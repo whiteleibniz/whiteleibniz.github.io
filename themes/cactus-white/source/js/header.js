@@ -1,5 +1,5 @@
-$(document).ready(function () {
-    $('#projectliul>li').hover(function (e) {
-        $(this).stop().slideToggle()
-    });
+$(document).ready(function() {
+  $('#projectli').hover(function(e) {
+    $('#projectliul').stop().slideToggle()
+  });
 });
