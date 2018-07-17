@@ -520,3 +520,33 @@ Changes not staged for commit:
 $ git stash
 Saved working directory and index state WIP on dev: f52c633 add merge
 ```
+工作区是干净的，刚才的工作现场存到哪去了？用git stash list命令看看：
+``` shell
+$ git stash list
+stash@{0}: WIP on dev: f52c633 add merge
+```
+用git stash pop，恢复的同时把stash内容也删了：
+``` shell
+$ git stash pop
+On branch dev
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+    new file:   hello.py
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+    modified:   readme.txt
+
+Dropped refs/stash@{0} (5d677e2ee266f39ea296182fb2354265b91b3b2a)
+```
+
+你可以多次stash，恢复的时候，先用git stash list查看，然后恢复指定的stash，用命令：
+``` shell
+$ git stash apply stash@{0}
+```
+修复bug时，我们会通过创建新的bug分支进行修复，然后合并，最后删除；
+
+当手头工作没有完成时，先把工作现场git stash一下，然后去修复bug，修复后，再git stash pop，回到工作现场。
