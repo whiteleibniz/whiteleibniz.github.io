@@ -310,11 +310,13 @@ $ ssh-keygen -t rsa -C "youremail@example.com"
 
 由于我们在本地初始化的版本库所以我们用第二种方式关联远程库：
 
-``` shell
+```shell
 $ git remote add origin git@github.com:whiteleibniz/learngit.git
 ```
+
 下一步，就可以把本地库的所有内容推送到远程库上：
-``` shell
+
+```shell
 $ git push -u origin master
 Counting objects: 20, done.
 Delta compression using up to 4 threads.
@@ -326,9 +328,11 @@ To github.com:whiteleibniz/learngit.git
  * [new branch]      master -> master
 Branch 'master' set up to track remote branch 'master' from 'origin'.
 ```
+
 由于远程库是空的，我们第一次推送master分支时，加上了-u参数，Git不但会把本地的master分支内容推送的远程新的master分支，还会把本地的master分支和远程的master分支关联起来，在以后的推送或者拉取时就可以简化命令。
 
 ### 从远程库克隆
+
 上次我们讲了先有本地库，后有远程库的时候，如何关联远程库。
 
 现在，假设我们从零开发，那么最好的方式是先创建远程库，然后，从远程库克隆。
@@ -336,7 +340,8 @@ Branch 'master' set up to track remote branch 'master' from 'origin'.
 首先，登陆GitHub，创建一个新的仓库，名字叫gitskills：
 
 远程库已经准备好了，下一步是用命令git clone克隆一个本地库：
-``` shell
+
+```shell
 $ git clone git@github.com:whiteleibniz/gitskills.git
 Cloning into 'gitskills'...
 remote: Counting objects: 3, done.
@@ -345,6 +350,7 @@ Receiving objects: 100% (3/3), done.
 ```
 
 ## 分支管理
+
 分支就是科幻电影里面的平行宇宙，当你正在电脑前努力学习Git的时候，另一个你正在另一个平行宇宙里努力学习SVN。
 
 如果两个平行宇宙互不干扰，那对现在的你也没啥影响。不过，在某个时间点，两个平行宇宙合并了，结果，你既学会了Git又学会了SVN！
@@ -360,17 +366,157 @@ Receiving objects: 100% (3/3), done.
 但Git的分支是与众不同的，无论创建、切换和删除分支，Git在1秒钟之内就能完成！无论你的版本库是1个文件还是1万个文件。
 
 ### 创建与合并分支
-创建分支本质上是在原有分支的上某时间点的提交上新建一个指向该提交的指针，然后在讲HEAD指针指向该分支指针，原理如下图：
 
+创建分支本质上是在原有分支的上某时间点的提交上新建一个指向该提交的指针，然后在将HEAD指针指向该分支指针，原理如下图：
+创建分支：
+![branch](branch-dev.png)
+分支提交:
+![branch](branch-commit.png)
+分支合并: git merge命令用于合并**指定分支到当前分支**。
+![branch](branch-merge.png)
+删除分支：合并后分支基本没用了可以删除掉，删除分支就是把分支指针给删掉
+![branch](branch-del.png)
+
+分支操作常用命令：
 
 查看分支：git branch
 
-创建分支：git branch <name>
+创建分支：git branch  &lt;name>
 
-切换分支：git checkout <name>
+切换分支：git checkout  &lt;name>
 
-创建+切换分支：git checkout -b <name>
+创建+切换分支：git checkout -b  &lt;name>
 
-合并某分支到当前分支：git merge <name>
+合并某分支到当前分支：git merge  &lt;name>
 
-删除分支：git branch -d <name>
+删除分支：git branch -d  &lt;name>
+
+### 解决冲突
+
+冲突产生的原因以及如何解决冲突：
+在主分支和分支中同时对一个文件进行了修改并且都commit了，这时git无法进行自动合并，需要把git合并失败的文件手动编辑为我们希望的内容。
+
+执行合并命令时git给出的提示：
+
+```shell
+$ git merge feature1
+Auto-merging readme.txt
+CONFLICT (content): Merge conflict in readme.txt
+Automatic merge failed; fix conflicts and then commit the result.
+```
+
+使用git status 查看冲突的具体原因：
+
+```shell
+$ git status
+On branch master
+Your branch is ahead of 'origin/master' by 2 commits.
+  (use "git push" to publish your local commits)
+
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
+
+    both modified:   readme.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+
+查看冲突文件readme的内容：
+
+```text
+Git is a distributed version control system.
+Git is free software distributed under the GPL.
+Git has a mutable index called stage.
+Git tracks changes of files.
+<<<<<<< HEAD
+Creating a new branch is quick & simple.
+=======
+Creating a new branch is quick AND simple.
+>>>>>>> feature1
+```
+
+Git用&lt;&lt;&lt;&lt;&lt;&lt;&lt;，=======，>>>>>>>标记出不同分支的内容，我们修改如下后保存：
+
+```shell
+Creating a new branch is quick and simple.
+```
+
+执行提交：
+
+```shell
+$ git add readme.txt
+$ git commit -m "conflict fixed"
+[master cf810e4] conflict fixed
+```
+
+### 分支管理策略
+
+在实际开发中，我们应该按照几个基本原则进行分支管理：
+
+首先，master分支应该是非常稳定的，也就是仅用来发布新版本，平时不能在上面干活；
+
+那在哪干活呢？干活都在dev分支上，也就是说，dev分支是不稳定的，到某个时候，比如1.0版本发布时，再把dev分支合并到master上，在master分支发布1.0版本；
+
+你和你的小伙伴们每个人都在dev分支上干活，每个人都有自己的分支，时不时地往dev分支上合并就可以了。
+
+所以，团队合作的分支看起来就像这样：
+
+![branch](branch-develop.png)
+
+前面我们使用了git自动合并机制(Fast forward模式),在这种模式下，删除分支后，会丢掉分支信息。一般情况下我们在合并分支时使用 --no-ff 参数来禁用Fast forward
+
+```shell
+$ git merge --no-ff -m "merge with no-ff" dev
+Merge made by the 'recursive' strategy.
+ readme.txt | 1 +
+ 1 file changed, 1 insertion(+)
+```
+
+ 因为本次合并要创建一个新的commit，所以加上-m参数，把commit描述写进去。
+
+合并后，我们用git log看看分支历史：
+
+```shell
+$ git log --graph --pretty=oneline --abbrev-commit
+*   e1e9c68 (HEAD -> master) merge with no-ff
+|\
+| * f52c633 (dev) add merge
+|/
+*   cf810e4 conflict fixed
+```
+
+可以看到，不使用Fast forward模式，merge后就像这样：
+
+![branch](branch-noff.png)
+
+合并分支时，加上--no-ff参数就可以用普通模式合并，合并后的历史有分支，能看出来曾经做过合并，而fast forward合并就看不出来曾经做过合并。
+
+### Bug分支
+
+当你接到一个修复一个代号101的bug的任务时，很自然地，你想创建一个分支issue-101来修复它，但是，等等，当前正在dev上进行的工作还没有提交：
+
+``` shell
+$ git status
+On branch dev
+Changes to be committed:
+(use "git reset HEAD <file>..." to unstage)
+
+  new file:   hello.py
+
+Changes not staged for commit:
+(use "git add <file>..." to update what will be committed)
+(use "git checkout -- <file>..." to discard changes in working directory)
+
+  modified:   readme.txt
+```
+并不是你不想提交，而是工作只进行到一半，还没法提交，预计完成还需1天时间。但是，必须在两个小时内修复该bug，怎么办？
+
+幸好，Git还提供了一个stash功能，可以把当前工作现场“储藏”起来，等以后恢复现场后继续工作：
+``` shell
+$ git stash
+Saved working directory and index state WIP on dev: f52c633 add merge
+```
