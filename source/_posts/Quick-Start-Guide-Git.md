@@ -499,7 +499,7 @@ $ git log --graph --pretty=oneline --abbrev-commit
 
 当你接到一个修复一个代号101的bug的任务时，很自然地，你想创建一个分支issue-101来修复它，但是，等等，当前正在dev上进行的工作还没有提交：
 
-``` shell
+```shell
 $ git status
 On branch dev
 Changes to be committed:
@@ -513,20 +513,26 @@ Changes not staged for commit:
 
   modified:   readme.txt
 ```
+
 并不是你不想提交，而是工作只进行到一半，还没法提交，预计完成还需1天时间。但是，必须在两个小时内修复该bug，怎么办？
 
 幸好，Git还提供了一个stash功能，可以把当前工作现场“储藏”起来，等以后恢复现场后继续工作：
-``` shell
+
+```shell
 $ git stash
 Saved working directory and index state WIP on dev: f52c633 add merge
 ```
+
 工作区是干净的，刚才的工作现场存到哪去了？用git stash list命令看看：
-``` shell
+
+```shell
 $ git stash list
 stash@{0}: WIP on dev: f52c633 add merge
 ```
+
 用git stash pop，恢复的同时把stash内容也删了：
-``` shell
+
+```shell
 $ git stash pop
 On branch dev
 Changes to be committed:
@@ -544,9 +550,170 @@ Dropped refs/stash@{0} (5d677e2ee266f39ea296182fb2354265b91b3b2a)
 ```
 
 你可以多次stash，恢复的时候，先用git stash list查看，然后恢复指定的stash，用命令：
-``` shell
+
+```shell
 $ git stash apply stash@{0}
 ```
+
 修复bug时，我们会通过创建新的bug分支进行修复，然后合并，最后删除；
 
 当手头工作没有完成时，先把工作现场git stash一下，然后去修复bug，修复后，再git stash pop，回到工作现场。
+
+### Feature分支
+
+添加一个新功能时，你肯定不希望因为一些实验性质的代码，把主分支搞乱了，所以，每添加一个新功能，最好新建一个feature分支，在上面开发，完成后，合并，最后，删除该feature分支。
+
+开发一个新feature，最好新建一个分支；
+
+如果要丢弃一个没有被合并过的分支，可以通过git branch -D &lt;name>强行删除。
+
+### 多人协作
+
+当你从远程仓库克隆时，实际上Git自动把本地的master分支和远程的master分支对应起来了，并且，远程仓库的默认名称是origin。
+
+要查看远程库的信息，用git remote：
+
+```shell
+$ git remote
+origin
+```
+
+或者，用git remote -v显示更详细的信息：
+
+```shell
+$ git remote -v
+origin  git@github.com:michaelliao/learngit.git (fetch)
+origin  git@github.com:michaelliao/learngit.git (push)
+```
+
+上面显示了可以抓取和推送的origin的地址。如果没有推送权限，就看不到push的地址。
+
+多人协作的工作模式通常是这样：
+
+1.  首先，可以试图用git push origin &lt;branch-name>推送自己的修改；
+
+2.  如果推送失败，则因为远程分支比你的本地更新，需要先用git pull试图合并；
+
+3.  如果合并有冲突，则解决冲突，并在本地提交；
+
+4.  没有冲突或者解决掉冲突后，再用git push origin &lt;branch-name>推送就能成功！
+
+如果git pull提示no tracking information，则说明本地分支和远程分支的链接关系没有创建，用命令git branch --set-upstream-to &lt;branch-name> origin/&lt;branch-name>。
+
+这就是多人协作的工作模式，一旦熟悉了，就非常简单。
+
+-   查看远程库信息，使用git remote -v；
+
+-   本地新建的分支如果不推送到远程，对其他人就是不可见的；
+
+-   从本地推送分支，使用git push origin branch-name，如果推送失败，先用git pull抓取远程的新提交；
+
+-   在本地创建和远程分支对应的分支，使用git checkout -b branch-name origin/branch-name，本地和远程分支的名称最好一致；
+
+-   建立本地分支和远程分支的关联，使用git branch --set-upstream branch-name origin/branch-name；
+
+-   从远程抓取分支，使用git pull，如果有冲突，要先处理冲突。
+
+### rebase
+
+-   rebase操作可以把本地未push的分叉提交历史整理成直线；
+-   rebase的目的是使得我们在查看历史提交的变化时更容易，因为分叉的提交需要三方对比。
+
+## 标签管理
+
+发布一个版本时，我们通常先在版本库中打一个标签（tag），这样，就唯一确定了打标签时刻的版本。将来无论什么时候，取某个标签的版本，就是把那个打标签的时刻的历史版本取出来。所以，标签也是版本库的一个快照。
+Git的标签虽然是版本库的快照，但其实它就是指向某个commit的指针（跟分支很像对不对？但是分支可以移动，标签不能移动），所以，创建和删除标签都是瞬间完成的。
+
+Git有commit，为什么还要引入tag？
+
+“请把上周一的那个版本打包发布，commit号是6a5819e...”
+
+“一串乱七八糟的数字不好找！”
+
+如果换一个办法：
+
+“请把上周一的那个版本打包发布，版本号是v1.2”
+
+“好的，按照tag v1.2查找commit就行！”
+
+所以，**tag就是一个让人容易记住的有意义的名字，它跟某个commit绑在一起**。
+
+### 创建标签
+
+在Git中打标签非常简单，首先，切换到需要打标签的分支上：
+
+```shell
+$ git branch
+* dev
+  master
+$ git checkout master
+Switched to branch 'master'
+```
+
+然后，敲命令git tag &lt;name>就可以打一个新标签：
+
+```shell
+$ git tag v1.0
+```
+
+可以用命令git tag查看所有标签：
+
+```shell
+$ git tag
+v1.0
+```
+
+在任意时间点打标签git log找到commit id，然后打上就可以了：
+
+```shell
+$ git tag v0.9 f52c633
+```
+
+注意，标签不是按时间顺序列出，而是按字母排序的。可以用git show &lt;tagname>查看标签信息：
+
+```shell
+$ git show v0.9
+commit f52c63349bc3c1593499807e5c8e972b82c8f286 (tag: v0.9)
+Author: Michael Liao <askxuefeng@gmail.com>
+Date:   Fri May 18 21:56:54 2018 +0800
+
+    add merge
+
+diff --git a/readme.txt b/readme.txt
+```
+
+### 操作标签
+
+如果标签打错了，也可以删除：
+
+```shell
+$ git tag -d v0.1
+Deleted tag 'v0.1' (was f15b0dd)
+```
+
+如果要推送某个标签到远程，使用命令git push origin &lt;tagname>：
+
+```shell
+$ git push origin v1.0
+Total 0 (delta 0), reused 0 (delta 0)
+To github.com:michaelliao/learngit.git
+ * [new tag]         v1.0 -> v1.0
+```
+或者，一次性推送全部尚未推送到远程的本地标签：
+``` shell
+$ git push origin --tags
+Total 0 (delta 0), reused 0 (delta 0)
+To github.com:michaelliao/learngit.git
+ * [new tag]         v0.9 -> v0.9
+ ```
+如果标签已经推送到远程，要删除远程标签就麻烦一点，先从本地删除：
+``` shell
+$ git tag -d v0.9
+Deleted tag 'v0.9' (was f52c633)
+```
+然后，从远程删除。删除命令也是push，但是格式如下：
+``` shell
+$ git push origin :refs/tags/v0.9
+To github.com:michaelliao/learngit.git
+ - [deleted]         v0.9
+ ```
