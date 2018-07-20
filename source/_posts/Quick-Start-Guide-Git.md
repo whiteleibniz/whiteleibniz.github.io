@@ -5,7 +5,8 @@ tags:
 - Quick Start Guide
 - Git
 ---
-
+## Git 常用命令检索
+ ![git-command](git-command.PNG)
 ## Git介绍
 
 Git是目前世界上最先进的**分布式**版本控制系统（没有之一）。
