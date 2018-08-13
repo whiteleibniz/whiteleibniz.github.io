@@ -255,9 +255,37 @@ var t = null; // t的值是null
 
 -   JavaScript 比较运算符
 
+    比较运算符在逻辑语句中使用，以测定变量或值是否相等。
+    给定 x=5，下面的表格解释了比较运算符：
+
+| 运算符   |     | 描述       | 例子                           |
+| ----- | --- | -------- | ---------------------------- |
+| ==    |     | 等于       | x==8 为 false                 |
+| ===   |     | 全等（值和类型） | x===5 为 true；x==="5" 为 false |
+| !=    |     | 不等于      | x!=8 为 true                  |
+| >     |     | 大于       | x>8 为 false                  |
+| &lt;  |     | 小于       | x&lt;8 为 true                |
+| >=    |     | 大于或等于    | x>=8 为 false                 |
+| &lt;= |     | 小于或等于    | x&lt;=8 为 true               |
+
 -   JavaScript 逻辑运算符
 
+    逻辑运算符用于测定变量或值之间的逻辑。
+    给定 x=6 以及 y=3，下表解释了逻辑运算符：
+
+| 运算符  | 描述  | 例子                          |
+| ---- | --- | --------------------------- |
+| &&   | and | (x &lt; 10 && y > 1) 为 true |
+| \|\| | or  | (x==5\|\|y==5) 为 false      |
+| !    | not | !(x==y) 为 true              |
+
 -   javascript 条件运算符
+
+    JavaScript 还包含了基于某些条件对变量进行赋值的条件运算符。
+
+    ```javascript
+    variablename=(condition)?value1:value2
+    ```
 
 ### 表达式
 
@@ -265,48 +293,434 @@ var t = null; // t的值是null
 
 ### 分支结构
 
+-   if 语句 - 只有当指定条件为 true 时，使用该语句来执行代码
+
+    ```javascript
+    if (time<20)
+    {
+    x="Good day";
+    }
+    ```
+
+-   if...else 语句 - 当条件为 true 时执行代码，当条件为 false 时执行其他代码
+
+    ```javascript
+    if (time<20)
+      {
+      x="Good day";
+      }
+    else
+      {
+      x="Good evening";
+      }
+    ```
+
+-   if...else if....else 语句 - 使用该语句来选择多个代码块之一来执行
+
+    ```javascript
+    if (time<10)
+      {
+      x="Good morning";
+      }
+    else if (time<20)
+      {
+      x="Good day";
+      }
+    else
+      {
+      x="Good evening";
+      }
+    ```
+
+-   switch 语句 - 使用该语句来选择多个代码块之一来执行
+
+    ```javascript
+    var day=new Date().getDay();
+    switch (day)
+    {
+    case 0:
+      x="Today it's Sunday";
+      break;
+    case 1:
+      x="Today it's Monday";
+      break;
+    case 2:
+      x="Today it's Tuesday";
+      break;
+    case 3:
+      x="Today it's Wednesday";
+      break;
+    case 4:
+      x="Today it's Thursday";
+      break;
+    case 5:
+      x="Today it's Friday";
+      break;
+    case 6:
+      x="Today it's Saturday";
+      break;
+    }
+    ```
+
+-   default 关键词 - 使用 default 关键词来规定匹配不存在时做的事情
+
+    ```javascript
+    var day=new Date().getDay();
+    switch (day)
+    {
+    case 6:
+      x="Today it's Saturday";
+      break;
+    case 0:
+      x="Today it's Sunday";
+      break;
+    default:
+      x="Looking forward to the Weekend";
+    }
+    ```
+
 ### 循环结构
+
+-   for - 循环代码块一定的次数
+
+    ```javascript
+    for (var i=0; i<5; i++)
+      {
+      x=x + "The number is " + i + "<br>";
+      }
+    ```
+
+-   for/in - 循环遍历对象的属性
+
+    ```javascript
+    var person={fname:"John",lname:"Doe",age:25};
+    for (x in person)
+      {
+      txt=txt + person[x];
+      }
+    ```
+
+-   for/of 具有iterable类型的集合可以通过新的for/of循环来遍历。
+
+    ```javascript
+    var a = ['A', 'B', 'C'];
+    var s = new Set(['A', 'B', 'C']);
+    var m = new Map([[1, 'x'], [2, 'y'], [3, 'z']]);
+    for (var x of a) { // 遍历Array
+        console.log(x);
+    }
+    for (var x of s) { // 遍历Set
+        console.log(x);
+    }
+    for (var x of m) { // 遍历Map
+        console.log(x[0] + '=' + x[1]);
+    }
+    ```
+
+-   forEach() 它接收一个函数，每次迭代就自动回调该函数
+
+    ```javascript
+    'use strict';
+    var a = ['A', 'B', 'C'];
+    a.forEach(function (element, index, array) {
+    // element: 指向当前元素的值
+    // index: 指向当前索引
+    // array: 指向Array对象本身
+    console.log(element + ', index = ' + index);
+    });
+    ```
+
+-   while - 当指定的条件为 true 时循环指定的代码块
+
+    ```javascript
+    while (i<5)
+    {
+    x=x + "The number is " + i + "<br>";
+    i++;
+    }
+    ```
+
+-   do/while - 同样当指定的条件为 true 时循环指定的代码块
+
+    ```javascript
+    do
+      {
+      x=x + "The number is " + i + "<br>";
+      i++;
+      }
+    while (i<5);
+    ```
 
 ### 特殊的流程控制语句
 
+-   Break 语句
+
+    我们已经switch中见到过 break 语句。它用于跳出 switch() 语句。
+    break 语句可用于跳出循环。
+    break 语句跳出循环后，会继续执行该循环之后的代码（如果有的话）：
+
+    ```javascript
+    for (i=0;i<10;i++)
+    {
+    if (i==3)
+    {
+    break;
+    }
+    x=x + "The number is " + i + "<br>";
+    }
+    ```
+
+-   Continue 语句
+
+    continue 语句中断循环中的迭代，如果出现了指定的条件，然后继续循环中的下一个迭代。
+    该例子跳过了值 3：
+
+    ```javascript
+    for (i=0;i<=10;i++)
+    {
+    if (i==3) continue;
+    x=x + "The number is " + i + "<br>";
+    }
+    ```
+
 ## 函数
 
-### 函数的定义
+借助抽象，我们才能不关心底层的具体计算过程，而直接在更高的层次上思考问题。
+写计算机程序也是一样，函数就是最基本的一种代码抽象的方式。
 
-```javascript
-function abs(x) {
-    if (typeof x !== 'number') {
-        throw 'Not a number';
-    }
-    if (x >= 0) {
-        return x;
-    } else {
-        return -x;
-    }
-}
-```
+### 函数的定义与调用
 
-JavaScript的函数也是一个对象，上述定义的`abs()`函数实际上是一个函数对象，而函数名`abs`可以视为指向该函数的变量。
+-   定义
 
-```javascript
-var abs = function (x) {
-     if (typeof x !== 'number') {
+    ```javascript
+    function abs(x) {
+        if (typeof x !== 'number') {
             throw 'Not a number';
-     }
-    if (x >= 0) {
-        return x;
-    } else {
-        return -x;
+        }
+        if (x >= 0) {
+            return x;
+        } else {
+            return -x;
+        }
     }
-};
-```
+    ```
 
-### 调用函数
+    JavaScript的函数也是一个对象，上述定义的`abs()`函数实际上是一个函数对象，而函数名`abs`可以视为指向该函数的变量。
 
-```javascript
-abs(10); // 返回10
-abs(-9); // 返回9
-```
+    ```javascript
+    var abs = function (x) {
+         if (typeof x !== 'number') {
+                throw 'Not a number';
+         }
+        if (x >= 0) {
+            return x;
+        } else {
+            return -x;
+        }
+    };
+    ```
+
+-   调用
+
+    ```javascript
+    abs(10); // 返回10
+    abs(-9); // 返回9
+    ```
+
+-   arguments
+
+    JavaScript还有一个免费赠送的关键字arguments，它只在函数内部起作用，并且永远指向当前函数的调用者传入的所有参数。arguments类似Array但它不是一个Array：
+    利用arguments，你可以获得调用者传入的所有参数。也就是说，即使函数不定义任何参数，还是可以拿到参数的值：
+
+    ```javascript
+    function abs() {
+    if (arguments.length === 0) {
+        return 0;
+    }
+    var x = arguments[0];
+    return x >= 0 ? x : -x;
+    }
+
+    abs(); // 0
+    abs(10); // 10
+    abs(-9); // 9
+    ```
+
+-   rest参数
+    由于JavaScript函数允许接收任意个参数，于是我们就不得不用arguments来获取所有参数：
+
+    ```javascript
+    function foo(a, b) {
+    var i, rest = [];
+    if (arguments.length > 2) {
+        for (i = 2; i<arguments.length; i++) {
+            rest.push(arguments[i]);
+        }
+    }
+    console.log('a = ' + a);
+    console.log('b = ' + b);
+    console.log(rest);
+    }
+    ```
+
+    为了获取除了已定义参数a、b之外的参数，我们不得不用arguments，并且循环要从索引2开始以便排除前两个参数，这种写法很别扭，只是为了获得额外的rest参数，有没有更好的方法？
+
+    ES6标准引入了rest参数，上面的函数可以改写为：
+
+    ```javascript
+    function foo(a, b, ...rest) {
+    console.log('a = ' + a);
+    console.log('b = ' + b);
+    console.log(rest);
+    }
+
+    foo(1, 2, 3, 4, 5);
+    // 结果:
+    // a = 1
+    // b = 2
+    // Array [ 3, 4, 5 ]
+
+    foo(1);
+    // 结果:
+    // a = 1
+    // b = undefined
+    // Array []
+    ```
+
+    rest参数只能写在最后，前面用...标识，从运行结果可知，传入的参数先绑定a、b，多余的参数以数组形式交给变量rest，所以，不再需要arguments我们就获取了全部参数。
+
+    如果传入的参数连正常定义的参数都没填满，也不要紧，rest参数会接收一个空数组（注意不是undefined）。
+
+### 变量作用域与解构赋值
+
+在JavaScript中，用var申明的变量实际上是有作用域的。
+如果一个变量在函数体内部申明，则该变量的作用域为整个函数体，在函数体外不可引用该变量：
+
+-   局部 JavaScript 变量
+
+    ```javascript
+    'use strict';
+
+    function foo() {
+        var x = 1;
+        x = x + 1;
+    }
+
+    x = x + 2; // ReferenceError! 无法在函数体外引用变量x
+    ```
+
+-   变量提升
+
+    JavaScript的函数定义有个特点，它会先扫描整个函数体的语句，把所有申明的变量“提升”到函数顶部：
+
+    ```javascript
+    'use strict';
+
+    function foo() {
+        var x = 'Hello, ' + y;
+        console.log(x);
+        var y = 'Bob';
+    }
+
+    foo();
+    ```
+
+    虽然是strict模式，但语句var x = 'Hello, ' + y;并不报错，原因是变量y在稍后申明了。但是console.log显示Hello, undefined，说明变量y的值为undefined。这正是因为JavaScript引擎自动提升了变量y的声明，但不会提升变量y的赋值。
+
+    对于上述foo()函数，JavaScript引擎看到的代码相当于：
+
+    ```javascript
+    function foo() {
+    var y; // 提升变量y的申明，此时y为undefined
+    var x = 'Hello, ' + y;
+    console.log(x);
+    y = 'Bob';
+    }
+    ```
+
+    由于JavaScript的这一怪异的“特性”，我们在函数内部定义变量时，请严格遵守“**在函数内部首先申明所有变量**”这一规则。最常见的做法是用一个var申明函数内部用到的所有变量：
+
+    ```javascript
+    function foo() {
+    var
+        x = 1, // x初始化为1
+        y = x + 1, // y初始化为2
+        z, i; // z和i为undefined
+    // 其他语句:
+    for (i=0; i<100; i++) {
+        ...
+    }
+    }
+    ```
+
+
+-   全局 JavaScript 变量
+    不在任何函数内定义的变量就具有全局作用域。实际上，JavaScript默认有一个全局对象window，全局作用域的变量实际上被绑定到window的一个属性：
+
+    ```javascript
+    'use strict';
+
+    var course = 'Learn JavaScript';
+    alert(course); // 'Learn JavaScript'
+    alert(window.course); // 'Learn JavaScript'
+    ```
+
+    因此，直接访问全局变量course和访问window.course是完全一样的。
+
+    你可能猜到了，由于函数定义有两种方式，以变量方式var foo = function () {}定义的函数实际上也是一个全局变量，因此，顶层函数的定义也被视为一个全局变量，并绑定到window对象：
+
+    ```javascript
+    'use strict';
+
+    function foo() {
+        alert('foo');
+    }
+
+    foo(); // 直接调用foo()
+    window.foo(); // 通过window.foo()调用
+    ```
+
+    进一步大胆地猜测，我们每次直接调用的alert()函数其实也是window的一个变量：
+
+    ```javascript
+    'use strict';
+    window.alert('调用window.alert()');
+    // 把alert保存到另一个变量:
+    var old_alert = window.alert;
+    // 给alert赋一个新函数:
+    window.alert = function () {}
+    alert('无法用alert()显示了!');
+    // 恢复alert:
+    window.alert = old_alert;
+    alert('又可以用alert()了!');
+    ```
+
+    这说明JavaScript实际上只有一个全局作用域。任何变量（函数也视为变量），如果没有在当前函数作用域中找到，就会继续往上查找，最后如果在全局作用域中也没有找到，则报ReferenceError错误。
+
+-   名字空间
+    全局变量会绑定到window上，不同的JavaScript文件如果使用了相同的全局变量，或者定义了相同名字的顶层函数，都会造成命名冲突，并且很难被发现。
+
+    减少冲突的一个方法是把自己的所有变量和函数全部绑定到一个全局变量中。例如：
+
+    ```javascript
+    // 唯一的全局变量MYAPP:
+    var MYAPP = {};
+
+    // 其他变量:
+    MYAPP.name = 'myapp';
+    MYAPP.version = 1.0;
+
+    // 其他函数:
+    MYAPP.foo = function () {
+        return 'foo';
+    };
+    ```
+    把自己的代码全部放入唯一的名字空间MYAPP中，会大大减少全局变量冲突的可能。
+
+    许多著名的JavaScript库都是这么干的：jQuery，YUI，underscore等等。
+
+-   JavaScript 变量的生存期
+-   向未声明的 JavaScript 变量来分配值
 
 ## 面向对象的程序设计
 
