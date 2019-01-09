@@ -4,6 +4,7 @@ date: 2018-07-12 07:01:31
 tags:
 - Quick Start Guide
 - Git
+typora-root-url: Quick-Start-Guide-Git
 ---
 ## Git 常用命令检索
  ![git-command](git-command.PNG)
@@ -706,7 +707,7 @@ $ git push origin --tags
 Total 0 (delta 0), reused 0 (delta 0)
 To github.com:michaelliao/learngit.git
  * [new tag]         v0.9 -> v0.9
- ```
+```
 如果标签已经推送到远程，要删除远程标签就麻烦一点，先从本地删除：
 ``` shell
 $ git tag -d v0.9
@@ -717,4 +718,4 @@ Deleted tag 'v0.9' (was f52c633)
 $ git push origin :refs/tags/v0.9
 To github.com:michaelliao/learngit.git
  - [deleted]         v0.9
- ```
+```

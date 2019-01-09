@@ -6,6 +6,7 @@ categories:
 tag:
 - 代理
 - Webstorm
+typora-root-url: proxy-setting
 ---
 经常需要访问国外网站的同学，由于*GFW*的限制导致很多网站无法访问，本文通过境外虚拟主机，利用socket5转发技术，搭建代理服务器，从而实现各种网站的自由访问。
 ## 准备工作
