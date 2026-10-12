@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_12 — GBA 退出逻辑改为与 FC 逐行一致（取消 GBA 专属分支）   项目 内容    发现时间 2026-09-23   修复时间 2026-09-23   模块 lv_pages&#x2F;gba_game_page.c   涉及版本 承接 bugfix_20260923_11 之后的现场（前端已分离）   现象等级 中（无新故障，属”消除结构分歧”的收敛性修复">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA退出逻辑对齐FC">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_12 — GBA 退出逻辑改为与 FC 逐行一致（取消 GBA 专属分支）   项目 内容    发现时间 2026-09-23   修复时间 2026-09-23   模块 lv_pages&#x2F;gba_game_page.c   涉及版本 承接 bugfix_20260923_11 之后的现场（前端已分离）   现象等级 中（无新故障，属”消除结构分歧”的收敛性修复">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.859Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA退出逻辑对齐FC</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-10/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-09/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&text=GBA退出逻辑对齐FC"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&title=GBA退出逻辑对齐FC"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&is_video=false&description=GBA退出逻辑对齐FC"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出逻辑对齐FC&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&title=GBA退出逻辑对齐FC"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&title=GBA退出逻辑对齐FC"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&title=GBA退出逻辑对齐FC"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&title=GBA退出逻辑对齐FC"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&name=GBA退出逻辑对齐FC&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-12-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E9%80%BB%E8%BE%91%E6%94%B9%E4%B8%BA%E4%B8%8E-FC-%E9%80%90%E8%A1%8C%E4%B8%80%E8%87%B4%EF%BC%88%E5%8F%96%E6%B6%88-GBA-%E4%B8%93%E5%B1%9E%E5%88%86%E6%94%AF%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_12 — GBA 退出逻辑改为与 FC 逐行一致（取消 GBA 专属分支）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 问题现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E4%BF%AE%E5%A4%8D%E5%89%8D%E7%9A%84%E5%9B%9B%E5%A4%84%E5%B7%AE%E5%BC%82%EF%BC%88GBA-%E7%9B%B8%E5%AF%B9-FC-%E7%9A%84%E9%A2%9D%E5%A4%96%E5%A4%8D%E6%9D%82%E5%BA%A6%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 修复前的四处差异（GBA 相对 FC 的额外复杂度）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E5%9B%9B%E5%A4%84%E5%B7%AE%E5%BC%82%E6%98%AF%E9%A3%8E%E9%99%A9"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 为什么这四处差异是风险</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E4%BB%A3%E4%BB%B7%E7%9A%84%E5%8F%96%E8%88%8D%EF%BC%88%E6%98%8E%E7%A1%AE%E6%8E%A5%E5%8F%97%EF%BC%89"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 代价的取舍（明确接受）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-gba-wait-thread-%E6%94%B9%E4%B8%BA%E9%98%BB%E5%A1%9E-waitpid"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 gba_wait_thread() 改为阻塞 waitpid</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-gba-exit-to-list-%E5%8E%BB%E6%8E%89%E6%8F%90%E5%89%8D%E6%94%BE%E8%A1%8C"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 gba_exit_to_list() 去掉提前放行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E5%88%A0%E9%99%A4-gba-reap-bg-%E5%90%8E%E5%8F%B0%E6%94%B6%E5%B0%B8%E7%BA%BF%E7%A8%8B"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 删除 gba_reap_bg() 后台收尸线程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E7%8A%B6%E6%80%81%E7%BB%93%E6%9E%84%E4%BD%93%E5%8E%BB%E6%8E%89-exiting-%E5%AD%97%E6%AE%B5"><span class="toc-number">1.4.4.</span> <span class="toc-text">4.4 状态结构体去掉 exiting 字段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-gba-timer-cb-%E7%94%BB%E9%9D%A2%E6%81%A2%E5%A4%8D%E5%9B%9E%E5%88%B0%E5%8D%95%E6%AC%A1-invalidate"><span class="toc-number">1.4.5.</span> <span class="toc-text">4.5 gba_timer_cb() 画面恢复回到单次 invalidate</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-6-%E6%96%87%E4%BB%B6%E5%A4%B4%E6%B3%A8%E9%87%8A%E9%87%8D%E5%86%99"><span class="toc-number">1.4.6.</span> <span class="toc-text">4.6 文件头注释重写</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81%E6%96%B9%E6%B3%95%E4%B8%8E%E7%BB%93%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证方法与结果</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E4%BB%A3%E7%A0%81%E4%B8%80%E8%87%B4%E6%80%A7%E6%A0%B8%E5%AF%B9%EF%BC%88%E6%9C%AC%E5%9C%B0%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 代码一致性核对（本地）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E6%9E%84%E5%BB%BA%E4%B8%8E%E9%83%A8%E7%BD%B2%EF%BC%88%E8%AE%BE%E5%A4%87%E7%AB%AF%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 构建与部署（设备端）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E5%AE%9E%E6%9C%BA%E5%8A%9F%E8%83%BD%E9%AA%8C%E8%AF%81%EF%BC%88%E4%BA%A4%E7%94%B1%E7%94%A8%E6%88%B7%EF%BC%89"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 实机功能验证（交由用户）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%9B%9E%E5%BD%92%E9%A3%8E%E9%99%A9"><span class="toc-number">1.6.</span> <span class="toc-text">6. 回归风险</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相关文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#gba-redeploy-py-%E5%8E%9F%E5%85%88%E7%94%A8-ps-o-pid-args-grep-lvgl-demo-%E5%8F%96-PID-%E5%86%8D-kill-9%E3%80%82%E8%AF%A5%E5%91%BD%E4%BB%A4%E7%BB%8F%E7%94%B1-sh-c-%E6%89%A7%E8%A1%8C%EF%BC%8C%E6%89%BF%E8%BD%BD%E5%AE%83%E7%9A%84-shell-%E8%87%AA%E8%BA%AB%E5%91%BD%E4%BB%A4%E8%A1%8C%E9%87%8C%E5%B0%B1%E5%90%AB-lvgl-demo-%E5%AD%97%E6%A0%B7-%E2%86%92%E8%A2%AB-grep-%E5%8C%B9%E9%85%8D-%E2%86%92-%E6%9D%80%E6%8E%89%E8%87%AA%E5%B7%B1-%E2%86%92-SSH-%E8%BF%9E%E6%8E%A5%E8%A2%AB%E9%87%8D%E7%BD%AE%EF%BC%88%E4%B8%8A%E4%B8%80%E8%BD%AE%E9%83%A8%E7%BD%B2%E6%97%B6%E5%B0%B1%E6%96%AD%E5%9C%A8%E8%BF%99%E9%87%8C%EF%BC%89%E3%80%82%E7%8E%B0%E6%94%B9%E4%B8%BA-ps-o-pid-comm-awk-2-lvgl-demo-print-1-%EF%BC%9Acomm-%E6%98%AF%E8%BF%9B%E7%A8%8B%E5%90%8D%EF%BC%88%E4%B8%8D%E5%90%AB%E5%8F%82%E6%95%B0%EF%BC%89%EF%BC%8C%E6%89%BF%E8%BD%BD-shell-%E7%9A%84-comm-%E6%98%AF-sh%EF%BC%8C%E4%B8%8D%E4%BC%9A%E8%87%AA%E5%8C%B9%E9%85%8D%E3%80%82miniretro-%E7%B3%BB%E5%88%97%E6%94%B9%E7%94%A8-2-miniretro-%E5%89%8D%E7%BC%80%E5%8C%B9%E9%85%8D%E3%80%82"><span class="toc-number">1.8.</span> <span class="toc-text">gba_redeploy.py 原先用 ps -o pid,args | grep &#39;lvgl_demo&#39; 取 PID 再 kill -9。该命令经由 sh -c 执行，承载它的 shell 自身命令行里就含 lvgl_demo 字样 →被 grep 匹配 → 杀掉自己 → SSH 连接被重置（上一轮部署时就断在这里）。现改为 ps -o pid,comm | awk &#39;$2&#x3D;&#x3D;&quot;lvgl_demo&quot;{print $1}&#39;：comm 是进程名（不含参数），承载 shell 的 comm 是 sh，不会自匹配。miniretro 系列改用 $2 ~ &#x2F;^miniretro&#x2F; 前缀匹配。</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA退出逻辑对齐FC
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-12-—-GBA-退出逻辑改为与-FC-逐行一致（取消-GBA-专属分支）"><a href="#bugfix-20260923-12-—-GBA-退出逻辑改为与-FC-逐行一致（取消-GBA-专属分支）" class="headerlink" title="bugfix_20260923_12 — GBA 退出逻辑改为与 FC 逐行一致（取消 GBA 专属分支）"></a>bugfix_20260923_12 — GBA 退出逻辑改为与 FC 逐行一致（取消 GBA 专属分支）</h1><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>发现时间</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>修复时间</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>模块</td>
+<td><code>lv_pages/gba_game_page.c</code></td>
+</tr>
+<tr>
+<td>涉及版本</td>
+<td>承接 bugfix_20260923_11 之后的现场（前端已分离）</td>
+</tr>
+<tr>
+<td>现象等级</td>
+<td>中（无新故障，属”消除结构分歧”的收敛性修复）</td>
+</tr>
+<tr>
+<td>触发方式</td>
+<td>用户明确要求：「你把 GBA 的改成 FC 的退出逻辑吧」</td>
+</tr>
+</tbody></table>
+<h2 id="1-问题现象"><a href="#1-问题现象" class="headerlink" title="1. 问题现象"></a>1. 问题现象</h2><p>前端分离（bugfix_20260923_11）之后，GBA 与 FC 虽然各用一个二进制，但<strong>退出逻辑仍不是同一套</strong>：<br>GBA 页保留了一条 FC 页没有的”提前放行”路径（<code>exiting</code> 标志 + 后台收尸线程 + 画面连刷 3 帧）。</p>
+<p>这条路径是 09→10→11 三轮故障中反复出问题的地方。用户据此判断”两边逻辑混在一起、退出莫名其妙”，<br>要求直接把 GBA 的退出逻辑改成 FC 那一套。</p>
+<p>用户的判断是对的：<strong>FC 那套是唯一被实机长期验证过的退出路径，任何”改进版”目前都没有可信的验证基础。</strong></p>
+<h2 id="2-影响范围"><a href="#2-影响范围" class="headerlink" title="2. 影响范围"></a>2. 影响范围</h2><ul>
+<li><code>lv_pages/gba_game_page.c</code>：退出路径（<code>gba_wait_thread</code> &#x2F; <code>gba_exit_to_list</code> &#x2F; <code>gba_timer_cb</code> &#x2F; 状态结构体）。</li>
+<li>不涉及 <code>miniretro_gba</code>（前端二进制不动），不涉及 FC 页（FC 页保持原样，一行未改）。</li>
+<li>结构层面：消除”同构组件之间的人为差异”——差异本身就是后续故障的藏身处。</li>
+</ul>
+<h2 id="3-根因分析"><a href="#3-根因分析" class="headerlink" title="3. 根因分析"></a>3. 根因分析</h2><h3 id="3-1-修复前的四处差异（GBA-相对-FC-的额外复杂度）"><a href="#3-1-修复前的四处差异（GBA-相对-FC-的额外复杂度）" class="headerlink" title="3.1 修复前的四处差异（GBA 相对 FC 的额外复杂度）"></a>3.1 修复前的四处差异（GBA 相对 FC 的额外复杂度）</h3><table>
+<thead>
+<tr>
+<th>#</th>
+<th>差异点</th>
+<th>FC 页</th>
+<th>GBA 页（修复前）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>等待判据</td>
+<td>阻塞 <code>waitpid</code>，只认”子进程真的消失”</td>
+<td>5ms 轮询，认 <code>exiting</code> 标志 <strong>或</strong> 子进程消失</td>
+</tr>
+<tr>
+<td>2</td>
+<td>退出函数副作用</td>
+<td>只 <code>SIGTERM → 120ms → SIGKILL</code></td>
+<td>追加 <code>s_gba.exiting = true</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>收尸兜底</td>
+<td>无（阻塞必然拿到尸）</td>
+<td><code>gba_reap_bg()</code> 独立后台线程</td>
+</tr>
+<tr>
+<td>4</td>
+<td>画面恢复</td>
+<td><code>lv_obj_invalidate()</code> ×1</td>
+<td><code>invalidate()</code> + <code>for(3) lv_refr_now()</code></td>
+</tr>
+</tbody></table>
+<h3 id="3-2-为什么这四处差异是风险"><a href="#3-2-为什么这四处差异是风险" class="headerlink" title="3.2 为什么这四处差异是风险"></a>3.2 为什么这四处差异是风险</h3><ul>
+<li><strong>第 1 处是 09&#x2F;10&#x2F;11 三轮卡死&#x2F;卡黑屏的同一个病灶</strong>。只要等待判据里出现”标志位”或”时间上限”这类<br>非硬事件，就存在”把仍在运行的游戏判成已退出”的可能，后果固定为两条：<br>① <code>hardware_keys_set_interceptor(NULL)</code> 摘掉按键拦截器 → 退出键失效，再也退不出游戏；<br>② <code>app_runtime_set_lvgl_paused(false)</code> 让 LVGL 抢回 fb0 → 与仍在运行的游戏互相覆盖。<br>历史两版的差别只是”误判的触发条件不同”（时间上限 &#x2F; 标志位被读到），本质同源。</li>
+<li><strong>第 3、4 处是为第 1 处的时序问题打的补丁</strong>。提前放行意味着”标志已消费但子进程仍在碰 fb0”，<br>于是不得不连刷 3 帧来抢画面、不得不另开线程收尸。改回硬事件判据后，这两个补丁<strong>不再有存在理由</strong>，<br>留着反而是多余的失败面。</li>
+<li><strong>结构性理由</strong>：FC 页这套逻辑经过长期实机验证；GBA 页却带着一条”只此一处”的路径。<br>同一份设计意图在两处写法不同，未来任何一次修改都容易只改一边 —— 这正是 11 号文档里<br>“共用二进制被改坏”那类问题的翻版，只是从”共享产物”变成了”共享语义、各自实现”。</li>
+</ul>
+<h3 id="3-3-代价的取舍（明确接受）"><a href="#3-3-代价的取舍（明确接受）" class="headerlink" title="3.3 代价的取舍（明确接受）"></a>3.3 代价的取舍（明确接受）</h3><p>FC 那套的唯一代价是：<strong>恢复 UI 要等内核回收 <code>evdev</code> fd，实测发信号→收尸完成约 455ms</strong><br>（其中子进程内部收尾 ~34ms，其余是内核固有开销）。09&#x2F;10 两轮就是试图”省掉这几百毫秒”才出的故障。</p>
+<p>本次明确选择<strong>承担这 ~400ms</strong>，换取”GBA 与 FC 行为逐行一致”。理由：</p>
+<ul>
+<li>455ms 的黑屏一闪在用户感受上属于”退出有一下停顿”，可接受；</li>
+<li>相比”偶发卡死、退出键失效、只能重启”，这个代价小得多；</li>
+<li>一致性带来的可验证性 &gt; 几百毫秒的性能收益。</li>
+</ul>
+<h2 id="4-修复方案"><a href="#4-修复方案" class="headerlink" title="4. 修复方案"></a>4. 修复方案</h2><p><strong>原则：GBA 页退出路径照抄 FC 页，不给任何专属分支。</strong></p>
+<h3 id="4-1-gba-wait-thread-改为阻塞-waitpid"><a href="#4-1-gba-wait-thread-改为阻塞-waitpid" class="headerlink" title="4.1 gba_wait_thread() 改为阻塞 waitpid"></a>4.1 <code>gba_wait_thread()</code> 改为阻塞 <code>waitpid</code></h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> *<span class="title function_">gba_wait_thread</span><span class="params">(<span class="type">void</span> *arg)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">pid_t</span> pid = (<span class="type">pid_t</span>)(<span class="type">intptr_t</span>)arg;</span><br><span class="line">    <span class="type">int</span> status = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span>(waitpid(pid, &amp;status, <span class="number">0</span>) &lt; <span class="number">0</span>) &#123;      <span class="comment">/* 无上限，与 fc_wait_thread 相同 */</span></span><br><span class="line">        <span class="keyword">if</span>(errno == EINTR) <span class="keyword">continue</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    pthread_mutex_lock(&amp;s_gba.lock);</span><br><span class="line">    <span class="keyword">if</span>(s_gba.child_pid == pid) &#123;</span><br><span class="line">        s_gba.child_pid = <span class="number">-1</span>;</span><br><span class="line">        s_gba.running   = <span class="literal">false</span>;</span><br><span class="line">        s_gba.finished  = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    pthread_mutex_unlock(&amp;s_gba.lock);</span><br><span class="line"></span><br><span class="line">    hardware_keys_set_grab(<span class="literal">true</span>);</span><br><span class="line">    hardware_keys_set_interceptor(<span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line">    app_runtime_set_lvgl_paused(<span class="literal">false</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>安全性依据：上游 <code>gba_exit_to_list()</code> 保证 <code>SIGTERM</code> 后 120ms 必然补上 <code>SIGKILL</code>，<br>而 <code>SIGKILL</code> 不可捕获 ⇒ 子进程必然结束 ⇒ 阻塞的 <code>waitpid</code> 必然返回，不存在死等。</p>
+<h3 id="4-2-gba-exit-to-list-去掉提前放行"><a href="#4-2-gba-exit-to-list-去掉提前放行" class="headerlink" title="4.2 gba_exit_to_list() 去掉提前放行"></a>4.2 <code>gba_exit_to_list()</code> 去掉提前放行</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kill(pid, SIGTERM);</span><br><span class="line">usleep(<span class="number">120</span> * <span class="number">1000</span>);</span><br><span class="line"><span class="keyword">if</span>(kill(pid, <span class="number">0</span>) == <span class="number">0</span>) kill(pid, SIGKILL);</span><br><span class="line"><span class="comment">/* 到此为止：不再置 exiting 标志，画面恢复交给收尸后触发的 finished + 主线程定时器 */</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-3-删除-gba-reap-bg-后台收尸线程"><a href="#4-3-删除-gba-reap-bg-后台收尸线程" class="headerlink" title="4.3 删除 gba_reap_bg() 后台收尸线程"></a>4.3 删除 <code>gba_reap_bg()</code> 后台收尸线程</h3><p>阻塞 <code>waitpid</code> 必然拿到尸，兜底线程没有存在意义。删除后同时消除”两处代码都去 <code>child_pid</code><br>赋值”的竞态空间。</p>
+<h3 id="4-4-状态结构体去掉-exiting-字段"><a href="#4-4-状态结构体去掉-exiting-字段" class="headerlink" title="4.4 状态结构体去掉 exiting 字段"></a>4.4 状态结构体去掉 <code>exiting</code> 字段</h3><p><code>gba_state_t</code> 的 <code>exiting</code> 及 <code>gba_launch()</code> 里对它的复位一并删除，字段布局回到与 <code>fc_state_t</code> 对齐。</p>
+<h3 id="4-5-gba-timer-cb-画面恢复回到单次-invalidate"><a href="#4-5-gba-timer-cb-画面恢复回到单次-invalidate" class="headerlink" title="4.5 gba_timer_cb() 画面恢复回到单次 invalidate"></a>4.5 <code>gba_timer_cb()</code> 画面恢复回到单次 <code>invalidate</code></h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lv_obj_invalidate(lv_screen_active());       <span class="comment">/* 与 fc_timer_cb 相同，不再连刷 3 帧 */</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-6-文件头注释重写"><a href="#4-6-文件头注释重写" class="headerlink" title="4.6 文件头注释重写"></a>4.6 文件头注释重写</h3><p>把”我们比 FC 更快”的叙述改成”<strong>刻意与 FC 完全一致，并说明为什么不再追求更快</strong>“，<br>同时把两轮失败方案（SIGUSR1 握手 &#x2F; 时间上限）作为反例留在注释里，防止后来者再走一遍。</p>
+<h2 id="5-验证方法与结果"><a href="#5-验证方法与结果" class="headerlink" title="5. 验证方法与结果"></a>5. 验证方法与结果</h2><h3 id="5-1-代码一致性核对（本地）"><a href="#5-1-代码一致性核对（本地）" class="headerlink" title="5.1 代码一致性核对（本地）"></a>5.1 代码一致性核对（本地）</h3><ul>
+<li><code>grep -n &quot;exiting\|reaped\|reap_bg\|lv_refr_now\|SIGUSR1\|RELEASE_SIGNAL&quot;</code> →<br>仅命中注释内容，<strong>无任何代码残留</strong>；</li>
+<li><code>gba_wait_thread()</code> 与 <code>fc_wait_thread()</code> 逐行对照 → 结构、判据、恢复顺序、顺序注释全部相同，<br>仅 <code>s_gba</code> &#x2F; <code>s_fc</code> 前缀与缩进不同。</li>
+</ul>
+<h3 id="5-2-构建与部署（设备端）"><a href="#5-2-构建与部署（设备端）" class="headerlink" title="5.2 构建与部署（设备端）"></a>5.2 构建与部署（设备端）</h3><p><code>ssh_tools/gba_redeploy.py</code>（不带 <code>--mini</code>，只部署页面 + 编译 + 重启）：</p>
+<table>
+<thead>
+<tr>
+<th>检查项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>make -j2</code></td>
+<td><code>MAKE_RC=0</code>，<code>error:</code> 计数 &#x3D; 0</td>
+</tr>
+<tr>
+<td>二进制替换</td>
+<td><code>ATOMIC_OK</code>（编到 <code>.tmp</code> 再 <code>mv -f</code>，原子）</td>
+</tr>
+<tr>
+<td>部署前在跑的游戏</td>
+<td>无</td>
+</tr>
+<tr>
+<td>重启后进程</td>
+<td><code>lvgl_demo</code> ×1 + <code>lvgl_watchdog</code> ×1，单实例，无僵尸</td>
+</tr>
+</tbody></table>
+<h3 id="5-3-实机功能验证（交由用户）"><a href="#5-3-实机功能验证（交由用户）" class="headerlink" title="5.3 实机功能验证（交由用户）"></a>5.3 实机功能验证（交由用户）</h3><ol>
+<li>桌面 → GBA 游戏 → 选 ROM → 确认，进入游戏；</li>
+<li>按<strong>买单</strong>键退出 → 预期约半秒黑屏一闪后回到游戏列表，<strong>退出键全程有效</strong>；</li>
+<li>进入游戏后<strong>停留 5 秒以上</strong>再退出（重点：验证不再有”跑满 N 秒被误判”）→ 表现应与第 2 步相同；</li>
+<li>再进一次并正常玩一段 → 退出，确认无残留黑屏、列表可继续操作；</li>
+<li>对照 FC 游戏：进入 → 退出，行为应与 GBA 表现一致（同为”半秒黑屏一闪”）。</li>
+</ol>
+<h2 id="6-回归风险"><a href="#6-回归风险" class="headerlink" title="6. 回归风险"></a>6. 回归风险</h2><table>
+<thead>
+<tr>
+<th>风险</th>
+<th>评估</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>退出比上一版慢约 400ms</td>
+<td><strong>已明确接受</strong>，这是与 FC 对齐的必然代价，也是唯一被验证过的时序</td>
+</tr>
+<tr>
+<td>单次 <code>invalidate</code> 是否够用</td>
+<td>FC 页同样只 <code>invalidate</code> 一次且长期正常；恢复时机现已与 FC 相同，判断为足够。若实机出现”退出后残留游戏画面”，则说明 GBA 侧 fb 清理与 FC 有差异，需从 <code>miniretro_gba</code> 的 <code>fb_restore()</code> 查，<strong>而不是再加连刷</strong></td>
+</tr>
+<tr>
+<td>阻塞 <code>waitpid</code> 会不会死等</td>
+<td>不会：<code>SIGKILL</code> 不可捕获，上游必然发出</td>
+</tr>
+<tr>
+<td><code>pthread_create</code> 失败的极端分支</td>
+<td>该分支（<code>gba_launch</code> 内）里是 <code>waitpid(pid, NULL, 0)</code> 且<strong>未先 kill</strong>，理论上会阻塞到游戏自行结束。<strong>FC 页存在完全相同写法</strong>，为保持逐行一致本次未改；属极低概率路径，如要修应两侧同时修</td>
+</tr>
+<tr>
+<td>FC 页</td>
+<td>本次一行未改</td>
+</tr>
+</tbody></table>
+<h2 id="7-相关文件"><a href="#7-相关文件" class="headerlink" title="7. 相关文件"></a>7. 相关文件</h2><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>lv_pages/gba_game_page.c</code></td>
+<td>本次改动全部集中于此（退出路径 + 结构体 + 文件头注释）</td>
+</tr>
+<tr>
+<td><code>lv_pages/fc_game_page.c</code></td>
+<td>参照基准，未改动</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro_gba</code></td>
+<td>GBA 专用前端，未改动</td>
+</tr>
+<tr>
+<td><code>ssh_tools/gba_redeploy.py</code></td>
+<td>部署脚本；本次顺带修正取 PID 方式（见下）</td>
+</tr>
+<tr>
+<td><code>bugfix_20260923_11</code></td>
+<td>上一环：前端分离、卡黑屏根因</td>
+</tr>
+</tbody></table>
+<p><strong>附：部署脚本的一处修正</strong></p>
+<h2 id="gba-redeploy-py-原先用-ps-o-pid-args-grep-lvgl-demo-取-PID-再-kill-9。该命令经由-sh-c-执行，承载它的-shell-自身命令行里就含-lvgl-demo-字样-→被-grep-匹配-→-杀掉自己-→-SSH-连接被重置（上一轮部署时就断在这里）。现改为-ps-o-pid-comm-awk-2-lvgl-demo-print-1-：comm-是进程名（不含参数），承载-shell-的-comm-是-sh，不会自匹配。miniretro-系列改用-2-miniretro-前缀匹配。"><a href="#gba-redeploy-py-原先用-ps-o-pid-args-grep-lvgl-demo-取-PID-再-kill-9。该命令经由-sh-c-执行，承载它的-shell-自身命令行里就含-lvgl-demo-字样-→被-grep-匹配-→-杀掉自己-→-SSH-连接被重置（上一轮部署时就断在这里）。现改为-ps-o-pid-comm-awk-2-lvgl-demo-print-1-：comm-是进程名（不含参数），承载-shell-的-comm-是-sh，不会自匹配。miniretro-系列改用-2-miniretro-前缀匹配。" class="headerlink" title="gba_redeploy.py 原先用 ps -o pid,args | grep &#39;lvgl_demo&#39; 取 PID 再 kill -9。该命令经由 sh -c 执行，承载它的 shell 自身命令行里就含 lvgl_demo 字样 →被 grep 匹配 → 杀掉自己 → SSH 连接被重置（上一轮部署时就断在这里）。现改为 ps -o pid,comm | awk &#39;$2==&quot;lvgl_demo&quot;{print $1}&#39;：comm 是进程名（不含参数），承载 shell 的 comm 是 sh，不会自匹配。miniretro 系列改用 $2 ~ /^miniretro/ 前缀匹配。"></a><code>gba_redeploy.py</code> 原先用 <code>ps -o pid,args | grep &#39;lvgl_demo&#39;</code> 取 PID 再 <code>kill -9</code>。<br>该命令经由 <code>sh -c</code> 执行，<strong>承载它的 shell 自身命令行里就含 <code>lvgl_demo</code> 字样</strong> →<br>被 grep 匹配 → 杀掉自己 → SSH 连接被重置（上一轮部署时就断在这里）。<br>现改为 <code>ps -o pid,comm | awk &#39;$2==&quot;lvgl_demo&quot;&#123;print $1&#125;&#39;</code>：<code>comm</code> 是进程名（不含参数），<br>承载 shell 的 <code>comm</code> 是 <code>sh</code>，不会自匹配。<code>miniretro</code> 系列改用 <code>$2 ~ /^miniretro/</code> 前缀匹配。</h2><blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-12-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E9%80%BB%E8%BE%91%E6%94%B9%E4%B8%BA%E4%B8%8E-FC-%E9%80%90%E8%A1%8C%E4%B8%80%E8%87%B4%EF%BC%88%E5%8F%96%E6%B6%88-GBA-%E4%B8%93%E5%B1%9E%E5%88%86%E6%94%AF%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_12 — GBA 退出逻辑改为与 FC 逐行一致（取消 GBA 专属分支）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 问题现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E4%BF%AE%E5%A4%8D%E5%89%8D%E7%9A%84%E5%9B%9B%E5%A4%84%E5%B7%AE%E5%BC%82%EF%BC%88GBA-%E7%9B%B8%E5%AF%B9-FC-%E7%9A%84%E9%A2%9D%E5%A4%96%E5%A4%8D%E6%9D%82%E5%BA%A6%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 修复前的四处差异（GBA 相对 FC 的额外复杂度）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E5%9B%9B%E5%A4%84%E5%B7%AE%E5%BC%82%E6%98%AF%E9%A3%8E%E9%99%A9"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 为什么这四处差异是风险</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E4%BB%A3%E4%BB%B7%E7%9A%84%E5%8F%96%E8%88%8D%EF%BC%88%E6%98%8E%E7%A1%AE%E6%8E%A5%E5%8F%97%EF%BC%89"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 代价的取舍（明确接受）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-gba-wait-thread-%E6%94%B9%E4%B8%BA%E9%98%BB%E5%A1%9E-waitpid"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 gba_wait_thread() 改为阻塞 waitpid</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-gba-exit-to-list-%E5%8E%BB%E6%8E%89%E6%8F%90%E5%89%8D%E6%94%BE%E8%A1%8C"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 gba_exit_to_list() 去掉提前放行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E5%88%A0%E9%99%A4-gba-reap-bg-%E5%90%8E%E5%8F%B0%E6%94%B6%E5%B0%B8%E7%BA%BF%E7%A8%8B"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 删除 gba_reap_bg() 后台收尸线程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E7%8A%B6%E6%80%81%E7%BB%93%E6%9E%84%E4%BD%93%E5%8E%BB%E6%8E%89-exiting-%E5%AD%97%E6%AE%B5"><span class="toc-number">1.4.4.</span> <span class="toc-text">4.4 状态结构体去掉 exiting 字段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-gba-timer-cb-%E7%94%BB%E9%9D%A2%E6%81%A2%E5%A4%8D%E5%9B%9E%E5%88%B0%E5%8D%95%E6%AC%A1-invalidate"><span class="toc-number">1.4.5.</span> <span class="toc-text">4.5 gba_timer_cb() 画面恢复回到单次 invalidate</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-6-%E6%96%87%E4%BB%B6%E5%A4%B4%E6%B3%A8%E9%87%8A%E9%87%8D%E5%86%99"><span class="toc-number">1.4.6.</span> <span class="toc-text">4.6 文件头注释重写</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81%E6%96%B9%E6%B3%95%E4%B8%8E%E7%BB%93%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证方法与结果</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E4%BB%A3%E7%A0%81%E4%B8%80%E8%87%B4%E6%80%A7%E6%A0%B8%E5%AF%B9%EF%BC%88%E6%9C%AC%E5%9C%B0%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 代码一致性核对（本地）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E6%9E%84%E5%BB%BA%E4%B8%8E%E9%83%A8%E7%BD%B2%EF%BC%88%E8%AE%BE%E5%A4%87%E7%AB%AF%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 构建与部署（设备端）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E5%AE%9E%E6%9C%BA%E5%8A%9F%E8%83%BD%E9%AA%8C%E8%AF%81%EF%BC%88%E4%BA%A4%E7%94%B1%E7%94%A8%E6%88%B7%EF%BC%89"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 实机功能验证（交由用户）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%9B%9E%E5%BD%92%E9%A3%8E%E9%99%A9"><span class="toc-number">1.6.</span> <span class="toc-text">6. 回归风险</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相关文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#gba-redeploy-py-%E5%8E%9F%E5%85%88%E7%94%A8-ps-o-pid-args-grep-lvgl-demo-%E5%8F%96-PID-%E5%86%8D-kill-9%E3%80%82%E8%AF%A5%E5%91%BD%E4%BB%A4%E7%BB%8F%E7%94%B1-sh-c-%E6%89%A7%E8%A1%8C%EF%BC%8C%E6%89%BF%E8%BD%BD%E5%AE%83%E7%9A%84-shell-%E8%87%AA%E8%BA%AB%E5%91%BD%E4%BB%A4%E8%A1%8C%E9%87%8C%E5%B0%B1%E5%90%AB-lvgl-demo-%E5%AD%97%E6%A0%B7-%E2%86%92%E8%A2%AB-grep-%E5%8C%B9%E9%85%8D-%E2%86%92-%E6%9D%80%E6%8E%89%E8%87%AA%E5%B7%B1-%E2%86%92-SSH-%E8%BF%9E%E6%8E%A5%E8%A2%AB%E9%87%8D%E7%BD%AE%EF%BC%88%E4%B8%8A%E4%B8%80%E8%BD%AE%E9%83%A8%E7%BD%B2%E6%97%B6%E5%B0%B1%E6%96%AD%E5%9C%A8%E8%BF%99%E9%87%8C%EF%BC%89%E3%80%82%E7%8E%B0%E6%94%B9%E4%B8%BA-ps-o-pid-comm-awk-2-lvgl-demo-print-1-%EF%BC%9Acomm-%E6%98%AF%E8%BF%9B%E7%A8%8B%E5%90%8D%EF%BC%88%E4%B8%8D%E5%90%AB%E5%8F%82%E6%95%B0%EF%BC%89%EF%BC%8C%E6%89%BF%E8%BD%BD-shell-%E7%9A%84-comm-%E6%98%AF-sh%EF%BC%8C%E4%B8%8D%E4%BC%9A%E8%87%AA%E5%8C%B9%E9%85%8D%E3%80%82miniretro-%E7%B3%BB%E5%88%97%E6%94%B9%E7%94%A8-2-miniretro-%E5%89%8D%E7%BC%80%E5%8C%B9%E9%85%8D%E3%80%82"><span class="toc-number">1.8.</span> <span class="toc-text">gba_redeploy.py 原先用 ps -o pid,args | grep &#39;lvgl_demo&#39; 取 PID 再 kill -9。该命令经由 sh -c 执行，承载它的 shell 自身命令行里就含 lvgl_demo 字样 →被 grep 匹配 → 杀掉自己 → SSH 连接被重置（上一轮部署时就断在这里）。现改为 ps -o pid,comm | awk &#39;$2&#x3D;&#x3D;&quot;lvgl_demo&quot;{print $1}&#39;：comm 是进程名（不含参数），承载 shell 的 comm 是 sh，不会自匹配。miniretro 系列改用 $2 ~ &#x2F;^miniretro&#x2F; 前缀匹配。</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&text=GBA退出逻辑对齐FC"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&title=GBA退出逻辑对齐FC"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&is_video=false&description=GBA退出逻辑对齐FC"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出逻辑对齐FC&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&title=GBA退出逻辑对齐FC"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&title=GBA退出逻辑对齐FC"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&title=GBA退出逻辑对齐FC"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&title=GBA退出逻辑对齐FC"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-12/&name=GBA退出逻辑对齐FC&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

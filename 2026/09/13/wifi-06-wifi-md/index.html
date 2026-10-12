@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="WiFi 芯片打通 —— 人工操作手册 适用设备：spd-box（SC9832A 四核，armv7l，Android 6 内核 3.10.65 + switchroot Alpine Linux 3.21 armhf）WiFi 芯片：Marlin SC2331（SDIO 接口，mmc2:8800:1，device 0x2331）文档目标：不依赖任何 AI 辅助，人工按本手册从零把该设备的板载 Wi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WiFi芯片打通操作手册">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="WiFi 芯片打通 —— 人工操作手册 适用设备：spd-box（SC9832A 四核，armv7l，Android 6 内核 3.10.65 + switchroot Alpine Linux 3.21 armhf）WiFi 芯片：Marlin SC2331（SDIO 接口，mmc2:8800:1，device 0x2331）文档目标：不依赖任何 AI 辅助，人工按本手册从零把该设备的板载 Wi">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-13T07:27:33.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.594Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="WiFi">
+<meta property="article:tag" content="SC2331">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>WiFi芯片打通操作手册</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/13/wifi-05-wifi-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2019/01/09/Quick-Start-Guide-Vue2/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&text=WiFi芯片打通操作手册"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&title=WiFi芯片打通操作手册"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&is_video=false&description=WiFi芯片打通操作手册"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=WiFi芯片打通操作手册&body=Check out this article: https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&title=WiFi芯片打通操作手册"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&title=WiFi芯片打通操作手册"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&title=WiFi芯片打通操作手册"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&title=WiFi芯片打通操作手册"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&name=WiFi芯片打通操作手册&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#WiFi-%E8%8A%AF%E7%89%87%E6%89%93%E9%80%9A-%E2%80%94%E2%80%94-%E4%BA%BA%E5%B7%A5%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C"><span class="toc-number">1.</span> <span class="toc-text">WiFi 芯片打通 —— 人工操作手册</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.</span> <span class="toc-text">目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%83%8C%E6%99%AF%E4%B8%8E%E9%97%AE%E9%A2%98%E5%AE%9A%E4%B9%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 背景与问题定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B7%A5%E5%85%B7%E4%B8%8E%E7%89%A9%E6%96%99%E6%B8%85%E5%8D%95"><span class="toc-number">1.3.</span> <span class="toc-text">2. 工具与物料清单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%80%BB%E4%BD%93%E6%80%9D%E8%B7%AF"><span class="toc-number">1.4.</span> <span class="toc-text">3. 总体思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.5.</span> <span class="toc-text">4. 操作流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E8%AE%BE%E5%A4%87%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%A1%AE%E8%AE%A4"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 设备与系统确认</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E4%BB%8E-Android-%E5%AF%B9%E7%85%A7%E6%9C%BA%E5%8F%96%E8%AF%81"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 从 Android 对照机取证</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E6%8F%90%E5%8F%96%E5%B9%B6%E6%9B%BF%E6%8D%A2-Android-%E5%8E%9F%E7%89%88%E8%AE%BE%E5%A4%87%E6%A0%91%EF%BC%88DTB%EF%BC%89"><span class="toc-number">1.5.3.</span> <span class="toc-text">4.3 提取并替换 Android 原版设备树（DTB）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E6%90%AD%E5%BB%BA-Android-%E7%94%A8%E6%88%B7%E6%80%81-chroot-%E7%8E%AF%E5%A2%83"><span class="toc-number">1.5.4.</span> <span class="toc-text">4.4 搭建 Android 用户态 chroot 环境</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-%E6%89%A7%E8%A1%8C%E5%9B%BA%E4%BB%B6%E4%B8%8B%E8%BD%BD%EF%BC%88download-%E4%B8%8A%E7%94%B5%E5%BA%8F%E5%88%97%EF%BC%89"><span class="toc-number">1.5.5.</span> <span class="toc-text">4.5 执行固件下载（download 上电序列）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-6-%E9%AA%8C%E8%AF%81-SDIO-%E6%9E%9A%E4%B8%BE"><span class="toc-number">1.5.6.</span> <span class="toc-text">4.6 验证 SDIO 枚举</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-7-%E5%8A%A0%E8%BD%BD-WiFi-%E9%A9%B1%E5%8A%A8"><span class="toc-number">1.5.7.</span> <span class="toc-text">4.7 加载 WiFi 驱动</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-8-%E5%AE%89%E8%A3%85%E5%B9%B6%E9%85%8D%E7%BD%AE-wpa-supplicant"><span class="toc-number">1.5.8.</span> <span class="toc-text">4.8 安装并配置 wpa_supplicant</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-9-%E6%89%AB%E6%8F%8F%E9%AA%8C%E8%AF%81"><span class="toc-number">1.5.9.</span> <span class="toc-text">4.9 扫描验证</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-10-%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E5%9B%BA%E5%8C%96"><span class="toc-number">1.5.10.</span> <span class="toc-text">4.10 开机自启动固化</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E9%80%9F%E6%9F%A5%E8%A1%A8"><span class="toc-number">1.6.</span> <span class="toc-text">5. 故障排查速查表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9%E4%B8%8E%E9%A3%8E%E9%99%A9"><span class="toc-number">1.7.</span> <span class="toc-text">6. 注意事项与风险</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%AC%E6%89%8B%E5%86%8C%E5%9F%BA%E4%BA%8E%E5%AE%9E%E9%99%85%E6%89%93%E9%80%9A%E8%BF%87%E7%A8%8B%E6%95%B4%E7%90%86%EF%BC%8C%E6%93%8D%E4%BD%9C%E9%A1%BA%E5%BA%8F%E4%B8%8D%E5%8F%AF%E9%A2%A0%E5%80%92%EF%BC%8C%E5%85%B3%E9%94%AE%E6%AD%A5%E9%AA%A4%EF%BC%88DTB-%E2%86%92-%E4%B8%8A%E7%94%B5-%E2%86%92-%E9%A9%B1%E5%8A%A8-%E2%86%92-supplicant%EF%BC%89%E7%BC%BA%E4%B8%80%E4%B8%8D%E5%8F%AF%E3%80%82"><span class="toc-number">1.8.</span> <span class="toc-text">本手册基于实际打通过程整理，操作顺序不可颠倒，关键步骤（DTB → 上电 → 驱动 → supplicant）缺一不可。</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        WiFi芯片打通操作手册
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-13T07:27:33.000Z" itemprop="datePublished">2026-09-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/SC2331/" rel="tag">SC2331</a>, <a class="tag-link-link" href="/tags/WiFi/" rel="tag">WiFi</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="WiFi-芯片打通-——-人工操作手册"><a href="#WiFi-芯片打通-——-人工操作手册" class="headerlink" title="WiFi 芯片打通 —— 人工操作手册"></a>WiFi 芯片打通 —— 人工操作手册</h1><blockquote>
+<p><strong>适用设备</strong>：spd-box（SC9832A 四核，armv7l，Android 6 内核 3.10.65 + switchroot Alpine Linux 3.21 armhf）<br><strong>WiFi 芯片</strong>：Marlin SC2331（SDIO 接口，<code>mmc2:8800:1</code>，device 0x2331）<br><strong>文档目标</strong>：不依赖任何 AI 辅助，人工按本手册从零把该设备的板载 WiFi 打通到”可扫描、可连接”状态。<br><strong>文档版本</strong>：v1.0　|　2026-09</p>
+</blockquote>
+<hr>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ol>
+<li><a href="#1-%E8%83%8C%E6%99%AF%E4%B8%8E%E9%97%AE%E9%A2%98%E5%AE%9A%E4%B9%89">背景与问题定义</a></li>
+<li><a href="#2-%E5%B7%A5%E5%85%B7%E4%B8%8E%E7%89%A9%E6%96%99%E6%B8%85%E5%8D%95">工具与物料清单</a></li>
+<li><a href="#3-%E6%80%BB%E4%BD%93%E6%80%9D%E8%B7%AF">总体思路</a></li>
+<li><a href="#4-%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B">操作流程</a><ul>
+<li>4.1 设备与系统确认</li>
+<li>4.2 从 Android 对照机取证</li>
+<li>4.3 提取并替换 Android 原版设备树（DTB）</li>
+<li>4.4 搭建 Android 用户态 chroot 环境</li>
+<li>4.5 执行固件下载（download 上电序列）</li>
+<li>4.6 验证 SDIO 枚举</li>
+<li>4.7 加载 WiFi 驱动</li>
+<li>4.8 安装并配置 wpa_supplicant</li>
+<li>4.9 扫描验证</li>
+<li>4.10 开机自启动固化</li>
+</ul>
+</li>
+<li><a href="#5-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E9%80%9F%E6%9F%A5%E8%A1%A8">故障排查速查表</a></li>
+<li><a href="#6-%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9%E4%B8%8E%E9%A3%8E%E9%99%A9">注意事项与风险</a></li>
+</ol>
+<hr>
+<h2 id="1-背景与问题定义"><a href="#1-背景与问题定义" class="headerlink" title="1. 背景与问题定义"></a>1. 背景与问题定义</h2><ul>
+<li>设备出厂为 Android 6.0，WiFi&#x2F;蓝牙在 Android 下<strong>完全可用</strong>（硬件无故障）。</li>
+<li>用户将该设备 <strong>switchroot</strong> 为 Alpine Linux（保留 Android 内核 3.10.65，仅替换根文件系统）。</li>
+<li>换到 Alpine 后 <strong>WiFi 完全不工作</strong>，典型现象：<ul>
+<li><code>dmesg</code> 反复出现 <code>SDIO dev not ready</code>；</li>
+<li>GPIO94（芯片 READY 引脚）恒为 0；</li>
+<li>内核从未枚举出 SDIO WiFi 设备（<code>/sys/bus/sdio/devices/</code> 为空）。</li>
+</ul>
+</li>
+<li><strong>根因</strong>：SC2331 芯片的<strong>上电时序 + 固件下载</strong>由 Android 系统里的常驻 <code>download</code> 服务完成（写 <code>/dev/power_ctl</code>、<code>/dev/download</code>，并把 <code>wcnfdl</code>&#x2F;<code>wcnmodem</code> 分区的固件刷进芯片）。Alpine 没有这套服务，芯片从未被”激活”。</li>
+</ul>
+<hr>
+<h2 id="2-工具与物料清单"><a href="#2-工具与物料清单" class="headerlink" title="2. 工具与物料清单"></a>2. 工具与物料清单</h2><table>
+<thead>
+<tr>
+<th>类别</th>
+<th>工具&#x2F;物料</th>
+<th>用途</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>远程操作</td>
+<td>SSH 客户端（paramiko &#x2F; PuTTY &#x2F; OpenSSH）</td>
+<td>连接 Alpine 设备</td>
+<td><code>root@&lt;设备IP&gt;</code></td>
+</tr>
+<tr>
+<td>对照取证</td>
+<td>WatchTools adb（<code>AndroidWatch_ADB_ToolBox\adb\adb.exe</code>）</td>
+<td>连接同型号 Android 机 H709</td>
+<td>需 root（Magisk）</td>
+</tr>
+<tr>
+<td>分区读写</td>
+<td><code>dd</code>、<code>cat</code>、<code>ls</code></td>
+<td>提取&#x2F;写入分区、设备节点</td>
+<td>设备内自带（BusyBox&#x2F;coreutils）</td>
+</tr>
+<tr>
+<td>系统跟踪</td>
+<td><code>strace</code></td>
+<td>定位 download 服务失败原因</td>
+<td>Alpine 用 <code>apk add strace</code></td>
+</tr>
+<tr>
+<td>固件文件</td>
+<td><code>download</code>（Android 二进制）、<code>libiwnpi.so</code>、<code>wcnfdl</code>&#x2F;<code>wcnmodem</code> 分区镜像</td>
+<td>上电 + 固件下载</td>
+<td>从 Android 系统提取</td>
+</tr>
+<tr>
+<td>设备树</td>
+<td><code>android_orig.dtb</code>（约 53,967 字节）</td>
+<td>替换 p16 分区中的 dtb</td>
+<td>从 Android boot 镜像提取</td>
+</tr>
+<tr>
+<td>内核模块</td>
+<td><code>marlin_fm.ko</code>、<code>sprdwl.ko</code></td>
+<td>WiFi 驱动</td>
+<td>放在 <code>/lib/modules/</code></td>
+</tr>
+<tr>
+<td>用户态</td>
+<td><code>wpa_supplicant</code> + <code>wpa_cli</code>（v2.10-r11）</td>
+<td>扫描&#x2F;连接</td>
+<td>Alpine armhf 包</td>
+</tr>
+<tr>
+<td>依赖库</td>
+<td><code>libnl3</code>、<code>pcsc-lite-libs</code></td>
+<td>wpa_supplicant 依赖</td>
+<td>Alpine armhf 包</td>
+</tr>
+<tr>
+<td>辅助</td>
+<td><code>chroot</code>、<code>mount --bind</code></td>
+<td>运行 Android 二进制</td>
+<td>设备自带</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="3-总体思路"><a href="#3-总体思路" class="headerlink" title="3. 总体思路"></a>3. 总体思路</h2><blockquote>
+<p><strong>一句话</strong>：芯片的上电与固件下载逻辑在 Android 用户态（<code>download</code> 服务）里，Alpine 缺它 → 把 Android 原版 <code>download</code> 二进制 + 固件 + 设备节点搬进 chroot，在 Alpine 里”借壳”跑完上电序列，让内核枚举出 SDIO 芯片，再加载驱动、配 wpa_supplicant。</p>
+</blockquote>
+<p>链路分四段，缺一不可：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[1] 正确的 DTB（Android 原版）</span><br><span class="line">        ↓</span><br><span class="line">[2] download 上电 + 固件下载（chroot 跑 Android 二进制）</span><br><span class="line">        ↓</span><br><span class="line">[3] 内核枚举 SDIO 设备 + insmod 驱动 → wlan0 出现</span><br><span class="line">        ↓</span><br><span class="line">[4] wpa_supplicant 配置 → 扫描 / 连接</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="4-操作流程"><a href="#4-操作流程" class="headerlink" title="4. 操作流程"></a>4. 操作流程</h2><h3 id="4-1-设备与系统确认"><a href="#4-1-设备与系统确认" class="headerlink" title="4.1 设备与系统确认"></a>4.1 设备与系统确认</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 连接设备</span></span><br><span class="line">ssh root@&lt;设备IP&gt;          <span class="comment"># 密码 &lt;密码&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 确认系统</span></span><br><span class="line"><span class="built_in">uname</span> -a                          <span class="comment"># 应看到 3.10.65 Android 内核 + armv7l</span></span><br><span class="line"><span class="built_in">cat</span> /etc/os-release               <span class="comment"># Alpine 3.21 armhf</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 确认分区映射（by-name）</span></span><br><span class="line"><span class="built_in">ls</span> -l /dev/block/platform/sdio_emmc/by-name/</span><br><span class="line"><span class="comment"># 关键分区：</span></span><br><span class="line"><span class="comment">#   boot    -&gt; p16   （含内核 + 设备树）</span></span><br><span class="line"><span class="comment">#   wcnfdl  -&gt; p14   （WiFi/蓝牙 固件 A）</span></span><br><span class="line"><span class="comment">#   wcnmodem-&gt; p15   （WiFi/蓝牙 固件 B）</span></span><br><span class="line"><span class="comment">#   system  -&gt; p17   （Android system，只读挂载可提取文件）</span></span><br><span class="line"><span class="comment">#   recovery-&gt; p21</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 确认芯片当前状态（未打通的典型表现）</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/mmc2:*/device 2&gt;/dev/null   <span class="comment"># 空 = 未枚举</span></span><br><span class="line">dmesg | grep -i -E <span class="string">&quot;sdio|mmc2|wlan|2331&quot;</span>              <span class="comment"># 可见 SDIO dev not ready</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-从-Android-对照机取证"><a href="#4-2-从-Android-对照机取证" class="headerlink" title="4.2 从 Android 对照机取证"></a>4.2 从 Android 对照机取证</h3><blockquote>
+<p>需要一台<strong>同型号、Android 系统正常</strong>的设备（H709），WiFi&#x2F;蓝牙都好的那台。</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 电脑端 adb 连接（WatchTools 的 adb）</span></span><br><span class="line">D:\Program Files (x86)\watchTools\AndroidWatch_ADB_ToolBox\adb\adb.exe devices</span><br><span class="line">adb shell <span class="built_in">id</span>                          <span class="comment"># 确认 root（Magisk）</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看分区表（拿到 by-name 到分区号的映射）</span></span><br><span class="line">adb shell <span class="built_in">ls</span> -l /dev/block/platform/sdio_emmc/by-name/</span><br><span class="line"><span class="comment">#   记录：boot=p16  wcnfdl=p14  wcnmodem=p15  system=p17  recovery=p21</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 提取 boot 镜像（内含 dtb）</span></span><br><span class="line">adb shell <span class="built_in">dd</span> <span class="keyword">if</span>=/dev/block/mmcblk0p16 of=/sdcard/boot_p16_android.img bs=4096</span><br><span class="line">adb pull /sdcard/boot_p16_android.img ./</span><br><span class="line"></span><br><span class="line"><span class="comment"># 提取 WiFi/蓝牙固件（两个分区）</span></span><br><span class="line">adb shell <span class="built_in">dd</span> <span class="keyword">if</span>=/dev/block/mmcblk0p14 of=/sdcard/wcnfdl.img bs=4096</span><br><span class="line">adb shell <span class="built_in">dd</span> <span class="keyword">if</span>=/dev/block/mmcblk0p15 of=/sdcard/wcnmodem.img bs=4096</span><br><span class="line">adb pull /sdcard/wcnfdl.img ./</span><br><span class="line">adb pull /sdcard/wcnmodem.img ./</span><br><span class="line"></span><br><span class="line"><span class="comment"># 提取 download 服务及其依赖（Android 用户态上电程序）</span></span><br><span class="line">adb shell <span class="built_in">cp</span> /system/bin/download /sdcard/download</span><br><span class="line">adb shell <span class="built_in">cp</span> /system/lib/libiwnpi.so /sdcard/libiwnpi.so</span><br><span class="line">adb pull /sdcard/download ./</span><br><span class="line">adb pull /sdcard/libiwnpi.so ./</span><br><span class="line"></span><br><span class="line"><span class="comment"># 提取 Android 内核模块（sprdwl 等，备选方案，通常 Alpine 里已有）</span></span><br><span class="line">adb shell <span class="built_in">ls</span> /system/lib/modules/ | grep -i -E <span class="string">&quot;sprdwl|marlin|fm&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-3-提取并替换-Android-原版设备树（DTB）"><a href="#4-3-提取并替换-Android-原版设备树（DTB）" class="headerlink" title="4.3 提取并替换 Android 原版设备树（DTB）"></a>4.3 提取并替换 Android 原版设备树（DTB）</h3><blockquote>
+<p>Android 原版 DTB 里含 WiFi 电源&#x2F;时钟的正确描述。这是后续 download 能正常工作的前提之一。</p>
+</blockquote>
+<p><strong>4.3.1 电脑端：从 boot 镜像提取 DTB</strong></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># boot 镜像头为 ANDROID!，内核之后、ramdisk 之前是 dtb 段</span></span><br><span class="line"><span class="comment"># 用 unpack_bootimg（或手动）：</span></span><br><span class="line"><span class="comment"># Android 6 内核镜像内嵌 dtb，偏移约 0xB71800（以实际解析为准）</span></span><br><span class="line"><span class="comment"># 工具：abootimg / unpack_bootimg / dtbTool</span></span><br><span class="line"></span><br><span class="line">unpack_bootimg --boot_img boot_p16_android.img --out boot_extract/</span><br><span class="line"><span class="comment"># 得到 dtb 文件（约 53,967 字节）→ 命名 android_orig.dtb</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 校验</span></span><br><span class="line">file android_orig.dtb        <span class="comment"># Device Tree Blob version 17</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>4.3.2 设备端：写入 p16 分区</strong></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 把 android_orig.dtb 上传到设备 /tmp/</span></span><br><span class="line"><span class="comment"># 写入 p16 的 dtb 偏移处：</span></span><br><span class="line"><span class="comment">#   dtb 在 boot 内的偏移 = 0x9C5000（字节）= 20008 个 512 字节块</span></span><br><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/tmp/android_orig.dtb of=/dev/block/mmcblk0p16 bs=512 seek=20008 conv=notrunc</span><br><span class="line"></span><br><span class="line"><span class="comment"># 备份当前 boot 以防万一</span></span><br><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/dev/block/mmcblk0p16 of=/root/p16_boot_backup.img bs=4096</span><br><span class="line"></span><br><span class="line"><span class="comment"># 重启后验证</span></span><br><span class="line">reboot</span><br><span class="line">dmesg | grep -i -E <span class="string">&quot;sdio|mmc2|2331&quot;</span>   <span class="comment"># 观察枚举情况</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ 写入 boot 分区有风险，务必先做备份。若刷错可 <code>dd</code> 回备份。</p>
+</blockquote>
+<h3 id="4-4-搭建-Android-用户态-chroot-环境"><a href="#4-4-搭建-Android-用户态-chroot-环境" class="headerlink" title="4.4 搭建 Android 用户态 chroot 环境"></a>4.4 搭建 Android 用户态 chroot 环境</h3><blockquote>
+<p>目的：让 Android 原版 <code>download</code> 二进制能在 Alpine 里运行（它依赖 Android 的库、设备节点、分区链接）。</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1) 建目录并铺 Android 用户态文件</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /tmp/aand/&#123;bin,lib,etc,dev&#125;</span><br><span class="line"><span class="built_in">cp</span> /tmp/download          /tmp/aand/bin/download</span><br><span class="line"><span class="built_in">cp</span> /tmp/libiwnpi.so       /tmp/aand/lib/</span><br><span class="line"><span class="built_in">cp</span> -r /mnt/android_sys/lib/*.so  /tmp/aand/lib/   <span class="comment"># 从 p17 挂载的 Android system 复制全套 so</span></span><br><span class="line"><span class="built_in">chmod</span> +x /tmp/aand/bin/download</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) 固件与配置</span></span><br><span class="line"><span class="comment">#    Android 的 download 会读 /etc/marlinba/*.ini（WiFi/蓝牙固件路径配置）</span></span><br><span class="line"><span class="built_in">cp</span> -r /mnt/android_sys/etc/marlinba /tmp/aand/etc/</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) 关键设备节点（download 需要 /dev/power_ctl 和 /dev/download）</span></span><br><span class="line">mount --<span class="built_in">bind</span> /dev /tmp/aand/dev</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4) 固件分区链接（download 按 by-name 找分区）</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /tmp/aand/dev/block/platform/sdio_emmc/by-name</span><br><span class="line"><span class="built_in">ln</span> -sf /dev/block/mmcblk0p14 /tmp/aand/dev/block/platform/sdio_emmc/by-name/wcnfdl</span><br><span class="line"><span class="built_in">ln</span> -sf /dev/block/mmcblk0p15 /tmp/aand/dev/block/platform/sdio_emmc/by-name/wcnmodem</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5) 验证 chroot 内可运行</span></span><br><span class="line"><span class="built_in">chroot</span> /tmp/aand /bin/download --<span class="built_in">help</span> 2&gt;&amp;1 | <span class="built_in">head</span> -20</span><br><span class="line"><span class="comment"># 若报缺库/找不到，用 strace 定位：</span></span><br><span class="line"><span class="built_in">chroot</span> /tmp/aand strace /bin/download 2&gt;&amp;1 | grep -E <span class="string">&quot;open|ENOENT&quot;</span> | <span class="built_in">head</span> -30</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>排错要点：<code>strace</code> 看到 <code>open(&quot;/dev/power_ctl&quot;)</code> 失败 → 确认 <code>mount --bind /dev</code>；看到 <code>open(...wcnfdl)</code> 失败 → 确认 by-name 链接。</p>
+</blockquote>
+<h3 id="4-5-执行固件下载（download-上电序列）"><a href="#4-5-执行固件下载（download-上电序列）" class="headerlink" title="4.5 执行固件下载（download 上电序列）"></a>4.5 执行固件下载（download 上电序列）</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在 chroot 里运行 Android 原版 download（带参数，参考 Android 的调用方式）</span></span><br><span class="line"><span class="built_in">chroot</span> /tmp/aand /bin/download -i wlan0 2&gt;&amp;1 | <span class="built_in">tee</span> /tmp/dl_run.log</span><br><span class="line"></span><br><span class="line"><span class="comment"># 预期动作（由 download 内部完成）：</span></span><br><span class="line"><span class="comment">#   1) 打开 /dev/power_ctl，写入 SLEEP → POWER_ON → POWER_RST 上电序列</span></span><br><span class="line"><span class="comment">#   2) 打开 ttyS0（115200）与芯片握手</span></span><br><span class="line"><span class="comment">#   3) 把 wcnfdl / wcnmodem 分区固件以 SDIO 大块写入芯片</span></span><br><span class="line"><span class="comment">#   4) 芯片完成启动，SDIO 从设备就绪</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 观察内核日志，应出现：</span></span><br><span class="line">dmesg | <span class="built_in">tail</span> -30</span><br><span class="line"><span class="comment">#   mmc2: new high speed SDIO card at address 8800</span></span><br><span class="line"><span class="comment">#   mmc2:8800:1  (device 0x2331)</span></span><br><span class="line"><span class="comment">#   sprd_download_sdio_write ... 131080 ...   （大块固件写入）</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若固件下载失败（卡在握手&#x2F;写入错误），检查：DTB 是否正确（回 4.3）、<code>/dev/power_ctl</code> 是否可写、固件分区是否为原版。</p>
+</blockquote>
+<h3 id="4-6-验证-SDIO-枚举"><a href="#4-6-验证-SDIO-枚举" class="headerlink" title="4.6 验证 SDIO 枚举"></a>4.6 验证 SDIO 枚举</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 芯片已枚举（此时 GPIO94 READY 应为 1）</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/mmc2:8800:1/device</span><br><span class="line"><span class="comment"># 期望输出：0x2331</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">ls</span> /sys/bus/sdio/devices/</span><br><span class="line"><span class="comment"># 期望出现 mmc2:8800:1</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-7-加载-WiFi-驱动"><a href="#4-7-加载-WiFi-驱动" class="headerlink" title="4.7 加载 WiFi 驱动"></a>4.7 加载 WiFi 驱动</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1) 先加载 FM 辅助模块（提供 fm_read 等符号）</span></span><br><span class="line">insmod /lib/modules/marlin_fm.ko</span><br><span class="line"><span class="comment"># 2) 再加载主 WiFi 驱动</span></span><br><span class="line">insmod /lib/modules/sprdwl.ko</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) 验证接口出现</span></span><br><span class="line">ip <span class="built_in">link</span> show wlan0</span><br><span class="line"><span class="comment">#   出现 wlan0，MAC a2:d2:f3:bf:8c:10 即为成功</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4) 打开接口</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> wlan0 up</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ 加载顺序不能反：<code>sprdwl.ko</code> 依赖 <code>marlin_fm.ko</code> 导出的符号（<code>fm_read</code>），反过来会报 <code>Unknown symbol</code>。</p>
+</blockquote>
+<h3 id="4-8-安装并配置-wpa-supplicant"><a href="#4-8-安装并配置-wpa-supplicant" class="headerlink" title="4.8 安装并配置 wpa_supplicant"></a>4.8 安装并配置 wpa_supplicant</h3><blockquote>
+<p>Alpine 官方源若不可用，直接下载 armhf 的 apk 手动安装。</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1) 准备 apk 包（armhf）：</span></span><br><span class="line"><span class="comment">#    wpa_supplicant-2.10-r11.apk</span></span><br><span class="line"><span class="comment">#    libnl3.apk</span></span><br><span class="line"><span class="comment">#    pcsc-lite-libs-2.2.3-r1.apk</span></span><br><span class="line">apk add --allow-untrusted /tmp/wpa_supplicant.apk /tmp/libnl3.apk /tmp/pcsc.apk</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) 写配置</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /etc/wpa_supplicant/wpa_supplicant.conf &lt;&lt;<span class="string">&#x27;EOF&#x27;</span></span><br><span class="line">ctrl_interface=/run/wpa_supplicant</span><br><span class="line">update_config=1</span><br><span class="line">country=CN</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) 启动</span></span><br><span class="line">/sbin/wpa_supplicant -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf -B</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4) 确认状态</span></span><br><span class="line">wpa_cli -i wlan0 status</span><br><span class="line"><span class="comment">#   wpa_state=INACTIVE 属正常（未连接任何网络）</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-9-扫描验证"><a href="#4-9-扫描验证" class="headerlink" title="4.9 扫描验证"></a>4.9 扫描验证</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">wpa_cli -i wlan0 scan</span><br><span class="line"><span class="built_in">sleep</span> 5</span><br><span class="line">wpa_cli -i wlan0 scan_results</span><br><span class="line"><span class="comment"># 出现多个热点（CMCC-*、ChinaNet-* 等）即打通成功</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 连接示例（开放网络直连）</span></span><br><span class="line">wpa_cli -i wlan0 add_network</span><br><span class="line">wpa_cli -i wlan0 set_network 0 ssid <span class="string">&#x27;&quot;CMCC-dtGM&quot;&#x27;</span></span><br><span class="line">wpa_cli -i wlan0 set_network 0 key_mgmt NONE</span><br><span class="line">wpa_cli -i wlan0 enable_network 0</span><br><span class="line">wpa_cli -i wlan0 save_config</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-10-开机自启动固化"><a href="#4-10-开机自启动固化" class="headerlink" title="4.10 开机自启动固化"></a>4.10 开机自启动固化</h3><blockquote>
+<p>设备重启后，内核枚举、固件、驱动、wpa_supplicant 都要自动恢复。</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1) 驱动开机加载：写入 /etc/modules-load.d/wifi.conf</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /etc/modules-load.d/wifi.conf &lt;&lt;<span class="string">&#x27;EOF&#x27;</span></span><br><span class="line">marlin_fm</span><br><span class="line">sprdwl</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) 固件下载 + wpa_supplicant 开机脚本：/etc/local.d/wifi_setup.start</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /etc/local.d/wifi_setup.start &lt;&lt;<span class="string">&#x27;EOF&#x27;</span></span><br><span class="line"><span class="comment">#!/bin/sh</span></span><br><span class="line"><span class="comment"># 1. chroot 跑 download 完成上电+固件下载</span></span><br><span class="line">mount --<span class="built_in">bind</span> /dev /tmp/aand/dev</span><br><span class="line"><span class="built_in">chroot</span> /tmp/aand /bin/download -i wlan0 &amp;</span><br><span class="line"><span class="built_in">sleep</span> 8</span><br><span class="line"><span class="comment"># 2. 确认接口并 up</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> wlan0 up</span><br><span class="line"><span class="comment"># 3. 启动 wpa_supplicant</span></span><br><span class="line">/sbin/wpa_supplicant -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf -B</span><br><span class="line">EOF</span><br><span class="line"><span class="built_in">chmod</span> +x /etc/local.d/wifi_setup.start</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) 启用 local 服务（Alpine openrc）</span></span><br><span class="line">rc-update add <span class="built_in">local</span> default</span><br><span class="line">rc-service <span class="built_in">local</span> start</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="5-故障排查速查表"><a href="#5-故障排查速查表" class="headerlink" title="5. 故障排查速查表"></a>5. 故障排查速查表</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>可能原因</th>
+<th>排查&#x2F;修复</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dmesg</code> 一直 <code>SDIO dev not ready</code></td>
+<td>芯片未上电&#x2F;固件未下载</td>
+<td>确认跑过 download（4.5），看 <code>/dev/power_ctl</code> 是否可写</td>
+</tr>
+<tr>
+<td>GPIO94 READY 恒 0</td>
+<td>上电序列没执行</td>
+<td>用 <code>strace</code> 跟踪 download 的 ioctl&#x2F;write 是否报错</td>
+</tr>
+<tr>
+<td><code>download</code> 报 open 设备失败</td>
+<td>chroot 内缺设备节点</td>
+<td><code>mount --bind /dev /tmp/aand/dev</code></td>
+</tr>
+<tr>
+<td><code>download</code> 报找不到 wcnfdl&#x2F;wcnmodem</td>
+<td>缺 by-name 链接</td>
+<td><code>ln -sf /dev/block/mmcblk0p14 .../wcnfdl</code></td>
+</tr>
+<tr>
+<td><code>download</code> 跑完但 SDIO 无枚举</td>
+<td>DTB 不对</td>
+<td>确认 p16 已是 Android 原版 dtb（4.3）</td>
+</tr>
+<tr>
+<td><code>insmod sprdwl.ko</code> 报 Unknown symbol</td>
+<td>模块加载顺序错</td>
+<td>先 <code>insmod marlin_fm.ko</code></td>
+</tr>
+<tr>
+<td>wlan0 不出现</td>
+<td>固件下载未完成就加载驱动</td>
+<td>等 dmesg 出现 <code>mmc2:8800:1</code> 再 insmod</td>
+</tr>
+<tr>
+<td><code>wpa_cli scan</code> 失败</td>
+<td>wpa_supplicant 未跑 &#x2F; 接口未 up</td>
+<td><code>ip link set wlan0 up</code> + 确认 supplicant 进程</td>
+</tr>
+<tr>
+<td><code>wpa_cli</code> 找不到</td>
+<td>PATH 缺 &#x2F;sbin</td>
+<td><code>export PATH=$PATH:/sbin</code></td>
+</tr>
+<tr>
+<td>重启后 WiFi 丢失</td>
+<td>未做自启动</td>
+<td>按 4.10 固化</td>
+</tr>
+<tr>
+<td>拔插 USB 外设后 SSH 断</td>
+<td>设备 USB 口复用（网口&#x2F;键盘）</td>
+<td>重插电脑 USB 并重启设备恢复</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-注意事项与风险"><a href="#6-注意事项与风险" class="headerlink" title="6. 注意事项与风险"></a>6. 注意事项与风险</h2><ol>
+<li><strong>刷 p16（boot）分区有变砖风险</strong>——必须先备份（<code>/root/p16_boot_backup.img</code>），刷错可回滚。</li>
+<li><strong>USB 口复用</strong>：设备的 USB 口既做 SSH 网口又插外设。插入键盘&#x2F;鼠标会断 SSH，需要拔掉外设、插回电脑 USB 并重启设备。</li>
+<li><strong>固件版本匹配</strong>：download 上电成功后，驱动和固件要来自同一 Android 版本，否则可能出现 wlan0 有接口但扫描失败。</li>
+<li><strong>模块路径</strong>：确认 <code>marlin_fm.ko</code> &#x2F; <code>sprdwl.ko</code> 在 <code>/lib/modules/</code> 且与内核 3.10.65 匹配（不匹配会 <code>invalid module format</code>）。</li>
+<li><strong>wpa_supplicant 版本</strong>：设备 armhf，务必用 armhf 包；x86_64 包会报 Exec format error。</li>
+<li><strong>dtb 偏移</strong>：写 p16 时 <code>seek=20008</code>（512 字节块）对应字节偏移 <code>0x9C5000</code>，不同固件可能不同，先解析 boot 镜像确认。</li>
+</ol>
+<hr>
+<h2 id="本手册基于实际打通过程整理，操作顺序不可颠倒，关键步骤（DTB-→-上电-→-驱动-→-supplicant）缺一不可。"><a href="#本手册基于实际打通过程整理，操作顺序不可颠倒，关键步骤（DTB-→-上电-→-驱动-→-supplicant）缺一不可。" class="headerlink" title="本手册基于实际打通过程整理，操作顺序不可颠倒，关键步骤（DTB → 上电 → 驱动 → supplicant）缺一不可。"></a><em>本手册基于实际打通过程整理，操作顺序不可颠倒，关键步骤（DTB → 上电 → 驱动 → supplicant）缺一不可。</em></h2><blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#WiFi-%E8%8A%AF%E7%89%87%E6%89%93%E9%80%9A-%E2%80%94%E2%80%94-%E4%BA%BA%E5%B7%A5%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C"><span class="toc-number">1.</span> <span class="toc-text">WiFi 芯片打通 —— 人工操作手册</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.</span> <span class="toc-text">目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%83%8C%E6%99%AF%E4%B8%8E%E9%97%AE%E9%A2%98%E5%AE%9A%E4%B9%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 背景与问题定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B7%A5%E5%85%B7%E4%B8%8E%E7%89%A9%E6%96%99%E6%B8%85%E5%8D%95"><span class="toc-number">1.3.</span> <span class="toc-text">2. 工具与物料清单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%80%BB%E4%BD%93%E6%80%9D%E8%B7%AF"><span class="toc-number">1.4.</span> <span class="toc-text">3. 总体思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.5.</span> <span class="toc-text">4. 操作流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E8%AE%BE%E5%A4%87%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%A1%AE%E8%AE%A4"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 设备与系统确认</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E4%BB%8E-Android-%E5%AF%B9%E7%85%A7%E6%9C%BA%E5%8F%96%E8%AF%81"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 从 Android 对照机取证</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E6%8F%90%E5%8F%96%E5%B9%B6%E6%9B%BF%E6%8D%A2-Android-%E5%8E%9F%E7%89%88%E8%AE%BE%E5%A4%87%E6%A0%91%EF%BC%88DTB%EF%BC%89"><span class="toc-number">1.5.3.</span> <span class="toc-text">4.3 提取并替换 Android 原版设备树（DTB）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E6%90%AD%E5%BB%BA-Android-%E7%94%A8%E6%88%B7%E6%80%81-chroot-%E7%8E%AF%E5%A2%83"><span class="toc-number">1.5.4.</span> <span class="toc-text">4.4 搭建 Android 用户态 chroot 环境</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-%E6%89%A7%E8%A1%8C%E5%9B%BA%E4%BB%B6%E4%B8%8B%E8%BD%BD%EF%BC%88download-%E4%B8%8A%E7%94%B5%E5%BA%8F%E5%88%97%EF%BC%89"><span class="toc-number">1.5.5.</span> <span class="toc-text">4.5 执行固件下载（download 上电序列）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-6-%E9%AA%8C%E8%AF%81-SDIO-%E6%9E%9A%E4%B8%BE"><span class="toc-number">1.5.6.</span> <span class="toc-text">4.6 验证 SDIO 枚举</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-7-%E5%8A%A0%E8%BD%BD-WiFi-%E9%A9%B1%E5%8A%A8"><span class="toc-number">1.5.7.</span> <span class="toc-text">4.7 加载 WiFi 驱动</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-8-%E5%AE%89%E8%A3%85%E5%B9%B6%E9%85%8D%E7%BD%AE-wpa-supplicant"><span class="toc-number">1.5.8.</span> <span class="toc-text">4.8 安装并配置 wpa_supplicant</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-9-%E6%89%AB%E6%8F%8F%E9%AA%8C%E8%AF%81"><span class="toc-number">1.5.9.</span> <span class="toc-text">4.9 扫描验证</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-10-%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E5%9B%BA%E5%8C%96"><span class="toc-number">1.5.10.</span> <span class="toc-text">4.10 开机自启动固化</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E9%80%9F%E6%9F%A5%E8%A1%A8"><span class="toc-number">1.6.</span> <span class="toc-text">5. 故障排查速查表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9%E4%B8%8E%E9%A3%8E%E9%99%A9"><span class="toc-number">1.7.</span> <span class="toc-text">6. 注意事项与风险</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%AC%E6%89%8B%E5%86%8C%E5%9F%BA%E4%BA%8E%E5%AE%9E%E9%99%85%E6%89%93%E9%80%9A%E8%BF%87%E7%A8%8B%E6%95%B4%E7%90%86%EF%BC%8C%E6%93%8D%E4%BD%9C%E9%A1%BA%E5%BA%8F%E4%B8%8D%E5%8F%AF%E9%A2%A0%E5%80%92%EF%BC%8C%E5%85%B3%E9%94%AE%E6%AD%A5%E9%AA%A4%EF%BC%88DTB-%E2%86%92-%E4%B8%8A%E7%94%B5-%E2%86%92-%E9%A9%B1%E5%8A%A8-%E2%86%92-supplicant%EF%BC%89%E7%BC%BA%E4%B8%80%E4%B8%8D%E5%8F%AF%E3%80%82"><span class="toc-number">1.8.</span> <span class="toc-text">本手册基于实际打通过程整理，操作顺序不可颠倒，关键步骤（DTB → 上电 → 驱动 → supplicant）缺一不可。</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&text=WiFi芯片打通操作手册"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&title=WiFi芯片打通操作手册"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&is_video=false&description=WiFi芯片打通操作手册"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=WiFi芯片打通操作手册&body=Check out this article: https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&title=WiFi芯片打通操作手册"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&title=WiFi芯片打通操作手册"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&title=WiFi芯片打通操作手册"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&title=WiFi芯片打通操作手册"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/13/wifi-06-wifi-md/&name=WiFi芯片打通操作手册&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

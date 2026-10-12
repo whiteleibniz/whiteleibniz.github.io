@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_06 — GBA 游戏音频”滋滋”爆音 日期：2026-09-23 模块：GBA 游戏页 &#x2F; extern&#x2F;miniretro&#x2F;miniretro.c（音频链路） 影响：所有 GBA 游戏（FC 游戏同样受共用代码影响，但 FC 音频速率恰为上报值，未暴露）  1. 问题现象游戏画面正常、Sound 能听到，但全程伴随”滋滋”噪声&#x2F;爆音，音乐与音">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA游戏音频滋滋爆音">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_06 — GBA 游戏音频”滋滋”爆音 日期：2026-09-23 模块：GBA 游戏页 &#x2F; extern&#x2F;miniretro&#x2F;miniretro.c（音频链路） 影响：所有 GBA 游戏（FC 游戏同样受共用代码影响，但 FC 音频速率恰为上报值，未暴露）  1. 问题现象游戏画面正常、Sound 能听到，但全程伴随”滋滋”噪声&#x2F;爆音，音乐与音">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.828Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA游戏音频滋滋爆音</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-05/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-07/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&text=GBA游戏音频滋滋爆音"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&title=GBA游戏音频滋滋爆音"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&is_video=false&description=GBA游戏音频滋滋爆音"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA游戏音频滋滋爆音&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&title=GBA游戏音频滋滋爆音"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&title=GBA游戏音频滋滋爆音"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&title=GBA游戏音频滋滋爆音"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&title=GBA游戏音频滋滋爆音"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&name=GBA游戏音频滋滋爆音&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-06-%E2%80%94-GBA-%E6%B8%B8%E6%88%8F%E9%9F%B3%E9%A2%91%E2%80%9D%E6%BB%8B%E6%BB%8B%E2%80%9D%E7%88%86%E9%9F%B3"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_06 — GBA 游戏音频”滋滋”爆音</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 问题现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81%E6%96%B9%E6%B3%95%E4%B8%8E%E7%BB%93%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证方法与结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%9B%9E%E5%BD%92%E9%A3%8E%E9%99%A9"><span class="toc-number">1.6.</span> <span class="toc-text">6. 回归风险</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相关文件</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA游戏音频滋滋爆音
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-06-—-GBA-游戏音频”滋滋”爆音"><a href="#bugfix-20260923-06-—-GBA-游戏音频”滋滋”爆音" class="headerlink" title="bugfix_20260923_06 — GBA 游戏音频”滋滋”爆音"></a>bugfix_20260923_06 — GBA 游戏音频”滋滋”爆音</h1><ul>
+<li>日期：2026-09-23</li>
+<li>模块：GBA 游戏页 &#x2F; <code>extern/miniretro/miniretro.c</code>（音频链路）</li>
+<li>影响：所有 GBA 游戏（FC 游戏同样受共用代码影响，但 FC 音频速率恰为上报值，未暴露）</li>
+</ul>
+<h2 id="1-问题现象"><a href="#1-问题现象" class="headerlink" title="1. 问题现象"></a>1. 问题现象</h2><p>游戏画面正常、Sound 能听到，但<strong>全程伴随”滋滋”噪声&#x2F;爆音</strong>，音乐与音效都被糊住。</p>
+<h2 id="2-影响范围"><a href="#2-影响范围" class="headerlink" title="2. 影响范围"></a>2. 影响范围</h2><ul>
+<li>GBA 应用（<code>mgba_libretro.so</code> + miniretro）</li>
+<li>所有经 <code>/tmp/bt_audio.fifo</code> 输出音频的应用（FC 游戏、音乐&#x2F;视频页共用同一重采样函数）</li>
+</ul>
+<h2 id="3-根因分析"><a href="#3-根因分析" class="headerlink" title="3. 根因分析"></a>3. 根因分析</h2><p>设备端受控跑 <code>MINIRETRO_AUDIO_DEBUG=1 miniretro mgba_libretro.so &lt;rom&gt;</code> 打出探针，得到硬证据：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[audio] samples=122696 out=96006 drop=0 fps=56 calls=56 fpc=1097</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>**<code>fpc=1097</code>**：核心每次 <code>retro_run</code> 交付 1097 帧音频。<br>而 <code>av_info</code> 上报 <code>sample_rate=32768</code>、<code>fps=59.73</code>，理论应为 <code>32768/59.73 ≈ 548</code> 帧。<br><strong>实际是 2 倍</strong> —— 核心真实音频率约 <strong>65536 Hz</strong>，上报值只有一半。</li>
+<li>旧代码按上报值换算：<code>out_per_in = 44100/32768 = 1.346</code>，<br>于是每帧要输出 <code>1097 × 1.346 ≈ 1476</code> 帧。</li>
+<li>但输出缓冲只有 <code>static int16_t buf[2048]</code>（&#x3D;1024 帧），<strong>每帧都被截断到 1024 帧</strong>，<br>即每次回调稳定丢掉约 30% 采样。</li>
+<li>结果：每秒产出约 5.8 万帧、蓝牙只消费 4.41 万帧，<code>drop</code> 持续 2~12 次&#x2F;秒，<br>且帧内又截断 —— 三重叠加即听感上的持续”滋滋”爆音。</li>
+</ul>
+<h2 id="4-修复方案"><a href="#4-修复方案" class="headerlink" title="4. 修复方案"></a>4. 修复方案</h2><p>不再相信核心自报的 <code>sample_rate</code>，改为<strong>按实测速率自适应重采样</strong>：</p>
+<ul>
+<li>滑动平均每次回调的帧数 <code>s_fpc</code>（只取决于核心，与本机快慢无关）；</li>
+<li>每 300ms 实测墙钟帧率 <code>s_fps_meas</code>；</li>
+<li><code>in_rate = s_fpc × s_fps_meas</code>，<code>out_per_in = 44100 / in_rate</code>；</li>
+<li>输出缓冲扩到 <code>int16_t buf[8192]</code>，彻底消除截断；</li>
+<li>首个测量窗口出结果前<strong>不发声</strong>（开局第一批回调帧数极不稳，实测第一帧只有 82 帧，<br>拿它估速率会算出数倍超产，一开局就把 fifo 灌爆）。</li>
+</ul>
+<blockquote>
+<p>注意：不能用”核心标称速率”换算。本机 CPU 100% 打满也只能跑到约 56fps，<br>若按标称 59.73fps 换算，每秒只产出 0.94 秒音频 → 蓝牙每秒缺 6% 数据 → 持续欠载爆音。<br>必须按实测帧率把音频<strong>拉伸到实时</strong>（详见第 6 节回归风险）。</p>
+</blockquote>
+<h2 id="5-验证方法与结果"><a href="#5-验证方法与结果" class="headerlink" title="5. 验证方法与结果"></a>5. 验证方法与结果</h2><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>修复前</th>
+<th>修复后</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>每帧输出是否撞缓冲上限</td>
+<td>稳定撞顶（2048 int16）</td>
+<td>约 1700 int16，不撞顶</td>
+<td>✅ 截断消除</td>
+</tr>
+<tr>
+<td><code>drop</code>（fifo 写失败次数&#x2F;秒）</td>
+<td>2 ~ 12</td>
+<td><strong>0</strong></td>
+<td>✅ 不丢帧</td>
+</tr>
+<tr>
+<td><code>out_rate</code>（实际输出帧率）</td>
+<td>≈52200（超产）</td>
+<td><strong>43000 ~ 45800</strong>（目标 44100）</td>
+<td>✅ 与蓝牙消费对齐</td>
+</tr>
+<tr>
+<td><code>fps</code></td>
+<td>50</td>
+<td>56</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>探针保留在代码里，用 <code>MINIRETRO_AUDIO_DEBUG=1</code> 环境变量开启，生产默认关闭。</p>
+<h2 id="6-回归风险"><a href="#6-回归风险" class="headerlink" title="6. 回归风险"></a>6. 回归风险</h2><ul>
+<li><strong>音高整体偏低约 6%<strong>：本机只能跑 56fps（目标 59.73fps），音频被拉伸到实时后音高随之下移。<br>画面同样慢 6%，因此音画</strong>内容仍同步</strong>，只是音调略低。帧率越接近 60 该偏差越小。</li>
+<li>彻底消除需把帧率提到 59.73fps，而渲染 + 模拟已占满 CPU（实测 <code>busy_ms≈990/1000</code>）。</li>
+<li>FC 游戏共用此函数：FC 的 <code>fpc × fps</code> 恰等于其上报采样率，换算结果与旧逻辑一致，行为不变。</li>
+</ul>
+<h2 id="7-相关文件"><a href="#7-相关文件" class="headerlink" title="7. 相关文件"></a>7. 相关文件</h2><ul>
+<li>设备：<code>/home/lvgl_demo/lvgl_demo/extern/miniretro/miniretro.c</code></li>
+<li>本地：<code>ssh_tools/_tmp/miniretro.c</code>、<code>ssh_tools/gba_probe2.py</code>（探针脚本）</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-06-%E2%80%94-GBA-%E6%B8%B8%E6%88%8F%E9%9F%B3%E9%A2%91%E2%80%9D%E6%BB%8B%E6%BB%8B%E2%80%9D%E7%88%86%E9%9F%B3"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_06 — GBA 游戏音频”滋滋”爆音</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 问题现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81%E6%96%B9%E6%B3%95%E4%B8%8E%E7%BB%93%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证方法与结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%9B%9E%E5%BD%92%E9%A3%8E%E9%99%A9"><span class="toc-number">1.6.</span> <span class="toc-text">6. 回归风险</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相关文件</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&text=GBA游戏音频滋滋爆音"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&title=GBA游戏音频滋滋爆音"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&is_video=false&description=GBA游戏音频滋滋爆音"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA游戏音频滋滋爆音&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&title=GBA游戏音频滋滋爆音"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&title=GBA游戏音频滋滋爆音"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&title=GBA游戏音频滋滋爆音"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&title=GBA游戏音频滋滋爆音"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-06/&name=GBA游戏音频滋滋爆音&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

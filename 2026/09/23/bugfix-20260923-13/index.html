@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_13 — GBA 退出”卡黑屏”：真凶是前端退出时自己清屏（不是 fork 形式的问题） 日期：2026-09-23 设备：展讯 SC9832A &#x2F; armv7l &#x2F; Alpine &#x2F; 720×1280 fb0（yres_virtual&#x3D;3840，3 页）&#x2F; 4 物理键 涉及文件： 设备 extern&#x2F;miniret">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA退出卡黑屏_前端退出清屏">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_13 — GBA 退出”卡黑屏”：真凶是前端退出时自己清屏（不是 fork 形式的问题） 日期：2026-09-23 设备：展讯 SC9832A &#x2F; armv7l &#x2F; Alpine &#x2F; 720×1280 fb0（yres_virtual&#x3D;3840，3 页）&#x2F; 4 物理键 涉及文件： 设备 extern&#x2F;miniret">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.864Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA退出卡黑屏_前端退出清屏</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-11/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-16/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&text=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&title=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&is_video=false&description=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出卡黑屏_前端退出清屏&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&title=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&title=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&title=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&title=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&name=GBA退出卡黑屏_前端退出清屏&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-13-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E2%80%9D%E5%8D%A1%E9%BB%91%E5%B1%8F%E2%80%9D%EF%BC%9A%E7%9C%9F%E5%87%B6%E6%98%AF%E5%89%8D%E7%AB%AF%E9%80%80%E5%87%BA%E6%97%B6%E8%87%AA%E5%B7%B1%E6%B8%85%E5%B1%8F%EF%BC%88%E4%B8%8D%E6%98%AF-fork-%E5%BD%A2%E5%BC%8F%E7%9A%84%E9%97%AE%E9%A2%98%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_13 — GBA 退出”卡黑屏”：真凶是前端退出时自己清屏（不是 fork 形式的问题）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 问题现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E5%AE%9E%E6%B5%8B%EF%BC%9A%E4%B8%A4%E4%B8%AA%E5%89%8D%E7%AB%AF%E6%94%B6%E5%88%B0-SIGTERM-%E5%90%8E%EF%BC%8C%E5%B1%8F%E5%B9%95%E5%88%B0%E5%BA%95%E5%8F%91%E7%94%9F%E4%BB%80%E4%B9%88"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 实测：两个前端收到 SIGTERM 后，屏幕到底发生什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E7%BB%93%E8%AE%BA"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 结论</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BD%93%E5%88%9D%E4%BC%9A%E5%86%99%E4%B8%8A-memset-%E6%B8%85%E5%B1%8F"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 为什么当初会写上 memset 清屏</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-fb-restore-%EF%BC%9A%E6%B8%85%E5%B1%8F-%E2%86%92-%E8%B7%A8%E9%A1%B5%E5%AE%9A%E6%A0%BC%E6%8B%B7%E8%B4%9D%EF%BC%88%E6%A0%B8%E5%BF%83%E4%BF%AE%E5%A4%8D%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 fb_restore()：清屏 → 跨页定格拷贝（核心修复）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E9%83%A8%E7%BD%B2%E8%84%9A%E6%9C%AC-gba-redeploy-py%EF%BC%9A%E4%BF%AE%E6%8E%89%E4%B8%80%E5%A4%84%E4%BC%9A%E8%AF%AF%E4%BC%A4-FC-%E7%9A%84%E9%9A%90%E6%82%A3"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 部署脚本 gba_redeploy.py：修掉一处会误伤 FC 的隐患</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81%E6%96%B9%E6%B3%95%E4%B8%8E%E7%BB%93%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证方法与结果</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E6%9E%84%E5%BB%BA%E4%B8%8E%E9%83%A8%E7%BD%B2"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 构建与部署</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E5%AE%9E%E6%9C%BA%E9%AA%8C%E8%AF%81%EF%BC%88AI-%E8%87%AA%E6%B5%8B%EF%BC%8C%E5%B7%B2%E6%8C%89%E8%A6%81%E6%B1%82%E6%89%A7%E8%A1%8C%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 实机验证（AI 自测，已按要求执行）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%81%97%E7%95%99%E4%B8%8E%E8%A7%82%E5%AF%9F%EF%BC%88%E6%9C%AA%E5%A4%84%E7%90%86%EF%BC%8C%E4%BE%9B%E5%90%8E%E7%BB%AD%E5%8F%82%E8%80%83%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">6. 遗留与观察（未处理，供后续参考）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相关文件</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA退出卡黑屏_前端退出清屏
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-13-—-GBA-退出”卡黑屏”：真凶是前端退出时自己清屏（不是-fork-形式的问题）"><a href="#bugfix-20260923-13-—-GBA-退出”卡黑屏”：真凶是前端退出时自己清屏（不是-fork-形式的问题）" class="headerlink" title="bugfix_20260923_13 — GBA 退出”卡黑屏”：真凶是前端退出时自己清屏（不是 fork 形式的问题）"></a>bugfix_20260923_13 — GBA 退出”卡黑屏”：真凶是前端退出时自己清屏（不是 fork 形式的问题）</h1><ul>
+<li>日期：2026-09-23</li>
+<li>设备：展讯 SC9832A &#x2F; armv7l &#x2F; Alpine &#x2F; 720×1280 fb0（yres_virtual&#x3D;3840，3 页）&#x2F; 4 物理键</li>
+<li>涉及文件：<ul>
+<li>设备 <code>extern/miniretro/miniretro.c</code>（GBA 专用前端，编译产物 <code>miniretro_gba</code>）</li>
+<li>本地 <code>ssh_tools/_tmp/miniretro.c</code>（同源）</li>
+<li>本地 <code>ssh_tools/gba_redeploy.py</code>（部署脚本，本次修掉一处会误伤 FC 的隐患）</li>
+</ul>
+</li>
+<li>证据脚本：<code>ssh_tools/gba_black_probe.py</code>、<code>ssh_tools/gba_black_run.py</code>、<code>ssh_tools/ssh_run.py</code></li>
+</ul>
+<hr>
+<h2 id="1-问题现象"><a href="#1-问题现象" class="headerlink" title="1. 问题现象"></a>1. 问题现象</h2><p>用户反馈：<strong>GBA 游戏退出时”卡黑屏”<strong>；而 FC 游戏用同样的退出方式（同样是 fork + 独立前端进程）</strong>一直很流畅</strong>。</p>
+<p>用户提出的疑问是：”GBA 这个前端不是 fork 这种形式吗？” ——<br><strong>是。GBA 与 FC 走的是完全相同的 fork + <code>execl</code> 形式</strong>（父进程 &#x3D; <code>lvgl_demo</code>，子进程 &#x3D; <code>extern/miniretro/miniretro_gba</code> 或 <code>miniretro</code>，前端直接写 <code>/dev/fb0</code>）。<br>正因为形式相同，”为什么一个流畅一个卡”只能到<strong>屏幕内容</strong>上去找，而不是在进程模型上找。</p>
+<hr>
+<h2 id="2-影响范围"><a href="#2-影响范围" class="headerlink" title="2. 影响范围"></a>2. 影响范围</h2><ul>
+<li>仅 GBA 页退出路径（<code>lv_pages/gba_game_page.c</code> → <code>miniretro_gba</code>）。</li>
+<li>FC 页<strong>未受影响</strong>：它的前端 <code>extern/miniretro/miniretro</code> 是 git 仓库原版、<strong>不捕获 SIGTERM</strong>，本次一行未动（md5 校验见 §5）。</li>
+</ul>
+<hr>
+<h2 id="3-根因分析"><a href="#3-根因分析" class="headerlink" title="3. 根因分析"></a>3. 根因分析</h2><h3 id="3-1-实测：两个前端收到-SIGTERM-后，屏幕到底发生什么"><a href="#3-1-实测：两个前端收到-SIGTERM-后，屏幕到底发生什么" class="headerlink" title="3.1 实测：两个前端收到 SIGTERM 后，屏幕到底发生什么"></a>3.1 实测：两个前端收到 SIGTERM 后，屏幕到底发生什么</h3><p>停掉 <code>lvgl_demo</code>&#x2F;watchdog，直接拉起两个前端跑 3s，然后发 SIGTERM，按时间点采样屏幕中心区域<br>（”非黑比例 &#x2F; 平均亮度”，<code>fb0</code> 有 3 个虚拟页，采样按当前 <code>yoffset</code> 取当前显示页）：</p>
+<table>
+<thead>
+<tr>
+<th>时间点</th>
+<th>FC（原版 <code>miniretro</code>）</th>
+<th>GBA（修前 <code>miniretro_gba</code>）</th>
+<th>GBA（修后）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>运行中</td>
+<td>非黑 0.954 &#x2F; 亮度 227.4</td>
+<td>非黑 1.000 &#x2F; 亮度 235.1</td>
+<td>非黑 1.000 &#x2F; 亮度 248.0</td>
+</tr>
+<tr>
+<td>t&#x3D;60~78ms</td>
+<td><strong>0.954 &#x2F; 227.4（不变）</strong></td>
+<td><strong>0.000 &#x2F; 0.0（全黑）</strong></td>
+<td><strong>1.000 &#x2F; 248.0（不变）</strong></td>
+</tr>
+<tr>
+<td>t&#x3D;1.0s</td>
+<td>0.954 &#x2F; 227.4</td>
+<td>0.000 &#x2F; 0.0</td>
+<td>1.000 &#x2F; 248.0</td>
+</tr>
+<tr>
+<td>子进程消失</td>
+<td><strong>1015 ms</strong>，rc&#x3D;−15</td>
+<td>1019 ms，rc&#x3D;0</td>
+<td>1016 ms，rc&#x3D;0</td>
+</tr>
+</tbody></table>
+<p>前端自己的计时日志（<code>[miniretro][timing]</code>）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">修前:  fb pan 回第0页          t=15.1 ms</span><br><span class="line">       fb 清屏(memset)         t=20.5 ms     ← 11MB 虚拟显存全清成黑</span><br><span class="line">       收尾完成               t=20.5 ms</span><br><span class="line">修后:  fb pan 回第0页          t=17.8 ms</span><br><span class="line">       fb 定格最后一帧(不清屏)   t=33.0 ms     ← 改为跨页拷贝(一页 3.7MB ≈ 15ms)</span><br><span class="line">       fb_restore 完成         t=33.1 ms</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-结论"><a href="#3-2-结论" class="headerlink" title="3.2 结论"></a>3.2 结论</h3><p><strong>差别只有一个：退出时前端要不要清屏。</strong></p>
+<ul>
+<li><code>miniretro</code>（FC）不捕获 SIGTERM、不做任何 fb 操作 → 被内核直接杀掉，<strong>屏幕停在游戏最后一帧</strong>。</li>
+<li><code>miniretro_gba</code>（GBA）捕获 SIGTERM 走优雅收尾，其中 <code>fb_restore()</code> 里有一句 <code>memset(fb_buf, 0, fb_total_bytes)</code>，<br>在<strong>第 20 ms</strong> 就把整块虚拟显存清黑 → 屏幕立刻变黑。</li>
+</ul>
+<p>而<strong>两个前端的子进程”真正消失”都要 ~1020 ms</strong>（内核 <code>exit_files()</code> 逐个回收继承来的 5 个 <code>/dev/input/eventX</code> 与 fb0 映射的固有开销，与前端写不写 fb 无关）。<br>父进程（GBA 页）当前用的是<strong>阻塞 <code>waitpid</code>，要等收尸完成才恢复 UI</strong>（这是 12 号文档按用户要求对齐 FC 的做法）。</p>
+<p>于是两条时间线是：</p>
+<ul>
+<li><strong>FC</strong>：0~1020 ms 屏幕定格在游戏最后一帧 → 恢复 UI 重绘。用户看到的是”画面定了一下，很流畅”。</li>
+<li><strong>GBA（修前）</strong>：20~1020 ms 屏幕是<strong>纯黑</strong> → 恢复 UI。用户看到的就是”<strong>卡黑屏</strong>“。</li>
+</ul>
+<blockquote>
+<p>一句话：**”卡”是两个前端共有的（~1s 的内核回收开销，FC 也一样）；”黑”才是 GBA 独有的、由自己清屏造成的。**</p>
+</blockquote>
+<h3 id="3-3-为什么当初会写上-memset-清屏"><a href="#3-3-为什么当初会写上-memset-清屏" class="headerlink" title="3.3 为什么当初会写上 memset 清屏"></a>3.3 为什么当初会写上 <code>memset</code> 清屏</h3><p>原本的担心是”残留游戏画面”：LVGL 恢复后只刷脏区，残留会糊在屏幕上。<br>但 GBA 页恢复时本来就做了 <code>lv_obj_invalidate(lv_screen_active())</code> <strong>整屏重绘</strong>，这个担心不成立 ——<br>清屏是多余动作，代价却是整整 1 秒的纯黑屏。</p>
+<hr>
+<h2 id="4-修复方案"><a href="#4-修复方案" class="headerlink" title="4. 修复方案"></a>4. 修复方案</h2><h3 id="4-1-fb-restore-：清屏-→-跨页定格拷贝（核心修复）"><a href="#4-1-fb-restore-：清屏-→-跨页定格拷贝（核心修复）" class="headerlink" title="4.1 fb_restore()：清屏 → 跨页定格拷贝（核心修复）"></a>4.1 <code>fb_restore()</code>：清屏 → 跨页定格拷贝（核心修复）</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">td(<span class="string">&quot;  fb pan 回第0页&quot;</span>);</span><br><span class="line"><span class="comment">/* 把前台页内容搬到第 0 页: 屏幕定格在最后一帧, 不出现黑屏窗口(见函数头注释)。 */</span></span><br><span class="line"><span class="keyword">if</span>(fb_buf &amp;&amp; fb_page_bytes &amp;&amp; g_front != <span class="number">0</span>)</span><br><span class="line">    <span class="built_in">memcpy</span>((<span class="type">char</span> *)fb_buf, (<span class="type">const</span> <span class="type">char</span> *)fb_buf + (<span class="type">size_t</span>)g_front * fb_page_bytes, fb_page_bytes);</span><br><span class="line">td(<span class="string">&quot;  fb 定格最后一帧(不清屏)&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>翻回第 0 页的动作<strong>保留</strong>（<code>yoffset</code> 不归零 &#x3D; LVGL 画在不可见页 &#x3D; 永久黑屏，这个是必须的）。</li>
+<li><strong>不再清屏</strong>；若退出瞬间前台是第 1 页，则把第 1 页整页拷到第 0 页，保证”屏幕内容与退出前逐像素一致”（定格，不闪黑、不跳帧）。</li>
+<li>页偏移用既有变量 <code>fb_page_bytes</code>（&#x3D; 一屏字节），与渲染侧 <code>fb_dst = fb_buf + target * fb_page_bytes</code> 完全一致，不存在越界。</li>
+</ul>
+<h3 id="4-2-部署脚本-gba-redeploy-py：修掉一处会误伤-FC-的隐患"><a href="#4-2-部署脚本-gba-redeploy-py：修掉一处会误伤-FC-的隐患" class="headerlink" title="4.2 部署脚本 gba_redeploy.py：修掉一处会误伤 FC 的隐患"></a>4.2 部署脚本 <code>gba_redeploy.py</code>：修掉一处会误伤 FC 的隐患</h3><p><code>--mini</code> 分支原本写死 <code>gcc ... -o miniretro.tmp ... mv -f miniretro</code> ——<br>即<strong>把 GBA 源码编成 FC 的二进制名</strong>，会把上一轮辛苦还原的 FC 原版覆盖掉。<br>本次改为只产出 <code>miniretro_gba</code>，并加了保护：编前备份 + 编后 <code>cmp</code> 校验，一旦 FC 前端 md5 变化就报错。</p>
+<blockquote>
+<p>教训：<strong>同一目录下两个”同名家族”的产物，构建脚本必须用不同的目标名，并在脚本头写死约束。</strong></p>
+</blockquote>
+<hr>
+<h2 id="5-验证方法与结果"><a href="#5-验证方法与结果" class="headerlink" title="5. 验证方法与结果"></a>5. 验证方法与结果</h2><h3 id="5-1-构建与部署"><a href="#5-1-构建与部署" class="headerlink" title="5.1 构建与部署"></a>5.1 构建与部署</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">GCC_RC=0   ERR_CNT=0   WARN_CNT=0   ATOMIC_MV_OK</span><br><span class="line">-rwxr-xr-x  25648  Sep 23 18:55  miniretro       ← FC 专用, 未触碰</span><br><span class="line">-rwxr-xr-x  35424  Sep 23 19:22  miniretro_gba   ← 新编</span><br><span class="line">FC 前端未被触碰 OK(md5 不变)</span><br><span class="line">MAKE_RC=0   ATOMIC_OK</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-2-实机验证（AI-自测，已按要求执行）"><a href="#5-2-实机验证（AI-自测，已按要求执行）" class="headerlink" title="5.2 实机验证（AI 自测，已按要求执行）"></a>5.2 实机验证（AI 自测，已按要求执行）</h3><p><strong>验证一：退出时屏幕是否还黑</strong>（两个前端各跑 3s → SIGTERM → 采样到子进程消失）</p>
+<ul>
+<li>FC：全程 <code>非黑 0.954 / 亮度 227.4</code>，<strong>与退出前完全一致</strong>（定格）。</li>
+<li>GBA（修后）：全程 <code>非黑 1.000 / 亮度 248.0</code>，<strong>与退出前完全一致</strong>（定格）。</li>
+<li><strong>黑屏窗口从 ~1s 降为 0。</strong></li>
+</ul>
+<p><strong>验证二：拷贝分支是否真的被执行到</strong>（双缓冲下前台页在 0&#x2F;1 间切换）</p>
+<ul>
+<li>采样 4 次运行中 <code>yoffset</code> 均为 0（详见 §6 遗留项 3），但退出日志显示 <code>fb pan 回第0页 17.8ms</code><br>→ <code>fb 定格最后一帧(不清屏) 33.0ms</code>，耗时 15 ms —— <strong>正是整页 3.7 MB 的拷贝用时，证明拷贝分支已执行</strong>。</li>
+<li>无任何 <code>pan 失败</code> 告警。</li>
+</ul>
+<p><strong>验证三：收尾状态</strong></p>
+<ul>
+<li><code>lvgl_demo</code> ×1、<code>lvgl_watchdog</code> ×1（测试期间产生的重复 watchdog 已清理为单实例）。</li>
+<li>FC 前端 <code>md5 = a95d9171d8d8b82a52c12ac84e68aaa2</code>，与编前备份一致。</li>
+</ul>
+<hr>
+<h2 id="6-遗留与观察（未处理，供后续参考）"><a href="#6-遗留与观察（未处理，供后续参考）" class="headerlink" title="6. 遗留与观察（未处理，供后续参考）"></a>6. 遗留与观察（未处理，供后续参考）</h2><ol>
+<li><strong>退出后回列表仍要等约 1 秒</strong>：这是阻塞 <code>waitpid</code> 等收尸 + 内核回收 fd 的固有开销，<strong>FC 完全一样</strong>（1015ms）。<br>若将来要做到”画面一交还就恢复 UI”，需要重新引入”提前放行”机制 ——<br>但那正是 09&#x2F;10 两轮翻车的方向（当时的错误是：<code>_exit(0)</code> + 超时循环放在互斥锁内 + <code>setenv</code> 跨页污染）。<br>本次按用户要求”与 FC 逐行一致”，<strong>不做该优化</strong>。</li>
+<li><strong>内核回收 fd 需 ~1020 ms</strong>，比早先实测的 ~455 ms 更长（可能受当时系统负载影响）。属内核固有行为，前端无法影响。</li>
+<li><strong>驱动回读 <code>yoffset</code> 不可靠</strong>：即使 pan 实际生效（拷贝分支被触发，说明 <code>g_front=1</code>），<code>FBIOGET_VSCREENINFO</code> 回读仍是 0。<br>因此 <code>fb_restore()</code> 里那段”yoffset 回读校验”<strong>不会误报，但也发现不了 pan 失败</strong> —— 不宜把它当作 pan 是否成功的判据（早先的记忆记载需相应修正）。</li>
+<li>设备在本轮测试期间自行重启过一次（uptime 45 min），与本 bug 无关。</li>
+</ol>
+<hr>
+<h2 id="7-相关文件"><a href="#7-相关文件" class="headerlink" title="7. 相关文件"></a>7. 相关文件</h2><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>extern/miniretro/miniretro.c</code> → <code>miniretro_gba</code></td>
+<td>GBA 专用前端；本次改动在 <code>fb_restore()</code></td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro</code></td>
+<td>FC 专用前端（git 原版），本次<strong>未改动</strong>，md5 已校验</td>
+</tr>
+<tr>
+<td><code>lv_pages/gba_game_page.c</code></td>
+<td>GBA 页；本次<strong>未改动</strong>（退出逻辑已在 12 号文档对齐 FC）</td>
+</tr>
+<tr>
+<td><code>ssh_tools/gba_redeploy.py</code></td>
+<td>部署脚本；本次修掉 <code>-o miniretro</code> 误伤 FC 的隐患并加 md5 保护</td>
+</tr>
+<tr>
+<td><code>ssh_tools/gba_black_probe.py</code> &#x2F; <code>gba_black_run.py</code></td>
+<td>退出黑屏实测（侦察 + 执行）</td>
+</tr>
+<tr>
+<td><code>ssh_tools/_tmp/black_probe_dev.py</code> &#x2F; <code>gba_freeze_dev.py</code></td>
+<td>设备端采样脚本（非黑比例&#x2F;亮度&#x2F;yoffset）</td>
+</tr>
+<tr>
+<td><code>ssh_tools/ssh_run.py</code></td>
+<td>通用”上传并执行设备脚本”工具</td>
+</tr>
+<tr>
+<td><code>outputs/bugfix_20260923/bugfix_20260923_12_GBA退出逻辑对齐FC.md</code></td>
+<td>上一轮：退出逻辑对齐 FC（本次的前置改动）</td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-13-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E2%80%9D%E5%8D%A1%E9%BB%91%E5%B1%8F%E2%80%9D%EF%BC%9A%E7%9C%9F%E5%87%B6%E6%98%AF%E5%89%8D%E7%AB%AF%E9%80%80%E5%87%BA%E6%97%B6%E8%87%AA%E5%B7%B1%E6%B8%85%E5%B1%8F%EF%BC%88%E4%B8%8D%E6%98%AF-fork-%E5%BD%A2%E5%BC%8F%E7%9A%84%E9%97%AE%E9%A2%98%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_13 — GBA 退出”卡黑屏”：真凶是前端退出时自己清屏（不是 fork 形式的问题）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 问题现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E5%AE%9E%E6%B5%8B%EF%BC%9A%E4%B8%A4%E4%B8%AA%E5%89%8D%E7%AB%AF%E6%94%B6%E5%88%B0-SIGTERM-%E5%90%8E%EF%BC%8C%E5%B1%8F%E5%B9%95%E5%88%B0%E5%BA%95%E5%8F%91%E7%94%9F%E4%BB%80%E4%B9%88"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 实测：两个前端收到 SIGTERM 后，屏幕到底发生什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E7%BB%93%E8%AE%BA"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 结论</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BD%93%E5%88%9D%E4%BC%9A%E5%86%99%E4%B8%8A-memset-%E6%B8%85%E5%B1%8F"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 为什么当初会写上 memset 清屏</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-fb-restore-%EF%BC%9A%E6%B8%85%E5%B1%8F-%E2%86%92-%E8%B7%A8%E9%A1%B5%E5%AE%9A%E6%A0%BC%E6%8B%B7%E8%B4%9D%EF%BC%88%E6%A0%B8%E5%BF%83%E4%BF%AE%E5%A4%8D%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 fb_restore()：清屏 → 跨页定格拷贝（核心修复）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E9%83%A8%E7%BD%B2%E8%84%9A%E6%9C%AC-gba-redeploy-py%EF%BC%9A%E4%BF%AE%E6%8E%89%E4%B8%80%E5%A4%84%E4%BC%9A%E8%AF%AF%E4%BC%A4-FC-%E7%9A%84%E9%9A%90%E6%82%A3"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 部署脚本 gba_redeploy.py：修掉一处会误伤 FC 的隐患</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81%E6%96%B9%E6%B3%95%E4%B8%8E%E7%BB%93%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证方法与结果</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E6%9E%84%E5%BB%BA%E4%B8%8E%E9%83%A8%E7%BD%B2"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 构建与部署</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E5%AE%9E%E6%9C%BA%E9%AA%8C%E8%AF%81%EF%BC%88AI-%E8%87%AA%E6%B5%8B%EF%BC%8C%E5%B7%B2%E6%8C%89%E8%A6%81%E6%B1%82%E6%89%A7%E8%A1%8C%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 实机验证（AI 自测，已按要求执行）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%81%97%E7%95%99%E4%B8%8E%E8%A7%82%E5%AF%9F%EF%BC%88%E6%9C%AA%E5%A4%84%E7%90%86%EF%BC%8C%E4%BE%9B%E5%90%8E%E7%BB%AD%E5%8F%82%E8%80%83%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">6. 遗留与观察（未处理，供后续参考）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相关文件</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&text=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&title=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&is_video=false&description=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出卡黑屏_前端退出清屏&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&title=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&title=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&title=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&title=GBA退出卡黑屏_前端退出清屏"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-13/&name=GBA退出卡黑屏_前端退出清屏&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="PSP 模拟器（2026-09-24 起） 顶层 MEMORY.md §12 只留结论；本文是明细。  A. 方案与可行性 沿用 GBA 架构：miniretro 前端直写 &#x2F;dev&#x2F;fb0 + libretro core。core &#x3D; PPSSPP（v1.18.x，-DLIBRETRO&#x3D;ON） ★ 关键：这台机器没有 GL&#x2F;Vulkan，所以必须让 PPSSPP 走纯 CPU">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ref_PSP模拟器">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/24/ref-psp/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="PSP 模拟器（2026-09-24 起） 顶层 MEMORY.md §12 只留结论；本文是明细。  A. 方案与可行性 沿用 GBA 架构：miniretro 前端直写 &#x2F;dev&#x2F;fb0 + libretro core。core &#x3D; PPSSPP（v1.18.x，-DLIBRETRO&#x3D;ON） ★ 关键：这台机器没有 GL&#x2F;Vulkan，所以必须让 PPSSPP 走纯 CPU">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-24T06:18:10.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.959Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="PPSSPP">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>ref_PSP模拟器</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/24/lvgl-landscape-req/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/24/bugfix-20260924-02/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/24/ref-psp/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&text=ref_PSP模拟器"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&title=ref_PSP模拟器"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&is_video=false&description=ref_PSP模拟器"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_PSP模拟器&body=Check out this article: https://whiteleibniz.github.io/2026/09/24/ref-psp/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&title=ref_PSP模拟器"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&title=ref_PSP模拟器"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&title=ref_PSP模拟器"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&title=ref_PSP模拟器"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&name=ref_PSP模拟器&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#PSP-%E6%A8%A1%E6%8B%9F%E5%99%A8%EF%BC%882026-09-24-%E8%B5%B7%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">PSP 模拟器（2026-09-24 起）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-%E6%96%B9%E6%A1%88%E4%B8%8E%E5%8F%AF%E8%A1%8C%E6%80%A7"><span class="toc-number">1.1.</span> <span class="toc-text">A. 方案与可行性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-%E6%BA%90%E7%A0%81%E8%8E%B7%E5%8F%96%E4%B8%8E%E7%BC%96%E8%AF%91"><span class="toc-number">1.2.</span> <span class="toc-text">B. 源码获取与编译</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-%E6%B4%BE%E7%94%9F%EF%BC%88%E7%A6%81%E6%AD%A2%E6%89%8B%E5%86%99%E7%AC%AC%E4%BA%8C%E4%BB%BD%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">C. 派生（禁止手写第二份）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#D-ROM"><span class="toc-number">1.4.</span> <span class="toc-text">D. ROM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#E-%E9%94%AE%E7%9B%98-%E8%BE%93%E5%85%A5"><span class="toc-number">1.5.</span> <span class="toc-text">E. 键盘 &#x2F; 输入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#F-%E7%BC%96%E5%88%B6%E7%AA%9C%E7%BB%B8"><span class="toc-number">1.6.</span> <span class="toc-text">F. 编制窜绸</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-core-%E7%BC%96%E8%AF%91%EF%BC%9A%E5%B9%B6%E5%8F%91%E4%B8%8A%E9%99%90-j2%EF%BC%88OOM-%E5%AE%9E%E9%94%A4%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">★ core 编译：并发上限 -j2（OOM 实锤）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-%E8%A3%81%E5%89%AA%E6%BA%90%E7%A0%81%E7%9A%84%E5%9D%91%EF%BC%9Aandroid-jni-%E5%A4%B4%E5%BF%85%E9%A1%BB%E4%BF%9D%E7%95%99%EF%BC%88%E8%87%B3%E5%B0%91-2-%E4%B8%AA%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">★ 裁剪源码的坑：android&#x2F;jni 头必须保留（至少 2 个）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85%E2%98%85-%E5%86%92%E7%83%9F%E6%B5%8B%E8%AF%95%E9%93%81%E5%BE%8B%EF%BC%9A%E5%BF%85%E9%A1%BB-setsid"><span class="toc-number">1.9.</span> <span class="toc-text">★★ 冒烟测试铁律：必须 setsid</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-PPSSPP-core-%E8%B7%91%E8%B5%B7%E6%9D%A5%E7%9A%84-4-%E4%B8%AA%E8%A6%81%E4%BB%B6"><span class="toc-number">1.10.</span> <span class="toc-text">★ PPSSPP core 跑起来的 4 个要件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%81%97%E7%95%99%EF%BC%9A%E9%80%80%E5%87%BA%E6%9C%AB%E5%B0%BE-terminate-called-without-an-active-exception%EF%BC%88%E5%8F%91%E7%94%9F%E5%9C%A8-fb-%E5%A4%8D%E4%BD%8D%E4%B9%8B%E5%90%8E%EF%BC%8C%E4%B8%8E-dlclose-%E6%97%A0%E5%85%B3%EF%BC%8C%E6%9A%82%E7%95%99%EF%BC%89"><span class="toc-number">1.11.</span> <span class="toc-text">遗留：退出末尾 terminate called without an active exception（发生在 fb 复位之后，与 dlclose 无关，暂留）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        ref_PSP模拟器
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-24T06:18:10.000Z" itemprop="datePublished">2026-09-24</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/PPSSPP/" rel="tag">PPSSPP</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="PSP-模拟器（2026-09-24-起）"><a href="#PSP-模拟器（2026-09-24-起）" class="headerlink" title="PSP 模拟器（2026-09-24 起）"></a>PSP 模拟器（2026-09-24 起）</h1><blockquote>
+<p>顶层 MEMORY.md §12 只留结论；本文是明细。</p>
+</blockquote>
+<h2 id="A-方案与可行性"><a href="#A-方案与可行性" class="headerlink" title="A. 方案与可行性"></a>A. 方案与可行性</h2><ul>
+<li><strong>沿用 GBA 架构</strong>：miniretro 前端直写 <code>/dev/fb0</code> + libretro core。core &#x3D; <strong>PPSSPP</strong>（v1.18.x，<code>-DLIBRETRO=ON</code>）</li>
+<li><strong>★ 关键：这台机器没有 GL&#x2F;Vulkan</strong>，所以必须让 PPSSPP 走纯 CPU 软渲染。<br>前端在 <code>env_cb(RETRO_ENVIRONMENT_GET_VARIABLE)</code> 里主动应答 <strong><code>ppsspp_backend=none</code></strong><br>→ 落到 <code>LibretroSoftwareContext</code>（源码 <code>libretro/LibretroGraphicsContext.cpp</code> 的软渲染兜底分支）。<br>不主动给的话它会依次试 GLCore→GL→Vulkan 三次全失败；更糟的是 .so 一旦链接了 libGL，<br><strong>dlopen 阶段就过不去</strong>，连兜底机会都没有</li>
+<li>其余注入的 core option：<code>cpu_core=JIT</code>（ARM32 dynarec，无它慢一个量级）、<br><code>internal_resolution=480x272</code>、<code>frameskip=1</code>、<code>auto_frameskip=disabled</code>、<br><code>gpu_hardware_transform=disabled</code>、<code>memstick_inserted=enabled</code>（不给→部分游戏拒绝存档）、<br><code>io_timing_method=Fast</code>、<code>cache_iso=disabled</code>（内存仅 916MB，别整张 ISO 缓存）</li>
+<li><code>RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY</code> → <code>/home/PSPgame/saves</code></li>
+</ul>
+<h2 id="B-源码获取与编译"><a href="#B-源码获取与编译" class="headerlink" title="B. 源码获取与编译"></a>B. 源码获取与编译</h2><ul>
+<li><strong>本机</strong> <code>git clone --depth 1 --recurse-submodules -j 8 https://github.com/hrydgard/ppsspp.git</code><br>（Makefile 路线硬性依赖 ffmpeg 头文件 → 必须走 CMake）</li>
+<li>裁剪打包：排除 <code>.git / ffmpeg / ext/vulkan / assets / android / Qt / SDL / Windows / UWP / ios / macOS / headless / unittest / Tools / pspautotests / source_assets / icons / dx9sdk / gradle</code> → 55MB</li>
+<li><code>assets</code> 后来发现是<strong>必需的整份</strong>（flash0 + 字体 atlas + meta），单独补传</li>
+<li>CMake：<code>-DLIBRETRO=ON -DUSE_FFMPEG=OFF -DVULKAN=OFF -DOPENGL=OFF -DUSE_SYSTEM_ZLIB=ON -DUSE_SYSTEM_LIBPNG=ON -DMOBILE_DEVICE=ON -DCMAKE_BUILD_TYPE=Release</code></li>
+<li><strong>★ 编译 flags 必须显式给</strong>：<code>-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard</code><br>（不加则 gcc 默认编 armv6 → <strong>没有 ARM32 动态重编译，直接慢一个量级</strong>）</li>
+<li><strong>★ 坑：<code>-DVULKAN=OFF</code> 并不会停掉 <code>ext/vma</code> 目标</strong>，它仍要 <code>ext/vulkan/vulkan.h</code>；<br>而在国内&#x2F;这台机器上精简打包时最容易把它整目录排掉 → 报错 <code>fatal error: ext/vulkan/vulkan.h</code>。<br>解法：只传<strong>头文件</strong>（排除 iOS 26MB &#x2F; macOS 12MB &#x2F; libvulkan.so 3.3MB 后仅 177KB）</li>
+<li>编译放后台 <code>setsid nohup make -j4 &gt; /tmp/ppsspp_build3.log</code>（增量，已编 .o 全部保留）</li>
+</ul>
+<h2 id="C-派生（禁止手写第二份）"><a href="#C-派生（禁止手写第二份）" class="headerlink" title="C. 派生（禁止手写第二份）"></a>C. 派生（禁止手写第二<em>份</em>）</h2><p><code>ssh_tools/make_psp_from_gba.py</code> 一次性产出 4 个文件，<code>ssh_tools/deploy_psp.py</code> 部署+重编，<br><code>ssh_tools/finish_psp.py</code> 收尾（校验依赖 → 安装 .so → 可选加载自测）。</p>
+<ul>
+<li>从 <code>miniretro_gba.c</code> 派生 <code>miniretro_psp.c</code>，只改 5 处：<br><code>PSP_SRC_W/H=480x272</code>、<code>SR_ROT_MAX 256²→512²</code>（272×480 旋转画布塞不进 256²，否则黑屏）、<br><code>temp32</code> 容量、**白名单从”枚举机种尺寸”改成”上限判定”**（<code>width&gt;PSP_SRC_W</code> 才拒）、<br>env_cb 加 GET_VARIABLE + GET_SAVE_DIRECTORY。其余（双缓冲翻页&#x2F;退出策略 v3&#x2F;音频自适应重采样）全继承</li>
+<li>页面从 <code>gba_game_page.c</code> 派生：后缀 <code>.iso/.cso/.pbp/.elf</code>；**Makefile 用 <code>wildcard lv_pages/*.c</code>**，<br>新页面丢进去自动进编译</li>
+<li><strong>★ 替换次序雷</strong>：复合标识符（<code>mgba_libretro.so</code>、<code>miniretro_gba</code>）必须<strong>排在通用规则<br><code>gba_-&gt;psp_</code> 之前</strong>替换，否则 <code>mgba_libretro.so</code> 会被先写成 <code>mpsp_libretro.so</code>，<br>后面的精确替换再也匹配不上（页面查不到 core）</li>
+<li><strong>★ 中文字体雷</strong>：派生源的 label 一律没设字体 → 中文 ROM 名全是豆腐块。<br>脚本已对所有 <code>lv_label_create</code> 补 <code>lv_obj_set_style_text_font(x, &amp;lv_font_cn_16, 0)</code><ul>
+<li><code>LV_FONT_DECLARE</code>，并给 list 容器兜一层</li>
+</ul>
+</li>
+</ul>
+<h2 id="D-ROM"><a href="#D-ROM" class="headerlink" title="D. ROM"></a>D. ROM</h2><p>目录 <code>/home/lvgl_demo/lvgl_demo/sdcard/game/psp/</code>（已放 5 个）</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>大小</th>
+<th>来源</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Tetris 俄罗斯方块.pbp</code></td>
+<td>16KB</td>
+<td>github.com&#x2F;zPSP-Dev&#x2F;tetris-psp release v1.0</td>
+<td><strong>首选</strong>：真游戏、极轻，软渲染扛得住</td>
+</tr>
+<tr>
+<td><code>Beatbox.pbp</code></td>
+<td>1.0MB</td>
+<td>github.com&#x2F;Babkock&#x2F;Beatbox 仓库内 EBOOT.PBP</td>
+<td>鼓机：验多键输入 + 音频</td>
+</tr>
+<tr>
+<td><code>Cube 旋转立方体.pbp</code> &#x2F; <code>Controller 按键测试.pbp</code> &#x2F; <code>HelloWorld.pbp</code></td>
+<td>40~76KB</td>
+<td>PPSSPP 自带 <code>pspautotests/demos/</code></td>
+<td>帧率&#x2F;按键&#x2F;基础渲染探针</td>
+</tr>
+</tbody></table>
+<p><strong>★ 下载可用性（国内实测）</strong>：<code>dlhb.gamebrew.org</code> <strong>403</strong>、<code>archive.org</code> 与 <code>raw.githubusercontent.com</code><br><strong>HTTP 000 不可达</strong>、GitHub API&#x2F;搜索容易 403 限流。<br>→ <strong>唯一可靠的是 <code>github.com</code> 本体</strong>：<code>git clone --depth 1</code> 或 <code>github.com/&lt;repo&gt;/releases/download/&lt;tag&gt;/&lt;文件&gt;</code>。<br>GameBrew 网页只用来 WebFetch 提取直链。</p>
+<h2 id="E-键盘-输入"><a href="#E-键盘-输入" class="headerlink" title="E. 键盘 &#x2F; 输入"></a>E. 键盘 &#x2F; 输入</h2><ul>
+<li>设备上 <code>/dev/input/event0/1/2</code> 只有板载 3 个；<strong>USB 键盘插入后热插拔自动生效</strong> ——<br><code>input_poll_cb()</code> 每次轮询都调 <code>input_scan()</code> 重扫 <code>/dev/input/eventN</code></li>
+<li><code>extern/miniretro/keymap_psp.conf</code> 映射（从 GBA 同源派生）：<br>WASD&#x2F;方向键 &#x3D; 方向；<code>Z</code>&#x2F;<code>J</code>&#x2F;空格 &#x3D; B(○)；<code>X</code>&#x2F;<code>K</code>&#x2F;左Ctrl &#x3D; A(×)；<code>Q</code>&#x2F;<code>E</code> &#x3D; Y(□)&#x2F;X(△)；<br><code>1</code>&#x2F;<code>2</code> &#x3D; L&#x2F;R；回车 &#x3D; START；左Shift&#x2F;退格 &#x3D; SELECT；<strong>ESC &#x3D; 退出</strong><br>板载 4 物理键沿用（点餐114&#x3D;左、服务102&#x3D;右、福利115&#x3D;A、买单116&#x3D;退出）</li>
+<li>未按预期映射的键会在 stderr 打 <code>未映射按键 code=xxx</code>，照提示补进 conf</li>
+</ul>
+<h2 id="F-编制窜绸"><a href="#F-编制窜绸" class="headerlink" title="F. 编制窜绸"></a>F. 编制窜绸</h2><table>
+<thead>
+<tr>
+<th>动作</th>
+<th>命令要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>查编译状态</td>
+<td><code>tail -1 /tmp/ppsspp_build3.log</code>；<code>grep -c &#39;error:&#39;</code></td>
+</tr>
+<tr>
+<td>改并行度（保留已完成目标）</td>
+<td>对 <code>ps -o pid,comm | awk &#39;$2==&quot;make&quot;&#39;</code> 的 PID 发 <strong>SIGTERM</strong>（**禁用 <code>pkill -f</code>**），等 cc1 退出后 <code>make -jN</code> 续跑</td>
+</tr>
+<tr>
+<td>观察实际并行</td>
+<td><code>ps -o pid,comm | awk &#39;$2==&quot;cc1&quot;||$2==&quot;cc1plus&quot;&#39; | wc -l</code></td>
+</tr>
+</tbody></table>
+<ul>
+<li>4 并发时内存 used 224~294MB &#x2F; 916MB total，<strong>未 OOM</strong></li>
+<li>中断后可能有半成品 <code>.o</code>（时间戳比源新 → make 认为不用重编 → 链接才炸）。<br>**★ BusyBox <code>find</code> 无 <code>-newermt</code>**，用 <code>-mmin N</code> &#x2F; <code>-newer FILE</code></li>
+<li>**别去写 <code>/sys/devices/system/cpu/cpuN/online</code>**（见 MEMORY §10 hotplug 雷）；<br>实测编译负载下 <code>sprd_hotplug</code> 会自动把 4 核全拉起来（<code>online=0-3</code>）</li>
+</ul>
+<h2 id="★-core-编译：并发上限-j2（OOM-实锤）"><a href="#★-core-编译：并发上限-j2（OOM-实锤）" class="headerlink" title="★ core 编译：并发上限 -j2（OOM 实锤）"></a>★ core 编译：并发上限 -j2（OOM 实锤）</h2><ul>
+<li><code>-j4</code> 在 50% 被 OOM kill（<code>glslang_tab.cpp</code> 单文件峰值），整条 make 静默 Error 2 停死</li>
+<li>正确启动方式（只编需要的 target，非 <code>all</code>）：<br><code>cd /home/PSPgame/ppsspp_git/build &amp;&amp; nohup setsid make -j2 ppsspp_libretro &gt; /tmp/ppsspp_build4.log 2&gt;&amp;1 &amp;</code></li>
+<li>判断存活必须 grep 日志里的 <code>Killed</code> &#x2F; <code>make.*Error 2</code>，<strong>只看进程会误判</strong></li>
+</ul>
+<h2 id="★-裁剪源码的坑：android-jni-头必须保留（至少-2-个）"><a href="#★-裁剪源码的坑：android-jni-头必须保留（至少-2-个）" class="headerlink" title="★ 裁剪源码的坑：android&#x2F;jni 头必须保留（至少 2 个）"></a>★ 裁剪源码的坑：android&#x2F;jni 头必须保留（至少 2 个）</h2><ul>
+<li><code>Common/File/AndroidStorage.cpp</code> 等 <strong>无条件</strong> <code>#include &quot;android/jni/app-android.h&quot;</code>，整删 <code>android/</code> 会在 52% 炸掉</li>
+<li>修复：原样放回真 <code>app-android.h</code>（libretro 下 <code>PPSSPP_PLATFORM(ANDROID)</code> 为假，且 <code>&lt;jni.h&gt;</code> 还包在<br><code>!defined(__LIBRETRO__)</code> 里 → 不需要 NDK）+ 真 <code>AndroidAudio.h</code>；**<code>OpenSLContext.h</code> 依赖 <code>SLES/*.h</code>，留占位头**</li>
+<li>通用教训：裁剪前先 <code>grep -rn &#39;#include &quot;&lt;目录&gt;&#39;</code> 排查非条件 include；补文件优先”原样放回真文件”，别手搓占位</li>
+</ul>
+<h2 id="★★-冒烟测试铁律：必须-setsid"><a href="#★★-冒烟测试铁律：必须-setsid" class="headerlink" title="★★ 冒烟测试铁律：必须 setsid"></a>★★ 冒烟测试铁律：必须 setsid</h2><p><code>./miniretro_psp ... &amp;</code> 挂在脚本 sh 下时，<strong>busybox sh 会立刻给后台作业发 SIGTERM</strong>（si_pid&#x3D;ppid 实锤），<br>表现为”启动 100ms 就退出”，极易误判成 core 崩溃。正确：<br><code>setsid ./miniretro_psp &lt;绝对路径 core&gt; &lt;rom&gt; keymap_psp.conf &gt; /tmp/x.log 2&gt;&amp;1 &amp;</code><br>（另：musl 的 dlopen 对不含斜杠的名字<strong>不搜当前目录</strong> → core 必须传绝对路径）</p>
+<h2 id="★-PPSSPP-core-跑起来的-4-个要件"><a href="#★-PPSSPP-core-跑起来的-4-个要件" class="headerlink" title="★ PPSSPP core 跑起来的 4 个要件"></a>★ PPSSPP core 跑起来的 4 个要件</h2><ol>
+<li>实现 <code>RETRO_ENVIRONMENT_GET_LOG_INTERFACE</code>(cmd 27) —— 否则 core 报错全不可见；放行级别限 WARN 以上</li>
+<li>assets 放 <code>&lt;system_dir&gt;/PPSSPP/</code>（22MB），不是 system 根目录</li>
+<li>system dir 不能为 NULL（前端原默认 NULL，已改 <code>/home/PSPgame/system</code>）</li>
+<li><code>ppsspp_backend=none</code> → <code>Using Software backend</code>，<a href="mailto:&#x34;&#56;&#48;&#x78;&#50;&#x37;&#x30;&#x40;&#53;&#x39;&#46;&#57;&#52;&#102;&#x70;&#x73;">&#x34;&#56;&#48;&#x78;&#50;&#x37;&#x30;&#x40;&#53;&#x39;&#46;&#57;&#52;&#102;&#x70;&#x73;</a>，JIT 走 ARM32</li>
+</ol>
+<h2 id="遗留：退出末尾-terminate-called-without-an-active-exception（发生在-fb-复位之后，与-dlclose-无关，暂留）"><a href="#遗留：退出末尾-terminate-called-without-an-active-exception（发生在-fb-复位之后，与-dlclose-无关，暂留）" class="headerlink" title="遗留：退出末尾 terminate called without an active exception（发生在 fb 复位之后，与 dlclose 无关，暂留）"></a>遗留：退出末尾 <code>terminate called without an active exception</code>（发生在 fb 复位之后，与 dlclose 无关，暂留）</h2><blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#PSP-%E6%A8%A1%E6%8B%9F%E5%99%A8%EF%BC%882026-09-24-%E8%B5%B7%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">PSP 模拟器（2026-09-24 起）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-%E6%96%B9%E6%A1%88%E4%B8%8E%E5%8F%AF%E8%A1%8C%E6%80%A7"><span class="toc-number">1.1.</span> <span class="toc-text">A. 方案与可行性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-%E6%BA%90%E7%A0%81%E8%8E%B7%E5%8F%96%E4%B8%8E%E7%BC%96%E8%AF%91"><span class="toc-number">1.2.</span> <span class="toc-text">B. 源码获取与编译</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-%E6%B4%BE%E7%94%9F%EF%BC%88%E7%A6%81%E6%AD%A2%E6%89%8B%E5%86%99%E7%AC%AC%E4%BA%8C%E4%BB%BD%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">C. 派生（禁止手写第二份）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#D-ROM"><span class="toc-number">1.4.</span> <span class="toc-text">D. ROM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#E-%E9%94%AE%E7%9B%98-%E8%BE%93%E5%85%A5"><span class="toc-number">1.5.</span> <span class="toc-text">E. 键盘 &#x2F; 输入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#F-%E7%BC%96%E5%88%B6%E7%AA%9C%E7%BB%B8"><span class="toc-number">1.6.</span> <span class="toc-text">F. 编制窜绸</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-core-%E7%BC%96%E8%AF%91%EF%BC%9A%E5%B9%B6%E5%8F%91%E4%B8%8A%E9%99%90-j2%EF%BC%88OOM-%E5%AE%9E%E9%94%A4%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">★ core 编译：并发上限 -j2（OOM 实锤）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-%E8%A3%81%E5%89%AA%E6%BA%90%E7%A0%81%E7%9A%84%E5%9D%91%EF%BC%9Aandroid-jni-%E5%A4%B4%E5%BF%85%E9%A1%BB%E4%BF%9D%E7%95%99%EF%BC%88%E8%87%B3%E5%B0%91-2-%E4%B8%AA%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">★ 裁剪源码的坑：android&#x2F;jni 头必须保留（至少 2 个）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85%E2%98%85-%E5%86%92%E7%83%9F%E6%B5%8B%E8%AF%95%E9%93%81%E5%BE%8B%EF%BC%9A%E5%BF%85%E9%A1%BB-setsid"><span class="toc-number">1.9.</span> <span class="toc-text">★★ 冒烟测试铁律：必须 setsid</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-PPSSPP-core-%E8%B7%91%E8%B5%B7%E6%9D%A5%E7%9A%84-4-%E4%B8%AA%E8%A6%81%E4%BB%B6"><span class="toc-number">1.10.</span> <span class="toc-text">★ PPSSPP core 跑起来的 4 个要件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%81%97%E7%95%99%EF%BC%9A%E9%80%80%E5%87%BA%E6%9C%AB%E5%B0%BE-terminate-called-without-an-active-exception%EF%BC%88%E5%8F%91%E7%94%9F%E5%9C%A8-fb-%E5%A4%8D%E4%BD%8D%E4%B9%8B%E5%90%8E%EF%BC%8C%E4%B8%8E-dlclose-%E6%97%A0%E5%85%B3%EF%BC%8C%E6%9A%82%E7%95%99%EF%BC%89"><span class="toc-number">1.11.</span> <span class="toc-text">遗留：退出末尾 terminate called without an active exception（发生在 fb 复位之后，与 dlclose 无关，暂留）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/24/ref-psp/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&text=ref_PSP模拟器"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&title=ref_PSP模拟器"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&is_video=false&description=ref_PSP模拟器"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_PSP模拟器&body=Check out this article: https://whiteleibniz.github.io/2026/09/24/ref-psp/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&title=ref_PSP模拟器"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&title=ref_PSP模拟器"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&title=ref_PSP模拟器"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&title=ref_PSP模拟器"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/24/ref-psp/&name=ref_PSP模拟器&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

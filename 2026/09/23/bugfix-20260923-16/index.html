@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix 16 — GBA「改完游戏都进不去了」：把「超时补刀」放进收尸线程 &#x3D; 给游戏设了 600ms 寿命 日期：2026-09-23 影响范围：lv_pages&#x2F;gba_game_page.c（GBA 游戏应用，进游戏 100% 失败） 严重级别：P0（功能完全不可用，且是我自己上一轮改动引入的回归） 关联：bugfix 09~15（同一退出链路的连续迭代） 回滚点：lv_pa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA游戏进不去_超时补刀误杀">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix 16 — GBA「改完游戏都进不去了」：把「超时补刀」放进收尸线程 &#x3D; 给游戏设了 600ms 寿命 日期：2026-09-23 影响范围：lv_pages&#x2F;gba_game_page.c（GBA 游戏应用，进游戏 100% 失败） 严重级别：P0（功能完全不可用，且是我自己上一轮改动引入的回归） 关联：bugfix 09~15（同一退出链路的连续迭代） 回滚点：lv_pa">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.881Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA游戏进不去_超时补刀误杀</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-13/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-15/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&text=GBA游戏进不去_超时补刀误杀"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&title=GBA游戏进不去_超时补刀误杀"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&is_video=false&description=GBA游戏进不去_超时补刀误杀"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA游戏进不去_超时补刀误杀&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&title=GBA游戏进不去_超时补刀误杀"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&title=GBA游戏进不去_超时补刀误杀"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&title=GBA游戏进不去_超时补刀误杀"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&title=GBA游戏进不去_超时补刀误杀"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&name=GBA游戏进不去_超时补刀误杀&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-16-%E2%80%94-GBA%E3%80%8C%E6%94%B9%E5%AE%8C%E6%B8%B8%E6%88%8F%E9%83%BD%E8%BF%9B%E4%B8%8D%E5%8E%BB%E4%BA%86%E3%80%8D%EF%BC%9A%E6%8A%8A%E3%80%8C%E8%B6%85%E6%97%B6%E8%A1%A5%E5%88%80%E3%80%8D%E6%94%BE%E8%BF%9B%E6%94%B6%E5%B0%B8%E7%BA%BF%E7%A8%8B-%E7%BB%99%E6%B8%B8%E6%88%8F%E8%AE%BE%E4%BA%86-600ms-%E5%AF%BF%E5%91%BD"><span class="toc-number">1.</span> <span class="toc-text">bugfix 16 — GBA「改完游戏都进不去了」：把「超时补刀」放进收尸线程 &#x3D; 给游戏设了 600ms 寿命</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%8F%96%E8%AF%81%EF%BC%88%E5%86%B3%E5%AE%9A%E6%80%A7%E6%97%A5%E5%BF%97%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. 取证（决定性日志）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E8%87%AA%E6%B5%8B%EF%BC%88%E6%9C%AC%E6%AC%A1%E7%94%B1-AI-%E5%AE%9E%E6%B5%8B%E9%80%9A%E8%BF%87%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 自测（本次由 AI 实测通过）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E3%80%8CFC-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%B5%81%E7%95%85%E3%80%81GBA-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%A1%8C%E3%80%8D%E2%80%94%E2%80%94%E5%B7%AE%E5%BC%82%E8%A1%A8"><span class="toc-number">1.6.</span> <span class="toc-text">6. 「FC 为什么流畅、GBA 为什么不行」——差异表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E6%95%99%E8%AE%AD-%E5%8F%8D%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.7.</span> <span class="toc-text">7. 教训 &#x2F; 反模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E6%94%B9%E5%8A%A8%E6%96%87%E4%BB%B6%E6%B8%85%E5%8D%95"><span class="toc-number">1.8.</span> <span class="toc-text">8. 改动文件清单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8F%90%E4%BA%A4%E8%AF%B4%E6%98%8E%EF%BC%88%E5%BE%85%E7%94%A8%E6%88%B7%E7%A1%AE%E8%AE%A4%EF%BC%89%EF%BC%9Afix-gba-%E6%81%A2%E5%A4%8D%E6%97%A0%E4%B8%8A%E9%99%90%E9%98%BB%E5%A1%9E%E6%94%B6%E5%B0%B8%EF%BC%8C%E8%B6%85%E6%97%B6%E8%A1%A5%E5%88%80%E7%A7%BB%E5%88%B0%E4%B8%93%E8%81%8C%E7%BA%BF%E7%A8%8B%EF%BC%88%E4%BF%AE%E3%80%8C%E6%B8%B8%E6%88%8F%E8%BF%9B%E4%B8%8D%E5%8E%BB%E3%80%8D%E5%9B%9E%E5%BD%92%EF%BC%89"><span class="toc-number">1.9.</span> <span class="toc-text">提交说明（待用户确认）：fix(gba): 恢复无上限阻塞收尸，超时补刀移到专职线程（修「游戏进不去」回归）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA游戏进不去_超时补刀误杀
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-16-—-GBA「改完游戏都进不去了」：把「超时补刀」放进收尸线程-给游戏设了-600ms-寿命"><a href="#bugfix-16-—-GBA「改完游戏都进不去了」：把「超时补刀」放进收尸线程-给游戏设了-600ms-寿命" class="headerlink" title="bugfix 16 — GBA「改完游戏都进不去了」：把「超时补刀」放进收尸线程 &#x3D; 给游戏设了 600ms 寿命"></a>bugfix 16 — GBA「改完游戏都进不去了」：把「超时补刀」放进收尸线程 &#x3D; 给游戏设了 600ms 寿命</h1><ul>
+<li><strong>日期</strong>：2026-09-23</li>
+<li><strong>影响范围</strong>：<code>lv_pages/gba_game_page.c</code>（GBA 游戏应用，进游戏 100% 失败）</li>
+<li><strong>严重级别</strong>：P0（功能完全不可用，且是我自己上一轮改动引入的回归）</li>
+<li><strong>关联</strong>：bugfix 09~15（同一退出链路的连续迭代）</li>
+<li><strong>回滚点</strong>：<code>lv_pages/gba_game_page.c.bak_exit2</code>（第 14 篇状态：能进游戏、偶发卡画面）</li>
+</ul>
+<hr>
+<h2 id="1-现象"><a href="#1-现象" class="headerlink" title="1. 现象"></a>1. 现象</h2><p>用户反馈：<strong>「改完游戏都进不去了」</strong>。按确认键选中 ROM 后，游戏画面「闪一下」就回到列表（有时连列表也一起退回桌面），看起来像”根本进不去”。</p>
+<p>注意与上一篇（bugfix 15）的区别：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>bugfix 15</th>
+<th>bugfix 16（本篇）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>现象</td>
+<td>能进游戏、能玩，<strong>退出时偶发卡在游戏画面</strong></td>
+<td><strong>进游戏就秒退</strong>，根本没得玩</td>
+</tr>
+<tr>
+<td>玩家感受</td>
+<td>“偶尔不正常”</td>
+<td>“完全不能用”</td>
+</tr>
+</tbody></table>
+<p><strong>这是我在修 15 的过程中引入的新回归</strong>——“越改越乱”的来源。</p>
+<hr>
+<h2 id="2-取证（决定性日志）"><a href="#2-取证（决定性日志）" class="headerlink" title="2. 取证（决定性日志）"></a>2. 取证（决定性日志）</h2><p><code>/tmp/lvgl_demo.log</code> 中一次”进游戏”的完整序列：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[HW Key] code=115 value=1 -&gt; ENTER          ← 用户按确认键</span><br><span class="line">[gba] 封面: .../Advance Wars (USA) (Rev 1).png</span><br><span class="line">[system] LVGL draw paused                    ← 进入游戏</span><br><span class="line">[Key Thread] 临时按键拦截器已启用。</span><br><span class="line">[Key Thread] EVIOCGRAB 请求释放</span><br><span class="line">[Key Thread] EVIOCGRAB 已释放(交给外部进程)</span><br><span class="line">[Key Thread] EVIOCGRAB 请求恢复独占           ← ★ 紧接着就恢复了</span><br><span class="line">[gba] fb 兜底翻回第0页(前端退出时停在第 1 页)   ← ★ 前端已经死了</span><br><span class="line">[system] LVGL draw resumed[nav] key=27</span><br><span class="line">[pm] 页面 &#x27;gba_game&#x27; 离场</span><br></pre></td></tr></table></figure>
+
+<p><strong>两个决定性事实</strong>：</p>
+<ol>
+<li><code>EVIOCGRAB 已释放</code> 与 <code>EVIOCGRAB 请求恢复独占</code> 之间<strong>没有 <code>[miniretro]</code> 的任何启动日志</strong>——而正常进游戏这一段必然有 12 行（映射 fb、打开 5 个 evdev、加载 core、加载 ROM…）。</li>
+<li>顺序上”恢复独占 + 兜底翻页”紧跟在”释放独占”之后，说明<strong>子进程已经退出</strong>，且退得极快。</li>
+</ol>
+<p>→ <strong>前端不是自己退的，是被父进程杀掉的。</strong></p>
+<hr>
+<h2 id="3-根因"><a href="#3-根因" class="headerlink" title="3. 根因"></a>3. 根因</h2><p>上一轮（bugfix 15）我把收尸逻辑从「阻塞 <code>waitpid</code>」改成了：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* ★ 错误写法（bugfix 15 引入） */</span></span><br><span class="line"><span class="type">bool</span> reaped = <span class="literal">false</span>;</span><br><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">60</span>; i++) &#123;            <span class="comment">/* 最多 600ms */</span></span><br><span class="line">    <span class="type">pid_t</span> r = waitpid(pid, &amp;status, WNOHANG);</span><br><span class="line">    <span class="keyword">if</span>(r == pid) &#123; reaped = <span class="literal">true</span>; <span class="keyword">break</span>; &#125;</span><br><span class="line">    usleep(<span class="number">10</span> * <span class="number">1000</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span>(!reaped) &#123;</span><br><span class="line">    <span class="keyword">if</span>(kill(pid, <span class="number">0</span>) == <span class="number">0</span>) kill(pid, SIGKILL);   <span class="comment">/* ★ 把还在正常跑的游戏杀了 */</span></span><br><span class="line">    waitpid(pid, &amp;status, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>当时的动机是好的</strong>：想给”前端挂死”留一个硬保证，同时不占用按键线程。注释里甚至写着”绝不设跑满 N 秒就算退出的上限”——</p>
+<p><strong>但这段代码本身就是那个上限。</strong> 判据从「子进程真的消失」偷偷变成了「600ms 到了」，于是：</p>
+<blockquote>
+<p>用户按确认 → 前端启动 → 渲染第一帧 → **600ms 到了 → 父进程补 SIGKILL → 游戏”闪一下就没了”**。</p>
+</blockquote>
+<p>而且这解释了为什么”第一次进有时能看到一帧画面”——前端启动 + 渲染第一帧大约就在 600ms 上下，运气好能出一帧。</p>
+<p><strong>这条坑在项目记忆里被记过</strong>（”六条已被证伪的路”第 ① 条：给等待循环设”跑满 N 秒就算退出”的上限），我明知故犯。</p>
+<hr>
+<h2 id="4-修复"><a href="#4-修复" class="headerlink" title="4. 修复"></a>4. 修复</h2><p><strong>原则：回到”判据只有一个硬事件——子进程真的消失”，把”等待”和”补刀”从收尸路径上彻底剥离出去。</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>位置</th>
+<th>改动</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>新增 <code>gba_kill_later()</code></td>
+<td><strong>专职补刀线程</strong>：唯一持有”睡 600ms 再补 SIGKILL”的地方。与 wait 线程持同一把锁、用 <code>kill(pid,0)</code> + <code>child_pid</code> 一致性校验，避免误伤复用 pid</td>
+</tr>
+<tr>
+<td>B</td>
+<td><code>gba_wait_thread()</code></td>
+<td>删除 600ms 轮询超时，<strong>恢复为阻塞 <code>waitpid</code>（无上限）</strong>——与 FC 页 <code>fc_wait_thread</code> 逐行相同</td>
+</tr>
+<tr>
+<td>C</td>
+<td><code>gba_exit_to_list()</code></td>
+<td>不在按键线程 <code>sleep</code>（会漏键把本页弹掉），改为 <code>kill(SIGTERM)</code> + 起补刀线程后<strong>立即返回</strong>去吞键</td>
+</tr>
+<tr>
+<td>D</td>
+<td><code>gba_on_destroy()</code></td>
+<td>不变（主线程罕见路径，<code>SIGTERM</code> + 300ms 轮询保护 <code>.sav</code> 落盘）</td>
+</tr>
+</tbody></table>
+<p>前端 <code>miniretro_gba.c</code> 本次<strong>未改动</strong>。</p>
+<p><strong>补刀线程的关键实现</strong>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> *<span class="title function_">gba_kill_later</span><span class="params">(<span class="type">void</span> *arg)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">pid_t</span> pid = (<span class="type">pid_t</span>)(<span class="type">intptr_t</span>)arg;</span><br><span class="line">    usleep(GBA_KILL_TIMEOUT_MS * <span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line">    pthread_mutex_lock(&amp;s_gba.lock);</span><br><span class="line">    <span class="type">bool</span> alive = (s_gba.child_pid == pid);      <span class="comment">/* wait 线程收尸后会置 -1 */</span></span><br><span class="line">    <span class="keyword">if</span>(alive &amp;&amp; kill(pid, <span class="number">0</span>) == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;[gba] 前端 %dms 未退出, 补 SIGKILL pid=%d\n&quot;</span>, GBA_KILL_TIMEOUT_MS, (<span class="type">int</span>)pid);</span><br><span class="line">        kill(pid, SIGKILL);</span><br><span class="line">    &#125;</span><br><span class="line">    pthread_mutex_unlock(&amp;s_gba.lock);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>为什么锁必须包住判断与补刀</strong>：wait 线程把 <code>child_pid</code> 置 <code>-1</code> 也在同一把锁内。若 wait 已收尸（<code>child_pid != pid</code>），补刀线程直接跳过 → 不会对已回收、可能被复用的 pid 下手；若还能取到 <code>child_pid == pid</code>，说明进程确实还没被收尸、确实活着 → 补刀正当。</p>
+<hr>
+<h2 id="5-自测（本次由-AI-实测通过）"><a href="#5-自测（本次由-AI-实测通过）" class="headerlink" title="5. 自测（本次由 AI 实测通过）"></a>5. 自测（本次由 AI 实测通过）</h2><p><strong>方法</strong>：设备上注入 uinput 按键导航（<code>LEFT×2 → DOWN×3 → ENTER×2</code>，走 <code>usb_map</code> 路径）进入《Advance Wars》，然后检查前端存活。</p>
+<p><strong>结果</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>检查项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>前端进程</td>
+<td><code>miniretro_gba</code> pid&#x3D;1780 <strong>仍在运行</strong>（距进入游戏已 1 分钟以上）</td>
+</tr>
+<tr>
+<td>fb 前台页</td>
+<td><code>yoffset=1280</code>（页 1）→ <strong>前端在正常翻页渲染</strong></td>
+</tr>
+<tr>
+<td>日志误杀痕迹</td>
+<td><code>grep -c &#39;未退出, 补 SIGKILL&#39;</code> &#x3D; <strong>0</strong></td>
+</tr>
+<tr>
+<td>游戏启动日志</td>
+<td><code>[miniretro] 游戏已加载 240x160, 59.73 fps</code> 完整</td>
+</tr>
+<tr>
+<td>画面</td>
+<td>截图拿到《Advance Wars》实际游戏地图 ✓</td>
+</tr>
+</tbody></table>
+<p><strong>结论</strong>：600ms 误杀已消除，游戏可正常进入并持续运行。</p>
+<blockquote>
+<p>注：注入键走 <code>usb_map</code>，测不出”按买单键退出”（物理码 116 不经过 <code>gba_key_intercept</code>），退出路径仍需用户实机手按确认。</p>
+</blockquote>
+<hr>
+<h2 id="6-「FC-为什么流畅、GBA-为什么不行」——差异表"><a href="#6-「FC-为什么流畅、GBA-为什么不行」——差异表" class="headerlink" title="6. 「FC 为什么流畅、GBA 为什么不行」——差异表"></a>6. 「FC 为什么流畅、GBA 为什么不行」——差异表</h2><p>这是用户反复问的核心问题，也是这条链路反复出错的根源。</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>FC（fceumm）</th>
+<th>GBA（mgba）</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>fb 多缓冲页翻转</strong></td>
+<td><strong>不翻页</strong>，固定写第 0 页</td>
+<td><strong>每帧 <code>FBIOPAN_DISPLAY</code> 在 0&#x2F;1 页间切</strong></td>
+<td>GBA 退出必须<strong>把页翻回 0</strong>，否则 LVGL（只画页 0）画的界面看不见 → 屏幕定格游戏画面</td>
+</tr>
+<tr>
+<td><strong>退出时落盘量</strong></td>
+<td><code>.sav</code> 小，收尾快</td>
+<td><code>.sav</code> 可达 32~128KB，真写 SD 卡可能数百 ms</td>
+<td>GBA 需要更长的”等它收尾”时间</td>
+</tr>
+<tr>
+<td><strong>等待放哪儿</strong></td>
+<td>按键线程里 <code>usleep(120ms)</code> 就够（前端 ~30ms 就退）</td>
+<td>若同样睡在按键线程，<strong>600ms 期间没人读 event0</strong> → 堆着的事件漏给 LVGL 变成”返回”键 → 本页被弹掉</td>
+<td>GBA 必须把等待挪出按键线程</td>
+</tr>
+<tr>
+<td><strong>收尸判据</strong></td>
+<td>阻塞 <code>waitpid</code>，从来没有超时</td>
+<td>曾被我加上 600ms 超时 → 变成”给游戏设寿命”</td>
+<td><strong>这就是本篇的 P0</strong></td>
+</tr>
+<tr>
+<td><strong>前端是否碰 fb 残留</strong></td>
+<td>不碰</td>
+<td>翻页 + （曾）整页 memcpy 定格</td>
+<td>决定”退出后画面由谁负责”</td>
+</tr>
+</tbody></table>
+<p><strong>一句话</strong>：FC 的前端<strong>不碰 framebuffer 的结构</strong>（不翻页、不拷页），所以它的退出只需要”杀进程 + 等收尸”；GBA 的前端<strong>改了 framebuffer 的显示状态</strong>（前台页），所以退出时<strong>必须有人负责把它改回去</strong>——多出来的这一份责任，如果图省事塞进”收尸线程”或”按键线程”，就会分别炸出”游戏进不去”和”退出卡画面”。</p>
+<hr>
+<h2 id="7-教训-反模式"><a href="#7-教训-反模式" class="headerlink" title="7. 教训 &#x2F; 反模式"></a>7. 教训 &#x2F; 反模式</h2><p><strong>新增反模式（已写入 <code>child-exit-hang-diagnosis</code> skill）：</strong></p>
+<blockquote>
+<p><strong>把「超时补刀」写进收尸线程 &#x3D; 变相给子进程设寿命。</strong><br>看起来是”给挂死留硬保证”，实际把判据从「子进程真的消失」偷偷换成了「N 毫秒到了」。<br>症状很有迷惑性：<strong>游戏&#x2F;程序”闪一下就没了”、”进不去”<strong>，而日志里收尸线程一切正常。<br>正解：</strong>补刀必须挂在一个”只在收到退出请求后才存在”的专职线程上</strong>，收尸路径永远只有一句<br>无上限的阻塞 <code>waitpid</code>。</p>
+</blockquote>
+<p><strong>其他：</strong></p>
+<ol>
+<li><strong>“判据只有一个硬事件”这条铁律必须落到代码上，不能只写在注释里。</strong> 本次我的注释写着”绝不设上限”，代码却在设上限。</li>
+<li><strong>回归的代价高于不修。</strong> bugfix 15 为了解决”偶发卡画面”（低概率、可容忍），引入了”完全进不去”（100%、不可用）。<strong>修概率性问题时，改动必须比问题本身更保守。</strong></li>
+<li><strong><code>EVIOCGRAB 请求释放</code> 到 <code>请求恢复独占</code> 之间的距离</strong>是一个很好用的诊断量：太短 &#x3D; 子进程被杀了（而不是自己退的）；太正常 &#x3D; 前端正常在跑。<strong>建议把这条写进排查清单。</strong></li>
+<li>静态校验比日志更快：<code>grep -c &#39;i &lt; 60&#39;</code>、<code>grep -c &#39;bool reaped&#39;</code> 归零就能确认”超时逻辑已彻底删除”。</li>
+</ol>
+<hr>
+<h2 id="8-改动文件清单"><a href="#8-改动文件清单" class="headerlink" title="8. 改动文件清单"></a>8. 改动文件清单</h2><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>lv_pages/gba_game_page.c</code></td>
+<td>A&#x2F;B&#x2F;C 三处改动；设备上备份 <code>.bak_exit3</code>（改前，坏的）、<code>.bak_exit2</code>（第 14 篇，能进游戏）</td>
+</tr>
+<tr>
+<td><code>ssh_tools/patch_gba_exit_v3.py</code></td>
+<td>补丁脚本（3 处替换，全部命中）</td>
+</tr>
+<tr>
+<td><code>ssh_tools/deploy_gba_exit_v3.py</code></td>
+<td>部署脚本（上传&#x2F;编译&#x2F;原子替换&#x2F;重启&#x2F;静态校验）</td>
+</tr>
+<tr>
+<td><code>ssh_tools/_tmp/alive_check.sh</code></td>
+<td>自测脚本（前端存活 + 前台页 + 误杀痕迹）</td>
+</tr>
+<tr>
+<td><code>_fc_ref/gba_game_page.c</code></td>
+<td>本地参照副本（同步为最新）</td>
+</tr>
+</tbody></table>
+<h2 id="提交说明（待用户确认）：fix-gba-恢复无上限阻塞收尸，超时补刀移到专职线程（修「游戏进不去」回归）"><a href="#提交说明（待用户确认）：fix-gba-恢复无上限阻塞收尸，超时补刀移到专职线程（修「游戏进不去」回归）" class="headerlink" title="提交说明（待用户确认）：fix(gba): 恢复无上限阻塞收尸，超时补刀移到专职线程（修「游戏进不去」回归）"></a><strong>提交说明（待用户确认）</strong>：<br><code>fix(gba): 恢复无上限阻塞收尸，超时补刀移到专职线程（修「游戏进不去」回归）</code></h2><blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-16-%E2%80%94-GBA%E3%80%8C%E6%94%B9%E5%AE%8C%E6%B8%B8%E6%88%8F%E9%83%BD%E8%BF%9B%E4%B8%8D%E5%8E%BB%E4%BA%86%E3%80%8D%EF%BC%9A%E6%8A%8A%E3%80%8C%E8%B6%85%E6%97%B6%E8%A1%A5%E5%88%80%E3%80%8D%E6%94%BE%E8%BF%9B%E6%94%B6%E5%B0%B8%E7%BA%BF%E7%A8%8B-%E7%BB%99%E6%B8%B8%E6%88%8F%E8%AE%BE%E4%BA%86-600ms-%E5%AF%BF%E5%91%BD"><span class="toc-number">1.</span> <span class="toc-text">bugfix 16 — GBA「改完游戏都进不去了」：把「超时补刀」放进收尸线程 &#x3D; 给游戏设了 600ms 寿命</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%8F%96%E8%AF%81%EF%BC%88%E5%86%B3%E5%AE%9A%E6%80%A7%E6%97%A5%E5%BF%97%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. 取证（决定性日志）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E8%87%AA%E6%B5%8B%EF%BC%88%E6%9C%AC%E6%AC%A1%E7%94%B1-AI-%E5%AE%9E%E6%B5%8B%E9%80%9A%E8%BF%87%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 自测（本次由 AI 实测通过）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E3%80%8CFC-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%B5%81%E7%95%85%E3%80%81GBA-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%A1%8C%E3%80%8D%E2%80%94%E2%80%94%E5%B7%AE%E5%BC%82%E8%A1%A8"><span class="toc-number">1.6.</span> <span class="toc-text">6. 「FC 为什么流畅、GBA 为什么不行」——差异表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E6%95%99%E8%AE%AD-%E5%8F%8D%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.7.</span> <span class="toc-text">7. 教训 &#x2F; 反模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E6%94%B9%E5%8A%A8%E6%96%87%E4%BB%B6%E6%B8%85%E5%8D%95"><span class="toc-number">1.8.</span> <span class="toc-text">8. 改动文件清单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8F%90%E4%BA%A4%E8%AF%B4%E6%98%8E%EF%BC%88%E5%BE%85%E7%94%A8%E6%88%B7%E7%A1%AE%E8%AE%A4%EF%BC%89%EF%BC%9Afix-gba-%E6%81%A2%E5%A4%8D%E6%97%A0%E4%B8%8A%E9%99%90%E9%98%BB%E5%A1%9E%E6%94%B6%E5%B0%B8%EF%BC%8C%E8%B6%85%E6%97%B6%E8%A1%A5%E5%88%80%E7%A7%BB%E5%88%B0%E4%B8%93%E8%81%8C%E7%BA%BF%E7%A8%8B%EF%BC%88%E4%BF%AE%E3%80%8C%E6%B8%B8%E6%88%8F%E8%BF%9B%E4%B8%8D%E5%8E%BB%E3%80%8D%E5%9B%9E%E5%BD%92%EF%BC%89"><span class="toc-number">1.9.</span> <span class="toc-text">提交说明（待用户确认）：fix(gba): 恢复无上限阻塞收尸，超时补刀移到专职线程（修「游戏进不去」回归）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&text=GBA游戏进不去_超时补刀误杀"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&title=GBA游戏进不去_超时补刀误杀"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&is_video=false&description=GBA游戏进不去_超时补刀误杀"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA游戏进不去_超时补刀误杀&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&title=GBA游戏进不去_超时补刀误杀"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&title=GBA游戏进不去_超时补刀误杀"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&title=GBA游戏进不去_超时补刀误杀"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&title=GBA游戏进不去_超时补刀误杀"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-16/&name=GBA游戏进不去_超时补刀误杀&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

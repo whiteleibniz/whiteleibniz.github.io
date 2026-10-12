@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="展讯 SC9832A Mali-400 —— 新应用接入操作手册 适用范围：要让一个新 App 用上 Mali-400 GPU。前提：Alpine&#x2F;musl 根系统 + mali.ko 已加载 + &#x2F;system 骨架就绪（由 &#x2F;etc&#x2F;local.d&#x2F;01_mali.start 自动准备）。校验时间：2026-09-30，实跑 &#x2F;root&#x2F;mali_check 全绿。   0. 一句话">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mali400_新应用接入操作手册">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="展讯 SC9832A Mali-400 —— 新应用接入操作手册 适用范围：要让一个新 App 用上 Mali-400 GPU。前提：Alpine&#x2F;musl 根系统 + mali.ko 已加载 + &#x2F;system 骨架就绪（由 &#x2F;etc&#x2F;local.d&#x2F;01_mali.start 自动准备）。校验时间：2026-09-30，实跑 &#x2F;root&#x2F;mali_check 全绿。   0. 一句话">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-30T09:52:17.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.751Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="GPU">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Mali400_新应用接入操作手册</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/30/mali-02-mali400-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/30/mali-05-mali400-wiki-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&text=Mali400_新应用接入操作手册"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&title=Mali400_新应用接入操作手册"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&is_video=false&description=Mali400_新应用接入操作手册"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_新应用接入操作手册&body=Check out this article: https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&title=Mali400_新应用接入操作手册"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&title=Mali400_新应用接入操作手册"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&title=Mali400_新应用接入操作手册"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&title=Mali400_新应用接入操作手册"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&name=Mali400_新应用接入操作手册&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-Mali-400-%E2%80%94%E2%80%94-%E6%96%B0%E5%BA%94%E7%94%A8%E6%8E%A5%E5%85%A5%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A Mali-400 —— 新应用接入操作手册</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%B5%81%E7%A8%8B"><span class="toc-number">1.1.</span> <span class="toc-text">0. 一句话流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%89%8D%E7%BD%AE%E6%A3%80%E6%9F%A5%EF%BC%88%E5%85%88%E7%9C%8B-GPU-%E6%98%AF%E5%90%A6%E5%B0%B1%E7%BB%AA%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 前置检查（先看 GPU 是否就绪）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%94%AF%E4%B8%80%E6%AD%A3%E7%A1%AE%E7%9A%84%E7%BC%96%E8%AF%91%E6%96%B9%E6%B3%95%EF%BC%88musl-gcc-%E2%86%92-bionic%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. 唯一正确的编译方法（musl gcc → bionic）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%BB%A3%E7%A0%81%E9%AA%A8%E6%9E%B6%EF%BC%88EGL-GLES2%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">3. 代码骨架（EGL + GLES2）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%B8%89%E7%A7%8D%E5%87%BA%E5%9B%BE%E6%A8%A1%E5%BC%8F%EF%BC%88%E6%8C%89%E9%9C%80%E6%B1%82%E9%80%89%E5%9E%8B%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 三种出图模式（按需求选型）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%A1%8C%E9%9D%A2%E5%9B%BE%E6%A0%87%E9%9B%86%E6%88%90%EF%BC%88%E8%AE%A9-App-%E8%83%BD%E8%A2%AB%E7%82%B9%E5%BC%80%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">5. 桌面图标集成（让 App 能被点开）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%BF%85%E5%AE%88%E7%9A%84%E5%9D%91%EF%BC%88%E8%A1%80%E6%B3%AA%E6%B8%85%E5%8D%95%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. 必守的坑（血泪清单）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E5%8F%82%E8%80%83%E6%96%87%E4%BB%B6%E6%B8%85%E5%8D%95%EF%BC%88%E7%85%A7%E6%8A%84%E5%AF%B9%E8%B1%A1%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">7. 参考文件清单（照抄对象）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Mali400_新应用接入操作手册
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-30T09:52:17.000Z" itemprop="datePublished">2026-09-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/GPU/" rel="tag">GPU</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="展讯-SC9832A-Mali-400-——-新应用接入操作手册"><a href="#展讯-SC9832A-Mali-400-——-新应用接入操作手册" class="headerlink" title="展讯 SC9832A Mali-400 —— 新应用接入操作手册"></a>展讯 SC9832A Mali-400 —— 新应用接入操作手册</h1><blockquote>
+<p>适用范围：要让一个<strong>新 App</strong> 用上 Mali-400 GPU。<br>前提：Alpine&#x2F;musl 根系统 + <code>mali.ko</code> 已加载 + <code>/system</code> 骨架就绪（由 <code>/etc/local.d/01_mali.start</code> 自动准备）。<br>校验时间：2026-09-30，实跑 <code>/root/mali_check</code> 全绿。</p>
+</blockquote>
+<hr>
+<h2 id="0-一句话流程"><a href="#0-一句话流程" class="headerlink" title="0. 一句话流程"></a>0. 一句话流程</h2><p><strong>新 App 用 GPU &#x3D; 编成 bionic 程序 → EGL pbuffer 拿上下文 → GLES2 画 → 按需要出图&#x2F;回读 →（可选）加桌面图标。</strong></p>
+<p>唯一要习惯的别扭点：必须用 <strong>musl gcc 编出一个跑 bionic 动态链接器的 ELF</strong>（详见 §2），因为 EGL&#x2F;GLES 库是安卓的。</p>
+<hr>
+<h2 id="1-前置检查（先看-GPU-是否就绪）"><a href="#1-前置检查（先看-GPU-是否就绪）" class="headerlink" title="1. 前置检查（先看 GPU 是否就绪）"></a>1. 前置检查（先看 GPU 是否就绪）</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">lsmod | grep mali                 <span class="comment"># 应有 mali 模块</span></span><br><span class="line"><span class="built_in">ls</span> -l /dev/mali0                  <span class="comment"># 设备节点要存在</span></span><br><span class="line"><span class="built_in">ls</span> -l /system/lib/libEGL.so /system/lib/libGLESv2.so /system/bin/linker</span><br><span class="line"><span class="built_in">timeout</span> -s TERM -k 2 10 /root/mali_check     <span class="comment"># ★ 一键验收工具，全绿才算就绪</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>必须看到（本机实测）</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/dev/mali0 : 可打开 ✔  |  mali 内核模块 : 已加载 ✔</span><br><span class="line">EGL_VENDOR : Android  | EGL_VERSION : 1.4 Android META-EGL</span><br><span class="line">1280x720 pbuffer + ES2 context : 就绪 ✔</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若缺 <code>mali.ko</code>：<code>insmod /lib/modules/mali.ko</code>；若缺 <code>/system</code> 骨架：由 <code>01_mali.start</code> 自动搭建（它还会造 <code>/dev/mali0</code> 等）。<br><code>WARNING: linker: unused DT entry / unsupported flags</code> 是<strong>无害</strong>警告，可忽略。</p>
+</blockquote>
+<hr>
+<h2 id="2-唯一正确的编译方法（musl-gcc-→-bionic）"><a href="#2-唯一正确的编译方法（musl-gcc-→-bionic）" class="headerlink" title="2. 唯一正确的编译方法（musl gcc → bionic）"></a>2. 唯一正确的编译方法（musl gcc → bionic）</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">gcc -O1 -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -I/usr/include \</span><br><span class="line">    -nostdlib -Wl,--entry=main -Wl,--dynamic-linker=/system/bin/linker -Wl,-rpath=/system/lib \</span><br><span class="line">    &lt;app&gt;.c /root/bionic_shim.o -L/system/lib \</span><br><span class="line">    -lEGL -lGLESv2 -lc -lm -ldl -lgcc -o &lt;app&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>必须遵守</strong>：</p>
+<ul>
+<li><code>-Wl,--entry=main</code>：<strong>缺了就崩</strong>（无 crt 时 ld 默认入口 &#x3D; <code>.text</code> 首字节）。</li>
+<li><code>-nostdlib</code> + <code>--dynamic-linker=/system/bin/linker</code> + <code>-rpath=/system/lib</code>：整套桥接三件套，缺一不可。</li>
+<li>链接 <code>/root/bionic_shim.o</code>（已存在，10592 B），补 musl↔bionic ABI 差异。</li>
+</ul>
+<p><strong>编完自检（必须为空）</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nm -D &lt;app&gt; | grep -E <span class="string">&#x27; (mmap|munmap|lseek|fseeko|ftello|ftruncate|open|close)$&#x27;</span>   <span class="comment"># 应无输出</span></span><br></pre></td></tr></table></figure>
+<p>有输出 &#x3D; exe 导出了 shim 符号 → 依赖库会绑走 musl-ABI 的 <code>mmap</code> 导致<strong>死循环</strong>。</p>
+<hr>
+<h2 id="3-代码骨架（EGL-GLES2）"><a href="#3-代码骨架（EGL-GLES2）" class="headerlink" title="3. 代码骨架（EGL + GLES2）"></a>3. 代码骨架（EGL + GLES2）</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;EGL/egl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;GLES2/gl2.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">EGLDisplay dpy; EGLSurface surf; EGLContext ctx;</span><br><span class="line"></span><br><span class="line">EGLint cfg_attr[] = &#123;</span><br><span class="line">    EGL_SURFACE_TYPE,    EGL_PBUFFER_BIT,        <span class="comment">/* ★ 必须 pbuffer */</span></span><br><span class="line">    EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,     <span class="comment">/* ★ ES2 */</span></span><br><span class="line">    EGL_RED_SIZE, <span class="number">8</span>, EGL_GREEN_SIZE, <span class="number">8</span>, EGL_BLUE_SIZE, <span class="number">8</span>, EGL_ALPHA_SIZE, <span class="number">8</span>,</span><br><span class="line">    EGL_DEPTH_SIZE, <span class="number">16</span>,                          <span class="comment">/* 3D 场景才需要 */</span></span><br><span class="line">    EGL_NONE</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">dpy  = eglGetDisplay(EGL_DEFAULT_DISPLAY);</span><br><span class="line">eglInitialize(dpy, &amp;major, &amp;minor);              <span class="comment">/* 实测 EGL 1.4 */</span></span><br><span class="line">eglChooseConfig(dpy, cfg_attr, &amp;cfg, <span class="number">1</span>, &amp;n);</span><br><span class="line">eglCreatePbufferSurface(dpy, cfg, (EGLint[])&#123;EGL_WIDTH, RW, EGL_HEIGHT, RH, EGL_NONE&#125;);</span><br><span class="line">eglCreateContext(dpy, cfg, EGL_NO_CONTEXT, (EGLint[])&#123;EGL_CONTEXT_CLIENT_VERSION, <span class="number">2</span>, EGL_NONE&#125;);</span><br><span class="line">eglMakeCurrent(dpy, surf, surf, ctx);</span><br><span class="line">glViewport(<span class="number">0</span>, <span class="number">0</span>, RW, RH);</span><br><span class="line"></span><br><span class="line"><span class="comment">/* ... 建 shader、上传顶点、每帧 draw ... */</span></span><br><span class="line"></span><br><span class="line">glFinish();            <span class="comment">/* 计时用；本帧 GPU 真正画完 */</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>要点</strong></p>
+<ul>
+<li>本机像素格式实测：<strong>RGBA 8888</strong>（<code>R8 G8 B8 A8</code>），带深度时 cfg 报 <code>depth=24 stencil=8 samples=0</code>。</li>
+<li><strong>内部分辨率尽量小</strong>：<code>glReadPixels</code> 只有 <strong>~55MB&#x2F;s</strong>，成本 ∝ 像素数（720p 约 68ms，480x272 约 9.3ms）。推荐内部 360x640、<code>scale_to_fb</code> 放大到 720x1280 —— 这是提帧率<strong>最有效</strong>的杠杆。</li>
+<li>全屏四边形：<code>glDrawArrays(GL_TRIANGLE_STRIP,0,4)</code> 在本机<strong>画不出东西</strong>，必须用 <code>glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_SHORT,idx)</code>。</li>
+</ul>
+<hr>
+<h2 id="4-三种出图模式（按需求选型）"><a href="#4-三种出图模式（按需求选型）" class="headerlink" title="4. 三种出图模式（按需求选型）"></a>4. 三种出图模式（按需求选型）</h2><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>做法</th>
+<th>适用</th>
+<th>注意事项</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>A 离屏 &#x2F; 跑分 &#x2F; 滤镜</strong></td>
+<td>pbuffer 渲染 → <code>glFinish()</code> 计时 →（可选）<code>glReadPixels</code> 存盘</td>
+<td>评测、GPU 计算、不需要实时出图</td>
+<td><strong>评分不受回读影响</strong>（计时只算 render+finish）</td>
+</tr>
+<tr>
+<td><strong>B 全屏独占出图到屏幕</strong></td>
+<td>渲染 → 回读 → <code>scale</code>&#x2F;<code>rotate90</code> → <code>mmap(/dev/fb0)</code> 写帧 → <code>FBIOPAN</code> 翻页；<strong>退出无条件归位第 0 页</strong></td>
+<td>模拟器&#x2F;播放器&#x2F;全屏 App</td>
+<td>⚠️ 见下方”回读坑”</td>
+</tr>
+<tr>
+<td><strong>C 软件备胎</strong></td>
+<td>Mesa 软渲（不用 Mali）</td>
+<td>兜底&#x2F;调试对照</td>
+<td>非 GPU，性能差 1~2 个量级</td>
+</tr>
+</tbody></table>
+<p><strong>⚠️ 回读坑（本机最致命）</strong>：pbuffer 的 <code>glReadPixels</code> <strong>不可靠</strong>——纯 clear 或普通 2D 四边形回读会变成<strong>全黑&#x2F;陈旧红</strong>，只有带深度的大网格（TERRAIN）偶发正确。已验证<strong>四种办法均无效</strong>：改 FBO 离屏渲染 &#x2F; 去掉 <code>glFinish</code> &#x2F; 加 <code>eglSwapBuffers</code> &#x2F; 全局开深度。根因是 Mali <strong>TBDR 惰性解析</strong> + pbuffer 回读路径缺陷。</p>
+<p><strong>对策</strong>：</p>
+<ul>
+<li>要出图 → <strong>照抄已成功出图的实现</strong>：<code>_tmp/miniretro_psp_hw.c</code> 的显示段（pbuffer → 回读 → <code>scale_rotate90</code> → <code>FBIOPAN</code>，实测 <strong>34~38fps 出图</strong>）。它靠 PPSSPP 核心内部 flush 才触发解析，是目前本机<strong>唯一真出过图</strong>的路线。</li>
+<li>HUD &#x2F; 文字 &#x2F; 帧率：<strong>CPU 直写 fb 必然可见</strong>，不受回读影响 → 场景区用 GPU、文字叠加用 CPU，是当下<strong>最稳的组合</strong>。</li>
+<li>若将来要彻底解决：见《Mali400_摆脱安卓可行性分析》方案①&#x2F;②（换 Linux DDK 或 Mesa Lima + 补 DRM）。</li>
+</ul>
+<hr>
+<h2 id="5-桌面图标集成（让-App-能被点开）"><a href="#5-桌面图标集成（让-App-能被点开）" class="headerlink" title="5. 桌面图标集成（让 App 能被点开）"></a>5. 桌面图标集成（让 App 能被点开）</h2><p><strong>关键事实</strong>：外部 <code>app.ini</code> 机制<strong>只有扫描、没有点击分支</strong>；要能点，必须改 launcher 内置数组。</p>
+<ol>
+<li>编辑设备端 <code>/home/lvgl_demo/lvgl_demo/lv_pages/launcher_page.c</code> 的内置 **<code>s_apps[]</code>**，加入新条目（图标&#x2F;名称&#x2F;命令）。</li>
+<li>拉起全屏外部程序照抄 <code>psp_game_page.c</code> 的范式：<strong>暂停 LVGL → 释放输入 grab → 拦截器 → wait 子线程 → 退出时无条件 <code>FBIOPAN</code> 归位第 0 页</strong>（幂等，否则桌面回不来）。</li>
+<li>重新 <code>make</code> 部署 lvgl_demo。</li>
+<li><strong>省事捷径</strong>：现有的 <code>GPUTEST_BIN</code> 入口已硬编码为 <code>/usr/local/bin/gpu_test</code>，把它<strong>软链</strong>到你的 App 即可沿用现有图标入口（本次 gpu_bench 就是这么接上的）：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ln</span> -sf /usr/local/bin/&lt;app&gt; /usr/local/bin/gpu_test</span><br></pre></td></tr></table></figure></li>
+<li>⚠️ <strong>调试前先停 watchdog</strong>（每 5s 拉起 lvgl_demo），否则改完被立刻覆盖。</li>
+</ol>
+<hr>
+<h2 id="6-必守的坑（血泪清单）"><a href="#6-必守的坑（血泪清单）" class="headerlink" title="6. 必守的坑（血泪清单）"></a>6. 必守的坑（血泪清单）</h2><table>
+<thead>
+<tr>
+<th>#</th>
+<th>坑</th>
+<th>症状</th>
+<th>规避</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>缺 <code>-Wl,--entry=main</code></td>
+<td>一跑就崩</td>
+<td>构建命令里必须有</td>
+</tr>
+<tr>
+<td>2</td>
+<td>exe 导出 shim 符号</td>
+<td><code>mmap</code> 被绑到 musl-ABI → <strong>死循环</strong></td>
+<td>shim 用 <code>-fvisibility=hidden</code> 编译（不能用 <code>#pragma</code>）</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>__dlsym_time64</code> 自引用</td>
+<td>musl 把 <code>dlsym</code> 重定向回它 → <code>b .</code> 死循环</td>
+<td>用 <code>__asm__(&quot;dlsym&quot;)</code> 绕过</td>
+</tr>
+<tr>
+<td>4</td>
+<td>用 <code>thread_local</code></td>
+<td>bionic 不认 TLS reloc</td>
+<td>去掉；已用 <code>_patchtls.py</code> 改过的 core 需重新打 patch</td>
+</tr>
+<tr>
+<td>5</td>
+<td>全局构造器做重活</td>
+<td>构造期崩溃；<strong>清零构造 &#x3D; 自杀</strong>（RELATIVE 把 0 变 ELF 头 → 调魔数 SIGILL）</td>
+<td>构造指向无害函数；必要时源码级短路（如 ArmCPUDetect）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>用 <code>printf</code> 输出诊断</td>
+<td>abort 时缓冲区丢失，<strong>看不到现场</strong></td>
+<td>用 <code>write(1,...)</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>用 <code>ps -o pid,comm</code> 判活</td>
+<td>PPSSPP 会把主线程名改成 <code>&#123;Main&#125;</code> → <strong>必然漏判</strong>（曾攒 7 个僵尸实例堆满 CPU）</td>
+<td>一律看 <code>/proc/&lt;pid&gt;/cmdline</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>重链后不打补丁</td>
+<td>core 崩溃 &#x2F; TLS 错</td>
+<td><code>ppsspp</code> 类 core 重链后需重打：<code>.py</code>(libpng&#x2F;z) + TLS + ctor patch（地址随链接漂移，<code>nm</code> 复查）</td>
+</tr>
+<tr>
+<td>9</td>
+<td>libretro 前端漏调 <code>context_reset()</code></td>
+<td><code>draw_=NULL</code> → DrawEngineGLES ctor 段错误</td>
+<td>必须在 <code>av_info</code> 之后调用</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-参考文件清单（照抄对象）"><a href="#7-参考文件清单（照抄对象）" class="headerlink" title="7. 参考文件清单（照抄对象）"></a>7. 参考文件清单（照抄对象）</h2><table>
+<thead>
+<tr>
+<th>用途</th>
+<th>文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GPU 就绪自检</td>
+<td><code>/root/mali_check</code>（源 <code>ssh_tools/mali_check.c</code>）</td>
+<td>一键验收，先跑它</td>
+</tr>
+<tr>
+<td>跑分&#x2F;多场景&#x2F;HUD 完整骨架</td>
+<td><code>/root/gpu_bench.c</code>（<code>ssh_tools/gpu_bench.c</code>）</td>
+<td>5 场景 + 实时 fps + 结果页 + <code>fb_restore()</code>，最适合当 App 模板</td>
+</tr>
+<tr>
+<td><strong>唯一真出图的全屏管线</strong></td>
+<td><code>_tmp/miniretro_psp_hw.c</code></td>
+<td>回读→<code>scale_rotate90</code>→<code>FBIOPAN</code>，实测 34~38fps</td>
+</tr>
+<tr>
+<td>bionic 桥</td>
+<td><code>/root/bionic_shim.o</code>（源 <code>bionic_shim.cpp</code>）</td>
+<td>编译必须链接</td>
+</tr>
+<tr>
+<td>部署&#x2F;构建脚本</td>
+<td><code>ssh_tools/deploy_bench2.py</code></td>
+<td>上传→编译→原子替换→软链，照改即可</td>
+</tr>
+<tr>
+<td>图标入口</td>
+<td><code>ssh_tools/patch_launcher_gputest.py</code></td>
+<td><code>GPUTEST_BIN</code> 入口 + fork&#x2F;exec&#x2F;等待&#x2F;归位范式</td>
+</tr>
+<tr>
+<td>故障排查</td>
+<td><code>ssh_tools/mali400_docs/Mali400_故障排查手册.md</code></td>
+<td>分层速查</td>
+</tr>
+<tr>
+<td>摆脱安卓</td>
+<td><code>ssh_tools/mali400_docs/Mali400_摆脱安卓可行性分析.md</code></td>
+<td>回读坑的根因与出路</td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-Mali-400-%E2%80%94%E2%80%94-%E6%96%B0%E5%BA%94%E7%94%A8%E6%8E%A5%E5%85%A5%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A Mali-400 —— 新应用接入操作手册</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%B5%81%E7%A8%8B"><span class="toc-number">1.1.</span> <span class="toc-text">0. 一句话流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%89%8D%E7%BD%AE%E6%A3%80%E6%9F%A5%EF%BC%88%E5%85%88%E7%9C%8B-GPU-%E6%98%AF%E5%90%A6%E5%B0%B1%E7%BB%AA%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 前置检查（先看 GPU 是否就绪）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%94%AF%E4%B8%80%E6%AD%A3%E7%A1%AE%E7%9A%84%E7%BC%96%E8%AF%91%E6%96%B9%E6%B3%95%EF%BC%88musl-gcc-%E2%86%92-bionic%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. 唯一正确的编译方法（musl gcc → bionic）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%BB%A3%E7%A0%81%E9%AA%A8%E6%9E%B6%EF%BC%88EGL-GLES2%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">3. 代码骨架（EGL + GLES2）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%B8%89%E7%A7%8D%E5%87%BA%E5%9B%BE%E6%A8%A1%E5%BC%8F%EF%BC%88%E6%8C%89%E9%9C%80%E6%B1%82%E9%80%89%E5%9E%8B%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 三种出图模式（按需求选型）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%A1%8C%E9%9D%A2%E5%9B%BE%E6%A0%87%E9%9B%86%E6%88%90%EF%BC%88%E8%AE%A9-App-%E8%83%BD%E8%A2%AB%E7%82%B9%E5%BC%80%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">5. 桌面图标集成（让 App 能被点开）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%BF%85%E5%AE%88%E7%9A%84%E5%9D%91%EF%BC%88%E8%A1%80%E6%B3%AA%E6%B8%85%E5%8D%95%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. 必守的坑（血泪清单）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E5%8F%82%E8%80%83%E6%96%87%E4%BB%B6%E6%B8%85%E5%8D%95%EF%BC%88%E7%85%A7%E6%8A%84%E5%AF%B9%E8%B1%A1%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">7. 参考文件清单（照抄对象）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&text=Mali400_新应用接入操作手册"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&title=Mali400_新应用接入操作手册"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&is_video=false&description=Mali400_新应用接入操作手册"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_新应用接入操作手册&body=Check out this article: https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&title=Mali400_新应用接入操作手册"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&title=Mali400_新应用接入操作手册"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&title=Mali400_新应用接入操作手册"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&title=Mali400_新应用接入操作手册"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/30/mali-04-mali400-md/&name=Mali400_新应用接入操作手册&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

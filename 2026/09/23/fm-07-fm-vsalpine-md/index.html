@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="展讯 SC9832A FM 收音启动流程 —— 安卓 vs Alpine（本设备）对比 读者对象：需要理解”为什么我们在 Alpine 上要这么干”的人核心价值：安卓原生有一整套框架，我们在 Alpine 上要用尽量少的代码替换它——本文把两边的每个环节对齐，让你清楚哪一段被我们替掉了、替代的依据是什么   1. 芯片物理架构（两种系统共用）无论安卓还是 Alpine，底下三层完全一样，这是能互相">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM收音启动流程_安卓vsAlpine对比">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="展讯 SC9832A FM 收音启动流程 —— 安卓 vs Alpine（本设备）对比 读者对象：需要理解”为什么我们在 Alpine 上要这么干”的人核心价值：安卓原生有一整套框架，我们在 Alpine 上要用尽量少的代码替换它——本文把两边的每个环节对齐，让你清楚哪一段被我们替掉了、替代的依据是什么   1. 芯片物理架构（两种系统共用）无论安卓还是 Alpine，底下三层完全一样，这是能互相">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.685Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM收音启动流程_安卓vsAlpine对比</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/fm-06-fm-ioctl-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&text=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&title=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&is_video=false&description=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音启动流程_安卓vsAlpine对比&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&title=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&title=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&title=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&title=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&name=FM收音启动流程_安卓vsAlpine对比&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-FM-%E6%94%B6%E9%9F%B3%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B-%E2%80%94%E2%80%94-%E5%AE%89%E5%8D%93-vs-Alpine%EF%BC%88%E6%9C%AC%E8%AE%BE%E5%A4%87%EF%BC%89%E5%AF%B9%E6%AF%94"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A FM 收音启动流程 —— 安卓 vs Alpine（本设备）对比</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%8A%AF%E7%89%87%E7%89%A9%E7%90%86%E6%9E%B6%E6%9E%84%EF%BC%88%E4%B8%A4%E7%A7%8D%E7%B3%BB%E7%BB%9F%E5%85%B1%E7%94%A8%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1. 芯片物理架构（两种系统共用）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AE%89%E5%8D%93-6-0-%E5%8E%9F%E7%94%9F-FM-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">2. 安卓 6.0 原生 FM 启动流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E5%90%AF%E5%8A%A8%E9%93%BE"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 启动链</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E5%AE%89%E5%8D%93%E5%85%B3%E9%94%AE%E7%82%B9"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 安卓关键点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Alpine%EF%BC%88%E6%9C%AC%E8%AE%BE%E5%A4%87%EF%BC%89FM-%E6%96%B9%E6%A1%88"><span class="toc-number">1.3.</span> <span class="toc-text">3. Alpine（本设备）FM 方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E7%9B%AE%E6%A0%87%EF%BC%9A%E7%94%A8%E6%9C%80%E5%B0%91%E4%BB%A3%E7%A0%81%E6%9B%BF%E6%8D%A2%E4%B8%80%E6%95%B4%E5%A5%97"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 目标：用最少代码替换一整套</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%8B%9F%E5%AE%9A%E7%9A%84%E5%90%AF%E5%8A%A8%E9%93%BE"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 拟定的启动链</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-Alpine-%E4%BE%A7%E7%9A%84%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 Alpine 侧的对应关系</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%80%90%E7%8E%AF%E8%8A%82%E5%AF%B9%E6%AF%94%E8%A1%A8"><span class="toc-number">1.4.</span> <span class="toc-text">4. 逐环节对比表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%8E%9F%E7%90%86%E8%A6%81%E7%82%B9%EF%BC%88%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E6%A0%B7%E8%83%BD%E9%80%9A%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 原理要点（为什么这样能通）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93"><span class="toc-number">1.6.</span> <span class="toc-text">6. 一句话总结</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM收音启动流程_安卓vsAlpine对比
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="展讯-SC9832A-FM-收音启动流程-——-安卓-vs-Alpine（本设备）对比"><a href="#展讯-SC9832A-FM-收音启动流程-——-安卓-vs-Alpine（本设备）对比" class="headerlink" title="展讯 SC9832A FM 收音启动流程 —— 安卓 vs Alpine（本设备）对比"></a>展讯 SC9832A FM 收音启动流程 —— 安卓 vs Alpine（本设备）对比</h1><blockquote>
+<p><strong>读者对象</strong>：需要理解”为什么我们在 Alpine 上要这么干”的人<br><strong>核心价值</strong>：安卓原生有一整套框架，我们在 Alpine 上要用尽量少的代码替换它——本文把两边的每个环节对齐，<br>让你清楚<strong>哪一段被我们替掉了、替代的依据是什么</strong></p>
+</blockquote>
+<hr>
+<h2 id="1-芯片物理架构（两种系统共用）"><a href="#1-芯片物理架构（两种系统共用）" class="headerlink" title="1. 芯片物理架构（两种系统共用）"></a>1. 芯片物理架构（两种系统共用）</h2><p>无论安卓还是 Alpine，<strong>底下三层完全一样</strong>，这是能互相对照的前提：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">┌─ 硬件层   Marlin2 combo 芯片，SDIO vendor 0x0000 / device 0x2331</span><br><span class="line">│            WiFi + BT + FM 三合一，共享 SDIO 总线</span><br><span class="line">├─ 固件层   download 一次性烧入 combo 固件（含 FM 部分）</span><br><span class="line">├─ 驱动层   marlin_fm.ko → 注册 misc 设备 /dev/fm（minor 23）</span><br><span class="line">│</span><br><span class="line">│  ← 以下开始分道扬镳 →</span><br></pre></td></tr></table></figure>
+
+<p><strong>实测取值</strong>（<code>spd-box</code>，本机）：</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SDIO modalias</td>
+<td><code>sdio:c00v0000d2331</code></td>
+</tr>
+<tr>
+<td>FM 驱动</td>
+<td><code>marlin_fm</code>（<code>Used by sprdwl</code>）</td>
+</tr>
+<tr>
+<td>FM 设备节点</td>
+<td><code>/dev/fm</code>（misc 23）、<code>/dev/log_radio</code>（misc 35）</td>
+</tr>
+<tr>
+<td>FM PCM</td>
+<td><code>01-04: Dfm sprd-codec-fm-4</code>（playback）</td>
+</tr>
+<tr>
+<td>内核</td>
+<td>Linux 3.10.65</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>驱动自述：<code>SDIO radio driver for marlin2 FM Radio Receivers, share SDIO with BT/WIFI</code><br>——这句话在两种系统下都成立，是分析共享资源问题的出发点。</p>
+</blockquote>
+<hr>
+<h2 id="2-安卓-6-0-原生-FM-启动流程"><a href="#2-安卓-6-0-原生-FM-启动流程" class="headerlink" title="2. 安卓 6.0 原生 FM 启动流程"></a>2. 安卓 6.0 原生 FM 启动流程</h2><h3 id="2-1-启动链"><a href="#2-1-启动链" class="headerlink" title="2.1 启动链"></a>2.1 启动链</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">开机</span><br><span class="line"> └─ init / ueventd</span><br><span class="line">     ├─ insmod sprdwl.ko → 连带 marlin_fm.ko</span><br><span class="line">     ├─ download（与 WiFi 共用，烧 combo 固件）</span><br><span class="line">     ├─ wcnd（WiFi/蓝牙/FM 统一的上电管理）</span><br><span class="line">     └─ SystemServer</span><br><span class="line">         └─ BroadcastRadioService</span><br><span class="line">             └─ 加载 FM HAL</span><br><span class="line">                 ├─ libradio.so / libradioservice.so（HAL 接口）</span><br><span class="line">                 ├─ libFMHalSource.so（音频源，起线程从 PCM 读）</span><br><span class="line">                 ├─ libfmjni.so（JNI 桥）</span><br><span class="line">                 └─ libengfm.so（工程模式，只导出 fm_runcommand）</span><br><span class="line">                     └─ 打开 /dev/fm，发命令</span><br><span class="line">         └─ FM App（radio_interactor_service.apk 等）</span><br><span class="line">             └─ AudioFlinger ← FMHalSource → TinyALSA → PCM</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2-安卓关键点"><a href="#2-2-安卓关键点" class="headerlink" title="2.2 安卓关键点"></a>2.2 安卓关键点</h3><table>
+<thead>
+<tr>
+<th>环节</th>
+<th>安卓的做法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>权限&#x2F;访问控制</strong></td>
+<td>SELinux + 设备节点权限，<code>/dev/fm</code> 只允许 radio 组访问</td>
+</tr>
+<tr>
+<td><strong>音频路由</strong></td>
+<td><code>FMHalSource</code> 持 <code>pcmHandle</code>，<code>FMHalThread::threadLoop()</code> 读 PCM → <code>RingBuffer</code> → AudioFlinger 混音</td>
+</tr>
+<tr>
+<td><strong>状态管理</strong></td>
+<td><code>BroadcastRadioService</code> 统一管理 radios，向 App 提供 <code>RadioManager</code> API</td>
+</tr>
+<tr>
+<td><strong>RDS 处理</strong></td>
+<td>HAL 内部解析（<code>rds_parser</code> 在驱动或 HAL 侧），经 <code>RadioMetadata</code> 上报给 App</td>
+</tr>
+<tr>
+<td><strong>多 App 竞争</strong></td>
+<td>服务层统一仲裁，App 通过 API client 使用</td>
+</tr>
+<tr>
+<td><strong>中间层厚度</strong></td>
+<td>很厚：App → RadioManager → BroadcastRadioService → JNI → HAL → &#x2F;dev&#x2F;fm</td>
+</tr>
+</tbody></table>
+<p><strong>证据来源</strong>（本机可从 Android 分区直接读到）：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ls</span> /mnt/android_sys/lib/&#123;libFMHalSource,libengfm,libfmjni,libradio,libradioservice&#125;.so</span><br><span class="line"><span class="built_in">ls</span> /mnt/android_sys/priv-app/radio_interactor_service/radio_interactor_service.apk</span><br><span class="line">nm -D /mnt/android_sys/lib/libengfm.so                 <span class="comment"># 只有 fm_runcommand</span></span><br><span class="line">nm -D /mnt/android_sys/lib/libFMHalSource.so | grep -i <span class="string">&#x27;pcm\|thread\|RingBuffer&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="3-Alpine（本设备）FM-方案"><a href="#3-Alpine（本设备）FM-方案" class="headerlink" title="3. Alpine（本设备）FM 方案"></a>3. Alpine（本设备）FM 方案</h2><h3 id="3-1-目标：用最少代码替换一整套"><a href="#3-1-目标：用最少代码替换一整套" class="headerlink" title="3.1 目标：用最少代码替换一整套"></a>3.1 目标：用最少代码替换一整套</h3><p>我们在 Alpine 上<strong>没有</strong> binder &#x2F; SystemServer &#x2F; AudioFlinger &#x2F; SELinux radio 策略。<br>所以要替换的是第 ④、⑤ 两层，<strong>保留 ①–③ 层原样</strong>。</p>
+<h3 id="3-2-拟定的启动链"><a href="#3-2-拟定的启动链" class="headerlink" title="3.2 拟定的启动链"></a>3.2 拟定的启动链</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">开机</span><br><span class="line"> └─ openrc</span><br><span class="line">     ├─ sprdwl.ko → marlin_fm.ko（继承现有 WiFi 链路）</span><br><span class="line">     ├─ logdw</span><br><span class="line">     ├─ download（烧 combo 固件，含 FM）        ← 复用既有</span><br><span class="line">     ├─ wcnd（上电）                            ← 复用既有</span><br><span class="line">     ├─ bt_once(BT-OPEN) → bt_wake.sh           ← 复用既有</span><br><span class="line">     ├─ bt_user_daemon  /tmp/bt_ctl.sock        ← 复用既有</span><br><span class="line">     ├─ fm_radio_daemon /tmp/fm_ctl.sock        ← 【新增】替换安卓整套中间层</span><br><span class="line">     └─ lvgl_demo → 收音机页 g_radio_page        ← 【新增】替换安卓 FM App</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-Alpine-侧的对应关系"><a href="#3-3-Alpine-侧的对应关系" class="headerlink" title="3.3 Alpine 侧的对应关系"></a>3.3 Alpine 侧的对应关系</h3><table>
+<thead>
+<tr>
+<th>安卓组件</th>
+<th>Alpine 替代方案</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>insmod + 节点权限</td>
+<td>继承既有 WiFi 链路，无需额外动作</td>
+<td><code>/dev/fm</code> 已可用</td>
+</tr>
+<tr>
+<td>BroadcastRadioService</td>
+<td><strong>无</strong></td>
+<td>用 daemon 的单实例互斥代替服务层仲裁</td>
+</tr>
+<tr>
+<td>FM HAL (<code>libFMHalSource.so</code>)</td>
+<td><strong><code>fm_radio_daemon</code> 内的音频线程</strong></td>
+<td>逻辑同构：读 PCM → 缓冲 → 输出</td>
+</tr>
+<tr>
+<td>JNI &#x2F; <code>libfmjni.so</code></td>
+<td><strong>无</strong></td>
+<td>UI 与 daemon 之间用 unix socket 文本协议</td>
+</tr>
+<tr>
+<td><code>libengfm.so</code>(<code>fm_runcommand</code>)</td>
+<td><strong>自己实现命令封装</strong></td>
+<td>提示可采用 AT 命令风格</td>
+</tr>
+<tr>
+<td>RadioManager API</td>
+<td><strong>socket 文本命令</strong></td>
+<td>命令少、好调试、和蓝牙 daemon 一致</td>
+</tr>
+<tr>
+<td>AudioFlinger 混音&#x2F;焦点</td>
+<td><strong>自己写音频焦点仲裁</strong></td>
+<td>必须做，否则 FM&#x2F;A2DP&#x2F;本地会串音</td>
+</tr>
+<tr>
+<td>FM App (APK)</td>
+<td><strong>LVGL <code>radio_page</code></strong></td>
+<td>720×1280 竖屏，31px 行高网格</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-逐环节对比表"><a href="#4-逐环节对比表" class="headerlink" title="4. 逐环节对比表"></a>4. 逐环节对比表</h2><table>
+<thead>
+<tr>
+<th>环节</th>
+<th>安卓</th>
+<th>Alpine（本机）</th>
+<th>差异要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>固件下载</strong></td>
+<td>download in init</td>
+<td>download via openrc</td>
+<td>基本相同；Alpine 依赖 WiFi 自启链</td>
+</tr>
+<tr>
+<td><strong>上电管理</strong></td>
+<td>wcnd 统一管理</td>
+<td>wcnd 同上</td>
+<td>相同</td>
+</tr>
+<tr>
+<td><strong>驱动加载</strong></td>
+<td>insmod sprdwl → marlin_fm</td>
+<td>同（自动加载）</td>
+<td>注意 <code>marlin_fm</code> 被 <code>sprdwl</code> 依赖</td>
+</tr>
+<tr>
+<td><strong>设备节点</strong></td>
+<td><code>/dev/fm</code>（受限访问）</td>
+<td><code>/dev/fm</code>（misc 23）</td>
+<td>Alpine 下 root 直连，无 SELinux 约束</td>
+</tr>
+<tr>
+<td><strong>命令接口</strong></td>
+<td>HAL 封装 ioctl&#x2F;AT</td>
+<td>daemon 直发</td>
+<td><strong>命令号已逆向还原</strong>（<code>0xC004F500 | nr</code>，47 条）</td>
+</tr>
+<tr>
+<td><strong>音频源</strong></td>
+<td><code>FMHalSource</code> + <code>FMHalThread</code> + RingBuffer</td>
+<td>daemon 自建读线程</td>
+<td>架构同构，实现从简</td>
+</tr>
+<tr>
+<td><strong>音频混音</strong></td>
+<td>AudioFlinger</td>
+<td><strong>需自建焦点仲裁</strong></td>
+<td>安卓由框架兜底，Alpine 必须自己写</td>
+</tr>
+<tr>
+<td><strong>RDS 上报</strong></td>
+<td><code>RadioMetadata</code> → App</td>
+<td>socket 文本字段</td>
+<td>RDS 解析能力驱动里已有，直接取</td>
+</tr>
+<tr>
+<td><strong>UI</strong></td>
+<td>APK + 完整 FM App</td>
+<td>LVGL 收音机页</td>
+<td>受限于 MCU 级资源，按 720×1280 精简设计</td>
+</tr>
+<tr>
+<td><strong>多 App 竞争</strong></td>
+<td>服务层仲裁</td>
+<td><strong>单 daemon 独占 + 上层仲裁</strong></td>
+<td>简单但够用</td>
+</tr>
+<tr>
+<td><strong>命令行工具</strong></td>
+<td><code>amixer</code>&#x2F;<code>tinymix</code>&#x2F;<code>tinyplay</code>（安卓自带）</td>
+<td><strong>全部没有</strong></td>
+<td>只能写 C 走 libasound.so.2</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-原理要点（为什么这样能通）"><a href="#5-原理要点（为什么这样能通）" class="headerlink" title="5. 原理要点（为什么这样能通）"></a>5. 原理要点（为什么这样能通）</h2><ol>
+<li><p><strong>组合芯片共享 SDIO 是关键约束</strong>：<br>固件一次烧入、上电统一管理，所以<strong>不可能单独给 FM 烧固件或单独上电</strong>。<br>这也是”WiFi 不通 ⇒ FM 一定不通”的根因。</p>
+</li>
+<li><p><strong>驱动已经把复杂的射频&#x2F;解调&#x2F;RDS 全做完了</strong>：<br>用户态不需要实现任何 FM 协议，只需要按命令集操作。<br>所以 Alpine 侧用”一个薄 daemon”替代安卓”一整套 HAL+服务+JNI”是可行的。</p>
+</li>
+<li><p><strong>音频是唯一必须自己补的框架能力</strong>：<br>安卓有 AudioFlinger 做混音与焦点管理；Alpine 侧没有任何东西负责这件事，<br><strong>必须显式实现 FM &#x2F; A2DP &#x2F; 本地播放的三方仲裁</strong>，否则用户必定遇到串音。</p>
+</li>
+<li><p><strong>socket 文本协议是刻意的选择</strong>：<br>与既有蓝牙 daemon（<code>/tmp/bt_ctl.sock</code>，<code>state</code>&#x2F;<code>on</code>&#x2F;<code>off</code>）保持一致，<br>团队已有认知、已有踩坑经验（尤其是”必须设 socket 超时，否则冻 UI”）。</p>
+</li>
+</ol>
+<hr>
+<h2 id="6-一句话总结"><a href="#6-一句话总结" class="headerlink" title="6. 一句话总结"></a>6. 一句话总结</h2><blockquote>
+<p>安卓用<strong>一整套框架</strong>（Service + HAL + JNI + AudioFlinger）托住 FM；<br>我们在 Alpine 上保留同样的<strong>底下三层</strong>（硬件&#x2F;固件&#x2F;驱动），<br>用一个 <strong><code>fm_radio_daemon</code></strong> 替掉中间层，用一个 <strong>LVGL 收音机页</strong>替掉 App，<br>并<strong>自己补上安卓由框架兜底的那块——音频焦点仲裁</strong>。<br>原先唯一的不确定性 <strong>ioctl 命令号</strong> 已解除（见《FM收音ioctl命令表_逆向还原》），整条链已可跑通。</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-FM-%E6%94%B6%E9%9F%B3%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B-%E2%80%94%E2%80%94-%E5%AE%89%E5%8D%93-vs-Alpine%EF%BC%88%E6%9C%AC%E8%AE%BE%E5%A4%87%EF%BC%89%E5%AF%B9%E6%AF%94"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A FM 收音启动流程 —— 安卓 vs Alpine（本设备）对比</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%8A%AF%E7%89%87%E7%89%A9%E7%90%86%E6%9E%B6%E6%9E%84%EF%BC%88%E4%B8%A4%E7%A7%8D%E7%B3%BB%E7%BB%9F%E5%85%B1%E7%94%A8%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1. 芯片物理架构（两种系统共用）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AE%89%E5%8D%93-6-0-%E5%8E%9F%E7%94%9F-FM-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">2. 安卓 6.0 原生 FM 启动流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E5%90%AF%E5%8A%A8%E9%93%BE"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 启动链</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E5%AE%89%E5%8D%93%E5%85%B3%E9%94%AE%E7%82%B9"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 安卓关键点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Alpine%EF%BC%88%E6%9C%AC%E8%AE%BE%E5%A4%87%EF%BC%89FM-%E6%96%B9%E6%A1%88"><span class="toc-number">1.3.</span> <span class="toc-text">3. Alpine（本设备）FM 方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E7%9B%AE%E6%A0%87%EF%BC%9A%E7%94%A8%E6%9C%80%E5%B0%91%E4%BB%A3%E7%A0%81%E6%9B%BF%E6%8D%A2%E4%B8%80%E6%95%B4%E5%A5%97"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 目标：用最少代码替换一整套</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%8B%9F%E5%AE%9A%E7%9A%84%E5%90%AF%E5%8A%A8%E9%93%BE"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 拟定的启动链</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-Alpine-%E4%BE%A7%E7%9A%84%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 Alpine 侧的对应关系</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%80%90%E7%8E%AF%E8%8A%82%E5%AF%B9%E6%AF%94%E8%A1%A8"><span class="toc-number">1.4.</span> <span class="toc-text">4. 逐环节对比表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%8E%9F%E7%90%86%E8%A6%81%E7%82%B9%EF%BC%88%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E6%A0%B7%E8%83%BD%E9%80%9A%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 原理要点（为什么这样能通）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93"><span class="toc-number">1.6.</span> <span class="toc-text">6. 一句话总结</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&text=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&title=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&is_video=false&description=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音启动流程_安卓vsAlpine对比&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&title=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&title=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&title=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&title=FM收音启动流程_安卓vsAlpine对比"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/fm-07-fm-vsalpine-md/&name=FM收音启动流程_安卓vsAlpine对比&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

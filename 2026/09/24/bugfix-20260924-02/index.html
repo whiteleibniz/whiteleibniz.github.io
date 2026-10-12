@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260924_02 — 「切换桌面」横屏菜单白屏卡死（transform 渲染路径不可用） 关联提交：2341fad   ⚠️ 本文结论已被 bugfix_20260924_03 推翻：transform 在本机一直可用（fc_game_page.c 就是同一套用法）；白屏真因是 **transform_pivot 未显式设为 50%**（默认是对象左上角 → 1280x720">
+<meta property="og:type" content="article">
+<meta property="og:title" content="切换桌面横屏菜单白屏_transform渲染路径不可用">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260924_02 — 「切换桌面」横屏菜单白屏卡死（transform 渲染路径不可用） 关联提交：2341fad   ⚠️ 本文结论已被 bugfix_20260924_03 推翻：transform 在本机一直可用（fc_game_page.c 就是同一套用法）；白屏真因是 **transform_pivot 未显式设为 50%**（默认是对象左上角 → 1280x720">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-24T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.903Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="桌面UI">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>切换桌面横屏菜单白屏_transform渲染路径不可用</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/24/ref-psp/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/24/bugfix-20260924-01/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&text=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&title=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&is_video=false&description=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=切换桌面横屏菜单白屏_transform渲染路径不可用&body=Check out this article: https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&title=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&title=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&title=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&title=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&name=切换桌面横屏菜单白屏_transform渲染路径不可用&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260924-02-%E2%80%94-%E3%80%8C%E5%88%87%E6%8D%A2%E6%A1%8C%E9%9D%A2%E3%80%8D%E6%A8%AA%E5%B1%8F%E8%8F%9C%E5%8D%95%E7%99%BD%E5%B1%8F%E5%8D%A1%E6%AD%BB%EF%BC%88transform-%E6%B8%B2%E6%9F%93%E8%B7%AF%E5%BE%84%E4%B8%8D%E5%8F%AF%E7%94%A8%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260924_02 — 「切换桌面」横屏菜单白屏卡死（transform 渲染路径不可用）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%8E%B0%E8%B1%A1%E4%B8%8E%E8%AF%89%E6%B1%82"><span class="toc-number">1.1.</span> <span class="toc-text">1. 现象与诉求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AE%9A%E4%BD%8D%EF%BC%9A%E5%85%88%E6%8A%8A%E8%AE%BE%E5%A4%87%E6%95%91%E5%9B%9E%E6%9D%A5%EF%BC%8C%E5%86%8D%E7%94%A8%E3%80%8C%E6%9C%80%E5%B0%8F%E5%AE%9E%E9%AA%8C%E3%80%8D%E7%BC%A9%E5%B0%8F%E5%8F%98%E9%87%8F"><span class="toc-number">1.2.</span> <span class="toc-text">2. 定位：先把设备救回来，再用「最小实验」缩小变量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E7%BB%8F%E9%AA%8C%EF%BC%88%E5%8F%8D%E6%A8%A1%E5%BC%8F%E8%AE%B0%E5%BD%95%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">6. 经验（反模式记录）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E9%81%97%E7%95%99"><span class="toc-number">1.7.</span> <span class="toc-text">7. 遗留</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        切换桌面横屏菜单白屏_transform渲染路径不可用
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-24T04:00:00.000Z" itemprop="datePublished">2026-09-24</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A1%8C%E9%9D%A2UI/" rel="tag">桌面UI</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260924-02-—-「切换桌面」横屏菜单白屏卡死（transform-渲染路径不可用）"><a href="#bugfix-20260924-02-—-「切换桌面」横屏菜单白屏卡死（transform-渲染路径不可用）" class="headerlink" title="bugfix_20260924_02 — 「切换桌面」横屏菜单白屏卡死（transform 渲染路径不可用）"></a>bugfix_20260924_02 — 「切换桌面」横屏菜单白屏卡死（transform 渲染路径不可用）</h1><blockquote>
+<p>关联提交：2341fad</p>
+</blockquote>
+<blockquote>
+<p>⚠️ <strong>本文结论已被 bugfix_20260924_03 推翻</strong>：transform 在本机一直可用（<code>fc_game_page.c</code> 就是同一套用法）；<br>白屏真因是 **<code>transform_pivot</code> 未显式设为 50%**（默认是对象左上角 → 1280x720 画布绕左上角旋转后整体转出可视区）。<br>请以 03 为准；本文保留仅作“一次错误定性”的过程记录。</p>
+</blockquote>
+<ul>
+<li>日期：2026-09-24</li>
+<li>影响范围：<code>lv_pages/launcher_page.c</code>（新功能「切换桌面」→ 横屏放大菜单）</li>
+<li>结论一句话：<strong>这个 LVGL 构建里 <code>transform</code>（旋转&#x2F;缩放）渲染路径不可用 —— 任何带 transform 的对象整个不绘制</strong>；<br>改为纯 <code>set_size</code> 动画后功能正常。</li>
+</ul>
+<hr>
+<h2 id="1-现象与诉求"><a href="#1-现象与诉求" class="headerlink" title="1. 现象与诉求"></a>1. 现象与诉求</h2><p>用户反馈：在桌面点「切换桌面」后 <strong>白屏卡死</strong>。</p>
+<p>只读现场取证（<code>ssh_tools/_tmp/dbg_white.sh</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>检查项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>进程</td>
+<td><code>lvgl_demo</code> 存活，PPID&#x3D;1，STAT&#x3D;S</td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>0%（<code>top</code> 显示进程空闲）</td>
+</tr>
+<tr>
+<td>日志尾部</td>
+<td>大量 <code>[HW Key] code=115/116</code> 与 <code>[nav] key=19/20/27</code>，<strong>无 segfault &#x2F; assert &#x2F; fatal</strong></td>
+</tr>
+<tr>
+<td>结论</td>
+<td>不是崩溃、不是死循环 —— 是<strong>界面没画出来</strong>（渲染层问题）</td>
+</tr>
+</tbody></table>
+<h2 id="2-定位：先把设备救回来，再用「最小实验」缩小变量"><a href="#2-定位：先把设备救回来，再用「最小实验」缩小变量" class="headerlink" title="2. 定位：先把设备救回来，再用「最小实验」缩小变量"></a>2. 定位：先把设备救回来，再用「最小实验」缩小变量</h2><ol>
+<li><strong>先回滚</strong>：<code>lv_pages/launcher_page.c.bak_cover</code> 还原 → <code>make -j2</code> → 原子替换 → 重启。<br>日志立即出现 <code>[fb] flush ... px0=ffdff3ff/ffe0f3ff</code>（桌面渐变底色），设备恢复可用。</li>
+<li><strong>再做最小实验</strong>：临时在 <code>onCreate</code> 末尾插入 <code>launcher_set_cover(true)</code>（自动进入菜单），<br>这样不必依赖按键就能稳定复现，并用 <code>grab_screen.py</code> 抓帧逐层判断”谁没画出来”。</li>
+</ol>
+<p>三次抓帧的结论递进：</p>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th>抓帧结果</th>
+<th>推断</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>方案 A：容器 <code>1280x720</code> + <code>transform_rotation=900</code></td>
+<td>整屏只剩父容器底色，<strong>容器和卡片全部不见</strong></td>
+<td>大容器旋转被整体丢弃</td>
+</tr>
+<tr>
+<td>方案 B 首版：容器不旋转，<strong>卡片仍用 <code>transform_scale</code></strong></td>
+<td>容器背景 + 顶部提示文字<strong>正常画出</strong>，<strong>所有卡片消失</strong></td>
+<td>transform 与对象大小无关，<strong>只要带 transform 就不画</strong></td>
+</tr>
+<tr>
+<td>方案 B 修正版：<strong>零 transform</strong>，改 <code>set_size</code> 动画</td>
+<td>卡片、图标、中文标题全部正常</td>
+<td>根因确认</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>关键对照：同一个容器里，”没有 transform 的提示 label”画得出来，”有 transform 的卡片”画不出来 ——<br>变量被缩到只剩 transform 一项。</p>
+</blockquote>
+<h2 id="3-根因"><a href="#3-根因" class="headerlink" title="3. 根因"></a>3. 根因</h2><p><strong>该 LVGL 构建（<code>/root/lvgl_install</code> 预编译 liblvgl.a）的 transform 渲染路径在运行期不可用。</strong></p>
+<ul>
+<li>早先我用静态符号法判断”支持”：<code>nm liblvgl.a</code> 里 <code>lv_draw_sw_transform</code> 在 <strong>T 段</strong>、<br><code>lv_obj_set_style_transform_rotation / scale_x / scale_y</code> 都在 → 结论”能链接、应该能画”。<br><strong>这个判断只证明符号存在，不证明运行正确。</strong></li>
+<li>最强旁证其实一直摆在源码里：<code>launcher_page.c</code> 的 <code>launcher_start_zoom()</code> 开头是<br><code>(void)target; return; /* transform disabled */</code>。<code>git log -S</code> 显示它是 <strong>v1.0 初始提交就带的</strong> ——<br>当时被解读为”上游自己关掉了按下缩放效果”，<strong>实际含义是”这台机器上 transform 画不出来，所以关掉”<strong>。<br>注释里的 “disabled” 是</strong>证据</strong>，不是噪音。</li>
+</ul>
+<h2 id="4-修复"><a href="#4-修复" class="headerlink" title="4. 修复"></a>4. 修复</h2><p><code>lv_pages/launcher_page.c</code>（补丁脚本 <code>ssh_tools/_tmp/patch_cover3.py</code> + <code>patch_cover4.py</code> + <code>patch_cover5.py</code>）：</p>
+<ol>
+<li><strong>弃用整屏旋转方案</strong>（改为竖屏内横向放大带）：屏幕 720×1280，卡片横向排列，<br>选中项 1.5×、左右各 1.0×；参数 <code>CARD=200 / GAP=250 / SEL=384 / SIDE=256</code>，<br>在 720 宽内正好 <code>200 + 250 + 250 = 700</code> 铺满，不重叠。</li>
+<li><strong><code>cover_geom()</code> 彻底不用 transform</strong>，改成尺寸动画：<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">lv_obj_set_size(it-&gt;cell, w, h);</span><br><span class="line">lv_obj_set_pos(it-&gt;cell, cx - w / <span class="number">2</span>, s_cover_cy - h / <span class="number">2</span>);</span><br><span class="line">lv_obj_set_size(it-&gt;box, bw, bw);        <span class="comment">/* 色块跟着放大 */</span></span><br><span class="line">lv_obj_align(it-&gt;box, LV_ALIGN_TOP_MID, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">lv_obj_set_width(it-&gt;title, w);</span><br><span class="line">lv_obj_align(it-&gt;title, LV_ALIGN_TOP_MID, <span class="number">0</span>, bw + <span class="number">6</span>);</span><br></pre></td></tr></table></figure>
+<code>cover_anim_cb</code> 仍由一个 <code>lv_anim</code> 统一插值所有卡片的 <code>cx</code> 与 <code>scale</code>（320ms，ease_out）。</li>
+<li>删除 cell 上已无用的 <code>transform_pivot_*</code>。</li>
+<li>进入菜单时**补一次”隐藏 root 其它子对象”**（<code>ch2 != s_cover_root</code>）：<br>网格是用 tileview 在 <code>onCreate</code> 后段创建的，只在进入时隐藏一次不够稳。</li>
+</ol>
+<h2 id="5-验证"><a href="#5-验证" class="headerlink" title="5. 验证"></a>5. 验证</h2><ul>
+<li>抓帧三连（<code>outputs/cover_check4~6.png</code>）：容器背景、顶部提示、中间放大卡片、两侧正常卡片、<br>白色图标、中文标题（任务管理 &#x2F; 切换桌面 &#x2F; 相机）<strong>全部正常</strong>。</li>
+<li>左右键导航：<code>[cover] built n=19 cx=360 cy=576</code> 后，按右键 11 次，选中项按预期逐个居中放大（截图 <code>cover_check5.png</code>）。</li>
+<li>最终版（去掉临时的自动进入）部署后，桌面渐变底色正常、无崩溃。</li>
+</ul>
+<h2 id="6-经验（反模式记录）"><a href="#6-经验（反模式记录）" class="headerlink" title="6. 经验（反模式记录）"></a>6. 经验（反模式记录）</h2><ol>
+<li><strong>“符号存在 ≠ 能力可用”<strong>：<code>nm</code> 只能证明链接得过。涉及渲染&#x2F;驱动能力时，</strong>必须抓一帧实际画面</strong>，<br>或者在最小对象上做一次实验 —— 不要把静态符号当成能力验证的终点。</li>
+<li><strong>上游注释要当证据读</strong>：<code>/* transform disabled */</code> 若早点当真，就能省掉一整轮白屏事故。<br>遇到 “disabled &#x2F; not supported &#x2F; FIXME” 先问”他们为什么关”。</li>
+<li><strong>排查要给变量做减法</strong>：本轮靠”临时自动进入 + 抓帧”，把”按键路径 &#x2F; 焦点组 &#x2F; 布局 &#x2F; 渲染”四条线<br>缩到”transform 有 vs 无”一条，才定住根因。</li>
+<li><strong>故障先回滚</strong>：改动一多，第一动作是恢复到可用基线（源文件 <code>.bak_*</code> + 原子替换），<br>再在安全前提下做实验，避免用户长时间面对坏画面。</li>
+<li><strong>USB 注入键验证不了物理键路径</strong>：<code>/root/vhwkey2</code> 走 <code>usb_map</code>，与物理键语义不同；<br>Enter&#x2F;ESC 的实际手感必须由人手验（详见 §7）。</li>
+</ol>
+<h2 id="7-遗留"><a href="#7-遗留" class="headerlink" title="7. 遗留"></a>7. 遗留</h2><ul>
+<li>进入菜单后按<strong>物理福利键（Enter）选中「切换桌面」应返回</strong>、按<strong>物理买单键（ESC）应返回</strong> ——<br>这两条由用户实机确认（USB 注入的 ENTER&#x2F;ESC 在本轮测试中未产生预期效果，但注入语义与物理键不同，<br>不能用它下结论）。</li>
+<li>卡片放大的只是色块与整体尺寸，<strong>图标符号字号不随缩放变化</strong>（无更大字号的图标字体，仅有 <code>montserrat_24</code>）；<br>若需要”图标也变大”，需再引入一档大字号字体。</li>
+<li>每次进入菜单会打印一行 <code>[cover] built n=.. cx=.. cy=..</code>（诊断用，保留便于以后排查）。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260924-02-%E2%80%94-%E3%80%8C%E5%88%87%E6%8D%A2%E6%A1%8C%E9%9D%A2%E3%80%8D%E6%A8%AA%E5%B1%8F%E8%8F%9C%E5%8D%95%E7%99%BD%E5%B1%8F%E5%8D%A1%E6%AD%BB%EF%BC%88transform-%E6%B8%B2%E6%9F%93%E8%B7%AF%E5%BE%84%E4%B8%8D%E5%8F%AF%E7%94%A8%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260924_02 — 「切换桌面」横屏菜单白屏卡死（transform 渲染路径不可用）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%8E%B0%E8%B1%A1%E4%B8%8E%E8%AF%89%E6%B1%82"><span class="toc-number">1.1.</span> <span class="toc-text">1. 现象与诉求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AE%9A%E4%BD%8D%EF%BC%9A%E5%85%88%E6%8A%8A%E8%AE%BE%E5%A4%87%E6%95%91%E5%9B%9E%E6%9D%A5%EF%BC%8C%E5%86%8D%E7%94%A8%E3%80%8C%E6%9C%80%E5%B0%8F%E5%AE%9E%E9%AA%8C%E3%80%8D%E7%BC%A9%E5%B0%8F%E5%8F%98%E9%87%8F"><span class="toc-number">1.2.</span> <span class="toc-text">2. 定位：先把设备救回来，再用「最小实验」缩小变量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E7%BB%8F%E9%AA%8C%EF%BC%88%E5%8F%8D%E6%A8%A1%E5%BC%8F%E8%AE%B0%E5%BD%95%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">6. 经验（反模式记录）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E9%81%97%E7%95%99"><span class="toc-number">1.7.</span> <span class="toc-text">7. 遗留</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&text=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&title=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&is_video=false&description=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=切换桌面横屏菜单白屏_transform渲染路径不可用&body=Check out this article: https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&title=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&title=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&title=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&title=切换桌面横屏菜单白屏_transform渲染路径不可用"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/24/bugfix-20260924-02/&name=切换桌面横屏菜单白屏_transform渲染路径不可用&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

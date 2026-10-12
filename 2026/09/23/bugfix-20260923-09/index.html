@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_09 — GBA 退出游戏返回列表卡顿（内核回收输入设备 fd 极慢） 日期：2026-09-23 模块：GBA 游戏页退出路径 &#x2F; extern&#x2F;miniretro&#x2F;miniretro.c &#x2F; 内核输入子系统 影响：GBA 退出返回列表的响应速度（FC 页共用 miniretro，同理但本次未改）；另含一次”兜底强杀后未收尸”的僵尸进程问题">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA退出游戏返回列表卡顿">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_09 — GBA 退出游戏返回列表卡顿（内核回收输入设备 fd 极慢） 日期：2026-09-23 模块：GBA 游戏页退出路径 &#x2F; extern&#x2F;miniretro&#x2F;miniretro.c &#x2F; 内核输入子系统 影响：GBA 退出返回列表的响应速度（FC 页共用 miniretro，同理但本次未改）；另含一次”兜底强杀后未收尸”的僵尸进程问题">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.844Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA退出游戏返回列表卡顿</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-12/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-11/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&text=GBA退出游戏返回列表卡顿"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&title=GBA退出游戏返回列表卡顿"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&is_video=false&description=GBA退出游戏返回列表卡顿"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出游戏返回列表卡顿&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&title=GBA退出游戏返回列表卡顿"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&title=GBA退出游戏返回列表卡顿"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&title=GBA退出游戏返回列表卡顿"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&title=GBA退出游戏返回列表卡顿"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&name=GBA退出游戏返回列表卡顿&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-09-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E6%B8%B8%E6%88%8F%E8%BF%94%E5%9B%9E%E5%88%97%E8%A1%A8%E5%8D%A1%E9%A1%BF%EF%BC%88%E5%86%85%E6%A0%B8%E5%9B%9E%E6%94%B6%E8%BE%93%E5%85%A5%E8%AE%BE%E5%A4%87-fd-%E6%9E%81%E6%85%A2%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_09 — GBA 退出游戏返回列表卡顿（内核回收输入设备 fd 极慢）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 问题现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#miniretro-%E4%BE%A7%EF%BC%88%E5%AD%90%E8%BF%9B%E7%A8%8B%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">miniretro 侧（子进程）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A1%B5%E9%9D%A2%E4%BE%A7%EF%BC%88lv-pages-gba-game-page-c%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">页面侧（lv_pages&#x2F;gba_game_page.c）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81%E6%96%B9%E6%B3%95%E4%B8%8E%E7%BB%93%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证方法与结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%9B%9E%E5%BD%92%E9%A3%8E%E9%99%A9"><span class="toc-number">1.6.</span> <span class="toc-text">6. 回归风险</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相关文件</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA退出游戏返回列表卡顿
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-09-—-GBA-退出游戏返回列表卡顿（内核回收输入设备-fd-极慢）"><a href="#bugfix-20260923-09-—-GBA-退出游戏返回列表卡顿（内核回收输入设备-fd-极慢）" class="headerlink" title="bugfix_20260923_09 — GBA 退出游戏返回列表卡顿（内核回收输入设备 fd 极慢）"></a>bugfix_20260923_09 — GBA 退出游戏返回列表卡顿（内核回收输入设备 fd 极慢）</h1><ul>
+<li>日期：2026-09-23</li>
+<li>模块：GBA 游戏页退出路径 &#x2F; <code>extern/miniretro/miniretro.c</code> &#x2F; 内核输入子系统</li>
+<li>影响：GBA 退出返回列表的响应速度（FC 页共用 miniretro，同理但本次未改）；另含一次”兜底强杀后未收尸”的僵尸进程问题</li>
+</ul>
+<blockquote>
+<p>与 bugfix_07 的区别：07 修的是”退出后画面<strong>僵住&#x2F;残留</strong>“（fb 停在翻转页）。<br>本次修的是 07 之后仍然存在的”画面<strong>回得慢</strong>“——按买单键要等约 0.35~0.4 秒才回到列表。</p>
+</blockquote>
+<h2 id="1-问题现象"><a href="#1-问题现象" class="headerlink" title="1. 问题现象"></a>1. 问题现象</h2><p>按”买单”键（116）退出游戏，画面已经不再是游戏画面，但要过约 0.35~0.4 秒列表才出现，体感是”卡一下”。用户反馈：”退出游戏返回到列表还是卡顿”。</p>
+<h2 id="2-影响范围"><a href="#2-影响范围" class="headerlink" title="2. 影响范围"></a>2. 影响范围</h2><ul>
+<li>GBA 游戏退出返回列表（本次修复）</li>
+<li>FC 游戏退出（共用同一份 miniretro，理论同样慢；FC 页未改，行为不变）</li>
+<li>附带修掉：一次 <code>SIGKILL</code> 兜底后未收尸 → 子进程变僵尸挂在 lvgl_demo 名下</li>
+</ul>
+<h2 id="3-根因分析"><a href="#3-根因分析" class="headerlink" title="3. 根因分析"></a>3. 根因分析</h2><p>用 2ms 粒度采样 + 在 miniretro 退出路径里加分段计时（<code>ssh_tools/gba_exit_latency.py</code>）实测：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">修复前  exit_latency = 394.5 ms</span><br><span class="line">[miniretro][timing] 主循环退出            t=  5.1 ms</span><br><span class="line">[miniretro][timing] core_deinit 完成      t=  5.4 ms</span><br><span class="line">[miniretro][timing] dlclose 完成          t=  5.4 ms</span><br><span class="line">[miniretro][timing]   fb pan 回第0页      t= 23.0 ms</span><br><span class="line">[miniretro][timing]   fb 清屏(memset)     t= 28.4 ms</span><br><span class="line">[miniretro][timing] munmap 完成           t= 28.7 ms</span><br><span class="line">[miniretro][timing] close(evdev) 完成     t=385.0 ms   ← 349ms 全耗在这一步</span><br></pre></td></tr></table></figure>
+
+<p>逐个设备复现（<strong>不需要 miniretro，单独 open&#x2F;close 就能复现</strong>）：</p>
+<table>
+<thead>
+<tr>
+<th>设备</th>
+<th>节点</th>
+<th>驱动</th>
+<th>close 耗时</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>物理四键</td>
+<td><code>/dev/input/event0</code></td>
+<td>sprd-gpio-keys</td>
+<td>39 ~ 215 ms</td>
+</tr>
+<tr>
+<td>另一组按键</td>
+<td><code>/dev/input/event1</code></td>
+<td>sprd-eic-keys</td>
+<td>~80 ms</td>
+</tr>
+<tr>
+<td>耳机键</td>
+<td><code>/dev/input/event2</code></td>
+<td>headset-keyboard</td>
+<td>~80 ms</td>
+</tr>
+</tbody></table>
+<p>结论：</p>
+<ol>
+<li>子进程内部收尾<strong>不是</strong>瓶颈（deinit&#x2F;pan&#x2F;清屏合计约 30ms）。</li>
+<li>本机内核关闭 sprd 输入设备固定要几十~几百毫秒。<strong>进程退出时内核必然要关这些 fd，用户态怎么改都躲不掉</strong> —— 所以”子进程真正消失”至少要 ~340ms。</li>
+<li>父进程侧还有两段白等：<ul>
+<li><code>gba_exit_to_list()</code> 里 <code>usleep(250ms)</code> 死等；</li>
+<li><code>gba_wait_thread()</code> 用阻塞式 <code>waitpid</code> 等子进程”真正消失”（&#x3D; 内核那 340ms 之后）才恢复 LVGL。</li>
+</ul>
+</li>
+<li>两段叠加 → 约 0.35~0.4s。<strong>卡顿不是渲染问题，是”等一个不必要的事件”。</strong></li>
+</ol>
+<h2 id="4-修复方案"><a href="#4-修复方案" class="headerlink" title="4. 修复方案"></a>4. 修复方案</h2><p>核心思路：<strong>UI 恢复不再等子进程死亡</strong>，改由子进程在”画面已交还”的那一刻主动通知父进程。</p>
+<h3 id="miniretro-侧（子进程）"><a href="#miniretro-侧（子进程）" class="headerlink" title="miniretro 侧（子进程）"></a>miniretro 侧（子进程）</h3><ul>
+<li>cleanup 顺序固定为：<code>core_deinit()</code>（<strong>必须保留</strong>，mGBA 要在这里落盘电池存档 <code>.sav</code>）→ <code>fb_restore()</code>（翻回第 0 页 + 清屏，约 35ms）→ <code>notify_parent_ui_released()</code> → <code>_exit(0)</code>。</li>
+<li><code>notify_parent_ui_released()</code>：给父进程发 <code>SIGUSR1</code>。<br><strong>必须由父进程用环境变量 <code>MINIRETRO_UI_RELEASE_SIGNAL</code> 显式开启才发</strong> —— <code>SIGUSR1</code> 默认动作是终止进程，没装处理函数的调用方（如 FC 页）一旦收到就会被打死。</li>
+<li><code>_exit(0)</code> 之后不再逐个 <code>close(fd)</code>&#x2F;<code>munmap</code>：反正内核退出时都要做，而那 340ms 丢到后台去，不阻塞 UI。</li>
+</ul>
+<h3 id="页面侧（lv-pages-gba-game-page-c）"><a href="#页面侧（lv-pages-gba-game-page-c）" class="headerlink" title="页面侧（lv_pages/gba_game_page.c）"></a>页面侧（<code>lv_pages/gba_game_page.c</code>）</h3><ul>
+<li><code>gba_launch()</code>：fork <strong>之前</strong>装 <code>signal(SIGUSR1, gba_ui_release_handler)</code> + <code>setenv(&quot;MINIRETRO_UI_RELEASE_SIGNAL&quot;,&quot;1&quot;,1)</code>（必须早于 fork，否则信号可能先到 → 默认动作杀进程）。</li>
+<li><code>gba_exit_to_list()</code>：只 <code>kill(pid, SIGTERM)</code>，一行都不等。</li>
+<li><code>gba_wait_thread()</code> 两阶段：<ul>
+<li><strong>阶段①</strong> 5ms 粒度等”收到 SIGUSR1 <strong>或</strong> 子进程真退出”（≤500ms 兜底），一满足就 <code>hardware_keys_set_grab(true)</code> → 摘拦截器 → <code>app_runtime_set_lvgl_paused(false)</code>；</li>
+<li><strong>阶段②</strong> 后台收尸：5s 超时后 <code>SIGKILL</code> 并<strong>同步 <code>waitpid</code> 收尸</strong>。</li>
+</ul>
+</li>
+<li>保留分秒计时 <code>[miniretro][timing]</code> 日志，方便下次回归直接看数字。</li>
+</ul>
+<h2 id="5-验证方法与结果"><a href="#5-验证方法与结果" class="headerlink" title="5. 验证方法与结果"></a>5. 验证方法与结果</h2><p><strong>① 退出耗时对比（受控测量）</strong></p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>修复前</th>
+<th>修复后</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>子进程内部收尾</td>
+<td>385 ms</td>
+<td><strong>37 ms</strong></td>
+</tr>
+<tr>
+<td>父进程收到”画面已交还”</td>
+<td>—</td>
+<td><strong>40.6 ms</strong></td>
+</tr>
+<tr>
+<td>子进程真正消失（内核回收）</td>
+<td>394 ms</td>
+<td>337 ms（<strong>已与 UI 无关</strong>）</td>
+</tr>
+</tbody></table>
+<p><strong>② 握手协议验证</strong>（<code>ssh_tools/gba_ui_release_test.py</code>，python 伪父进程，无需按物理键）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">用例 A 开启通知  : SIGTERM 后 40.6ms 收到 SIGUSR1（yoffset 17ms 已翻回第 0 页）</span><br><span class="line">用例 B 未开通知  : 收不到信号(-1.0ms)，且父进程存活   ← 门禁生效，FC 页安全</span><br></pre></td></tr></table></figure>
+
+<p><strong>③ 恢复是否”瞬时”<strong>：<code>lv_tick_inc()</code> 在主循环里</strong>无条件</strong>执行（<code>main.c:635</code>），暂停期间 LVGL 时间照走，所以恢复后 100ms 定时器早已过期，<strong>第一次 <code>lv_timer_handler()</code> 就触发整屏重绘</strong>；主循环 10ms 一跳。即恢复路径没有额外等待。</p>
+<p>预期观感：按买单 → <del>40ms 交还画面 → 立即重绘列表（原 0.35</del>0.4s）。</p>
+<h2 id="6-回归风险"><a href="#6-回归风险" class="headerlink" title="6. 回归风险"></a>6. 回归风险</h2><ul>
+<li><strong>子进程既不通知也不退出</strong>：阶段① 500ms 后仍会恢复 UI，退化为旧行为，不会卡死；阶段② 5s 后强杀收尸。</li>
+<li>子进程退出期间（<del>0.3</del>0.4s）仍持有 fb0&#x2F;evdev 的 fd（内核正在回收），但它已不再绘制，不影响 LVGL（LVGL 自己持有 fb0；<code>yoffset</code> 是设备级状态）。</li>
+<li><strong>FC 页未改</strong>：退出仍等子进程消失（~340ms）。若要一并提速，把上述页面侧三处改动搬到 <code>fc_game_page.c</code> 即可（miniretro 侧已就绪，且默认不开信号门禁）。</li>
+<li><strong>部署纪律（本次踩坑）</strong>：<code>extern/miniretro/build.sh</code> 是 <code>gcc ... -o miniretro</code>，<strong>直接写目标文件</strong>。用户正在玩时重编，恰有启动动作 exec 到半覆盖的二进制 → 子进程卡在 exec 里、启动失败、2.5s 后被兜底强杀且未收尸（僵尸）。<br>现统一要求：二进制一律”编到 <code>*.tmp</code> → <code>mv -f</code> 原子替换”，部署走 <code>ssh_tools/gba_redeploy.py</code>。</li>
+</ul>
+<h2 id="7-相关文件"><a href="#7-相关文件" class="headerlink" title="7. 相关文件"></a>7. 相关文件</h2><ul>
+<li>设备：<code>/home/lvgl_demo/lvgl_demo/extern/miniretro/miniretro.c</code></li>
+<li>设备：<code>/home/lvgl_demo/lvgl_demo/lv_pages/gba_game_page.c</code></li>
+<li>本地：<code>ssh_tools/_tmp/miniretro.c</code>、<code>_fc_ref/gba_game_page.c</code></li>
+<li>诊断&#x2F;验证&#x2F;部署脚本：<code>ssh_tools/gba_exit_latency.py</code>、<code>ssh_tools/gba_ui_release_test.py</code>、<code>ssh_tools/gba_redeploy.py</code></li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-09-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E6%B8%B8%E6%88%8F%E8%BF%94%E5%9B%9E%E5%88%97%E8%A1%A8%E5%8D%A1%E9%A1%BF%EF%BC%88%E5%86%85%E6%A0%B8%E5%9B%9E%E6%94%B6%E8%BE%93%E5%85%A5%E8%AE%BE%E5%A4%87-fd-%E6%9E%81%E6%85%A2%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_09 — GBA 退出游戏返回列表卡顿（内核回收输入设备 fd 极慢）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 问题现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#miniretro-%E4%BE%A7%EF%BC%88%E5%AD%90%E8%BF%9B%E7%A8%8B%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">miniretro 侧（子进程）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A1%B5%E9%9D%A2%E4%BE%A7%EF%BC%88lv-pages-gba-game-page-c%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">页面侧（lv_pages&#x2F;gba_game_page.c）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81%E6%96%B9%E6%B3%95%E4%B8%8E%E7%BB%93%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证方法与结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%9B%9E%E5%BD%92%E9%A3%8E%E9%99%A9"><span class="toc-number">1.6.</span> <span class="toc-text">6. 回归风险</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相关文件</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&text=GBA退出游戏返回列表卡顿"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&title=GBA退出游戏返回列表卡顿"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&is_video=false&description=GBA退出游戏返回列表卡顿"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出游戏返回列表卡顿&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&title=GBA退出游戏返回列表卡顿"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&title=GBA退出游戏返回列表卡顿"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&title=GBA退出游戏返回列表卡顿"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&title=GBA退出游戏返回列表卡顿"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-09/&name=GBA退出游戏返回列表卡顿&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Mali-400 GPU 与硬件加速：勘察结论 日期：2026-09-23　设备：展讯 SC9832A（Alpine &#x2F; 内核 3.10.65 原厂安卓内核 &#x2F; 720x1280 fb）问题：MPlayer 播放卡；Mali-400 有没有用上；能不能用到显示&#x2F;视频&#x2F;UI 上。性质：只读勘察，未执行任何播放验证（按约定验证由用户上机做）。   0. 先纠正两">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mali400与硬件加速_勘察结论">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/mali-survey/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Mali-400 GPU 与硬件加速：勘察结论 日期：2026-09-23　设备：展讯 SC9832A（Alpine &#x2F; 内核 3.10.65 原厂安卓内核 &#x2F; 720x1280 fb）问题：MPlayer 播放卡；Mali-400 有没有用上；能不能用到显示&#x2F;视频&#x2F;UI 上。性质：只读勘察，未执行任何播放验证（按约定验证由用户上机做）。   0. 先纠正两">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T03:06:07.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.944Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="GPU">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Mali400与硬件加速_勘察结论</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-17/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/22/fm-progress/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/mali-survey/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&text=Mali400与硬件加速_勘察结论"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&title=Mali400与硬件加速_勘察结论"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&is_video=false&description=Mali400与硬件加速_勘察结论"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400与硬件加速_勘察结论&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/mali-survey/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&title=Mali400与硬件加速_勘察结论"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&title=Mali400与硬件加速_勘察结论"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&title=Mali400与硬件加速_勘察结论"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&title=Mali400与硬件加速_勘察结论"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&name=Mali400与硬件加速_勘察结论&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Mali-400-GPU-%E4%B8%8E%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F%EF%BC%9A%E5%8B%98%E5%AF%9F%E7%BB%93%E8%AE%BA"><span class="toc-number">1.</span> <span class="toc-text">Mali-400 GPU 与硬件加速：勘察结论</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E5%85%88%E7%BA%A0%E6%AD%A3%E4%B8%A4%E4%B8%AA%E6%A6%82%E5%BF%B5"><span class="toc-number">1.1.</span> <span class="toc-text">0. 先纠正两个概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%A1%AC%E4%BB%B6%E4%B8%8E%E9%A9%B1%E5%8A%A8%E7%8E%B0%E7%8A%B6%EF%BC%88%E5%AE%9E%E6%B5%8B%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 硬件与驱动现状（实测）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Mali-400-%E8%83%BD%E4%B8%8D%E8%83%BD%E7%94%A8%E8%B5%B7%E6%9D%A5%EF%BC%9A%E4%B8%8D%E8%83%BD"><span class="toc-number">1.3.</span> <span class="toc-text">2. Mali-400 能不能用起来：不能</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E5%86%85%E6%A0%B8%E5%B1%82%EF%BC%9A%E8%83%BD%E7%82%B9%E4%BA%AE%EF%BC%88%E4%BD%86%E4%B8%8D%E6%98%AF%E7%93%B6%E9%A2%88%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">2.1 内核层：能点亮（但不是瓶颈）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E7%94%A8%E6%88%B7%E6%80%81%E5%B1%82%EF%BC%9A%E6%AD%BB%E7%BB%93%EF%BC%88bionic-vs-musl%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">2.2 用户态层：死结（bionic vs musl）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E5%BC%80%E6%BA%90-mesa-lima-%E8%B7%AF%E7%BA%BF%EF%BC%9A%E4%B9%9F%E4%B8%8D%E9%80%9A"><span class="toc-number">1.3.3.</span> <span class="toc-text">2.3 开源 mesa-lima 路线：也不通</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%B0%B1%E7%AE%97-GPU-%E8%83%BD%E7%94%A8%EF%BC%8C%E4%B9%9F%E4%B8%8D%E6%98%AF%E5%8D%A1%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="toc-number">1.4.</span> <span class="toc-text">3. 就算 GPU 能用，也不是卡的原因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%9C%9F%E6%AD%A3%E8%AF%A5%E7%94%A8%E7%9A%84%E4%B8%A4%E4%B8%AA%E7%A1%AC%E4%BB%B6%EF%BC%88%E9%83%BD%E5%9C%A8%EF%BC%8C%E4%B8%94%E5%B7%B2-probe%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 真正该用的两个硬件（都在，且已 probe）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-VSP-%E2%80%94%E2%80%94-%E8%A7%86%E9%A2%91%E7%A1%AC%E8%A7%A3%EF%BC%88%E8%A7%A3%E5%86%B3%E2%80%9D%E5%8D%A1%E2%80%9D%E7%9A%84%E6%AD%A3%E8%A7%A3%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 VSP —— 视频硬解（解决”卡”的正解）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-GSP-%E2%80%94%E2%80%94-2D-%E5%8A%A0%E9%80%9F%EF%BC%88%E8%BF%99%E6%89%8D%E6%98%AF%E2%80%9D%E7%94%A8%E5%88%B0%E6%98%BE%E7%A4%BA%E4%B8%8A%E2%80%9D%E7%9A%84%E6%AD%A3%E8%A7%A3%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 GSP —— 2D 加速（这才是”用到显示上”的正解）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%B8%8D%E5%8A%A8%E5%86%85%E6%A0%B8%E3%80%81%E4%B8%8D%E9%80%86%E5%90%91%EF%BC%8C%E7%AB%8B%E5%88%BB%E8%83%BD%E5%81%9A%E7%9A%84%EF%BC%88%E6%8E%A8%E8%8D%90%E5%85%88%E5%81%9A%E8%BF%99%E5%87%A0%E6%AD%A5%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">5. 不动内核、不逆向，立刻能做的（推荐先做这几步）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%90%8E%E7%BB%AD%E5%8F%AF%E9%80%89%E8%B7%AF%E7%BA%BF%EF%BC%88%E6%8C%89%E6%80%A7%E4%BB%B7%E6%AF%94%E6%8E%92%E5%BA%8F%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. 后续可选路线（按性价比排序）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Mali400与硬件加速_勘察结论
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T03:06:07.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/GPU/" rel="tag">GPU</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Mali-400-GPU-与硬件加速：勘察结论"><a href="#Mali-400-GPU-与硬件加速：勘察结论" class="headerlink" title="Mali-400 GPU 与硬件加速：勘察结论"></a>Mali-400 GPU 与硬件加速：勘察结论</h1><blockquote>
+<p>日期：2026-09-23　设备：展讯 SC9832A（Alpine &#x2F; 内核 3.10.65 原厂安卓内核 &#x2F; 720x1280 fb）<br>问题：MPlayer 播放卡；Mali-400 有没有用上；能不能用到显示&#x2F;视频&#x2F;UI 上。<br>性质：只读勘察，<strong>未执行任何播放验证</strong>（按约定验证由用户上机做）。</p>
+</blockquote>
+<hr>
+<h2 id="0-先纠正两个概念"><a href="#0-先纠正两个概念" class="headerlink" title="0. 先纠正两个概念"></a>0. 先纠正两个概念</h2><ol>
+<li><strong>Mali-400 是 3D 渲染 GPU，不是显示控制器。</strong><br>显示由 <code>20800000.fb</code>（sprdfb &#x2F; dispc）硬件扫描输出，<code>/dev/fb0</code> 就是最终输出口。<br>GPU **不能”接管显示”**——它只能把图画进内存 buffer，再由 dispc 显示（Android 靠<br>SurfaceFlinger + hwcomposer 的 overlay 图层完成这一步，本机没有这套东西）。</li>
+<li><strong>Marlin 不负责视频。</strong> Marlin2 是 WiFi &#x2F; BT &#x2F; FM &#x2F; GNSS 的 combo 芯片。<br>视频硬解在 AP 侧，叫 <strong>VSP</strong>（<code>/dev/sprd_vsp</code>，配 <code>sprd_coda7l</code>）。</li>
+</ol>
+<hr>
+<h2 id="1-硬件与驱动现状（实测）"><a href="#1-硬件与驱动现状（实测）" class="headerlink" title="1. 硬件与驱动现状（实测）"></a>1. 硬件与驱动现状（实测）</h2><table>
+<thead>
+<tr>
+<th>部件</th>
+<th>存在的证据</th>
+<th>当前状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Mali-400 GPU</td>
+<td>设备树 <code>60000000.gpu</code>；<code>/lib/modules/mali.ko</code>（4.6 MB）</td>
+<td>❌ <strong>完全没用</strong>：平台设备<strong>无 driver 绑定</strong>，模块未加载，**<code>/dev/mali</code> 不存在**</td>
+</tr>
+<tr>
+<td>显示控制器</td>
+<td><code>20800000.fb</code> → <code>/dev/fb0</code>，720x1280 32bpp，<code>accel false</code></td>
+<td>✅ 在用（fbdev 软件写入）</td>
+</tr>
+<tr>
+<td>VSP 视频编解码</td>
+<td><code>/dev/sprd_vsp</code>、<code>/dev/sprd_coda7l</code>（misc 已注册 &#x3D; probe 成功）</td>
+<td>⚠️ 驱动在，<strong>没有任何程序用</strong></td>
+</tr>
+<tr>
+<td>JPG 硬编解码</td>
+<td><code>/dev/sprd_jpg</code></td>
+<td>⚠️ 同上</td>
+</tr>
+<tr>
+<td>GSP 2D 加速</td>
+<td><code>/dev/sprd_gsp</code> + <code>/dev/sprd_iommu_gsp</code></td>
+<td>⚠️ 同上（blit&#x2F;缩放&#x2F;旋转&#x2F;YUV→RGB）</td>
+</tr>
+<tr>
+<td>ION 内存分配器</td>
+<td><code>/dev/ion</code> + 3 个 ion-heap 平台设备</td>
+<td>✅ 可用（GPU&#x2F;VSP&#x2F;GSP 都依赖它）</td>
+</tr>
+</tbody></table>
+<p>补充：<code>nproc = 2</code>（<strong>只有 2 核在线</strong>，非 4 核），最高 1.3 GHz，内存 916 MB。<br>mplayer 二进制在 <code>/home/lvgl_demo/lvgl_demo/libs/mplayer/mplayer</code>（13.7 MB，不在 PATH 里）。</p>
+<hr>
+<h2 id="2-Mali-400-能不能用起来：不能"><a href="#2-Mali-400-能不能用起来：不能" class="headerlink" title="2. Mali-400 能不能用起来：不能"></a>2. Mali-400 能不能用起来：不能</h2><p>要用 GPU 必须三层齐全：<strong>内核驱动 → 用户态 EGL&#x2F;GLES 库 → 应用</strong>。逐层看：</p>
+<h3 id="2-1-内核层：能点亮（但不是瓶颈）"><a href="#2-1-内核层：能点亮（但不是瓶颈）" class="headerlink" title="2.1 内核层：能点亮（但不是瓶颈）"></a>2.1 内核层：能点亮（但不是瓶颈）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mali.ko vermagic = 3.10.65 SMP preempt mod_unload modversions ARMv7</span><br></pre></td></tr></table></figure>
+
+<p>与当前内核<strong>完全一致</strong>（本机跑的本就是原厂安卓内核）。<br>所以 <code>insmod /lib/modules/mali.ko</code> 大概率成功，<code>60000000.gpu</code> 会绑定驱动、<code>/dev/mali</code> 会出现。<br><strong>这一步能做到，但没用</strong>——见下一条。</p>
+<h3 id="2-2-用户态层：死结（bionic-vs-musl）"><a href="#2-2-用户态层：死结（bionic-vs-musl）" class="headerlink" title="2.2 用户态层：死结（bionic vs musl）"></a>2.2 用户态层：死结（bionic vs musl）</h3><p>整机唯一存在的 Mali 用户态 DDK 是安卓分区里的<br><code>/mnt/android_sys/lib/egl/libGLES_mali.so</code>（1.2 MB，内含 “Mali online shader compiler r6p0-01rel0”）。<br>它依赖的库：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">libc.so(→ bionic)  libc++.so  libbinder.so  libcutils.so  libhardware.so</span><br><span class="line">libion.so  liblog.so  libui.so  libutils.so  libboost.so  libapplist.so</span><br></pre></td></tr></table></figure>
+
+<p>→ 是 <strong>bionic 二进制，musl 加载不了</strong>。<br>要救只能：搭 glibc chroot，再手搓 bionic 桩，还要实现 <code>libbinder</code>（Android IPC）——不现实。</p>
+<h3 id="2-3-开源-mesa-lima-路线：也不通"><a href="#2-3-开源-mesa-lima-路线：也不通" class="headerlink" title="2.3 开源 mesa-lima 路线：也不通"></a>2.3 开源 mesa-lima 路线：也不通</h3><p>Alpine 装了 mesa（<code>libEGL.so</code> &#x2F; <code>libGLESv2.so</code> &#x2F; <code>libgbm.so</code> 都在），但：</p>
+<ul>
+<li><code>/usr/lib/dri/</code> 只有 <code>nouveau/r600/radeonsi/virtio_gpu_drv_video.so</code> —— 这 4 个是<br><strong>VA-API 视频驱动</strong>，**没有 <code>lima_dri.so</code>**（Mali-400&#x2F;450 的开源 3D 驱动）；</li>
+<li><strong><code>/dev/dri</code> 与 <code>/sys/class/drm</code> 都不存在</strong> —— lima 是 DRM 驱动，需要内核 4.20+，<br>本机是 3.10.65。移植等于把整个 DRM 子系统搬进 3.10，不现实。</li>
+</ul>
+<p><strong>结论：Mali-400 在这台机器上用不起来。</strong> 内核侧能点亮，但没有任何可用的用户态 GL 栈。</p>
+<hr>
+<h2 id="3-就算-GPU-能用，也不是卡的原因"><a href="#3-就算-GPU-能用，也不是卡的原因" class="headerlink" title="3. 就算 GPU 能用，也不是卡的原因"></a>3. 就算 GPU 能用，也不是卡的原因</h2><ul>
+<li><strong>视频卡顿的真因是 CPU 软解码</strong>。2 核 1.3 GHz 软解 H.264（尤其 720p &#x2F; high profile &#x2F; B 帧）<br>必然吃不住，<strong>GPU 不做视频解码</strong>。</li>
+<li><strong>UI（LVGL）用 GPU 大概率更慢</strong>：LVGL 现在 fbdev 直写、只刷脏矩形（面积小），<br>是最短路径。改走 GLES 后要把结果 <code>glReadPixels</code> 回读再写 fb —— Mali-400 的回读极慢，<br>属于典型的”加速反而变慢”。</li>
+</ul>
+<hr>
+<h2 id="4-真正该用的两个硬件（都在，且已-probe）"><a href="#4-真正该用的两个硬件（都在，且已-probe）" class="headerlink" title="4. 真正该用的两个硬件（都在，且已 probe）"></a>4. 真正该用的两个硬件（都在，且已 probe）</h2><h3 id="4-1-VSP-——-视频硬解（解决”卡”的正解）"><a href="#4-1-VSP-——-视频硬解（解决”卡”的正解）" class="headerlink" title="4.1 VSP —— 视频硬解（解决”卡”的正解）"></a>4.1 VSP —— 视频硬解（解决”卡”的正解）</h3><p>安卓分区里有硬件编解码 OMX 组件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">libomx_avcdec_hw_sprd.so        H.264 硬解</span><br><span class="line">libomx_m4vh263dec_hw_sprd.so    MPEG4 / H.263 硬解</span><br><span class="line">libomx_vpxdec_hw_sprd.so        VP8/VP9 硬解</span><br><span class="line">libomx_avcenc_hw_sprd.so        H.264 硬编</span><br><span class="line">libomxvpu.so                    VPU 封装层</span><br></pre></td></tr></table></figure>
+
+<p>证明 <strong>硬件解码能力确实存在</strong>，内核节点 <code>/dev/sprd_vsp</code>、<code>/dev/sprd_coda7l</code> 也都就位。<br>但这些 OMX 库同样是 bionic，不能直接用。</p>
+<p><strong>唯一出路</strong>：自己写用户态驱动，直接 ioctl <code>/dev/sprd_vsp</code>（展讯私有 ioctl，需要逆向；<br>工作量与之前逆向 FM ioctl 同一量级），再喂给 mplayer&#x2F;自建播放器。</p>
+<h3 id="4-2-GSP-——-2D-加速（这才是”用到显示上”的正解）"><a href="#4-2-GSP-——-2D-加速（这才是”用到显示上”的正解）" class="headerlink" title="4.2 GSP —— 2D 加速（这才是”用到显示上”的正解）"></a>4.2 GSP —— 2D 加速（这才是”用到显示上”的正解）</h3><p><code>/dev/sprd_gsp</code> + <code>/dev/sprd_iommu_gsp</code>，配合 <code>/dev/ion</code> 分配 buffer，能硬件做：</p>
+<ul>
+<li><strong>YUV → RGB 色彩转换</strong></li>
+<li><strong>任意比例缩放</strong></li>
+<li>旋转、alpha 混合、blit</li>
+</ul>
+<p>对 mplayer 的价值：省掉软件缩放 + 色彩转换（<code>-vf scale</code> &#x2F; swscale），<br>这部分在软解播放里通常占 <strong>30~50% CPU</strong>，是仅次于解码的第二大头。<br>对 LVGL：可做整屏合成，但 LVGL 本身软件渲染，收益有限。</p>
+<hr>
+<h2 id="5-不动内核、不逆向，立刻能做的（推荐先做这几步）"><a href="#5-不动内核、不逆向，立刻能做的（推荐先做这几步）" class="headerlink" title="5. 不动内核、不逆向，立刻能做的（推荐先做这几步）"></a>5. 不动内核、不逆向，立刻能做的（推荐先做这几步）</h2><ol>
+<li><strong>量化瓶颈</strong>（决定后面走哪条路）：<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /home/lvgl_demo/lvgl_demo/libs</span><br><span class="line">./mplayer/mplayer -benchmark -vo null -nosound 你的视频.mp4</span><br></pre></td></tr></table></figure>
+<ul>
+<li>若纯解码就能 ≥25 fps → 瓶颈在<strong>缩放&#x2F;写 fb</strong>：<br>把视频<strong>预先转码成 720x1280 固定分辨率</strong>再播（省掉运行时缩放，收益最大）；<br>或降 <code>-vf scale</code> 的复杂度（<code>-sws 0</code> 最快）。</li>
+<li>若纯解码也只有 ~10 fps → 瓶颈是<strong>解码</strong>：降规格或走 VSP 硬解。</li>
+</ul>
+</li>
+<li><strong>预转码为基线规格</strong>（最省事、收益明确）：<br>H.264 <strong>baseline</strong>、无 B 帧、720x1280（或 480x854）、≤1 Mbps、24~25 fps。<br>baseline 无 CABAC&#x2F;无 B 帧，软解开销能降一大截。</li>
+<li><strong>播放参数减负</strong>：<code>-framedrop -nosound -noautoquality -vo fbdev</code>；<br>音频解码在 2 核机器上也是实打实的 CPU 开销。</li>
+</ol>
+<hr>
+<h2 id="6-后续可选路线（按性价比排序）"><a href="#6-后续可选路线（按性价比排序）" class="headerlink" title="6. 后续可选路线（按性价比排序）"></a>6. 后续可选路线（按性价比排序）</h2><table>
+<thead>
+<tr>
+<th>#</th>
+<th>路线</th>
+<th>收益</th>
+<th>代价</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>d</td>
+<td>预转码 + benchmark 定位瓶颈</td>
+<td>中（很可能直接解决卡顿）</td>
+<td>几乎为零</td>
+</tr>
+<tr>
+<td>b</td>
+<td>逆向 <code>/dev/sprd_gsp</code> 做硬件缩放&#x2F;色彩转换</td>
+<td>中高（视频播放明显轻松）</td>
+<td>中（ioctl 逆向 + ION 分配）</td>
+</tr>
+<tr>
+<td>a</td>
+<td>逆向 <code>/dev/sprd_vsp</code> 做硬解</td>
+<td>高（根本解决解码瓶颈）</td>
+<td>大（类比 FM ioctl 逆向）</td>
+</tr>
+<tr>
+<td>c</td>
+<td><code>insmod mali.ko</code> 点亮内核层</td>
+<td><strong>几乎为零</strong>（无用户态 GL 栈可用）</td>
+<td>小，但<strong>不建议做</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Mali-400-GPU-%E4%B8%8E%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F%EF%BC%9A%E5%8B%98%E5%AF%9F%E7%BB%93%E8%AE%BA"><span class="toc-number">1.</span> <span class="toc-text">Mali-400 GPU 与硬件加速：勘察结论</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E5%85%88%E7%BA%A0%E6%AD%A3%E4%B8%A4%E4%B8%AA%E6%A6%82%E5%BF%B5"><span class="toc-number">1.1.</span> <span class="toc-text">0. 先纠正两个概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%A1%AC%E4%BB%B6%E4%B8%8E%E9%A9%B1%E5%8A%A8%E7%8E%B0%E7%8A%B6%EF%BC%88%E5%AE%9E%E6%B5%8B%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 硬件与驱动现状（实测）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Mali-400-%E8%83%BD%E4%B8%8D%E8%83%BD%E7%94%A8%E8%B5%B7%E6%9D%A5%EF%BC%9A%E4%B8%8D%E8%83%BD"><span class="toc-number">1.3.</span> <span class="toc-text">2. Mali-400 能不能用起来：不能</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E5%86%85%E6%A0%B8%E5%B1%82%EF%BC%9A%E8%83%BD%E7%82%B9%E4%BA%AE%EF%BC%88%E4%BD%86%E4%B8%8D%E6%98%AF%E7%93%B6%E9%A2%88%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">2.1 内核层：能点亮（但不是瓶颈）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E7%94%A8%E6%88%B7%E6%80%81%E5%B1%82%EF%BC%9A%E6%AD%BB%E7%BB%93%EF%BC%88bionic-vs-musl%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">2.2 用户态层：死结（bionic vs musl）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E5%BC%80%E6%BA%90-mesa-lima-%E8%B7%AF%E7%BA%BF%EF%BC%9A%E4%B9%9F%E4%B8%8D%E9%80%9A"><span class="toc-number">1.3.3.</span> <span class="toc-text">2.3 开源 mesa-lima 路线：也不通</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%B0%B1%E7%AE%97-GPU-%E8%83%BD%E7%94%A8%EF%BC%8C%E4%B9%9F%E4%B8%8D%E6%98%AF%E5%8D%A1%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="toc-number">1.4.</span> <span class="toc-text">3. 就算 GPU 能用，也不是卡的原因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%9C%9F%E6%AD%A3%E8%AF%A5%E7%94%A8%E7%9A%84%E4%B8%A4%E4%B8%AA%E7%A1%AC%E4%BB%B6%EF%BC%88%E9%83%BD%E5%9C%A8%EF%BC%8C%E4%B8%94%E5%B7%B2-probe%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 真正该用的两个硬件（都在，且已 probe）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-VSP-%E2%80%94%E2%80%94-%E8%A7%86%E9%A2%91%E7%A1%AC%E8%A7%A3%EF%BC%88%E8%A7%A3%E5%86%B3%E2%80%9D%E5%8D%A1%E2%80%9D%E7%9A%84%E6%AD%A3%E8%A7%A3%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 VSP —— 视频硬解（解决”卡”的正解）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-GSP-%E2%80%94%E2%80%94-2D-%E5%8A%A0%E9%80%9F%EF%BC%88%E8%BF%99%E6%89%8D%E6%98%AF%E2%80%9D%E7%94%A8%E5%88%B0%E6%98%BE%E7%A4%BA%E4%B8%8A%E2%80%9D%E7%9A%84%E6%AD%A3%E8%A7%A3%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 GSP —— 2D 加速（这才是”用到显示上”的正解）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%B8%8D%E5%8A%A8%E5%86%85%E6%A0%B8%E3%80%81%E4%B8%8D%E9%80%86%E5%90%91%EF%BC%8C%E7%AB%8B%E5%88%BB%E8%83%BD%E5%81%9A%E7%9A%84%EF%BC%88%E6%8E%A8%E8%8D%90%E5%85%88%E5%81%9A%E8%BF%99%E5%87%A0%E6%AD%A5%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">5. 不动内核、不逆向，立刻能做的（推荐先做这几步）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%90%8E%E7%BB%AD%E5%8F%AF%E9%80%89%E8%B7%AF%E7%BA%BF%EF%BC%88%E6%8C%89%E6%80%A7%E4%BB%B7%E6%AF%94%E6%8E%92%E5%BA%8F%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. 后续可选路线（按性价比排序）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/mali-survey/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&text=Mali400与硬件加速_勘察结论"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&title=Mali400与硬件加速_勘察结论"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&is_video=false&description=Mali400与硬件加速_勘察结论"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400与硬件加速_勘察结论&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/mali-survey/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&title=Mali400与硬件加速_勘察结论"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&title=Mali400与硬件加速_勘察结论"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&title=Mali400与硬件加速_勘察结论"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&title=Mali400与硬件加速_勘察结论"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/mali-survey/&name=Mali400与硬件加速_勘察结论&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

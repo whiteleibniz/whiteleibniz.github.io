@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_04 — GBA 改用 miniretro 后仍然黑屏（video_cb 硬编码分辨率丢帧） 现象：GBA 启动方式改成 miniretro + mgba_libretro.so 后，核心能加载、进程在跑，但屏幕全黑。根因层：miniretro 前端帧回调 video_cb（渲染管线）。修复工作量：extern&#x2F;miniretro&#x2F;miniretro.c（本项与「条">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA改用miniretro后仍黑屏">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_04 — GBA 改用 miniretro 后仍然黑屏（video_cb 硬编码分辨率丢帧） 现象：GBA 启动方式改成 miniretro + mgba_libretro.so 后，核心能加载、进程在跑，但屏幕全黑。根因层：miniretro 前端帧回调 video_cb（渲染管线）。修复工作量：extern&#x2F;miniretro&#x2F;miniretro.c（本项与「条">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.817Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA改用miniretro后仍黑屏</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-02/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-03/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&text=GBA改用miniretro后仍黑屏"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&title=GBA改用miniretro后仍黑屏"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&is_video=false&description=GBA改用miniretro后仍黑屏"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA改用miniretro后仍黑屏&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&title=GBA改用miniretro后仍黑屏"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&title=GBA改用miniretro后仍黑屏"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&title=GBA改用miniretro后仍黑屏"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&title=GBA改用miniretro后仍黑屏"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&name=GBA改用miniretro后仍黑屏&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-04-%E2%80%94-GBA-%E6%94%B9%E7%94%A8-miniretro-%E5%90%8E%E4%BB%8D%E7%84%B6%E9%BB%91%E5%B1%8F%EF%BC%88video-cb-%E7%A1%AC%E7%BC%96%E7%A0%81%E5%88%86%E8%BE%A8%E7%8E%87%E4%B8%A2%E5%B8%A7%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_04 — GBA 改用 miniretro 后仍然黑屏（video_cb 硬编码分辨率丢帧）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E8%BF%87%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解决办法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81"><span class="toc-number">1.6.</span> <span class="toc-text">验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%8F%E9%AA%8C%E6%95%99%E8%AE%AD"><span class="toc-number">1.7.</span> <span class="toc-text">经验教训</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA改用miniretro后仍黑屏
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-04-—-GBA-改用-miniretro-后仍然黑屏（video-cb-硬编码分辨率丢帧）"><a href="#bugfix-20260923-04-—-GBA-改用-miniretro-后仍然黑屏（video-cb-硬编码分辨率丢帧）" class="headerlink" title="bugfix_20260923_04 — GBA 改用 miniretro 后仍然黑屏（video_cb 硬编码分辨率丢帧）"></a>bugfix_20260923_04 — GBA 改用 miniretro 后仍然黑屏（video_cb 硬编码分辨率丢帧）</h1><blockquote>
+<p><strong>现象</strong>：GBA 启动方式改成 <code>miniretro + mgba_libretro.so</code> 后，核心能加载、进程在跑，但<strong>屏幕全黑</strong>。<br><strong>根因层</strong>：<code>miniretro</code> 前端帧回调 <code>video_cb</code>（渲染管线）。<br><strong>修复工作量</strong>：<code>extern/miniretro/miniretro.c</code>（本项与「条纹」修复合计 +81&#x2F;-13，见 <code>bugfix_20260923_05</code>）。<br><strong>文件名</strong>：<code>bugfix_20260923_04_GBA改用miniretro后仍黑屏.md</code><br><strong>关联提交</strong>：（待提交后回填）<br><strong>日期</strong>：2026-09-23</p>
+</blockquote>
+<h2 id="现象"><a href="#现象" class="headerlink" title="现象"></a>现象</h2><ol>
+<li>GBA 启动已改为 <code>miniretro extern/miniretro/mgba_libretro.so &lt;rom&gt; ...</code>（见 <code>bugfix_20260923_03</code>）。</li>
+<li>冒烟测试显示核心加载正常：<code>core: mGBA 0.11.0</code>、<code>游戏已加载 240x160, 59.73 fps</code>。</li>
+<li>但真实进入游戏时<strong>全屏黑</strong>，进程存活、无崩溃日志。</li>
+<li>对照：同一个 <code>miniretro</code> 跑 FC（<code>fceumm_libretro.so</code>，256×240）<strong>画面完全正常</strong>。</li>
+</ol>
+<p>线索：<strong>核心加载成功却黑屏 → 帧数据在渲染环节被丢掉了</strong>，且只发生在 GBA 这一路。</p>
+<h2 id="影响范围"><a href="#影响范围" class="headerlink" title="影响范围"></a>影响范围</h2><ul>
+<li><strong>受影响</strong>：所有 240×160 的核心（GBA &#x2F; mGBA）。</li>
+<li><strong>不受影响</strong>：FC（256×240）——仍走原路径，行为不变。<br>（本次改动对 FC 透明，共用的 <code>miniretro</code> 可安全改。）</li>
+</ul>
+<h2 id="根因"><a href="#根因" class="headerlink" title="根因"></a>根因</h2><p><code>miniretro.c</code> 的帧回调 <code>video_cb</code> 把分辨率<strong>硬编码</strong>成 FC 的尺寸：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> FC_W 256</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> FC_H 240</span></span><br><span class="line">...</span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">video_cb</span><span class="params">(<span class="type">const</span> <span class="type">void</span> *data, <span class="type">unsigned</span> width, <span class="type">unsigned</span> height, <span class="type">size_t</span> pitch)</span></span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span>(width != FC_W || height != FC_H) <span class="keyword">return</span>;   <span class="comment">/* 非 256x240 直接丢弃整帧 */</span></span><br></pre></td></tr></table></figure>
+
+<p>mGBA 输出的是 <strong>240×160</strong>（日志实锤：<code>游戏已加载 240x160</code>）。<br><code>240 != 256</code> → 条件成立 → <code>return</code>，<strong>每一帧都在进入绘制前被丢弃</strong>，<code>fb_buf</code> 从不刷新 → 黑屏。</p>
+<p>此外，同函数下面的 <code>scale_rotate90()</code> 还写死了源尺寸 <code>FC_W/FC_H</code>，即便放行也会用错尺寸。</p>
+<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><ol>
+<li><strong>确认链路</strong>：冒烟测试证明 <code>core 加载正常</code>、ROM 正确、fb0 已 mmap、输入设备已打开 → 排除”没启动&#x2F;没加载”。</li>
+<li><strong>找到客观指标</strong>：用”fb0 非黑像素占比”量化——黑屏时应 ≈ 0。</li>
+<li><strong>读源码</strong>：在 <code>miniretro.c</code> 里 <code>grep</code> 分辨率相关符号，<code>if(width != FC_W || height != FC_H) return;</code> 一眼可见。</li>
+<li><strong>弯路（错方向）</strong>：一开始怀疑”核心没加载 &#x2F; 像素格式不对”，但日志已证核心加载成功；<br>真正的原因是<strong>尺寸守卫</strong>，而不是格式。</li>
+<li><strong>验证</strong>：放行 240×160 后重编，受控自测 fb0 非黑像素占比从 ≈0 变为 <strong>0.559</strong> → 画面确实出来了。</li>
+</ol>
+<h2 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h2><p><code>extern/miniretro/miniretro.c</code>：</p>
+<ol>
+<li><p>放行 GBA 分辨率：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* 放行 FC(256x240) 与 GBA(240x160) 两种分辨率; 其它异常尺寸拒绝 */</span></span><br><span class="line"><span class="keyword">if</span>((width != FC_W || height != FC_H) &amp;&amp; (width != <span class="number">240</span> || height != <span class="number">160</span>)) <span class="keyword">return</span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>scale_rotate90()</code> 改用<strong>传入的</strong>动态宽高（<code>out_h = out_w * rot_canvas_h / rot_canvas_w</code>），<br>不再引用 <code>FC_W/FC_H</code>。</p>
+</li>
+<li><p>补 <strong>0RGB1555</strong> 兜底分支（核心未主动声明像素格式时的默认值；mGBA 实际用 RGB565，分支 2）。</p>
+</li>
+<li><p>重编：<code>cd extern/miniretro &amp;&amp; sh build.sh</code>（该目录无 Makefile，用 <code>build.sh</code>）。</p>
+</li>
+</ol>
+<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><ul>
+<li>受控自测（设备端单独跑 <code>miniretro mgba_libretro.so &lt;rom&gt;</code>）：<br><code>fb0 非黑像素 = 515088 / 921600，占比 0.559</code>，日志 <code>core 输出像素格式 = 2</code>（RGB565）。<br>→ <strong>画面确实渲染出来了</strong>（此前黑屏时应 ≈0）。</li>
+<li><strong>用户实机确认</strong>：”有图像了” —— 但仍描述为”撕裂状”，转入 <code>bugfix_20260923_05</code>。</li>
+</ul>
+<h2 id="经验教训"><a href="#经验教训" class="headerlink" title="经验教训"></a>经验教训</h2><ol>
+<li><strong>复用别平台的前端时，硬编码的分辨率&#x2F;尺寸守卫是头号杀手。</strong><br>不同 libretro 核心的输出分辨率不同（fceumm 256×240、mGBA 240×160），<br>前端任何”&#x3D;&#x3D; 某尺寸才处理”的写法都会静默丢帧。</li>
+<li>**”核心加载成功”不等于”有画面”**：加载日志只证明 <code>retro_load_game</code> 成功，<br>帧要经过 <code>video_cb</code> 才能上屏，中间任何一次”静默 return”都会黑屏且不报错。</li>
+<li>**量化指标（非黑像素占比）很好用，但只能证明”有画面”，证明不了”画面正确”**——<br>它能抓出黑屏，抓不出错位&#x2F;条纹。判”画面对不对”必须人眼看图。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-04-%E2%80%94-GBA-%E6%94%B9%E7%94%A8-miniretro-%E5%90%8E%E4%BB%8D%E7%84%B6%E9%BB%91%E5%B1%8F%EF%BC%88video-cb-%E7%A1%AC%E7%BC%96%E7%A0%81%E5%88%86%E8%BE%A8%E7%8E%87%E4%B8%A2%E5%B8%A7%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_04 — GBA 改用 miniretro 后仍然黑屏（video_cb 硬编码分辨率丢帧）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E8%BF%87%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解决办法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81"><span class="toc-number">1.6.</span> <span class="toc-text">验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%8F%E9%AA%8C%E6%95%99%E8%AE%AD"><span class="toc-number">1.7.</span> <span class="toc-text">经验教训</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&text=GBA改用miniretro后仍黑屏"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&title=GBA改用miniretro后仍黑屏"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&is_video=false&description=GBA改用miniretro后仍黑屏"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA改用miniretro后仍黑屏&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&title=GBA改用miniretro后仍黑屏"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&title=GBA改用miniretro后仍黑屏"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&title=GBA改用miniretro后仍黑屏"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&title=GBA改用miniretro后仍黑屏"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-04/&name=GBA改用miniretro后仍黑屏&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

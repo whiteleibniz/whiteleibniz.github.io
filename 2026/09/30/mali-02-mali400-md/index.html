@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="展讯 SC9832A Mali-400 —— 摆脱安卓可行性分析 目标：评估能否完全不依赖安卓(bionic)用户态来驱动 Mali-400 GPU。环境：Alpine&#x2F;musl（根 OS，armv7l）+ 展讯 SC9832A + 内核 3.10.65。数据来源：2026-09-30 对设备的只读探测（uname &#x2F; lsmod &#x2F; readelf &#x2F; s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mali400_摆脱安卓可行性分析">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="展讯 SC9832A Mali-400 —— 摆脱安卓可行性分析 目标：评估能否完全不依赖安卓(bionic)用户态来驱动 Mali-400 GPU。环境：Alpine&#x2F;musl（根 OS，armv7l）+ 展讯 SC9832A + 内核 3.10.65。数据来源：2026-09-30 对设备的只读探测（uname &#x2F; lsmod &#x2F; readelf &#x2F; s">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-30T10:50:38.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.741Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="GPU">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Mali400_摆脱安卓可行性分析</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/08/ref-vsp-h264/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/30/mali-04-mali400-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&text=Mali400_摆脱安卓可行性分析"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&title=Mali400_摆脱安卓可行性分析"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&is_video=false&description=Mali400_摆脱安卓可行性分析"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_摆脱安卓可行性分析&body=Check out this article: https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&title=Mali400_摆脱安卓可行性分析"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&title=Mali400_摆脱安卓可行性分析"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&title=Mali400_摆脱安卓可行性分析"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&title=Mali400_摆脱安卓可行性分析"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&name=Mali400_摆脱安卓可行性分析&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-Mali-400-%E2%80%94%E2%80%94-%E6%91%86%E8%84%B1%E5%AE%89%E5%8D%93%E5%8F%AF%E8%A1%8C%E6%80%A7%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A Mali-400 —— 摆脱安卓可行性分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E4%B8%80%E5%8F%A5%E8%AF%9D%E7%BB%93%E8%AE%BA"><span class="toc-number">1.1.</span> <span class="toc-text">0. 一句话结论</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%8E%B0%E7%8A%B6%E7%A1%AC%E8%AF%81%E6%8D%AE%EF%BC%88%E6%8E%A2%E6%B5%8B%E6%89%80%E5%BE%97%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 现状硬证据（探测所得）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E2%80%9C%E6%91%86%E8%84%B1%E5%AE%89%E5%8D%93%E2%80%9D%E7%9A%84%E4%B8%89%E7%A7%8D%E7%BB%88%E6%80%81"><span class="toc-number">1.3.</span> <span class="toc-text">2. “摆脱安卓”的三种终态</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%B8%A4%E6%9D%A1%E8%B7%AF%E7%BA%BF%E9%80%90%E5%B1%82%E5%8F%AF%E8%A1%8C%E6%80%A7"><span class="toc-number">1.4.</span> <span class="toc-text">3. 两条路线逐层可行性</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E5%86%85%E6%A0%B8%E4%BE%A7%EF%BC%88%E4%B8%A4%E6%9D%A1%E8%B7%AF%E5%85%B1%E7%94%A8%E5%89%8D%E6%8F%90%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 内核侧（两条路共用前提）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%96%B9%E6%A1%88%E2%91%A0-%E6%98%8E%E7%BB%86"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 方案① 明细</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E6%96%B9%E6%A1%88%E2%91%A1-%E6%98%8E%E7%BB%86"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 方案② 明细</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%85%B3%E9%94%AE%E8%AE%A4%E7%9F%A5%EF%BC%88%E5%AE%B9%E6%98%93%E8%B8%A9%E7%9A%84%E5%9D%91%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 关键认知（容易踩的坑）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%8E%A8%E8%8D%90%E4%B8%8E%E5%86%B3%E7%AD%96%E6%A0%91"><span class="toc-number">1.6.</span> <span class="toc-text">5. 推荐与决策树</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%8B%E4%B8%80%E6%AD%A5%E6%9C%80%E5%B0%8F%E9%AA%8C%E8%AF%81%EF%BC%88%E9%AA%8C%E8%AF%81%E5%BD%92%E7%94%A8%E6%88%B7%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. 下一步最小验证（验证归用户）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%BD%95-A%EF%BC%9A-lib-modules-%E9%87%8C%E5%87%A0%E4%B8%AA%E6%A8%A1%E5%9D%97%E6%98%AF%E5%B9%B2%E4%BB%80%E4%B9%88%E7%9A%84"><span class="toc-number">1.8.</span> <span class="toc-text">附录 A：&#x2F;lib&#x2F;modules 里几个模块是干什么的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%BD%95-B%EF%BC%9ADRM-%E5%90%8C%E5%90%8D%E9%99%B7%E9%98%B1-%E2%80%94%E2%80%94-%E5%AE%89%E5%8D%93%E9%82%A3%E4%B8%AA-lib-drm-%E4%B8%8D%E6%98%AF-GPU-%E7%9A%84-DRM"><span class="toc-number">1.9.</span> <span class="toc-text">附录 B：DRM 同名陷阱 —— 安卓那个 &#x2F;lib&#x2F;drm 不是 GPU 的 DRM</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%BD%E5%8A%A0%EF%BC%9A-mnt-android-sys-vendor-lib-%E4%B8%8B%E7%9A%84%E5%90%8C%E5%90%8D%E6%96%87%E4%BB%B6%E4%B9%9F%E5%85%A8%E6%98%AF%E6%95%B0%E5%AD%97%E7%89%88%E6%9D%83"><span class="toc-number">1.9.1.</span> <span class="toc-text">追加：&#x2F;mnt&#x2F;android_sys&#x2F;vendor&#x2F;lib 下的同名文件也全是数字版权</span></a></li></ol></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Mali400_摆脱安卓可行性分析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-30T10:50:38.000Z" itemprop="datePublished">2026-09-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/GPU/" rel="tag">GPU</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="展讯-SC9832A-Mali-400-——-摆脱安卓可行性分析"><a href="#展讯-SC9832A-Mali-400-——-摆脱安卓可行性分析" class="headerlink" title="展讯 SC9832A Mali-400 —— 摆脱安卓可行性分析"></a>展讯 SC9832A Mali-400 —— 摆脱安卓可行性分析</h1><blockquote>
+<p>目标：评估能否<strong>完全不依赖安卓(bionic)用户态</strong>来驱动 Mali-400 GPU。<br>环境：Alpine&#x2F;musl（根 OS，armv7l）+ 展讯 SC9832A + 内核 3.10.65。<br>数据来源：2026-09-30 对设备的只读探测（uname &#x2F; lsmod &#x2F; readelf &#x2F; strings &#x2F; mount &#x2F; find）。</p>
+</blockquote>
+<hr>
+<h2 id="0-一句话结论"><a href="#0-一句话结论" class="headerlink" title="0. 一句话结论"></a>0. 一句话结论</h2><p><strong>技术可行，但有两条路线，难度天差地别：</strong></p>
+<ul>
+<li><strong>方案①（闭源、省力）</strong>：换一组”Linux 原生”的 Mali 用户态库（同版本 Utgard DDK 的 Linux 变体），去掉 bionic 依赖。<strong>难点在获取匹配版本的闭源 DDK</strong>，不是技术。</li>
+<li><strong>方案②（全开源、彻底）</strong>：用设备已装好的 <strong>Mesa 24.2.8 + Lima</strong> 驱动 Mali-400。<strong>只差内核 DRM 节点</strong>（<code>/dev/dri</code>），需在 3.10.65 上补 <code>lima</code> + 显示 DRM 驱动——工程量最大，但能 100% 去安卓、且去 shim 黑魔法。</li>
+</ul>
+<blockquote>
+<p>一个被忽视的事实：**<code>mali.ko</code> 本身是 ARM 闭源内核 blob<strong>。所以方案①只是”用户态非安卓”，内核仍依赖闭源模块；只有方案②才彻底开源。无论哪条路，当前都卡在</strong>内核侧接口**——用户态库（bionic 那套 &#x2F; mesa 那套）反而都齐了。</p>
+</blockquote>
+<hr>
+<h2 id="1-现状硬证据（探测所得）"><a href="#1-现状硬证据（探测所得）" class="headerlink" title="1. 现状硬证据（探测所得）"></a>1. 现状硬证据（探测所得）</h2><table>
+<thead>
+<tr>
+<th>项</th>
+<th>发现</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>内核</td>
+<td><code>3.10.65 #13 SMP PREEMPT ... armv7l</code></td>
+<td>老旧 vendor 内核</td>
+</tr>
+<tr>
+<td>GPU 节点</td>
+<td><code>/dev/mali0</code> 存在；**<code>/dev/dri</code> 不存在**</td>
+<td>只有专有 UDD 接口，无 DRM</td>
+</tr>
+<tr>
+<td>内核模块</td>
+<td><code>mali.ko</code>（446KB，已加载）；源自 <code>vendor/sprd/modules/libgpu/gpu/utgard/...</code>（<code>wzp_1.5_0703</code> BSP）</td>
+<td><strong>Utgard 专有 blob，不含 DRM 子系统</strong></td>
+</tr>
+<tr>
+<td>DRM 子系统</td>
+<td><code>/sys/class/drm</code> 不存在；<code>cat /proc/filesystems</code> 无 drm</td>
+<td>运行内核根本没编 DRM</td>
+</tr>
+<tr>
+<td>当前用户态</td>
+<td><code>/system/lib/libEGL.so</code>→<code>/mnt/android_sys/lib/libEGL.so</code>；interpreter&#x3D;<code>/system/bin/linker</code>；NEEDED&#x3D;<code>libcutils/libutils/liblog/libc++.so/libc.so</code></td>
+<td><strong>Android DDK</strong>，链接 bionic HAL 库</td>
+</tr>
+<tr>
+<td>bionic 来源</td>
+<td><code>/mnt/android_sys</code>（<code>/dev/mmcblk0p17</code>，ext4，<strong>ro 挂载</strong>的原安卓分区）；<code>/system/bin/linker</code>、<code>/system/lib/libc.so</code> 均指向它</td>
+<td>安卓用户态完全外挂，根 OS 是 musl</td>
+</tr>
+<tr>
+<td>Mesa 现状</td>
+<td><code>/usr/lib/libGL.so.</code><u><code>1.2.0</code></u>→<strong>Mesa 24.2.8</strong>；<code>/usr/lib/xorg/modules/dri/lima_dri.so</code>、<code>panfrost_dri.so</code> 均存在</td>
+<td><strong>Lima 用户态已就绪</strong>，只缺内核 DRM</td>
+</tr>
+<tr>
+<td>内核构建环境</td>
+<td><code>/lib/modules/3.10.65/build</code> 不存在；<code>/usr/src</code> 不存在；仅有 <code>/usr/bin/gcc</code>（host）</td>
+<td><strong>无法就地编内核模块</strong>，需外部 BSP 源码树</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-“摆脱安卓”的三种终态"><a href="#2-“摆脱安卓”的三种终态" class="headerlink" title="2. “摆脱安卓”的三种终态"></a>2. “摆脱安卓”的三种终态</h2><ul>
+<li><strong>方案① ARM Mali Linux DDK（闭源用户态，非 Android）</strong>：把 Android <code>libEGL/libGLESv2</code> 换成<strong>同一 Utgard DDK 的 Linux 构建</strong>（链接 musl&#x2F;glibc + <code>libump</code>，走 fbdev&#x2F;DRM 窗口，<strong>不</strong>依赖 <code>libcutils/libutils/liblog</code>）。</li>
+<li><strong>方案② Mesa Lima（全开源）</strong>：用已装好的 Mesa+<code>lima_dri.so</code> 驱动 Mali-400，经标准 EGL&#x2F;GL + DRM&#x2F;KMS 出图。</li>
+<li><strong>方案③ 维持现状混合桥</strong>（bionic 库 + <code>bionic_shim</code> + musl-gcc <code>-Wl,--entry=main</code>）：当前唯一能跑的，<strong>不算摆脱</strong>。</li>
+</ul>
+<hr>
+<h2 id="3-两条路线逐层可行性"><a href="#3-两条路线逐层可行性" class="headerlink" title="3. 两条路线逐层可行性"></a>3. 两条路线逐层可行性</h2><h3 id="3-1-内核侧（两条路共用前提）"><a href="#3-1-内核侧（两条路共用前提）" class="headerlink" title="3.1 内核侧（两条路共用前提）"></a>3.1 内核侧（两条路共用前提）</h3><p><code>mali.ko</code> 是内核模块，libc 无关，Alpine 照常 <code>insmod</code>。但它只给 <code>/dev/mali0</code>（UDD ioctl），<strong>Lima 用户态不认这个接口</strong>——Lima 要的是 <code>drm_lima_*</code> ioctl（<code>/dev/dri</code>）。所以：</p>
+<ul>
+<li>方案① 保留 <code>mali.ko</code>，只换用户态 → <strong>内核侧零改动</strong>。</li>
+<li>方案② 必须<strong>替换</strong> <code>mali.ko</code> 为 lima DRM 驱动 → 内核侧大改。</li>
+</ul>
+<h3 id="3-2-方案①-明细"><a href="#3-2-方案①-明细" class="headerlink" title="3.2 方案① 明细"></a>3.2 方案① 明细</h3><ul>
+<li>动作：取得 <strong>Utgard Linux DDK</strong>（含 <code>libEGL.so</code>&#x2F;<code>libGLESv2.so</code>&#x2F;<code>libump.so</code>，glibc&#x2F;musl 版），放到 <code>/usr/lib</code>，删掉 <code>/system</code> 软链与 <code>bionic_shim</code>。</li>
+<li>窗口系统：Linux DDK 支持 <strong>fbdev</strong>（无 DRM 也能跑），正好匹配本机只有 <code>/dev/fb0</code>。</li>
+<li>回读：Linux DDK 的 pbuffer&#x2F;fbdev 读回语义正常，<strong>之前 gpu_bench 的黑屏&#x2F;陈旧红问题大概率消失</strong>。</li>
+<li><strong>阻塞点（唯一）</strong>：用户态 DDK 与内核 <code>mali.ko</code> 必须<strong>同 DDK 版本</strong>（如 r4p0↔r4p0）。模块来自 sprd <code>wzp_1.5_0703</code> BSP，需从该 BSP 取出<strong>对应版本的 Linux 用户态</strong>。ARM 早已停止公开分发经典 Utgard DDK（UMPL 许可，~2014 r4p0 末版），公开获取困难；<strong>若该 BSP 打包时带了 linux 变体则一击即中，否则 procurement 是硬卡点</strong>。</li>
+</ul>
+<h3 id="3-3-方案②-明细"><a href="#3-3-方案②-明细" class="headerlink" title="3.3 方案② 明细"></a>3.3 方案② 明细</h3><ul>
+<li>动作：内核加 <code>drivers/gpu/drm/lima</code> + 一个显示 DRM 驱动（SPRD 显示控制器，或包一层 dumb DRM 复用现有 fb），编进 3.10.65 并加载，得 <code>/dev/dri/card0</code>；用户态已齐（Mesa 24.2.8 + lima）。</li>
+<li>payoff：100% 开源、标准接口、<code>glReadPixels</code> 正常、彻底告别 shim&#x2F;ctor&#x2F;TLS&#x2F;dlsym 黑魔法；PSP 前端、gpu_bench 都可直接用标准 EGL。</li>
+<li><strong>阻塞点（最大）</strong>：lima 上游要求较新内核，往 3.10.65 <strong>backport 是重活</strong>；且需配套显示 DRM 驱动（本机显示目前是裸 fbdev，没有 DRM 封装）。<strong>无在机内核源码&#x2F;构建环境</strong>，需先取得 SC9832A 的 3.10.65 BSP 源码树。</li>
+<li>性能：Lima 的 GLES2 在 Mali-400 上可用，但通常略低于专有 blob；对跑分&#x2F;演示足够，PSP 模拟可能比专有前端略低。</li>
+</ul>
+<hr>
+<h2 id="4-关键认知（容易踩的坑）"><a href="#4-关键认知（容易踩的坑）" class="headerlink" title="4. 关键认知（容易踩的坑）"></a>4. 关键认知（容易踩的坑）</h2><ol>
+<li>**两条路都卡在”内核侧接口”**：方案① 卡”匹配版本的闭源用户态”，方案② 卡”补开源内核 DRM”。用户态库（bionic 那套 &#x2F; mesa 那套）反而都齐了。</li>
+<li><strong>mali.ko 闭源</strong> → 方案① 只是”用户态非安卓”，内核仍依赖 ARM blob；只有方案② 全开源。</li>
+<li><strong>android_sys 可卸载</strong>：<code>/mnt/android_sys</code> 是 ro 挂载的原安卓分区，仅当前 Mali 栈需要；摆脱后不挂它、删 <code>/system</code> 软链即可，根 OS（Alpine&#x2F;musl）不受影响。</li>
+<li>**不能”用 mesa 但留 mali.ko”**：Mesa Lima 与专有 <code>mali.ko</code> 用的是两套不兼容的内核 UAPI，无法混用。</li>
+<li>**不能”给 bionic libEGL 套 shim 伪装成 Linux”**：它依赖 <code>libcutils/libutils/liblog</code>（Android HAL：property&#x2F;hw_get_module&#x2F;ashmem&#x2F;binder），重实现这些等于重写 Android HAL，正是要摆脱的东西，且极脆。</li>
+</ol>
+<hr>
+<h2 id="5-推荐与决策树"><a href="#5-推荐与决策树" class="headerlink" title="5. 推荐与决策树"></a>5. 推荐与决策树</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">能否从 SC9832A BSP(wzp_1.5_0703) 拿到 同版本 Utgard Linux DDK 用户态?</span><br><span class="line">├─ 能 ──► 方案①：换 .so、去 bionic、fbdev 出图。最省力，顺手解决回读黑屏。</span><br><span class="line">└─ 不能 ─► 想要&quot;真正彻底非安卓&quot;才值得上 方案②：</span><br><span class="line">           取得 3.10.65 BSP 源码 → 加 lima+显示 DRM 驱动 → 编内核 → /dev/dri → Mesa Lima。</span><br><span class="line">           （工程量大，但一劳永逸，且能摘掉所有 shim 黑魔法）</span><br></pre></td></tr></table></figure>
+
+<p><strong>务实建议</strong>：先确认 BSP 里有没有 Linux 版 <code>libEGL/libGLESv2</code>（往往和 Android 版放在同一 vendor 包的不同目录）。有就走方案①，性价比最高；没有且你坚持”彻底去安卓”，再投入方案②。</p>
+<hr>
+<h2 id="6-下一步最小验证（验证归用户）"><a href="#6-下一步最小验证（验证归用户）" class="headerlink" title="6. 下一步最小验证（验证归用户）"></a>6. 下一步最小验证（验证归用户）</h2><ol>
+<li><strong>查 BSP 是否含 linux 版 Mali 用户态</strong>：在 <code>wzp_1.5_0703/idh.code/vendor/sprd/modules/libgpu/</code> 及 <code>out/.../system/lib/</code> 里找 <code>libEGL.so</code>&#x2F;<code>libGLESv2.so</code> 的 <strong>非 bionic</strong> 构建（readelf 看 interpreter 是否为 <code>/system/bin/linker</code>，NEEDED 是否含 <code>libcutils</code>）。</li>
+<li><strong>探 3.10.65 能否补 DRM</strong>：确认能否取得该内核源码树；grep 是否已有 <code>drivers/gpu/drm/lima</code> 或 SPRD 显示 DRM 雏形，评估 backport 工作量。</li>
+<li><strong>快速证伪</strong>：在现有环境 <code>EGL_PLATFORM=surfaceless</code> + Mesa 试跑，确认确因缺 <code>/dev/dri</code> 而失败（验证”只差 DRM”这个判断）。</li>
+</ol>
+<hr>
+<h2 id="附录-A：-lib-modules-里几个模块是干什么的"><a href="#附录-A：-lib-modules-里几个模块是干什么的" class="headerlink" title="附录 A：/lib/modules 里几个模块是干什么的"></a>附录 A：<code>/lib/modules</code> 里几个模块是干什么的</h2><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>证据（strings&#x2F;modinfo）</th>
+<th>干什么</th>
+<th>运行必需</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>mali.ko</strong></td>
+<td><code>utgard/driver/mali</code>（sprd <code>wzp_1.5_0703</code> BSP）</td>
+<td>Mali-400 GPU 内核驱动 → <code>/dev/mali0</code></td>
+<td>✅ GPU</td>
+</tr>
+<tr>
+<td><strong>sprdwl.ko</strong></td>
+<td><code>description=SPRD sc2331 Wireless Network Adapter</code>，<code>author=jinglong.chen</code></td>
+<td>展讯 <strong>Wi-Fi</strong> 驱动（Marlin combo 芯片）</td>
+<td>✅ Wi-Fi</td>
+</tr>
+<tr>
+<td><strong>marlin_fm.ko</strong></td>
+<td><code>fm_read_rds_data</code> &#x2F; <code>parse_at_fm_cmd</code> &#x2F; <code>fm_sdio_*</code></td>
+<td><strong>FM 收音机</strong>驱动（SDIO&#x2F;AT）</td>
+<td>仅用 FM</td>
+</tr>
+<tr>
+<td><strong>pskey_bt.txt</strong></td>
+<td><code>device_class</code>&#x2F;<code>default_ahb_clk</code>&#x2F;<code>feature_set</code>&#x2F;增益功率表；”HEX 修改、0x 开头”</td>
+<td><strong>非驱动</strong>：蓝牙芯片 <strong>PSKEY 持久化配置</strong>（NVM）</td>
+<td>用 BT 时</td>
+</tr>
+<tr>
+<td><strong>autotst.ko</strong></td>
+<td><code>author=anli.wei</code>；含 <code>sprdfb</code> 串</td>
+<td>出厂<strong>自检</strong>模块</td>
+<td>❌ 调试</td>
+</tr>
+<tr>
+<td><strong>gator.ko</strong></td>
+<td><code>gator_get_time</code> &#x2F; <code>ARM1136…ARMv7 Cortex-</code></td>
+<td><strong>ARM Streamline</strong> 性能剖析模块</td>
+<td>❌ 剖析</td>
+</tr>
+<tr>
+<td><strong>mmc_test.ko</strong></td>
+<td><code>author=Pierre Ossman</code>，<code>kernel/drivers/mmc/card/mmc_test.c</code></td>
+<td>主线 <strong>MMC&#x2F;SD&#x2F;eMMC 压测</strong>模块</td>
+<td>❌ 拷机</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>marlin_fm &#x2F; sprdwl &#x2F; pskey_bt 是一套：<strong>Marlin &#x3D; 展讯 combo 连接芯片（Wi-Fi&#x2F;蓝牙&#x2F;FM&#x2F;GPS 合一）</strong>。</p>
+</blockquote>
+<hr>
+<h2 id="附录-B：DRM-同名陷阱-——-安卓那个-lib-drm-不是-GPU-的-DRM"><a href="#附录-B：DRM-同名陷阱-——-安卓那个-lib-drm-不是-GPU-的-DRM" class="headerlink" title="附录 B：DRM 同名陷阱 —— 安卓那个 /lib/drm 不是 GPU 的 DRM"></a>附录 B：DRM 同名陷阱 —— 安卓那个 <code>/lib/drm</code> 不是 GPU 的 DRM</h2><p><strong>发现</strong>：<code>/mnt/android_sys/lib/drm/</code> 里只有 **<code>libdrmomaplugin.so</code>**（OMA DRM 插件）。</p>
+<p><strong>两个 DRM 完全是两回事（最容易带偏排查）</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>缩写</th>
+<th>全称</th>
+<th>领域</th>
+<th>本机在哪</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>DRM</strong></td>
+<td><strong>Direct Rendering Manager</strong></td>
+<td><strong>内核 GPU&#x2F;显示子系统</strong>，给 <code>/dev/dri</code>、<code>GEM/TTM</code> 显存、命令提交、<code>KMS</code> 模式设置</td>
+<td>❌ 本机没有（无 <code>/dev/dri</code>）</td>
+</tr>
+<tr>
+<td><strong>DRM</strong></td>
+<td><strong>Digital Rights Management</strong></td>
+<td><strong>数字版权保护</strong>（加密媒体、OMA&#x2F;Widevine）</td>
+<td>✅ 安卓侧有：<code>lib/drm/libdrmomaplugin.so</code>、<code>libdrmframework.so</code>、<code>libdrmdecrypt.so</code>、<code>libdrmntp.so</code></td>
+</tr>
+</tbody></table>
+<p><strong>安卓确实没有用内核 DRM（Direct Rendering Manager）——证据链：</strong></p>
+<ol>
+<li>无 <code>/dev/dri</code>、无 <code>/sys/class/drm</code>，内核根本没编 DRM；</li>
+<li>图形走 <strong>HAL 替代方案</strong>：<code>gralloc.sc8830.so</code>（显存分配，<strong>替代 GEM</strong>）+ <code>hwcomposer.sc8830.so</code>（显示合成，<strong>替代 KMS</strong>）；</li>
+<li>Mali 只暴露 **<code>/dev/mali0</code>**（专有 UDD ioctl），不走 <code>/dev/dri</code>；</li>
+<li>安卓侧<strong>没有</strong>通用 <code>libdrm.so</code>（GPU 那版），只有 <code>libdrmframework*.so</code>（版权那版）；</li>
+<li>系统 &#x3D; <strong>Android 6.0（MRA58K）</strong>，老式 vendor HAL 模型（远早于 Treble，更不可能用主线 DRM）。</li>
+<li>反证：GPU 版 libdrm 只存在于 Alpine&#x2F;mesa 侧（<code>/usr/lib/libdrm_intel.so.1</code>，Intel 目标、且同样需要 DRM 节点才有用）。</li>
+</ol>
+<p><strong>结论</strong>：找到 <code>/lib/drm</code> <strong>不代表</strong>安卓用了内核 DRM，纯属缩写撞名。正因为安卓用 gralloc+hwcomposer+<code>/dev/mali0</code> 绕开了 DRM，才导致——现成的 Mesa Lima 无 <code>/dev/dri</code> 可用、方案②必须先在 3.10.65 上补 DRM 驱动。这也是”摆脱安卓”卡在内核侧的根因之一。</p>
+<h3 id="追加：-mnt-android-sys-vendor-lib-下的同名文件也全是数字版权"><a href="#追加：-mnt-android-sys-vendor-lib-下的同名文件也全是数字版权" class="headerlink" title="追加：/mnt/android_sys/vendor/lib 下的同名文件也全是数字版权"></a>追加：<code>/mnt/android_sys/vendor/lib</code> 下的同名文件也全是数字版权</h3><p>实抽符号坐实（均为 Google <strong>Widevine</strong> &#x2F; <strong>MediaDrm</strong> 内容解密，与 GPU 无关）：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>实抽符号</th>
+<th>真身</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>libwvm.so</code></td>
+<td><code>android::DrmManagerClient::decrypt</code> &#x2F; <code>DecryptHandle</code></td>
+<td>安卓 DRM 框架客户端</td>
+</tr>
+<tr>
+<td><code>libwvdrm_L3.so</code></td>
+<td><code>WidevineMediaKit::Component::HandleStreamInfoSource</code></td>
+<td><strong>Widevine L3</strong>（软件级版权）</td>
+</tr>
+<tr>
+<td><code>libWVStreamControlAPI_L3.so</code></td>
+<td><code>WidevineMediaKit::MemoryChunk</code></td>
+<td>Widevine 流控 API L3</td>
+</tr>
+<tr>
+<td><code>vendor/lib/drm/libdrmwvmplugin.so</code></td>
+<td><code>android::DrmConstraints</code></td>
+<td>老安卓 DRM 插件（WVM）</td>
+</tr>
+<tr>
+<td><code>vendor/lib/mediadrm/libdrmclearkeyplugin.so</code></td>
+<td><code>clearkeydrm::AesCtrDecryptor</code>、<code>createDrmFactory</code></td>
+<td><strong>MediaDrm</strong> ClearKey 插件</td>
+</tr>
+<tr>
+<td><code>vendor/lib/mediadrm/libwvdrmengine.so</code></td>
+<td><code>wvdrm::getCDM</code></td>
+<td><strong>MediaDrm</strong> Widevine 引擎</td>
+</tr>
+<tr>
+<td><code>vendor/lib/libbt-vendor.so</code></td>
+<td><code>sprd_bt_power_ctrl</code>、<code>bt_vendor_cbacks</code></td>
+<td>展讯<strong>蓝牙</strong> vendor HAL</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>识别口诀</strong>：安卓侧凡是名字带 <code>drm</code> 的（<code>libdrmframework / libdrmdecrypt / libdrmwvmplugin / mediadrm / libwvdrm*</code>）<strong>一律是数字版权&#x2F;媒体解密</strong>。<br><strong>真正跟 GPU 相关的名字里从来没有 drm</strong>：用户态是 <code>libEGL.so</code> &#x2F; <code>libGLESv2.so</code> &#x2F; <code>libGLESv1_CM.so</code>，HAL 是 <code>gralloc.sc8830.so</code> + <code>hwcomposer.sc8830.so</code>，内核是 <code>mali.ko</code>。</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-Mali-400-%E2%80%94%E2%80%94-%E6%91%86%E8%84%B1%E5%AE%89%E5%8D%93%E5%8F%AF%E8%A1%8C%E6%80%A7%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A Mali-400 —— 摆脱安卓可行性分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E4%B8%80%E5%8F%A5%E8%AF%9D%E7%BB%93%E8%AE%BA"><span class="toc-number">1.1.</span> <span class="toc-text">0. 一句话结论</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%8E%B0%E7%8A%B6%E7%A1%AC%E8%AF%81%E6%8D%AE%EF%BC%88%E6%8E%A2%E6%B5%8B%E6%89%80%E5%BE%97%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 现状硬证据（探测所得）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E2%80%9C%E6%91%86%E8%84%B1%E5%AE%89%E5%8D%93%E2%80%9D%E7%9A%84%E4%B8%89%E7%A7%8D%E7%BB%88%E6%80%81"><span class="toc-number">1.3.</span> <span class="toc-text">2. “摆脱安卓”的三种终态</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%B8%A4%E6%9D%A1%E8%B7%AF%E7%BA%BF%E9%80%90%E5%B1%82%E5%8F%AF%E8%A1%8C%E6%80%A7"><span class="toc-number">1.4.</span> <span class="toc-text">3. 两条路线逐层可行性</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E5%86%85%E6%A0%B8%E4%BE%A7%EF%BC%88%E4%B8%A4%E6%9D%A1%E8%B7%AF%E5%85%B1%E7%94%A8%E5%89%8D%E6%8F%90%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 内核侧（两条路共用前提）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%96%B9%E6%A1%88%E2%91%A0-%E6%98%8E%E7%BB%86"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 方案① 明细</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E6%96%B9%E6%A1%88%E2%91%A1-%E6%98%8E%E7%BB%86"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 方案② 明细</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%85%B3%E9%94%AE%E8%AE%A4%E7%9F%A5%EF%BC%88%E5%AE%B9%E6%98%93%E8%B8%A9%E7%9A%84%E5%9D%91%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 关键认知（容易踩的坑）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%8E%A8%E8%8D%90%E4%B8%8E%E5%86%B3%E7%AD%96%E6%A0%91"><span class="toc-number">1.6.</span> <span class="toc-text">5. 推荐与决策树</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%8B%E4%B8%80%E6%AD%A5%E6%9C%80%E5%B0%8F%E9%AA%8C%E8%AF%81%EF%BC%88%E9%AA%8C%E8%AF%81%E5%BD%92%E7%94%A8%E6%88%B7%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. 下一步最小验证（验证归用户）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%BD%95-A%EF%BC%9A-lib-modules-%E9%87%8C%E5%87%A0%E4%B8%AA%E6%A8%A1%E5%9D%97%E6%98%AF%E5%B9%B2%E4%BB%80%E4%B9%88%E7%9A%84"><span class="toc-number">1.8.</span> <span class="toc-text">附录 A：&#x2F;lib&#x2F;modules 里几个模块是干什么的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%BD%95-B%EF%BC%9ADRM-%E5%90%8C%E5%90%8D%E9%99%B7%E9%98%B1-%E2%80%94%E2%80%94-%E5%AE%89%E5%8D%93%E9%82%A3%E4%B8%AA-lib-drm-%E4%B8%8D%E6%98%AF-GPU-%E7%9A%84-DRM"><span class="toc-number">1.9.</span> <span class="toc-text">附录 B：DRM 同名陷阱 —— 安卓那个 &#x2F;lib&#x2F;drm 不是 GPU 的 DRM</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%BD%E5%8A%A0%EF%BC%9A-mnt-android-sys-vendor-lib-%E4%B8%8B%E7%9A%84%E5%90%8C%E5%90%8D%E6%96%87%E4%BB%B6%E4%B9%9F%E5%85%A8%E6%98%AF%E6%95%B0%E5%AD%97%E7%89%88%E6%9D%83"><span class="toc-number">1.9.1.</span> <span class="toc-text">追加：&#x2F;mnt&#x2F;android_sys&#x2F;vendor&#x2F;lib 下的同名文件也全是数字版权</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&text=Mali400_摆脱安卓可行性分析"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&title=Mali400_摆脱安卓可行性分析"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&is_video=false&description=Mali400_摆脱安卓可行性分析"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_摆脱安卓可行性分析&body=Check out this article: https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&title=Mali400_摆脱安卓可行性分析"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&title=Mali400_摆脱安卓可行性分析"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&title=Mali400_摆脱安卓可行性分析"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&title=Mali400_摆脱安卓可行性分析"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/30/mali-02-mali400-md/&name=Mali400_摆脱安卓可行性分析&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

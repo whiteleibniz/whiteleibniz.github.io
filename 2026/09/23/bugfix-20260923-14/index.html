@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_14 — GBA 退出后”卡死”（页翻转残留：屏幕定格在游戏画面） 日期：2026-09-23 现象：GBA 游戏退出后屏幕不黑（显示游戏画面），但界面永远回不来、按键像失灵，只能重启应用。用户描述为”不黑屏了，直接卡死”。偶发 —— 有时正常，有时必卡。 影响面：lv_pages&#x2F;gba_game_page.c、extern&#x2F;miniretro&#x2F;miniretro">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA退出后卡死_页翻转残留">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_14 — GBA 退出后”卡死”（页翻转残留：屏幕定格在游戏画面） 日期：2026-09-23 现象：GBA 游戏退出后屏幕不黑（显示游戏画面），但界面永远回不来、按键像失灵，只能重启应用。用户描述为”不黑屏了，直接卡死”。偶发 —— 有时正常，有时必卡。 影响面：lv_pages&#x2F;gba_game_page.c、extern&#x2F;miniretro&#x2F;miniretro">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.869Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA退出后卡死_页翻转残留</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-15/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-18/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&text=GBA退出后卡死_页翻转残留"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&title=GBA退出后卡死_页翻转残留"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&is_video=false&description=GBA退出后卡死_页翻转残留"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出后卡死_页翻转残留&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&title=GBA退出后卡死_页翻转残留"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&title=GBA退出后卡死_页翻转残留"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&title=GBA退出后卡死_页翻转残留"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&title=GBA退出后卡死_页翻转残留"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&name=GBA退出后卡死_页翻转残留&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-14-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E5%90%8E%E2%80%9D%E5%8D%A1%E6%AD%BB%E2%80%9D%EF%BC%88%E9%A1%B5%E7%BF%BB%E8%BD%AC%E6%AE%8B%E7%95%99%EF%BC%9A%E5%B1%8F%E5%B9%95%E5%AE%9A%E6%A0%BC%E5%9C%A8%E6%B8%B8%E6%88%8F%E7%94%BB%E9%9D%A2%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_14 — GBA 退出后”卡死”（页翻转残留：屏幕定格在游戏画面）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%83%8C%E6%99%AF%EF%BC%9A%E4%B8%A4%E4%B8%AA%E9%A9%B1%E5%8A%A8%E5%AF%B9%E2%80%9D%E9%A1%B5%E2%80%9D%E7%9A%84%E7%90%86%E8%A7%A3%E4%B8%8D%E4%B8%80%E8%87%B4"><span class="toc-number">1.1.</span> <span class="toc-text">1. 背景：两个驱动对”页”的理解不一致</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.2.</span> <span class="toc-text">2. 根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%AF%81%E6%8D%AE"><span class="toc-number">1.3.</span> <span class="toc-text">3. 证据</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D%EF%BC%88%E4%B8%89%E5%B1%82%E5%85%9C%E5%BA%95%EF%BC%8C%E5%85%A8%E9%83%A8%E2%80%9D%E5%B9%82%E7%AD%89-%E5%8F%AA%E5%9C%A8%E5%BC%82%E5%B8%B8%E6%97%B6%E6%89%8D%E6%9C%89%E5%8A%A8%E4%BD%9C%E2%80%9D%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复（三层兜底，全部”幂等 + 只在异常时才有动作”）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%89%8D%E7%AB%AF-miniretro-gba-c-%E2%80%94-fb-restore-%E6%94%B9%E4%B8%BA%E6%97%A0%E6%9D%A1%E4%BB%B6%E7%BF%BB%E5%9B%9E%E7%AC%AC-0-%E9%A1%B5"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 前端 miniretro_gba.c — fb_restore() 改为无条件翻回第 0 页</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-GBA-%E9%A1%B5-%E2%80%94-%E6%96%B0%E5%A2%9E-gba-reset-fb-page-%EF%BC%8C%E7%88%B6%E8%BF%9B%E7%A8%8B%E8%87%AA%E5%B7%B1%E5%85%9C%E5%BA%95%E7%BF%BB%E9%A1%B5"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 GBA 页 — 新增 gba_reset_fb_page()，父进程自己兜底翻页</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E8%A1%A5%E5%88%80%E6%97%B6%E9%97%B4-120ms-%E2%86%92-600ms"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 补刀时间 120ms → 600ms</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E6%81%A2%E5%A4%8D%E9%87%8D%E7%BB%98%E5%90%8E%E8%A1%A5%E4%B8%80%E6%AC%A1-lv-refr-now-NULL"><span class="toc-number">1.4.4.</span> <span class="toc-text">4.4 恢复重绘后补一次 lv_refr_now(NULL)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%8F%8D%E6%A8%A1%E5%BC%8F%E8%AE%B0%E5%BD%95%EF%BC%88%E6%9C%AC%E6%AC%A1%E6%96%B0%E5%A2%9E%EF%BC%8C%E5%B7%B2%E5%B9%B6%E5%85%A5-skill%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">6. 反模式记录（本次新增，已并入 skill）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E9%81%97%E7%95%99"><span class="toc-number">1.7.</span> <span class="toc-text">7. 遗留</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA退出后卡死_页翻转残留
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-14-—-GBA-退出后”卡死”（页翻转残留：屏幕定格在游戏画面）"><a href="#bugfix-20260923-14-—-GBA-退出后”卡死”（页翻转残留：屏幕定格在游戏画面）" class="headerlink" title="bugfix_20260923_14 — GBA 退出后”卡死”（页翻转残留：屏幕定格在游戏画面）"></a>bugfix_20260923_14 — GBA 退出后”卡死”（页翻转残留：屏幕定格在游戏画面）</h1><ul>
+<li><strong>日期</strong>：2026-09-23</li>
+<li><strong>现象</strong>：GBA 游戏退出后屏幕<strong>不黑</strong>（显示游戏画面），但<strong>界面永远回不来、按键像失灵</strong>，<br>只能重启应用。用户描述为”不黑屏了，直接卡死”。<strong>偶发</strong> —— 有时正常，有时必卡。</li>
+<li><strong>影响面</strong>：<code>lv_pages/gba_game_page.c</code>、<code>extern/miniretro/miniretro_gba.c</code>（GBA 前端）</li>
+<li><strong>是否影响 FC</strong>：<strong>不影响</strong>（FC 用原版 <code>miniretro</code>，它从来不翻页）</li>
+</ul>
+<hr>
+<h2 id="1-背景：两个驱动对”页”的理解不一致"><a href="#1-背景：两个驱动对”页”的理解不一致" class="headerlink" title="1. 背景：两个驱动对”页”的理解不一致"></a>1. 背景：两个驱动对”页”的理解不一致</h2><p>设备 framebuffer 有 3 个虚拟页（<code>yres_virtual=3840</code> &#x3D; 3×1280）。</p>
+<table>
+<thead>
+<tr>
+<th>谁</th>
+<th>怎么用 fb0</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>LVGL</strong>（<code>lv_linux_fbdev</code>）</td>
+<td><strong>只用 mmap 基址绘制 &#x3D; 永远写第 0 页</strong>；<code>vinfo.yoffset</code> 在 init 时设 0 后再不改；源码里 <strong><code>FBIOPAN_DISPLAY</code> 零命中</strong></td>
+</tr>
+<tr>
+<td><strong>GBA 前端</strong>（<code>miniretro_gba</code>）</td>
+<td>用 <code>FBIOPAN_DISPLAY</code> <strong>双缓冲页翻转</strong>消撕裂 → 前台在<strong>第 0&#x2F;1 页之间来回切</strong></td>
+</tr>
+</tbody></table>
+<p><strong>关键推论</strong>：只要退出时前台停在第 1 页，<strong>LVGL 画什么都看不见</strong> ——<br>因为 LVGL 永远往第 0 页写，而屏幕显示的是第 1 页。</p>
+<h2 id="2-根因"><a href="#2-根因" class="headerlink" title="2. 根因"></a>2. 根因</h2><ol>
+<li>前端每渲染一帧就翻一次页，**前台页是 0 还是 1 取决于”退出那一刻”**。<br>实测抓帧：启动游戏后依次测到 <code>yoffset=1280 → 0 → 1280 → 1280 → 1280</code>（同一局游戏内）。</li>
+<li>前端退出时本会在 <code>fb_restore()</code> 里翻回第 0 页（<strong>定点实测：SIGTERM 后 0.4s <code>yoffset</code> 由 1280 变 0</strong>），<br>但父进程 <code>gba_exit_to_list()</code> 在 **SIGTERM 后 120ms 就补 <code>SIGKILL</code>**；<br>而前端收尾里包含 <code>core_deinit()</code> —— <strong>把 .sav 电池存档落盘到 SD 卡</strong>，写卡慢时远超 120ms。</li>
+<li>一旦被 SIGKILL 打断 → <strong>翻页没做 → 前台永久停在第 1 页 → 屏幕定格游戏画面</strong> → “卡死”。</li>
+</ol>
+<blockquote>
+<p>这解释了<strong>为什么它偶发</strong>：存档早就在页缓存里 → 收尾 &lt;120ms → 正常；<br>真要写 SD 卡 → 被杀 → 卡死。</p>
+</blockquote>
+<h2 id="3-证据"><a href="#3-证据" class="headerlink" title="3. 证据"></a>3. 证据</h2><table>
+<thead>
+<tr>
+<th>证据</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>源码</td>
+<td><code>lv_linux_fbdev.c:174 dsc-&gt;vinfo.yoffset = 0;</code>（此后不改）、<code>grep -n &#39;PAN&#39;</code> <strong>零命中</strong></td>
+</tr>
+<tr>
+<td>抓帧</td>
+<td>图 <code>shots/final/01..10</code>：运行期 <code>yoffset</code> 在 0&#x2F;1 间切换</td>
+</tr>
+<tr>
+<td>定点实验</td>
+<td>单独跑 <code>miniretro_gba</code>：运行中 <code>yoffset=1280</code> → SIGTERM 后 0.4s <strong>→0</strong>（说明前端收尾<strong>能</strong>翻页，问题只在”有没有机会走到”）</td>
+</tr>
+<tr>
+<td>残留取证</td>
+<td><code>shots/guard/01</code>：重启应用后抓到的”桌面”其实是<strong>页1 里的上一局游戏画面</strong>（<code>yoffset=1280</code>）—— 正是卡死的物质形态</td>
+</tr>
+<tr>
+<td>排除项</td>
+<td>前端退出日志完整（<code>收尾完成 t=30.8ms</code>）、无僵尸、无崩溃循环、<code>hardware_keys</code> 的 <code>EVIOCGRAB</code> 幂等正常</td>
+</tr>
+</tbody></table>
+<h2 id="4-修复（三层兜底，全部”幂等-只在异常时才有动作”）"><a href="#4-修复（三层兜底，全部”幂等-只在异常时才有动作”）" class="headerlink" title="4. 修复（三层兜底，全部”幂等 + 只在异常时才有动作”）"></a>4. 修复（三层兜底，全部”幂等 + 只在异常时才有动作”）</h2><h3 id="4-1-前端-miniretro-gba-c-—-fb-restore-改为无条件翻回第-0-页"><a href="#4-1-前端-miniretro-gba-c-—-fb-restore-改为无条件翻回第-0-页" class="headerlink" title="4.1 前端 miniretro_gba.c — fb_restore() 改为无条件翻回第 0 页"></a>4.1 前端 <code>miniretro_gba.c</code> — <code>fb_restore()</code> 改为<strong>无条件</strong>翻回第 0 页</h3><p>去掉”先读 <code>yoffset</code>、非 0 才翻”的分支：翻到第 0 页本身是幂等操作，<br>判断只会多一个可能出错的分支（虽然实测本驱动回读可靠，但没必要依赖）。<br>失败&#x2F;翻不动时打印 <code>★ 翻回第0页失败</code>，便于现场定位。</p>
+<h3 id="4-2-GBA-页-—-新增-gba-reset-fb-page-，父进程自己兜底翻页"><a href="#4-2-GBA-页-—-新增-gba-reset-fb-page-，父进程自己兜底翻页" class="headerlink" title="4.2 GBA 页 — 新增 gba_reset_fb_page()，父进程自己兜底翻页"></a>4.2 GBA 页 — 新增 <code>gba_reset_fb_page()</code>，<strong>父进程自己兜底翻页</strong></h3><p>打开 <code>/dev/fb0</code>，若 <code>yoffset != 0</code> 就 <code>FBIOPAN_DISPLAY</code> 到 0。<br><strong>无论前端有没有被打死都成立</strong> —— 这是治本的一层。在 <strong>3 处</strong>调用：</p>
+<table>
+<thead>
+<tr>
+<th>调用点</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>gba_wait_thread()</code> 恢复段（<code>set_lvgl_paused(false)</code> <strong>之前</strong>）</td>
+<td>游戏退出 → 恢复 UI 前先保证可见页 &#x3D; 第 0 页</td>
+</tr>
+<tr>
+<td><code>gba_on_destroy()</code></td>
+<td>页面离场时再兜一次</td>
+</tr>
+<tr>
+<td><code>gba_on_create()</code></td>
+<td>进页面先归零（若上次异常留下页1 残留）</td>
+</tr>
+</tbody></table>
+<h3 id="4-3-补刀时间-120ms-→-600ms"><a href="#4-3-补刀时间-120ms-→-600ms" class="headerlink" title="4.3 补刀时间 120ms → 600ms"></a>4.3 补刀时间 120ms → 600ms</h3><p>给”落存档 + 翻页”留出时间。<strong>补刀必须保留</strong>（子进程真挂死时，没有 SIGKILL 会让阻塞的<br><code>waitpid</code> 永不返回）。这 600ms 只花在<strong>按键线程</strong>里，不拖慢 UI 恢复。</p>
+<h3 id="4-4-恢复重绘后补一次-lv-refr-now-NULL"><a href="#4-4-恢复重绘后补一次-lv-refr-now-NULL" class="headerlink" title="4.4 恢复重绘后补一次 lv_refr_now(NULL)"></a>4.4 恢复重绘后补一次 <code>lv_refr_now(NULL)</code></h3><p>只 <code>invalidate</code> 的话要等下一轮 <code>lv_timer_handler</code> 才真正出图；立即刷一帧，<br>消除”标志被消费、画面却没画回来”的窗口。</p>
+<h2 id="5-验证"><a href="#5-验证" class="headerlink" title="5. 验证"></a>5. 验证</h2><table>
+<thead>
+<tr>
+<th>项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>定点：前端运行中 &#x2F; SIGTERM 后 <code>yoffset</code></td>
+<td><code>1280</code> → <strong>0</strong> ✓</td>
+</tr>
+<tr>
+<td>关键推论（运行期会在页1）</td>
+<td>实测同一局内多次采到 <code>yoffset=1280</code> ✓</td>
+</tr>
+<tr>
+<td>编译</td>
+<td>前端 <code>RC=0</code>、主程序 <code>MAKE_RC=0 / ERR=0</code> ✓</td>
+</tr>
+<tr>
+<td>部署</td>
+<td>原子替换 <code>BIN_OK</code>；设备源码 <code>gba_reset_fb_page</code>×6、前端”无条件翻回”×1 ✓</td>
+</tr>
+<tr>
+<td>运行态</td>
+<td><code>lvgl_demo</code>×1 + <code>lvgl_watchdog</code>×1；退出后 <code>yoffset=0</code>；无僵尸 ✓</td>
+</tr>
+<tr>
+<td>正常路径</td>
+<td>兜底日志<strong>不出现</strong>（前端自己已翻回 0）→ 兜底是纯保险，不改变正常行为 ✓</td>
+</tr>
+</tbody></table>
+<h2 id="6-反模式记录（本次新增，已并入-skill）"><a href="#6-反模式记录（本次新增，已并入-skill）" class="headerlink" title="6. 反模式记录（本次新增，已并入 skill）"></a>6. 反模式记录（本次新增，已并入 skill）</h2><ul>
+<li><strong>多缓冲页翻转必须”退出时归位”<strong>：只要有一个消费者（LVGL）不做翻页、<br>而另一个生产者（外部播放器&#x2F;模拟器）做翻页，</strong>退出时不清算前台页 &#x3D; 永久黑屏&#x2F;定格</strong>。<br>且<strong>归位责任不能只交给会被强杀的子进程</strong> —— 父进程必须能自己兜底。</li>
+<li><strong>给子进程的 SIGKILL 时限要考虑它的落盘开销</strong>（存档&#x2F;截图&#x2F;日志刷盘），<br>否则”以为在防挂死，实际在制造故障”。</li>
+</ul>
+<h2 id="7-遗留"><a href="#7-遗留" class="headerlink" title="7. 遗留"></a>7. 遗留</h2><ul>
+<li>退出到恢复 UI 仍有 ~400ms（内核回收 evdev fd 的固有开销），<strong>刻意保留</strong>（与 FC 一致）。</li>
+<li>本文件描述的三层兜底中，只有”前端无条件翻页”需要重编前端；另三层都在页面侧。</li>
+<li>若将来给 FC 页也上双缓冲（当前 FC 前端不翻页、无此问题），<strong>必须同时搬这三层兜底</strong>。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-14-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E5%90%8E%E2%80%9D%E5%8D%A1%E6%AD%BB%E2%80%9D%EF%BC%88%E9%A1%B5%E7%BF%BB%E8%BD%AC%E6%AE%8B%E7%95%99%EF%BC%9A%E5%B1%8F%E5%B9%95%E5%AE%9A%E6%A0%BC%E5%9C%A8%E6%B8%B8%E6%88%8F%E7%94%BB%E9%9D%A2%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_14 — GBA 退出后”卡死”（页翻转残留：屏幕定格在游戏画面）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%83%8C%E6%99%AF%EF%BC%9A%E4%B8%A4%E4%B8%AA%E9%A9%B1%E5%8A%A8%E5%AF%B9%E2%80%9D%E9%A1%B5%E2%80%9D%E7%9A%84%E7%90%86%E8%A7%A3%E4%B8%8D%E4%B8%80%E8%87%B4"><span class="toc-number">1.1.</span> <span class="toc-text">1. 背景：两个驱动对”页”的理解不一致</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.2.</span> <span class="toc-text">2. 根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%AF%81%E6%8D%AE"><span class="toc-number">1.3.</span> <span class="toc-text">3. 证据</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%A4%8D%EF%BC%88%E4%B8%89%E5%B1%82%E5%85%9C%E5%BA%95%EF%BC%8C%E5%85%A8%E9%83%A8%E2%80%9D%E5%B9%82%E7%AD%89-%E5%8F%AA%E5%9C%A8%E5%BC%82%E5%B8%B8%E6%97%B6%E6%89%8D%E6%9C%89%E5%8A%A8%E4%BD%9C%E2%80%9D%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修复（三层兜底，全部”幂等 + 只在异常时才有动作”）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%89%8D%E7%AB%AF-miniretro-gba-c-%E2%80%94-fb-restore-%E6%94%B9%E4%B8%BA%E6%97%A0%E6%9D%A1%E4%BB%B6%E7%BF%BB%E5%9B%9E%E7%AC%AC-0-%E9%A1%B5"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 前端 miniretro_gba.c — fb_restore() 改为无条件翻回第 0 页</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-GBA-%E9%A1%B5-%E2%80%94-%E6%96%B0%E5%A2%9E-gba-reset-fb-page-%EF%BC%8C%E7%88%B6%E8%BF%9B%E7%A8%8B%E8%87%AA%E5%B7%B1%E5%85%9C%E5%BA%95%E7%BF%BB%E9%A1%B5"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 GBA 页 — 新增 gba_reset_fb_page()，父进程自己兜底翻页</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E8%A1%A5%E5%88%80%E6%97%B6%E9%97%B4-120ms-%E2%86%92-600ms"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 补刀时间 120ms → 600ms</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E6%81%A2%E5%A4%8D%E9%87%8D%E7%BB%98%E5%90%8E%E8%A1%A5%E4%B8%80%E6%AC%A1-lv-refr-now-NULL"><span class="toc-number">1.4.4.</span> <span class="toc-text">4.4 恢复重绘后补一次 lv_refr_now(NULL)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%8F%8D%E6%A8%A1%E5%BC%8F%E8%AE%B0%E5%BD%95%EF%BC%88%E6%9C%AC%E6%AC%A1%E6%96%B0%E5%A2%9E%EF%BC%8C%E5%B7%B2%E5%B9%B6%E5%85%A5-skill%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">6. 反模式记录（本次新增，已并入 skill）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E9%81%97%E7%95%99"><span class="toc-number">1.7.</span> <span class="toc-text">7. 遗留</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&text=GBA退出后卡死_页翻转残留"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&title=GBA退出后卡死_页翻转残留"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&is_video=false&description=GBA退出后卡死_页翻转残留"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出后卡死_页翻转残留&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&title=GBA退出后卡死_页翻转残留"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&title=GBA退出后卡死_页翻转残留"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&title=GBA退出后卡死_页翻转残留"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&title=GBA退出后卡死_页翻转残留"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-14/&name=GBA退出后卡死_页翻转残留&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

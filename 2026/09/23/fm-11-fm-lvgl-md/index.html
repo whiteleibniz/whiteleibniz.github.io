@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="展讯 SC9832A（spd-box）FM 收音机 —— LVGL 界面设计与交互规格 读者对象：实现收音机 App 的工程师 &#x2F; AI 助手使用方式：先读 §1–§2 拿到屏幕与硬件约束 → 按 §3 排图标 → 按 §4 画页面 → 按 §5 拆功能优先级核心价值：所有尺寸按本机实测参数（720×1280 竖屏、lv_font_cn_16 行高 31px）算出，避免画完再改行高；所有">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM收音机_LVGL界面设计与交互规格">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="展讯 SC9832A（spd-box）FM 收音机 —— LVGL 界面设计与交互规格 读者对象：实现收音机 App 的工程师 &#x2F; AI 助手使用方式：先读 §1–§2 拿到屏幕与硬件约束 → 按 §3 排图标 → 按 §4 画页面 → 按 §5 拆功能优先级核心价值：所有尺寸按本机实测参数（720×1280 竖屏、lv_font_cn_16 行高 31px）算出，避免画完再改行高；所有">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.710Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM收音机_LVGL界面设计与交互规格</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/fm-09-fm-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/fm-12-fm-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&text=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&title=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&is_video=false&description=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音机_LVGL界面设计与交互规格&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&title=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&title=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&title=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&title=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&name=FM收音机_LVGL界面设计与交互规格&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A%EF%BC%88spd-box%EF%BC%89FM-%E6%94%B6%E9%9F%B3%E6%9C%BA-%E2%80%94%E2%80%94-LVGL-%E7%95%8C%E9%9D%A2%E8%AE%BE%E8%AE%A1%E4%B8%8E%E4%BA%A4%E4%BA%92%E8%A7%84%E6%A0%BC"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A（spd-box）FM 收音机 —— LVGL 界面设计与交互规格</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%AE%BE%E8%AE%A1%E7%BA%A6%E6%9D%9F%EF%BC%88%E5%85%88%E5%AE%9A%E6%AD%BB%EF%BC%8C%E5%86%8D%E7%94%BB%E9%A1%B5%E9%9D%A2%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1. 设计约束（先定死，再画页面）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-%E5%B1%8F%E5%B9%95%E4%B8%8E%E5%AD%97%E4%BD%93%E7%A1%AC%E5%8F%82%E6%95%B0"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1 屏幕与字体硬参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-%E7%A1%AC%E4%BB%B6%E8%83%BD%E5%8A%9B%E8%BE%B9%E7%95%8C%EF%BC%88%E5%86%B3%E5%AE%9A-UI-%E8%83%BD%E6%98%BE%E7%A4%BA%E4%BB%80%E4%B9%88%EF%BC%89"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2 硬件能力边界（决定 UI 能显示什么）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%B3%BB%E7%BB%9F%E5%AE%9A%E4%BD%8D%EF%BC%9A%E6%94%B6%E9%9F%B3%E6%9C%BA%E5%9C%A8%E6%95%B4%E4%B8%AA-App-%E9%87%8C%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.2.</span> <span class="toc-text">2. 系统定位：收音机在整个 App 里的位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%85%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%9B%BE%E6%A0%87%EF%BC%88%E8%A6%81%E6%B1%82-%E2%91%A0%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 入口设计与图标（要求 ①）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E6%A1%8C%E9%9D%A2%E7%BD%91%E6%A0%BC%E6%8E%92%E5%B8%83"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 桌面网格排布</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E4%B8%89%E5%A4%84%E4%BB%A3%E7%A0%81%E6%94%B9%E5%8A%A8%EF%BC%88%E5%BF%85%E6%94%B9%EF%BC%8C%E7%BC%BA%E4%B8%80%E4%B8%8D%E5%8F%AF%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 三处代码改动（必改，缺一不可）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E5%9B%BE%E6%A0%87%E9%80%89%E5%9E%8B"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 图标选型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E5%9B%BE%E6%A0%87%E9%AA%8C%E8%AF%81%EF%BC%88%E4%BA%A4%E4%BB%98%E5%89%8D%E5%BF%85%E5%81%9A%EF%BC%8C%E7%BC%BA%E6%AD%A4%E6%AD%A5%E4%B8%8D%E7%AE%97%E5%AE%8C%E6%88%90%EF%BC%89"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4 图标验证（交付前必做，缺此步不算完成）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-%E8%AE%BE%E7%BD%AE%E9%A1%B5%E6%8E%92%E5%B8%83"><span class="toc-number">1.3.5.</span> <span class="toc-text">3.5 设置页排布</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%A1%B5%E9%9D%A2%E5%B8%83%E5%B1%80%EF%BC%88%E8%A6%81%E6%B1%82-%E2%91%A1%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 页面布局（要求 ②）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%88%86%E5%8C%BA%E6%80%BB%E8%A7%88%EF%BC%88720-%C3%97-1280%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 分区总览（720 × 1280）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E5%88%86%E5%8C%BA%E8%AF%A6%E7%BB%86%E8%A7%84%E6%A0%BC"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 分区详细规格</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#A-%E6%A0%87%E9%A2%98%E6%A0%8F%EF%BC%880%E2%80%9372%EF%BC%89"><span class="toc-number">1.4.2.1.</span> <span class="toc-text">A. 标题栏（0–72）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#B-%E9%A2%91%E6%AE%B5%E6%A8%A1%E5%BC%8F%E6%9D%A1%EF%BC%8880%E2%80%93111%EF%BC%89"><span class="toc-number">1.4.2.2.</span> <span class="toc-text">B. 频段模式条（80–111）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#C-%E5%BD%93%E5%89%8D%E9%A2%91%E7%82%B9%EF%BC%88120%E2%80%93232%EF%BC%89%E2%80%94%E2%80%94-%E8%A7%86%E8%A7%89%E7%84%A6%E7%82%B9"><span class="toc-number">1.4.2.3.</span> <span class="toc-text">C. 当前频点（120–232）—— 视觉焦点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#D-%E5%88%BB%E5%BA%A6%E5%B0%BA%E4%B8%8E%E8%B0%83%E8%B0%90%E6%8C%87%E9%92%88%EF%BC%88244%E2%80%93340%EF%BC%89%E2%80%94%E2%80%94-%E6%A0%B8%E5%BF%83%E4%BA%A4%E4%BA%92%E4%BB%B6"><span class="toc-number">1.4.2.4.</span> <span class="toc-text">D. 刻度尺与调谐指针（244–340）—— 核心交互件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#E-%E4%BF%A1%E5%8F%B7%E5%BC%BA%E5%BA%A6%E4%B8%8E-RDS-%E6%96%87%E6%9C%AC%EF%BC%88352%E2%80%93413%EF%BC%89"><span class="toc-number">1.4.2.5.</span> <span class="toc-text">E. 信号强度与 RDS 文本（352–413）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#F-%E6%8E%A7%E5%88%B6%E5%8C%BA%EF%BC%88430%E2%80%93590%EF%BC%89"><span class="toc-number">1.4.2.6.</span> <span class="toc-text">F. 控制区（430–590）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#G-%E6%94%B6%E8%97%8F%E9%A2%91%E9%81%93%E5%88%97%E8%A1%A8%EF%BC%88606%E2%80%931110%EF%BC%89"><span class="toc-number">1.4.2.7.</span> <span class="toc-text">G. 收藏频道列表（606–1110）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#H-%E9%9F%B3%E9%87%8F%E4%B8%8E%E5%A3%B0%E9%81%93%EF%BC%881128%E2%80%931264%EF%BC%89"><span class="toc-number">1.4.2.8.</span> <span class="toc-text">H. 音量与声道（1128–1264）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E9%A1%B5%E9%9D%A2%E4%BA%A4%E4%BA%92%E6%B5%81%E7%A8%8B%EF%BC%88%E7%8A%B6%E6%80%81%E6%9C%BA%EF%BC%89"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 页面交互流程（状态机）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E9%A1%B5%E9%9D%A2%E6%B3%A8%E5%86%8C%E8%8C%83%E5%BC%8F%EF%BC%88%E4%B8%A5%E6%A0%BC%E9%81%B5%E5%AE%88%E6%97%A2%E6%9C%89%E7%BA%A6%E5%AE%9A%EF%BC%89"><span class="toc-number">1.4.4.</span> <span class="toc-text">4.4 页面注册范式（严格遵守既有约定）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%8A%9F%E8%83%BD%E6%B8%85%E5%8D%95%EF%BC%88%E8%A6%81%E6%B1%82-%E2%91%A2%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 功能清单（要求 ③）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E4%BC%98%E5%85%88%E7%BA%A7%E6%80%BB%E8%A1%A8"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 优先级总表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E4%BE%9D%E8%B5%96%E9%A1%BA%E5%BA%8F%EF%BC%88%E5%AE%9E%E6%96%BD%E8%B7%AF%E5%BE%84%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 依赖顺序（实施路径）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-FM-daemon-%E6%8E%A5%E5%8F%A3%EF%BC%88%E9%95%9C%E5%83%8F-bt-user-daemon-%E7%9A%84%E6%97%A2%E6%9C%89%E8%8C%83%E5%BC%8F%EF%BC%89"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 FM daemon 接口（镜像 bt_user_daemon 的既有范式）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-4-%E5%A3%B0%E9%81%93%E4%BB%B2%E8%A3%81%EF%BC%88FM-A2DP-%E6%9C%AC%E5%9C%B0%E6%92%AD%E6%94%BE%E4%BA%92%E6%96%A5%EF%BC%89%E2%80%94%E2%80%94-%E9%87%8D%E7%82%B9%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.5.4.</span> <span class="toc-text">5.4 声道仲裁（FM &#x2F; A2DP &#x2F; 本地播放互斥）—— 重点设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-5-%E5%90%8E%E5%8F%B0%E6%92%AD%E6%94%BE%E4%B8%8E%E6%81%AF%E5%B1%8F%E4%BF%9D%E6%8C%81"><span class="toc-number">1.5.5.</span> <span class="toc-text">5.5 后台播放与息屏保持</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-6-%E7%8A%B6%E6%80%81%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-number">1.5.6.</span> <span class="toc-text">5.6 状态持久化</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93"><span class="toc-number">1.6.</span> <span class="toc-text">6. 一句话总结</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM收音机_LVGL界面设计与交互规格
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="展讯-SC9832A（spd-box）FM-收音机-——-LVGL-界面设计与交互规格"><a href="#展讯-SC9832A（spd-box）FM-收音机-——-LVGL-界面设计与交互规格" class="headerlink" title="展讯 SC9832A（spd-box）FM 收音机 —— LVGL 界面设计与交互规格"></a>展讯 SC9832A（spd-box）FM 收音机 —— LVGL 界面设计与交互规格</h1><blockquote>
+<p><strong>读者对象</strong>：实现收音机 App 的工程师 &#x2F; AI 助手<br><strong>使用方式</strong>：先读 §1–§2 拿到屏幕与硬件约束 → 按 §3 排图标 → 按 §4 画页面 → 按 §5 拆功能优先级<br><strong>核心价值</strong>：所有尺寸按本机实测参数（720×1280 竖屏、<code>lv_font_cn_16</code> 行高 31px）算出，避免画完再改行高；所有功能项均标注了对应的驱动 ioctl，避免设计出实现不了的交互</p>
+</blockquote>
+<hr>
+<h2 id="1-设计约束（先定死，再画页面）"><a href="#1-设计约束（先定死，再画页面）" class="headerlink" title="1. 设计约束（先定死，再画页面）"></a>1. 设计约束（先定死，再画页面）</h2><h3 id="1-1-屏幕与字体硬参数"><a href="#1-1-屏幕与字体硬参数" class="headerlink" title="1.1 屏幕与字体硬参数"></a>1.1 屏幕与字体硬参数</h3><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>值</th>
+<th>来源 &#x2F; 影响</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>分辨率</td>
+<td><strong>720 × 1280</strong>（竖屏）</td>
+<td>Framebuffer 实测；所有坐标基于此</td>
+</tr>
+<tr>
+<td>LVGL 版本</td>
+<td>9.6.0</td>
+<td>用 <code>lv_obj_set_style_transform_rotation</code> 等 9.x API</td>
+</tr>
+<tr>
+<td>默认中文字体</td>
+<td><code>lv_font_cn_16</code></td>
+<td><strong>禁止</strong>用 <code>LV_FONT_DEFAULT</code>（Montserrat-14 无 CJK，会出方格豆腐块）</td>
+</tr>
+<tr>
+<td><code>lv_font_cn_16</code> metrics</td>
+<td><strong>line_height &#x3D; 31px，base_line &#x3D; 9px</strong></td>
+<td><strong>关键</strong>：名义 16px 字号，实际占 31px 行高。按 16px 估算的布局必然裁切中文</td>
+</tr>
+<tr>
+<td>图标字库</td>
+<td>FontAwesome 码位覆盖区间 <strong>61441 ~ 63650</strong>（0xF001–0xF8A2）</td>
+<td>选图标时必须落在该区间内</td>
+</tr>
+<tr>
+<td>物理按键</td>
+<td>点餐&#x3D;114(LEFT)、服务&#x3D;102(RIGHT)、福利&#x3D;115(ENTER)、买单&#x3D;116(BACK)</td>
+<td>导航&#x2F;返回走按键，无触摸屏时要能盲操作</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ <strong>本项目历史教训</strong>：已有过因为按旧字体硬编码行高（36&#x2F;60px）导致中文被裁切的返工。<br>本规格内所有 y 坐标均已按 <strong>31px 网格</strong>重算，实现时不要”视觉微调”成 16px 网格。</p>
+</blockquote>
+<h3 id="1-2-硬件能力边界（决定-UI-能显示什么）"><a href="#1-2-硬件能力边界（决定-UI-能显示什么）" class="headerlink" title="1.2 硬件能力边界（决定 UI 能显示什么）"></a>1.2 硬件能力边界（决定 UI 能显示什么）</h3><p>以下能力已由驱动符号<strong>实测确认</strong>（见 <code>FM收音打通_AI指导手册.md</code> §2），UI 设计据此取舍：</p>
+<table>
+<thead>
+<tr>
+<th>驱动能力</th>
+<th>对应 UI 元素</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>TUNE</code> &#x2F; <code>TUNE_NEW</code></td>
+<td>手动调谐、列表跳转频点</td>
+<td>直接定频，响应快</td>
+</tr>
+<tr>
+<td><code>SEEK</code> &#x2F; <code>SEEK_NEW</code></td>
+<td>◀◀ &#x2F; ▶▶ 搜台</td>
+<td>找<strong>下一个强信号</strong>，非逐频步进</td>
+</tr>
+<tr>
+<td><code>SCAN</code> &#x2F; <code>SCAN_NEW</code> &#x2F; <code>STOP_SCAN</code> &#x2F; <code>SCAN_GETRSSI</code></td>
+<td>自动全频扫描 + 进度条 + <strong>可中断</strong></td>
+<td>四个命令成套：<code>SCAN</code> 发起全扫、<code>SCAN_GETRSSI</code> 逐点取场强以驱动进度与去噪、<code>STOP_SCAN</code> 中途取消</td>
+</tr>
+<tr>
+<td><code>GETRSSI</code></td>
+<td>信号强度指示条</td>
+<td>单频点实时查询</td>
+</tr>
+<tr>
+<td><code>MUTE</code> &#x2F; <code>SETVOL</code> &#x2F; <code>GETVOL</code></td>
+<td>静音开关、音量滑条</td>
+<td>注意：<strong>仍有 <code>SETVOL</code>，但主输出音量可能另走 ALSA</strong>，见 §5 仲裁表</td>
+</tr>
+<tr>
+<td><code>RDS_SUPPORT</code> &#x2F; <code>RDS_ONOFF</code></td>
+<td>RDS 开关（上层关上层开）</td>
+<td>建议常开</td>
+</tr>
+<tr>
+<td><code>rds_get_ps()</code></td>
+<td><strong>电台名 PS（8 字符）</strong> → 主频点下的台名</td>
+<td>RDS 最有价值的字段</td>
+</tr>
+<tr>
+<td><code>rds_get_rt()</code></td>
+<td><strong>电台文本 RT（64 字符）</strong> → 滚动字幕</td>
+<td>用于 second line 滚动</td>
+</tr>
+<tr>
+<td><code>rds_get_pty()</code></td>
+<td>节目类型（新闻&#x2F;音乐&#x2F;交通…）</td>
+<td>可显示为小标签</td>
+</tr>
+<tr>
+<td><code>rds_get_af()</code></td>
+<td>备用频率 AF → <strong>可自动切到信号更好的同套节目频率</strong></td>
+<td>高价值增弎项，非 P0</td>
+</tr>
+<tr>
+<td><code>rds_get_ct()</code></td>
+<td>电台时钟</td>
+<td>可作为状态栏时间的可选来源</td>
+</tr>
+<tr>
+<td><code>rds_get_ews()</code></td>
+<td>紧急广播</td>
+<td>有合规意义，建议预留提示位</td>
+</tr>
+<tr>
+<td><code>GETMONOSTERO</code> &#x2F; <code>SETMONOSTERO</code></td>
+<td>立体声 ST 指示灯</td>
+<td>单双声道指示</td>
+</tr>
+<tr>
+<td><code>OVER_BT_ENABLE</code></td>
+<td><strong>FM 音频改走蓝牙</strong></td>
+<td>§5.4 声道仲裁的核心开关</td>
+</tr>
+<tr>
+<td><code>ANA_SWITCH</code> &#x2F; <code>I2S_SETTING</code> &#x2F; <code>GET_I2S_INFO</code></td>
+<td>模拟 cntl vs I2S 两路音频路径选择</td>
+<td>实现一个即可，见 §5.4</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ <strong>需要实测确认（当前为待验证项，不要当成事实）</strong></p>
+<ol>
+<li><strong>FM 是否必须播耳机作天线</strong>。芯片侧 FM 射频输入常见做法是复用耳机线；本机 ALSA 拓扑里有独立的 FM 设备<br>（<code>01-04: Dfm sprd-codec-fm-4</code>），暗示可以不靠耳机。<strong>必须先做完 §5.4 音频路径试验再定方案</strong>；<br>若最终需要耳机，UI 必须在无耳机时用全屏插画提示”请插入耳机”（见 §4.1 状态 Z2）。</li>
+<li>RDS 解析函数虽然在驱动里，但<strong>是否已由用户态提供数据结构</strong>尚无头文件佐证，<code>Struct number</code> 待定。</li>
+<li>音量 <code>SETVOL</code> 与实际主输出音量的关系：可能只是 FM 模块内部增益，主管量另在 ALSA。</li>
+</ol>
+</blockquote>
+<hr>
+<h2 id="2-系统定位：收音机在整个-App-里的位置"><a href="#2-系统定位：收音机在整个-App-里的位置" class="headerlink" title="2. 系统定位：收音机在整个 App 里的位置"></a>2. 系统定位：收音机在整个 App 里的位置</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">桌面 launcher（g_launcher_page）</span><br><span class="line">   ├── 状态栏：左=时间  右=电池 / WiFi / 蓝牙图标</span><br><span class="line">   │</span><br><span class="line">   └── 应用网格 s_apps[]（第 3 行第 2 个）</span><br><span class="line">         ├── … 网络（LV_SYMBOL_WIFI,  0x56ccf2）</span><br><span class="line">         ├── 蓝牙（LV_SYMBOL_BLUETOOTH, 0x1e88e5）   ← 索引 7</span><br><span class="line">         ├── 收音机（新）                            ← 索引 8 ★ 紧跟蓝牙</span><br><span class="line">         ├── 图库</span><br><span class="line">         └── …</span><br><span class="line">                 │ 点击</span><br><span class="line">                 ▼</span><br><span class="line">        收音机页 g_radio_page（新增）</span><br><span class="line">                 │ 后台常驻播放、返回桌面不停台</span><br><span class="line">                 ▼</span><br><span class="line">        FM daemon（新增，/tmp/fm_ctl.sock）</span><br><span class="line">                 │ ioctl / AT → /dev/fm</span><br><span class="line">                 ▼</span><br><span class="line">        Marlin2 芯片 FM 部件（与 WiFi/蓝牙共享 SDIO）</span><br></pre></td></tr></table></figure>
+
+<p><strong>与其他既有页面的关系</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>页面</th>
+<th>关系</th>
+<th>交互</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>网络页 <code>g_network_page</code></td>
+<td><strong>前置依赖</strong></td>
+<td>FM 固件随 WiFi 一次下载好；WiFi 未拉起 ⇒ FM 不可用（须灰化图标或弹提示）</td>
+</tr>
+<tr>
+<td>蓝牙页 <code>g_bluetooth_page</code></td>
+<td><strong>声道互斥</strong></td>
+<td>A2DP 播放时开 FM ⇒ 需上层仲裁，见 §5.4</td>
+</tr>
+<tr>
+<td>音乐&#x2F;视频页</td>
+<td><strong>声道互斥</strong></td>
+<td>本地播放与 FM 互斥</td>
+</tr>
+<tr>
+<td>桌面 <code>g_launcher_page</code></td>
+<td>返回关系</td>
+<td>返回不停台，见 §5.5</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="3-入口设计与图标（要求-①）"><a href="#3-入口设计与图标（要求-①）" class="headerlink" title="3. 入口设计与图标（要求 ①）"></a>3. 入口设计与图标（要求 ①）</h2><h3 id="3-1-桌面网格排布"><a href="#3-1-桌面网格排布" class="headerlink" title="3.1 桌面网格排布"></a>3.1 桌面网格排布</h3><p>当前 <code>s_apps[]</code>（<code>lv_pages/launcher_page.c</code> 第 94 行起）顺序：</p>
+<table>
+<thead>
+<tr>
+<th>索引</th>
+<th>名称</th>
+<th>symbol</th>
+<th>背景色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>6</td>
+<td>网络</td>
+<td><code>LV_SYMBOL_WIFI</code></td>
+<td><code>0x56ccf2</code></td>
+</tr>
+<tr>
+<td><strong>7</strong></td>
+<td><strong>蓝牙</strong></td>
+<td><code>LV_SYMBOL_BLUETOOTH</code></td>
+<td><code>0x1e88e5</code></td>
+</tr>
+<tr>
+<td><strong>8</strong></td>
+<td><strong>收音机（新增）</strong></td>
+<td>见 §3.2</td>
+<td><code>0xe6614f</code>（建议）</td>
+</tr>
+<tr>
+<td>9（原 8）</td>
+<td>图库</td>
+<td>…</td>
+<td>…</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>视觉顺序由 <code>s_apps[]</code> 数组顺序决定</strong>（网格遍历用 <code>sizeof(s_apps)/sizeof(s_apps[0])</code>，见 <code>launcher_page.c:985</code> 与 <code>:1055</code>），<br>所以只要在数组里把它放在蓝牙条目之后，就自动排到蓝牙后面。</p>
+</blockquote>
+<h3 id="3-2-三处代码改动（必改，缺一不可）"><a href="#3-2-三处代码改动（必改，缺一不可）" class="headerlink" title="3.2 三处代码改动（必改，缺一不可）"></a>3.2 三处代码改动（必改，缺一不可）</h3><p><strong>（1）枚举</strong> —— <code>launcher_page.c</code> 第 40 行附近的枚举：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LAUNCHER_APP_BLUETOOTH,</span><br><span class="line">LAUNCHER_APP_RADIO,             <span class="comment">/* ★ 新增 */</span></span><br><span class="line">LAUNCHER_APP_GALLERY,</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ <strong>建议不要把枚举插在有隐式连续值的中间</strong>：上面写法会让 <code>GALLERY</code> 及其后各项的数值整体 +1。<br>若担心有状态持久化了旧数值，更稳的写法是<strong>加在枚举末尾</strong>（<code>LAUNCHER_APP_EXTERN = 1000</code> 之前），<br>视觉顺序仍由 <code>s_apps[]</code> 数组控制。两种方式二选一，选定后全项目统一。</p>
+</blockquote>
+<p><strong>（2）数组</strong> —— <code>s_apps[]</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&#123; LAUNCHER_APP_BLUETOOTH, <span class="string">&quot;蓝牙&quot;</span>,   LV_SYMBOL_BLUETOOTH, <span class="number">0x1e88e5</span> &#125;,</span><br><span class="line">&#123; LAUNCHER_APP_RADIO,     <span class="string">&quot;收音机&quot;</span>, RADIO_SYMBOL,       <span class="number">0xe6614f</span> &#125;,  <span class="comment">/* ★ 新增 */</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>（3）跳转分支</strong> —— <code>open_app</code> 的 switch：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> LAUNCHER_APP_RADIO:</span><br><span class="line">    lv_start_activity(&amp;g_radio_page, LV_PAGE_FLAG_DEFAULT, LV_PAGE_ANIM_SLIDE_LEFT, <span class="number">220</span>);</span><br><span class="line">    <span class="keyword">break</span>;</span><br></pre></td></tr></table></figure>
+
+<p>标准跳转写法与其他页面一致（<code>lv_start_activity(&amp;g_xxx_page, LV_PAGE_FLAG_DEFAULT, LV_PAGE_ANIM_SLIDE_LEFT, 220)</code>）。</p>
+<h3 id="3-3-图标选型"><a href="#3-3-图标选型" class="headerlink" title="3.3 图标选型"></a>3.3 图标选型</h3><p>LVGL 内置符号里<strong>没有收音机 dedicated 符号</strong>。三个候选：</p>
+<table>
+<thead>
+<tr>
+<th>候选</th>
+<th>码位</th>
+<th>十进制</th>
+<th>是否在已确认覆盖区间</th>
+<th>评价</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>broadcast-tower</strong></td>
+<td><code>U+F519</code></td>
+<td>62745</td>
+<td>✅ 在 61441–63650 内</td>
+<td><strong>推荐首选</strong>：塔形，识别度高</td>
+</tr>
+<tr>
+<td>podcast</td>
+<td><code>U+F2CE</code></td>
+<td>62158</td>
+<td>✅</td>
+<td>备选，偏”播客”语义</td>
+</tr>
+<tr>
+<td>satellite-dish</td>
+<td><code>U+F7C0</code></td>
+<td>63424</td>
+<td>✅</td>
+<td>备选，偏”卫星”语义</td>
+</tr>
+<tr>
+<td><del>radio</del></td>
+<td><code>U+F8CE</code></td>
+<td>63702</td>
+<td>❌ <strong>超出 63650</strong></td>
+<td><strong>禁止使用</strong>，会渲染成豆腐块</td>
+</tr>
+</tbody></table>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* 建议放在 radio_page.h 或公共 symbols 头里 */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RADIO_SYMBOL <span class="string">&quot;\uF519&quot;</span>   <span class="comment">/* broadcast-tower，待 §3.4 验证后固化 */</span></span></span><br></pre></td></tr></table></figure>
+
+<p><strong>背景色</strong>建议 <code>0xe6614f</code>（暖砖红）：桌面现有色板里蓝色系已被网络&#x2F;图库&#x2F;蓝牙大量占用，红色系只有关机（<code>0xe74c3c</code>）和音乐（<code>0xeb5757</code>）；暖砖红与这三者都不撞色，且暖色调符合”收音机&#x2F;广播”的常规心理暗示。</p>
+<h3 id="3-4-图标验证（交付前必做，缺此步不算完成）"><a href="#3-4-图标验证（交付前必做，缺此步不算完成）" class="headerlink" title="3.4 图标验证（交付前必做，缺此步不算完成）"></a>3.4 图标验证（<strong>交付前必做，缺此步不算完成</strong>）</h3><p>区间覆盖是间接证据，<strong>码位是否有具体字形必须实测</strong>：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 方法：写个最小 LVGL 测试页渲染该码位，截图看是字形还是豆腐块</span></span><br><span class="line"><span class="comment"># 参考本项目既有验证思路：写已知值 → 出图 → 人眼确认</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ <strong>禁止用”渲染出来看着像”自证</strong>：这与本项目显示类问题的排障纪律一致<br>（”抓数据→按假设解码→看起来对”不是证据）。必须<strong>人眼在物理屏上确认</strong>是塔形图案而非方框。</p>
+<p>若 <code>U+F519</code> 缺字形 → 退化方案：用 32×32 PNG 资源，或退而用 <code>LV_SYMBOL_AUDIO</code>（与”音乐”语义冲突，不推荐）。</p>
+</blockquote>
+<h3 id="3-5-设置页排布"><a href="#3-5-设置页排布" class="headerlink" title="3.5 设置页排布"></a>3.5 设置页排布</h3><p>设置页 <code>g_settings_page</code> 内<strong>建议新增两项</strong>（跟随蓝牙项之后）：</p>
+<table>
+<thead>
+<tr>
+<th>控件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>开关「收音机开机自启」</td>
+<td>控制 <code>fm_radio.start</code> 是否随系统起来（默认关，见 §5.5）</td>
+</tr>
+<tr>
+<td>条目「收音地区与频段」</td>
+<td>中国 87.5–108.0 MHz &#x2F; 步进 100 kHz；留口给日本 76–90 MHz、欧规 50 kHz 步进</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>这两项属 <strong>P2</strong>，可在 P0&#x2F;P1 完成后再补。</p>
+</blockquote>
+<hr>
+<h2 id="4-页面布局（要求-②）"><a href="#4-页面布局（要求-②）" class="headerlink" title="4. 页面布局（要求 ②）"></a>4. 页面布局（要求 ②）</h2><h3 id="4-1-分区总览（720-×-1280）"><a href="#4-1-分区总览（720-×-1280）" class="headerlink" title="4.1 分区总览（720 × 1280）"></a>4.1 分区总览（720 × 1280）</h3><p>按 31px 行高网格排版，纵向 8 个分区：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>分区</th>
+<th>y 范围</th>
+<th>高度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>标题栏</td>
+<td>0 – 72</td>
+<td>72</td>
+<td>返回按钮、标题「收音机」、耳机&#x2F;声道状态小图标</td>
+</tr>
+<tr>
+<td>B</td>
+<td>频段模式条</td>
+<td>80 – 111</td>
+<td>31</td>
+<td><code>FM</code> + <code>87.5 – 108.0 MHz</code> + <code>100 kHz</code> + ST 立体声标</td>
+</tr>
+<tr>
+<td>C</td>
+<td>当前频点</td>
+<td>120 – 232</td>
+<td>112</td>
+<td><strong>大字号</strong> <code>97.4</code> + <code>MHz</code>；下方 RDS 台名 PS</td>
+</tr>
+<tr>
+<td>D</td>
+<td>刻度尺</td>
+<td>244 – 340</td>
+<td>96</td>
+<td>频率刻度 + <strong>调谐指针</strong> + 收藏频点标记</td>
+</tr>
+<tr>
+<td>E</td>
+<td>信号与 RDS</td>
+<td>352 – 413</td>
+<td>61</td>
+<td>RSSI 五格信号条 + RT 滚动字幕</td>
+</tr>
+<tr>
+<td>F</td>
+<td>控制区</td>
+<td>430 – 590</td>
+<td>160</td>
+<td>◀◀ &#x2F; 搜台 &#x2F; 静音 &#x2F; 搜台 &#x2F; ▶▶</td>
+</tr>
+<tr>
+<td>G</td>
+<td>收藏列表</td>
+<td>606 – 1110</td>
+<td>504</td>
+<td>可滚动 ListView：频点 + 台名 + 删除</td>
+</tr>
+<tr>
+<td>H</td>
+<td>音量与声道</td>
+<td>1128 – 1264</td>
+<td>136</td>
+<td>音量滑条 + 静音 + 输出声道指示（扬声器&#x2F;耳机&#x2F;蓝牙）</td>
+</tr>
+</tbody></table>
+<p>留白 16px 作为各区间分割（<code>○ padding = 16</code>）。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">┌────────────────────────────────────┐ y=0</span><br><span class="line">│ ◀   收音机                    🎧 蓝 │ A  标题栏 72</span><br><span class="line">├────────────────────────────────────┤ </span><br><span class="line">│ FM  87.5-108.0 MHz  100kHz   [ST]  │ B  模式条 31</span><br><span class="line">│                                    │</span><br><span class="line">│            97.4 MHz                │ C  主频点 112</span><br><span class="line">│        北京音乐广播                 │    (PS 台名)</span><br><span class="line">│                                    │</span><br><span class="line">│ 87.5  ▏┴┴┴┴┴┼┴┴┴┴★┴┴┴┴┴┼┴  108.0 │ D  刻度尺 96</span><br><span class="line">│                ▲                   │    指针 + 收藏星</span><br><span class="line">│                                    │</span><br><span class="line">│ ▮▮▮▯▯  正在恶化 RT 文本滚动…        │ E  信号 + RT 61</span><br><span class="line">│                                    │</span><br><span class="line">│    ◀◀      ⟲搜索      🔇      ▶▶    │ F  控制区 160</span><br><span class="line">│                                    │</span><br><span class="line">│ ☆ 97.4  北京音乐广播          🗑     │ G  收藏列表</span><br><span class="line">│ ☆ 90.0  Music Radio          🗑     │    504 (可滚)</span><br><span class="line">│ ☆ 106.6 文艺之声             🗑     │</span><br><span class="line">│                                    │</span><br><span class="line">│ 🔈 ▬▬▬▬▬▬▬▯▯▯    输出: 扬声器       │ H  音量声道 136</span><br><span class="line">└────────────────────────────────────┘ y=1280</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-分区详细规格"><a href="#4-2-分区详细规格" class="headerlink" title="4.2 分区详细规格"></a>4.2 分区详细规格</h3><h4 id="A-标题栏（0–72）"><a href="#A-标题栏（0–72）" class="headerlink" title="A. 标题栏（0–72）"></a>A. 标题栏（0–72）</h4><table>
+<thead>
+<tr>
+<th>元素</th>
+<th>位置 &#x2F; 尺寸</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>返回按钮</td>
+<td>x&#x3D;0, 56×56，<code>LV_SYMBOL_LEFT</code></td>
+<td>点击 → 返回桌面但<strong>不停台</strong>（见 §5.5）</td>
+</tr>
+<tr>
+<td>标题</td>
+<td>居中，<code>lv_font_cn_16</code></td>
+<td>「收音机」</td>
+</tr>
+<tr>
+<td>耳机状态</td>
+<td>x &#x3D; 720-56</td>
+<td>无耳机显示 🎧 划掉；有耳机隐藏。依赖 §1.2 待验证项 1</td>
+</tr>
+<tr>
+<td>声道指示</td>
+<td>紧邻左侧</td>
+<td>小标「耳机 &#x2F; 扬声器 &#x2F; 蓝牙」，与 H 区联动，点击可弹声道切换窗（P2）</td>
+</tr>
+</tbody></table>
+<h4 id="B-频段模式条（80–111）"><a href="#B-频段模式条（80–111）" class="headerlink" title="B. 频段模式条（80–111）"></a>B. 频段模式条（80–111）</h4><p>单行 31px，四段信息：<code>[FM] [87.5 - 108.0 MHz] [100 kHz] [ST]</code>。<br>ST 立体声标仅在 <code>GETMONOSTERO</code> 返回立体声时点亮，作为 RDS 可用性的间接指示。</p>
+<h4 id="C-当前频点（120–232）——-视觉焦点"><a href="#C-当前频点（120–232）——-视觉焦点" class="headerlink" title="C. 当前频点（120–232）—— 视觉焦点"></a>C. 当前频点（120–232）—— <strong>视觉焦点</strong></h4><table>
+<thead>
+<tr>
+<th>元素</th>
+<th>规格</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>频率数字</td>
+<td><strong>48px 加粗</strong>（需引入或用现有最大字号；若 <code>lv_font_cn_16</code> 无此尺寸，用 LVGL 缩放变换或新增点阵字号）</td>
+</tr>
+<tr>
+<td>单位 <code>MHz</code></td>
+<td>16px，随数字右对齐</td>
+</tr>
+<tr>
+<td>RDS 台名</td>
+<td>16px 单行，取 <code>rds_get_ps()</code>，无 RDS 时显示空白或「—」</td>
+</tr>
+<tr>
+<td>字号提醒</td>
+<td>该区域高度 112px，容纳一行 48px（占 62px 行区）+ 一行 16px（31px）+ 调节余量</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ 48px 中文字号<strong>必须先用实际情况验证</strong>（<code>lv_font_cn_16</code> 为 16px 点阵）。<br>若该字号不可用，两种替代方案：<br>一是用 LVGL 的 <code>lv_obj_set_style_transform_scale()</code> 对数字做放大（点阵字体放大后有锯齿，效果一般）；<br>二是新增一个 48px 中文&#x2F;数字点阵字号（效果最好，但增加固件体积）。此项属 P1 依赖，需实测后定。</p>
+</blockquote>
+<h4 id="D-刻度尺与调谐指针（244–340）——-核心交互件"><a href="#D-刻度尺与调谐指针（244–340）——-核心交互件" class="headerlink" title="D. 刻度尺与调谐指针（244–340）—— 核心交互件"></a>D. 刻度尺与调谐指针（244–340）—— <strong>核心交互件</strong></h4><ul>
+<li><strong>刻度生成</strong>：按当前频段上下界与步进（默认 87.5–108.0 MHz &#x2F; 100 kHz）计算，绘制主刻度（每 1 MHz）+ 次刻度（每 0.5 MHz）。</li>
+<li><strong>指针</strong>：倒三角，x 由当前频点线性映射；文件 <code>lv_obj_set_x()</code> 更新，切换 ANIM 200ms。</li>
+<li><strong>收藏标记</strong>：在对应频点 x 上画 ★ 形小标记，标记位置随收藏列表实时增删。</li>
+<li><strong>交互</strong>：<ul>
+<li>拖动 &#x2F; 左右划 → <strong>频点微调</strong>（每 move 10px ≈ 100 kHz），实时 <code>TUNE</code> 更新 C 区数字。</li>
+<li>点击刻度某位置 → 直接 <code>TUNE</code> 到该频点。</li>
+<li>物理 LEFT&#x2F;RIGHT 键（114&#x2F;102）→ ±100 kHz 微调（触摸屏外的可达性必备）。</li>
+</ul>
+</li>
+</ul>
+<h4 id="E-信号强度与-RDS-文本（352–413）"><a href="#E-信号强度与-RDS-文本（352–413）" class="headerlink" title="E. 信号强度与 RDS 文本（352–413）"></a>E. 信号强度与 RDS 文本（352–413）</h4><table>
+<thead>
+<tr>
+<th>元素</th>
+<th>来源</th>
+<th>规格</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RSSI 五格信号条</td>
+<td><code>GETRSSI</code></td>
+<td>轮询周期建议 500ms；强弱阈值<strong>需实测标定</strong>（当前无样本，先在实现时用 <code>/tmp/fmtest</code> 打印原始值找分界线）</td>
+</tr>
+<tr>
+<td>RT 滚动字幕</td>
+<td><code>rds_get_rt()</code></td>
+<td>64 字符，超宽时滚动；无 RDS 隐藏</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ RSSI 阈值必须<strong>实测标定</strong>，不要照搬网上通用的 <code>-85dBm</code> 之类数值——本机 <code>GETRSSI</code> 返回的是驱动原始值，量纲未知。</p>
+</blockquote>
+<h4 id="F-控制区（430–590）"><a href="#F-控制区（430–590）" class="headerlink" title="F. 控制区（430–590）"></a>F. 控制区（430–590）</h4><p>五行位 3 类按钮（建议使用 96×96 圆形按钮，纵向居中一 ribbon）：</p>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>图标</th>
+<th>行为</th>
+<th>驱动调用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>上一频点 ◀◀</td>
+<td><code>LV_SYMBOL_PREV</code></td>
+<td><code>SEEK</code> down（找下一个强信号）</td>
+<td><code>SEEK(dir=0)</code></td>
+</tr>
+<tr>
+<td>搜索 ⟲</td>
+<td><code>LV_SYMBOL_REFRESH</code></td>
+<td>短按&#x3D;单次 seek；<strong>长按&#x3D;自动全频扫描</strong></td>
+<td><code>SEEK</code> &#x2F; <code>SCAN</code></td>
+</tr>
+<tr>
+<td>静音 🔇</td>
+<td><code>LV_SYMBOL_MUTE</code></td>
+<td>切换 FM 静音</td>
+<td><code>MUTE</code></td>
+</tr>
+<tr>
+<td>下一频点 ▶▶</td>
+<td><code>LV_SYMBOL_NEXT</code></td>
+<td><code>SEEK</code> up</td>
+<td><code>SEEK(dir=1)</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>自动扫描：<strong>长按 ⟲ ≥ 800ms</strong> 触发，扫描期间按钮变为「停止」，<code>STOP_SCAN</code> 可中断。<br>扫描总线也建议其余按钮 disabled，避免状态机混乱。</p>
+</blockquote>
+<h4 id="G-收藏频道列表（606–1110）"><a href="#G-收藏频道列表（606–1110）" class="headerlink" title="G. 收藏频道列表（606–1110）"></a>G. 收藏频道列表（606–1110）</h4><p><code>lv_list</code> 实现，每行高度 <strong>62px</strong>（两行文字各 31px）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">┌───────────────────────────────────┐</span><br><span class="line">│ ★  97.4 MHz                  [✕]  │</span><br><span class="line">│    北京音乐广播 / α PS             │</span><br><span class="line">└───────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>左侧频点 + 台名（台名无 RDS 时留空）</li>
+<li>右侧删除按钮 <code>LV_SYMBOL_CLOSE</code>（或长按行弹出删除确认，防误触）</li>
+<li>点击行 → <code>TUNE</code> 到该频点并滚动列表置顶</li>
+<li>数据持久化见 §5.6</li>
+</ul>
+<h4 id="H-音量与声道（1128–1264）"><a href="#H-音量与声道（1128–1264）" class="headerlink" title="H. 音量与声道（1128–1264）"></a>H. 音量与声道（1128–1264）</h4><table>
+<thead>
+<tr>
+<th>元素</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>音量滑条</td>
+<td><code>lv_slider</code>，范围绑定 <code>SETVOL/GETVOL</code>（取值范围待探明，见 §1.2 待验证项 3）</td>
+</tr>
+<tr>
+<td>静音按钮</td>
+<td>与 F 区静音联动（同一状态，双向同步）</td>
+</tr>
+<tr>
+<td>输出声道指示</td>
+<td>文本控件，显示当前竞争者胜出的声道：扬声器 &#x2F; 耳机 &#x2F; 蓝牙 A2DP</td>
+</tr>
+</tbody></table>
+<h3 id="4-3-页面交互流程（状态机）"><a href="#4-3-页面交互流程（状态机）" class="headerlink" title="4.3 页面交互流程（状态机）"></a>4.3 页面交互流程（状态机）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">     ┌────────────┐</span><br><span class="line">     │  Z1 未启动  │ ← 首次进入 / daemon 未拉起</span><br><span class="line">     └─────┬──────┘</span><br><span class="line">           │ 调用 open</span><br><span class="line">           ▼</span><br><span class="line">     ┌────────────┐</span><br><span class="line">┌───▶│  Z2 就绪    │ 无合适音频通路 → 提示插入耳机 / 弹声道窗</span><br><span class="line">│    └─────┬──────┘</span><br><span class="line">│          │ TUNE 到上次频点</span><br><span class="line">│          ▼</span><br><span class="line">│    ┌────────────┐</span><br><span class="line">└────│  Z3 播放中  │◀── TUNE / SEEK / 列表点击 / 刻度微调</span><br><span class="line">     └──┬──┬──┬───┘</span><br><span class="line">静音 ───┘  │  └─── 长按 ⟲ → Z4</span><br><span class="line">           │</span><br><span class="line">        返回键 → 后台（见 §5.5）不改大学出版社 Z3</span><br><span class="line">           │</span><br><span class="line">           ▼</span><br><span class="line">     ┌────────────┐</span><br><span class="line">     │  Z4 扫描中  │ 进度条百分比 + 已发现台数；STOP_SCAN 或完成 → Z3</span><br><span class="line">     └────────────┘</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-4-页面注册范式（严格遵守既有约定）"><a href="#4-4-页面注册范式（严格遵守既有约定）" class="headerlink" title="4.4 页面注册范式（严格遵守既有约定）"></a>4.4 页面注册范式（严格遵守既有约定）</h3><p>新增 <code>lv_pages/radio_page.c</code> &#x2F; <code>radio_page.h</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* radio_page.h */</span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">lv_page_t</span> g_radio_page;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* radio_page.c —— 结构与 bluetooth_page.c:1118 完全一致 */</span></span><br><span class="line"><span class="type">lv_page_t</span> g_radio_page = &#123;</span><br><span class="line">    .root = <span class="literal">NULL</span>,</span><br><span class="line">    .page_name = <span class="string">&quot;radio&quot;</span>,</span><br><span class="line">    .onCreate  = radio_page_on_create,</span><br><span class="line">    .onResume  = radio_page_on_resume,   <span class="comment">/* 恢复时会重新拉 UI 状态：现在的频点、RSSI */</span></span><br><span class="line">    .onPause   = radio_page_on_pause,    <span class="comment">/* 必须停掉所有 lv_timer，但【不停播放】 */</span></span><br><span class="line">    .onDestroy = radio_page_on_destroy,</span><br><span class="line">    .onActivityResult = <span class="literal">NULL</span>,</span><br><span class="line">    .user_data = <span class="literal">NULL</span>,</span><br><span class="line">    .request_code = <span class="number">-1</span>,</span><br><span class="line">    .result_code = <span class="number">0</span>,</span><br><span class="line">    .result_data = <span class="literal">NULL</span>,</span><br><span class="line">    .launch_flags = LV_PAGE_FLAG_DEFAULT,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ 两条红线（<code>lv_pm/lv_page_manager.h</code> 注释原文）：</p>
+<ol>
+<li><code>onDestroy</code> 中<strong>必须</strong>释放自己的定时器、回调，并把自建全局 UI 指针置空；</li>
+<li><code>onDestroy</code> 中<strong>不要</strong>删除 <code>page-&gt;root</code>，根节点由页面管理器统一删除。</li>
+</ol>
+<p>另：SIM 页面栈最大深度 8，收藏列表面可用 <code>LV_PAGE_FLAG_NO_HISTORY</code> 之类按需调整。</p>
+</blockquote>
+<hr>
+<h2 id="5-功能清单（要求-③）"><a href="#5-功能清单（要求-③）" class="headerlink" title="5. 功能清单（要求 ③）"></a>5. 功能清单（要求 ③）</h2><h3 id="5-1-优先级总表"><a href="#5-1-优先级总表" class="headerlink" title="5.1 优先级总表"></a>5.1 优先级总表</h3><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>功能</th>
+<th>优先级</th>
+<th>依赖</th>
+<th>驱动调用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F01</td>
+<td><strong>打开&#x2F;关闭 FM</strong></td>
+<td><strong>P0</strong></td>
+<td>WiFi 已拉起（固件已下载）</td>
+<td><code>fm_powerup</code> &#x2F; <code>fm_powerdown</code></td>
+</tr>
+<tr>
+<td>F02</td>
+<td><strong>手动调谐 Tune</strong></td>
+<td><strong>P0</strong></td>
+<td>F01</td>
+<td><code>TUNE</code> &#x2F; <code>TUNE_NEW</code></td>
+</tr>
+<tr>
+<td>F03</td>
+<td><strong>自动搜台 Seek（下一强信号）</strong></td>
+<td><strong>P0</strong></td>
+<td>F01</td>
+<td><code>SEEK</code> &#x2F; <code>SEEK_NEW</code></td>
+</tr>
+<tr>
+<td>F04</td>
+<td><strong>全频扫描 Scan + 进度 + 可中断</strong></td>
+<td><strong>P0</strong></td>
+<td>F01</td>
+<td><code>SCAN</code> &#x2F; <code>SCAN_GETRSSI</code> &#x2F; <code>STOP_SCAN</code></td>
+</tr>
+<tr>
+<td>F05</td>
+<td><strong>信号强度显示 RSSI</strong></td>
+<td><strong>P0</strong></td>
+<td>F02&#x2F;F03</td>
+<td><code>GETRSSI</code></td>
+</tr>
+<tr>
+<td>F06</td>
+<td><strong>静音 &#x2F; 取消静音</strong></td>
+<td><strong>P0</strong></td>
+<td>F01</td>
+<td><code>MUTE</code></td>
+</tr>
+<tr>
+<td>F07</td>
+<td><strong>音量调节</strong></td>
+<td><strong>P0</strong></td>
+<td>F01</td>
+<td><code>SETVOL</code> &#x2F; <code>GETVOL</code></td>
+</tr>
+<tr>
+<td>F08</td>
+<td><strong>FM daemon + socket 接口</strong></td>
+<td><strong>P0</strong></td>
+<td>F01（daemon 是所有 UI 操作的唯一入口）</td>
+<td><code>/tmp/fm_ctl.sock</code></td>
+</tr>
+<tr>
+<td>F09</td>
+<td><strong>LVGL 收音机页</strong>（§4 布局）</td>
+<td><strong>P0</strong></td>
+<td>F08</td>
+<td>—</td>
+</tr>
+<tr>
+<td>F10</td>
+<td><strong>开机自启 + 固件依赖检查</strong></td>
+<td><strong>P1</strong></td>
+<td>WiFi 自启链已就绪</td>
+<td>openrc service</td>
+</tr>
+<tr>
+<td>F11</td>
+<td><strong>收藏频道列表（增&#x2F;删&#x2F;跳转）</strong></td>
+<td><strong>P1</strong></td>
+<td>F02</td>
+<td>—</td>
+</tr>
+<tr>
+<td>F12</td>
+<td><strong>状态持久化</strong>（上次频点&#x2F;音量&#x2F;收藏）</td>
+<td><strong>P1</strong></td>
+<td>F11</td>
+<td>—</td>
+</tr>
+<tr>
+<td>F13</td>
+<td><strong>RDS 台名 PS 显示</strong></td>
+<td><strong>P1</strong></td>
+<td>F02、<code>RDS_ONOFF</code> 打开</td>
+<td><code>rds_get_ps</code></td>
+</tr>
+<tr>
+<td>F14</td>
+<td><strong>RDS 文本 RT 滚动</strong></td>
+<td><strong>P1</strong></td>
+<td>F13</td>
+<td><code>rds_get_rt</code></td>
+</tr>
+<tr>
+<td>F15</td>
+<td><strong>立体声 ST 指示</strong></td>
+<td><strong>P1</strong></td>
+<td>F02</td>
+<td><code>GETMONOSTERO</code></td>
+</tr>
+<tr>
+<td>F16</td>
+<td><strong>后台播放 + 息屏保持</strong></td>
+<td><strong>P1</strong></td>
+<td>F08、页面 lifecycle</td>
+<td>—</td>
+</tr>
+<tr>
+<td>F17</td>
+<td><strong>声道仲裁（FM &#x2F; A2DP &#x2F; 本地互斥）</strong></td>
+<td><strong>P0</strong></td>
+<td>F08、蓝牙 daemon</td>
+<td>§5.4</td>
+</tr>
+<tr>
+<td>F18</td>
+<td>RDS 节目类型 PTY 标签</td>
+<td>P2</td>
+<td>F13</td>
+<td><code>rds_get_pty</code></td>
+</tr>
+<tr>
+<td>F19</td>
+<td>RDS 备用频率 AF 自动切换</td>
+<td>P2</td>
+<td>F13</td>
+<td><code>rds_get_af</code></td>
+</tr>
+<tr>
+<td>F20</td>
+<td>设置页：地区频段切换</td>
+<td>P2</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>F21</td>
+<td>RDS 紧急广播 EWS 提示</td>
+<td>P2</td>
+<td>F13</td>
+<td><code>rds_get_ews</code></td>
+</tr>
+<tr>
+<td>F22</td>
+<td>RDS 电台时钟 CT</td>
+<td>P2</td>
+<td>F13</td>
+<td><code>rds_get_ct</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>为什么 F17 是 P0</strong>：FM、蓝牙 A2DP、本地音乐三者共用一套音频输出。<br>若不做仲裁，最典型故障就是”FM 与 A2DP 同时出声”或”关了 FM 蓝牙音箱还在响”，属于用户必然踩到的问题。</p>
+</blockquote>
+<h3 id="5-2-依赖顺序（实施路径）"><a href="#5-2-依赖顺序（实施路径）" class="headerlink" title="5.2 依赖顺序（实施路径）"></a>5.2 依赖顺序（实施路径）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">第 0 步  驱动能力确认（§1.2 三个待验证项出结果）</span><br><span class="line">   ↓</span><br><span class="line">第 1 步  F08  FM daemon（/dev/fm open + ioctl 封装 + socket）</span><br><span class="line">   ↓</span><br><span class="line">第 2 步  F01/F02/F03/F05  命令行/ socket 可手测：open/tune/seek/rssi</span><br><span class="line">   ↓</span><br><span class="line">第 3 步  F09  收音机页（先做 A/C/D/F 四区，能听能调）</span><br><span class="line">   ↓</span><br><span class="line">第 4 步  F17  声道仲裁（与蓝牙 daemon 联动）</span><br><span class="line">   ↓</span><br><span class="line">第 5 步  F04/F11/F12  扫描 + 收藏 + 持久化</span><br><span class="line">   ↓</span><br><span class="line">第 6 步  F13/F14/F15/F16  RDS 显示 + 后台播放</span><br><span class="line">   ↓</span><br><span class="line">第 7 步  P2 项（PTY / AF / EWS / 地区）</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-3-FM-daemon-接口（镜像-bt-user-daemon-的既有范式）"><a href="#5-3-FM-daemon-接口（镜像-bt-user-daemon-的既有范式）" class="headerlink" title="5.3 FM daemon 接口（镜像 bt_user_daemon 的既有范式）"></a>5.3 FM daemon 接口（镜像 <code>bt_user_daemon</code> 的既有范式）</h3><p>蓝牙 daemon 用的是 unix socket + 纯文本命令（发 <code>state</code> &#x2F; <code>on</code> &#x2F; <code>off</code>，回 <code>OK ...\n</code>），FM 建议完全照抄该范式：</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>蓝牙（既有，参照）</th>
+<th>FM（新增，建议）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>socket 路径</td>
+<td><code>/tmp/bt_ctl.sock</code></td>
+<td><strong><code>/tmp/fm_ctl.sock</code></strong></td>
+</tr>
+<tr>
+<td>权限</td>
+<td><code>chmod(SOCK_PATH, 0666)</code></td>
+<td>同</td>
+</tr>
+<tr>
+<td>协议</td>
+<td>文本命令 + <code>\n</code> 结尾，回 <code>OK &lt;payload&gt;\n</code></td>
+<td>同</td>
+</tr>
+<tr>
+<td>典型命令</td>
+<td><code>state</code> &#x2F; <code>on</code> &#x2F; <code>off</code> &#x2F; 扫描相关</td>
+<td><code>state</code>、<code>open</code>、<code>close</code>、<code>tune &lt;freq_khz&gt;</code>、&#96;seek &lt;0</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>🔒 <strong>必须设超时</strong>：做 socket I&#x2F;O 的 LVGL 定时器回调<strong>必须</strong> <code>SO_RCVTIMEO</code> &#x2F; <code>SO_SNDTIMEO</code>（建议 200ms），<br>否则 daemon 卡住会直接冻结 UI 线程。这是本项目蓝牙页踩过的硬教训。</p>
+</blockquote>
+<h3 id="5-4-声道仲裁（FM-A2DP-本地播放互斥）——-重点设计"><a href="#5-4-声道仲裁（FM-A2DP-本地播放互斥）——-重点设计" class="headerlink" title="5.4 声道仲裁（FM &#x2F; A2DP &#x2F; 本地播放互斥）—— 重点设计"></a>5.4 声道仲裁（FM &#x2F; A2DP &#x2F; 本地播放互斥）—— 重点设计</h3><p>三种 FM 音频输出路径由驱动暴露：</p>
+<table>
+<thead>
+<tr>
+<th>路径</th>
+<th>开关</th>
+<th>适用场景</th>
+<th>优先级建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>模拟&#x2F;内部 codec</strong></td>
+<td><code>ANA_SWITCH</code></td>
+<td>本机扬声器 &#x2F; 耳机直出</td>
+<td>默认</td>
+</tr>
+<tr>
+<td><strong>I2S</strong></td>
+<td><code>I2S_SETTING</code> &#x2F; <code>GET_I2S_INFO</code></td>
+<td>需走外部 codec 时</td>
+<td>备选（<strong>需实测确认是否可用</strong>）</td>
+</tr>
+<tr>
+<td><strong>Over BT</strong></td>
+<td><code>OVER_BT_ENABLE</code></td>
+<td>FM 声音从蓝牙耳机&#x2F;音箱出</td>
+<td>蓝牙已连接时可选</td>
+</tr>
+</tbody></table>
+<p><strong>仲裁规则建议</strong>（在 LVGL 主进程实现单一”音频焦点”模块，daemon 只管设备）：</p>
+<table>
+<thead>
+<tr>
+<th>当前占用者</th>
+<th>新申请者</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>空闲</td>
+<td>FM</td>
+<td>直接获取；按 §5.4 表选默认路径（耳机插入→耳机，否则扬声器）</td>
+</tr>
+<tr>
+<td>空闲</td>
+<td>A2DP</td>
+<td>直接获取</td>
+</tr>
+<tr>
+<td>FM</td>
+<td>A2DP</td>
+<td><strong>FM 自动 mute（不 close）</strong>，A2DP 结束后询问是否恢复 FM</td>
+</tr>
+<tr>
+<td>A2DP</td>
+<td>FM</td>
+<td>弹确认框：「蓝牙正在播放，是否切到收音机？」→ 同意则暂停&#x2F;断开 A2DP 后 FM 接管</td>
+</tr>
+<tr>
+<td>本地播放（音乐&#x2F;视频）</td>
+<td>FM</td>
+<td>停止本地播放 → FM 接管</td>
+</tr>
+<tr>
+<td>FM</td>
+<td>本地播放</td>
+<td>FM mute → 本地播放接管</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ <code>OVER_BT_ENABLE</code> 是本设计的<strong>关键不确定项</strong>：它到底是把 FM 音频”送给已连接的蓝牙设备”，<br>还是”允许 FM 与 BT 共存”，尚未经读码确认。<br><strong>实现前必须先用最小程序试探该 ioctl 的行为</strong>，再写仲裁逻辑。这条不确认就动手，很可能会错测。</p>
+</blockquote>
+<h3 id="5-5-后台播放与息屏保持"><a href="#5-5-后台播放与息屏保持" class="headerlink" title="5.5 后台播放与息屏保持"></a>5.5 后台播放与息屏保持</h3><table>
+<thead>
+<tr>
+<th>需求</th>
+<th>实现要点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>返回桌面继续播放</td>
+<td><code>onPause</code> 只停 UI 定时器&#x2F;回调，<strong>不调 close、不静音</strong>；播放状态由 daemon 持有，与页面生命周期解耦</td>
+</tr>
+<tr>
+<td>页面彻底销毁</td>
+<td><code>onDestroy</code> 同样不停台（理由同上）；只有用户显式按关闭或关机才 stop</td>
+</tr>
+<tr>
+<td>息屏保持播放</td>
+<td>息屏由系统背光管理；FM 是 daemon 在播，不依赖 LVGL 心跳。<strong>需实测</strong>：确认息屏不会触发 <code>fm_suspend</code>（驱动里有 <code>fm_suspend</code> &#x2F; <code>fm_resume</code>，是被 PM 挂起的入口，务必验证系统 suspend 时 FM 是否掉台）</td>
+</tr>
+<tr>
+<td>开机自启</td>
+<td>参考既有 <code>bt_user_daemon</code> 的 openrc 自启写法；自启前必须先确认 WiFi 链已拉起（固件依赖，见 §5.2 第 0 步）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ 驱动符号表里有 <code>fm_suspend</code> &#x2F; <code>fm_resume</code> 两个<strong>静态</strong>函数（<code>t</code> 而非 <code>T</code>），说明驱动实现了 dev_pm_ops。<br>系统挂起时 FM 很可能会被一起挂起。若产品要求息屏续听，需要额外处理（wakelock 或禁止 suspend），此项<strong>必须实测</strong>，不可假定。</p>
+</blockquote>
+<h3 id="5-6-状态持久化"><a href="#5-6-状态持久化" class="headerlink" title="5.6 状态持久化"></a>5.6 状态持久化</h3><p>建议路径 <code>/etc/fm_radio.conf</code>（或沿用项目既有配置存放约定），JSON&#x2F;INI 二选一：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>last_freq</code></td>
+<td>上次收听频点（kHz），开机恢复到该频点</td>
+</tr>
+<tr>
+<td><code>volume</code></td>
+<td>上次音量</td>
+</tr>
+<tr>
+<td><code>muted</code></td>
+<td>静音状态</td>
+</tr>
+<tr>
+<td><code>rds_on</code></td>
+<td>RDS 开关（建议常开）</td>
+</tr>
+<tr>
+<td><code>band/region</code></td>
+<td>地区频段（P2）</td>
+</tr>
+<tr>
+<td><code>favorites[]</code></td>
+<td>收藏列表：<code>&#123;freq, name&#125;</code></td>
+</tr>
+</tbody></table>
+<p>写入时机：退出程序、切换频点后 debounce 1s、增删收藏立即写。</p>
+<hr>
+<h2 id="6-一句话总结"><a href="#6-一句话总结" class="headerlink" title="6. 一句话总结"></a>6. 一句话总结</h2><blockquote>
+<p><strong>收音机不是一个”从零写一个 FM 协议栈”的活儿</strong>：<br>本机 <strong>Marlin2 芯片的 FM 部件 + <code>marlin_fm.ko</code> 驱动已经现成在跑</strong>（<code>/dev/fm</code> 也已经在 <code>/proc/misc</code> 注册），<br>真正的工作量集中在<strong>三件事</strong>——写一个镜像 <code>bt_user_daemon</code> 范式的 FM daemon 把 ioctl 包装成 socket 命令、<br>按 31px 行高网格画出收音机页、以及做好 <strong>FM &#x2F; A2DP &#x2F; 本地播放的声道仲裁</strong>。<br>动手前先跑完 §1.2 标注的三项待验证确认，尤其是”要不要播耳机当天线”和 <code>OVER_BT_ENABLE</code> 的真实语义。</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A%EF%BC%88spd-box%EF%BC%89FM-%E6%94%B6%E9%9F%B3%E6%9C%BA-%E2%80%94%E2%80%94-LVGL-%E7%95%8C%E9%9D%A2%E8%AE%BE%E8%AE%A1%E4%B8%8E%E4%BA%A4%E4%BA%92%E8%A7%84%E6%A0%BC"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A（spd-box）FM 收音机 —— LVGL 界面设计与交互规格</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%AE%BE%E8%AE%A1%E7%BA%A6%E6%9D%9F%EF%BC%88%E5%85%88%E5%AE%9A%E6%AD%BB%EF%BC%8C%E5%86%8D%E7%94%BB%E9%A1%B5%E9%9D%A2%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1. 设计约束（先定死，再画页面）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-%E5%B1%8F%E5%B9%95%E4%B8%8E%E5%AD%97%E4%BD%93%E7%A1%AC%E5%8F%82%E6%95%B0"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1 屏幕与字体硬参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-%E7%A1%AC%E4%BB%B6%E8%83%BD%E5%8A%9B%E8%BE%B9%E7%95%8C%EF%BC%88%E5%86%B3%E5%AE%9A-UI-%E8%83%BD%E6%98%BE%E7%A4%BA%E4%BB%80%E4%B9%88%EF%BC%89"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.2 硬件能力边界（决定 UI 能显示什么）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%B3%BB%E7%BB%9F%E5%AE%9A%E4%BD%8D%EF%BC%9A%E6%94%B6%E9%9F%B3%E6%9C%BA%E5%9C%A8%E6%95%B4%E4%B8%AA-App-%E9%87%8C%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.2.</span> <span class="toc-text">2. 系统定位：收音机在整个 App 里的位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%85%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%9B%BE%E6%A0%87%EF%BC%88%E8%A6%81%E6%B1%82-%E2%91%A0%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 入口设计与图标（要求 ①）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E6%A1%8C%E9%9D%A2%E7%BD%91%E6%A0%BC%E6%8E%92%E5%B8%83"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 桌面网格排布</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E4%B8%89%E5%A4%84%E4%BB%A3%E7%A0%81%E6%94%B9%E5%8A%A8%EF%BC%88%E5%BF%85%E6%94%B9%EF%BC%8C%E7%BC%BA%E4%B8%80%E4%B8%8D%E5%8F%AF%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 三处代码改动（必改，缺一不可）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E5%9B%BE%E6%A0%87%E9%80%89%E5%9E%8B"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 图标选型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E5%9B%BE%E6%A0%87%E9%AA%8C%E8%AF%81%EF%BC%88%E4%BA%A4%E4%BB%98%E5%89%8D%E5%BF%85%E5%81%9A%EF%BC%8C%E7%BC%BA%E6%AD%A4%E6%AD%A5%E4%B8%8D%E7%AE%97%E5%AE%8C%E6%88%90%EF%BC%89"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4 图标验证（交付前必做，缺此步不算完成）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-%E8%AE%BE%E7%BD%AE%E9%A1%B5%E6%8E%92%E5%B8%83"><span class="toc-number">1.3.5.</span> <span class="toc-text">3.5 设置页排布</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%A1%B5%E9%9D%A2%E5%B8%83%E5%B1%80%EF%BC%88%E8%A6%81%E6%B1%82-%E2%91%A1%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 页面布局（要求 ②）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%88%86%E5%8C%BA%E6%80%BB%E8%A7%88%EF%BC%88720-%C3%97-1280%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 分区总览（720 × 1280）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E5%88%86%E5%8C%BA%E8%AF%A6%E7%BB%86%E8%A7%84%E6%A0%BC"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 分区详细规格</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#A-%E6%A0%87%E9%A2%98%E6%A0%8F%EF%BC%880%E2%80%9372%EF%BC%89"><span class="toc-number">1.4.2.1.</span> <span class="toc-text">A. 标题栏（0–72）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#B-%E9%A2%91%E6%AE%B5%E6%A8%A1%E5%BC%8F%E6%9D%A1%EF%BC%8880%E2%80%93111%EF%BC%89"><span class="toc-number">1.4.2.2.</span> <span class="toc-text">B. 频段模式条（80–111）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#C-%E5%BD%93%E5%89%8D%E9%A2%91%E7%82%B9%EF%BC%88120%E2%80%93232%EF%BC%89%E2%80%94%E2%80%94-%E8%A7%86%E8%A7%89%E7%84%A6%E7%82%B9"><span class="toc-number">1.4.2.3.</span> <span class="toc-text">C. 当前频点（120–232）—— 视觉焦点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#D-%E5%88%BB%E5%BA%A6%E5%B0%BA%E4%B8%8E%E8%B0%83%E8%B0%90%E6%8C%87%E9%92%88%EF%BC%88244%E2%80%93340%EF%BC%89%E2%80%94%E2%80%94-%E6%A0%B8%E5%BF%83%E4%BA%A4%E4%BA%92%E4%BB%B6"><span class="toc-number">1.4.2.4.</span> <span class="toc-text">D. 刻度尺与调谐指针（244–340）—— 核心交互件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#E-%E4%BF%A1%E5%8F%B7%E5%BC%BA%E5%BA%A6%E4%B8%8E-RDS-%E6%96%87%E6%9C%AC%EF%BC%88352%E2%80%93413%EF%BC%89"><span class="toc-number">1.4.2.5.</span> <span class="toc-text">E. 信号强度与 RDS 文本（352–413）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#F-%E6%8E%A7%E5%88%B6%E5%8C%BA%EF%BC%88430%E2%80%93590%EF%BC%89"><span class="toc-number">1.4.2.6.</span> <span class="toc-text">F. 控制区（430–590）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#G-%E6%94%B6%E8%97%8F%E9%A2%91%E9%81%93%E5%88%97%E8%A1%A8%EF%BC%88606%E2%80%931110%EF%BC%89"><span class="toc-number">1.4.2.7.</span> <span class="toc-text">G. 收藏频道列表（606–1110）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#H-%E9%9F%B3%E9%87%8F%E4%B8%8E%E5%A3%B0%E9%81%93%EF%BC%881128%E2%80%931264%EF%BC%89"><span class="toc-number">1.4.2.8.</span> <span class="toc-text">H. 音量与声道（1128–1264）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E9%A1%B5%E9%9D%A2%E4%BA%A4%E4%BA%92%E6%B5%81%E7%A8%8B%EF%BC%88%E7%8A%B6%E6%80%81%E6%9C%BA%EF%BC%89"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 页面交互流程（状态机）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E9%A1%B5%E9%9D%A2%E6%B3%A8%E5%86%8C%E8%8C%83%E5%BC%8F%EF%BC%88%E4%B8%A5%E6%A0%BC%E9%81%B5%E5%AE%88%E6%97%A2%E6%9C%89%E7%BA%A6%E5%AE%9A%EF%BC%89"><span class="toc-number">1.4.4.</span> <span class="toc-text">4.4 页面注册范式（严格遵守既有约定）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%8A%9F%E8%83%BD%E6%B8%85%E5%8D%95%EF%BC%88%E8%A6%81%E6%B1%82-%E2%91%A2%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 功能清单（要求 ③）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E4%BC%98%E5%85%88%E7%BA%A7%E6%80%BB%E8%A1%A8"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 优先级总表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E4%BE%9D%E8%B5%96%E9%A1%BA%E5%BA%8F%EF%BC%88%E5%AE%9E%E6%96%BD%E8%B7%AF%E5%BE%84%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 依赖顺序（实施路径）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-FM-daemon-%E6%8E%A5%E5%8F%A3%EF%BC%88%E9%95%9C%E5%83%8F-bt-user-daemon-%E7%9A%84%E6%97%A2%E6%9C%89%E8%8C%83%E5%BC%8F%EF%BC%89"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 FM daemon 接口（镜像 bt_user_daemon 的既有范式）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-4-%E5%A3%B0%E9%81%93%E4%BB%B2%E8%A3%81%EF%BC%88FM-A2DP-%E6%9C%AC%E5%9C%B0%E6%92%AD%E6%94%BE%E4%BA%92%E6%96%A5%EF%BC%89%E2%80%94%E2%80%94-%E9%87%8D%E7%82%B9%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.5.4.</span> <span class="toc-text">5.4 声道仲裁（FM &#x2F; A2DP &#x2F; 本地播放互斥）—— 重点设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-5-%E5%90%8E%E5%8F%B0%E6%92%AD%E6%94%BE%E4%B8%8E%E6%81%AF%E5%B1%8F%E4%BF%9D%E6%8C%81"><span class="toc-number">1.5.5.</span> <span class="toc-text">5.5 后台播放与息屏保持</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-6-%E7%8A%B6%E6%80%81%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-number">1.5.6.</span> <span class="toc-text">5.6 状态持久化</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93"><span class="toc-number">1.6.</span> <span class="toc-text">6. 一句话总结</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&text=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&title=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&is_video=false&description=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音机_LVGL界面设计与交互规格&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&title=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&title=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&title=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&title=FM收音机_LVGL界面设计与交互规格"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/fm-11-fm-lvgl-md/&name=FM收音机_LVGL界面设计与交互规格&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

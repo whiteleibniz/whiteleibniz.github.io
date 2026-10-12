@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_17 · GBA 音画延迟 1~2 秒：定位到音箱端缓冲，设备侧无可修点 日期：2026-09-23 设备：展讯 SC9832A &#x2F; Alpine Linux &#x2F; 720x1280 fb 应用：GBA 游戏（miniretro_gba + mgba_libretro.so）→ 蓝牙 A2DP（小爱音箱） 分类：音频链路 &#x2F; 延迟预算定位">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA音画延迟1到2秒_音箱端缓冲定位">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_17 · GBA 音画延迟 1~2 秒：定位到音箱端缓冲，设备侧无可修点 日期：2026-09-23 设备：展讯 SC9832A &#x2F; Alpine Linux &#x2F; 720x1280 fb 应用：GBA 游戏（miniretro_gba + mgba_libretro.so）→ 蓝牙 A2DP（小爱音箱） 分类：音频链路 &#x2F; 延迟预算定位">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.886Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA音画延迟1到2秒_音箱端缓冲定位</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-18/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/mali-survey/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&text=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&title=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&is_video=false&description=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA音画延迟1到2秒_音箱端缓冲定位&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&title=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&title=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&title=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&title=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&name=GBA音画延迟1到2秒_音箱端缓冲定位&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-17-%C2%B7-GBA-%E9%9F%B3%E7%94%BB%E5%BB%B6%E8%BF%9F-1-2-%E7%A7%92%EF%BC%9A%E5%AE%9A%E4%BD%8D%E5%88%B0%E9%9F%B3%E7%AE%B1%E7%AB%AF%E7%BC%93%E5%86%B2%EF%BC%8C%E8%AE%BE%E5%A4%87%E4%BE%A7%E6%97%A0%E5%8F%AF%E4%BF%AE%E7%82%B9"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_17 · GBA 音画延迟 1~2 秒：定位到音箱端缓冲，设备侧无可修点</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AE%9A%E4%BD%8D%E6%96%B9%E6%B3%95%EF%BC%9A%E9%93%BE%E8%B7%AF%E5%88%86%E6%AE%B5%E9%87%8F%E5%8C%96%EF%BC%88%E5%BB%B6%E8%BF%9F%E9%A2%84%E7%AE%97%E8%A1%A8%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. 定位方法：链路分段量化（延迟预算表）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%88%A4%E5%AE%9A%E5%9C%A8%E9%9F%B3%E7%AE%B1%E7%AB%AF%EF%BC%88%E4%BB%A5%E5%8F%8A%E4%B8%BA%E4%BB%80%E4%B9%88%E8%AE%BE%E5%A4%87%E4%BE%A7%E6%B5%8B%E4%B8%8D%E5%88%B0%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 为什么判定在音箱端（以及为什么设备侧测不到）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%9C%AC%E8%BD%AE%E7%BB%93%E8%AE%BA%E4%B8%8E%E5%86%B3%E7%AD%96"><span class="toc-number">1.4.</span> <span class="toc-text">4. 本轮结论与决策</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%8F%8D%E6%A8%A1%E5%BC%8F%E4%B8%8E%E8%B8%A9%E5%9D%91"><span class="toc-number">1.6.</span> <span class="toc-text">6. 反模式与踩坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相关文件</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA音画延迟1到2秒_音箱端缓冲定位
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-17-·-GBA-音画延迟-1-2-秒：定位到音箱端缓冲，设备侧无可修点"><a href="#bugfix-20260923-17-·-GBA-音画延迟-1-2-秒：定位到音箱端缓冲，设备侧无可修点" class="headerlink" title="bugfix_20260923_17 · GBA 音画延迟 1~2 秒：定位到音箱端缓冲，设备侧无可修点"></a>bugfix_20260923_17 · GBA 音画延迟 1~2 秒：定位到音箱端缓冲，设备侧无可修点</h1><ul>
+<li>日期：2026-09-23</li>
+<li>设备：展讯 SC9832A &#x2F; Alpine Linux &#x2F; 720x1280 fb</li>
+<li>应用：GBA 游戏（<code>miniretro_gba</code> + <code>mgba_libretro.so</code>）→ 蓝牙 A2DP（小爱音箱）</li>
+<li>分类：音频链路 &#x2F; 延迟预算定位</li>
+<li><strong>结论：设备侧全链路延迟 ≤0.25s，与用户实测 1<del>2s 差 4</del>8 倍；超出部分在蓝牙音箱端的应用层缓冲，设备侧既不可观测也不可控 → 本轮不做代码改动</strong></li>
+</ul>
+<hr>
+<h2 id="1-现象"><a href="#1-现象" class="headerlink" title="1. 现象"></a>1. 现象</h2><p>用户反馈：GBA 游戏「<strong>声音比游戏画面落后</strong>」，量级 <strong>1~2 秒</strong>，且<strong>固定</strong>（一进游戏就落后那么多，长时间玩也没有明显变化）。</p>
+<p><strong>“固定”这一条是决定性的</strong>：它排除了”设备侧积压”这一类原因（积压会随时间累积、越玩越久），指向链路中某一段的<strong>固定缓冲</strong>。</p>
+<h2 id="2-定位方法：链路分段量化（延迟预算表）"><a href="#2-定位方法：链路分段量化（延迟预算表）" class="headerlink" title="2. 定位方法：链路分段量化（延迟预算表）"></a>2. 定位方法：链路分段量化（延迟预算表）</h2><p>把「游戏音频生成 → 出声」拆成 5 段，逐段量化出延迟，找出<strong>量级对不上</strong>的那一段：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>段</th>
+<th>延迟</th>
+<th>依据（可复现）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>mGBA core 内部音频缓冲</td>
+<td><strong>~33ms</strong></td>
+<td><code>libretro.c</code>：<code>internalAudioBufferSize = audioSamplesPerFrame * 2</code>（上限 <code>0x4000</code>）；GBA 每帧 ~1097 样本 → 约 2 帧；且 <code>retro_run</code> 每帧 <code>mAudioBufferRead(buffer, ..., audioSamplesPerFrameAvg)</code> <strong>一次取走</strong>，不累积</td>
+</tr>
+<tr>
+<td>2</td>
+<td>前端 <code>miniretro_gba</code></td>
+<td><strong>0</strong></td>
+<td><code>fifo_write()</code> 是<strong>收到就写、非阻塞</strong>（EAGAIN 直接丢）；重采样为<strong>无状态丢样</strong>（<code>s_out_acc</code> 累加器 + 直接复制样本），<strong>无内部队列、无攒批</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>/tmp/bt_audio.fifo</code> 积压</td>
+<td><strong>80ms</strong></td>
+<td>水位闭环后实测 <code>back ≈ 14000B</code>（原始 0.21s 已压到 ~0.08s）</td>
+</tr>
+<tr>
+<td>4</td>
+<td>daemon 在途包</td>
+<td><strong>≤122ms</strong></td>
+<td><code>A2DP_MEDIA_INFLIGHT_MAX=6</code> × 20.3ms&#x2F;包；实测 <code>inflight=0/1776</code>、<code>credit busy=0</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>蓝牙空口 + 音箱应用层缓冲</strong></td>
+<td><strong>不可观测</strong></td>
+<td>见 §3</td>
+</tr>
+<tr>
+<td>—</td>
+<td><strong>设备侧小计</strong></td>
+<td><strong>≤0.25s</strong></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>对照用户实测的 1~2 秒：<strong>差额全部落在第 5 段</strong>。</p>
+<h2 id="3-为什么判定在音箱端（以及为什么设备侧测不到）"><a href="#3-为什么判定在音箱端（以及为什么设备侧测不到）" class="headerlink" title="3. 为什么判定在音箱端（以及为什么设备侧测不到）"></a>3. 为什么判定在音箱端（以及为什么设备侧测不到）</h2><p><strong>判定依据</strong>：设备侧四段都有硬实测、加起来 ≤0.25s；「固定」的性质又排除了累积型原因。剩下的量级只能来自音箱。</p>
+<p><strong>为什么设备侧观测不到音箱缓冲</strong>（这三条是本节的重点，别再白费力气找）：</p>
+<ol>
+<li><strong>ACL 层的 <code>Number-Completed(0x13)</code> 不等于应用层消费确认</strong> —— 它由<strong>蓝牙控制器</strong>回，只表示”空口传完了”，音箱把包放进自己缓冲后并不会因此额外通知。</li>
+<li><strong>A2DP 媒体通道走 L2CAP basic mode，没有 credit 流控</strong> —— sink 不会告诉 source”我手里还压着多少”。</li>
+<li><strong>daemon 的发送节奏是设备侧绝对时钟</strong>（每 20.3ms 一包），与音箱的消费节奏完全解耦；设备侧只能知道”我发了多少”，无法知道”它播到哪”。</li>
+</ol>
+<p><strong>旁证</strong>：daemon 源码注释（v48R22 那次修复）自述「<strong>sink 缓冲约 2s</strong>」。那次是异常态（缺 START 直接推流）下观察到的，但侧面印证该音箱的缓冲深度就在<strong>秒级</strong>。</p>
+<h2 id="4-本轮结论与决策"><a href="#4-本轮结论与决策" class="headerlink" title="4. 本轮结论与决策"></a>4. 本轮结论与决策</h2><ul>
+<li><strong>不做设备侧代码改动</strong>。理由：设备侧剩下可压的只有约 90ms（fifo 水位 60→30ms、在途窗口 6→3），相对 1~2s 是 5% 量级，收益可忽略；且收紧蓝牙发送窗口有历史「CP 复位」风险，风险收益比不划算。</li>
+<li>上一轮已落地的<strong>fifo 水位闭环</strong>（把积压从 0.21s 压到 0.08s）保留，它是有效的、无副作用的改进。</li>
+<li><strong>可行的改善方向只在音箱端</strong>：音箱 App &#x2F; 音箱本体的「低延迟 &#x2F; 游戏模式」开关；或换一台延迟更小的蓝牙音箱&#x2F;耳机做对照。</li>
+</ul>
+<h2 id="5-验证"><a href="#5-验证" class="headerlink" title="5. 验证"></a>5. 验证</h2><ul>
+<li>用户已确认：<strong>固定落后</strong>、量级 <strong>1~2 秒</strong> → 与”音箱固定缓冲”模型完全吻合。</li>
+<li><strong>对照实验（推荐用户做，一步定论）</strong>：把设备连到<strong>另一个蓝牙耳机&#x2F;音箱</strong>，若延迟显著改变 → 100% 确认是音箱端；若换谁都一样 1~2 秒 → 再回头查链路。</li>
+</ul>
+<h2 id="6-反模式与踩坑"><a href="#6-反模式与踩坑" class="headerlink" title="6. 反模式与踩坑"></a>6. 反模式与踩坑</h2><ul>
+<li><strong>★ 别用”设备侧的缓冲指标”去解释”秒级”延迟</strong> —— 先做延迟预算表，看哪个量级对不上，再深挖那一段。凭直觉猜”肯定是缓冲”会一直在设备侧空转。</li>
+<li><strong>★ <code>Number-Completed</code> ≠ 应用层消费确认</strong>（见 §3.1），拿它估音箱缓冲是错的。</li>
+<li><strong>★ 测量时注意计数方式</strong>：全文件计数做差分才有意义；用”固定前缀计数”做差分必然为 0（自己给自己挖的坑，本轮真踩了）；日志轮转也会污染差值。</li>
+<li><strong>★ <code>FIONREAD</code> 量 fifo 积压是可信的</strong>：它返回管道内可读字节数，与读端数量无关；只读 FIONREAD、不 read，就不会抢走消费者的数据。</li>
+<li><strong>★ 前端”把音频拉伸到实时”的设计是正确的</strong>：核心产出随实际帧率变化，前端按 <code>s_fpc × s_fps_meas</code> 归一后恒以 44100 帧&#x2F;秒输出，音画<strong>内容速率</strong>保持同步（代价是音调随帧率下降）。别再怀疑这里。</li>
+</ul>
+<h2 id="7-相关文件"><a href="#7-相关文件" class="headerlink" title="7. 相关文件"></a>7. 相关文件</h2><ul>
+<li>设备源码：<code>extern/miniretro/miniretro_gba.c</code>、<code>extern/miniretro/build.sh</code>、<code>/tmp/bt_user_daemon_v49.c</code></li>
+<li>上游证据：<code>/home/GBAgame/mgba/src/platform/libretro/libretro.c</code>（音频缓冲 877<del>910 行、<code>retro_run</code> 交付 618</del>648 行）</li>
+<li>诊断脚本：<code>ssh_tools/_tmp/&#123;audio_probe,sample_audio,rate2,mgba_lr_read,delay_send&#125;.sh</code></li>
+<li>相关归档：<code>bugfix_20260923_03</code> ~ <code>_16</code></li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-17-%C2%B7-GBA-%E9%9F%B3%E7%94%BB%E5%BB%B6%E8%BF%9F-1-2-%E7%A7%92%EF%BC%9A%E5%AE%9A%E4%BD%8D%E5%88%B0%E9%9F%B3%E7%AE%B1%E7%AB%AF%E7%BC%93%E5%86%B2%EF%BC%8C%E8%AE%BE%E5%A4%87%E4%BE%A7%E6%97%A0%E5%8F%AF%E4%BF%AE%E7%82%B9"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_17 · GBA 音画延迟 1~2 秒：定位到音箱端缓冲，设备侧无可修点</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AE%9A%E4%BD%8D%E6%96%B9%E6%B3%95%EF%BC%9A%E9%93%BE%E8%B7%AF%E5%88%86%E6%AE%B5%E9%87%8F%E5%8C%96%EF%BC%88%E5%BB%B6%E8%BF%9F%E9%A2%84%E7%AE%97%E8%A1%A8%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. 定位方法：链路分段量化（延迟预算表）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%88%A4%E5%AE%9A%E5%9C%A8%E9%9F%B3%E7%AE%B1%E7%AB%AF%EF%BC%88%E4%BB%A5%E5%8F%8A%E4%B8%BA%E4%BB%80%E4%B9%88%E8%AE%BE%E5%A4%87%E4%BE%A7%E6%B5%8B%E4%B8%8D%E5%88%B0%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 为什么判定在音箱端（以及为什么设备侧测不到）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%9C%AC%E8%BD%AE%E7%BB%93%E8%AE%BA%E4%B8%8E%E5%86%B3%E7%AD%96"><span class="toc-number">1.4.</span> <span class="toc-text">4. 本轮结论与决策</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%AA%8C%E8%AF%81"><span class="toc-number">1.5.</span> <span class="toc-text">5. 验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%8F%8D%E6%A8%A1%E5%BC%8F%E4%B8%8E%E8%B8%A9%E5%9D%91"><span class="toc-number">1.6.</span> <span class="toc-text">6. 反模式与踩坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相关文件</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&text=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&title=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&is_video=false&description=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA音画延迟1到2秒_音箱端缓冲定位&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&title=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&title=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&title=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&title=GBA音画延迟1到2秒_音箱端缓冲定位"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-17/&name=GBA音画延迟1到2秒_音箱端缓冲定位&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

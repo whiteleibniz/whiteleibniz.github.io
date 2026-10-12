@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="HT0 设备蓝牙拉起 —— 部署交付文档 目的：回答”整个蓝牙流程到底涉及哪些脚本&#x2F;程序？在新设备上怎么部署才能拉起蓝牙？”内容：① 链路全景 → ② 产物清单（设备端&#x2F;本机&#x2F;Git）→ ③ 新设备部署步骤 → ④ 验证 → ⑤ 常见问题适用：同型号设备（HT0 &#x2F; 展讯 SC9832A，安卓内核 + Alpine 用户态）   1. 蓝牙链路全景（谁拉起谁">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HT0蓝牙拉起_部署交付文档">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="HT0 设备蓝牙拉起 —— 部署交付文档 目的：回答”整个蓝牙流程到底涉及哪些脚本&#x2F;程序？在新设备上怎么部署才能拉起蓝牙？”内容：① 链路全景 → ② 产物清单（设备端&#x2F;本机&#x2F;Git）→ ③ 新设备部署步骤 → ④ 验证 → ⑤ 常见问题适用：同型号设备（HT0 &#x2F; 展讯 SC9832A，安卓内核 + Alpine 用户态）   1. 蓝牙链路全景（谁拉起谁">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-21T03:47:29.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.609Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="蓝牙">
+<meta property="article:tag" content="WCN">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>HT0蓝牙拉起_部署交付文档</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/13/ht0-skill-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&text=HT0蓝牙拉起_部署交付文档"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&title=HT0蓝牙拉起_部署交付文档"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&is_video=false&description=HT0蓝牙拉起_部署交付文档"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=HT0蓝牙拉起_部署交付文档&body=Check out this article: https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&title=HT0蓝牙拉起_部署交付文档"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&title=HT0蓝牙拉起_部署交付文档"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&title=HT0蓝牙拉起_部署交付文档"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&title=HT0蓝牙拉起_部署交付文档"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&name=HT0蓝牙拉起_部署交付文档&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-%E8%AE%BE%E5%A4%87%E8%93%9D%E7%89%99%E6%8B%89%E8%B5%B7-%E2%80%94%E2%80%94-%E9%83%A8%E7%BD%B2%E4%BA%A4%E4%BB%98%E6%96%87%E6%A1%A3"><span class="toc-number">1.</span> <span class="toc-text">HT0 设备蓝牙拉起 —— 部署交付文档</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%93%9D%E7%89%99%E9%93%BE%E8%B7%AF%E5%85%A8%E6%99%AF%EF%BC%88%E8%B0%81%E6%8B%89%E8%B5%B7%E8%B0%81%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1. 蓝牙链路全景（谁拉起谁）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E4%BA%A7%E7%89%A9%E6%B8%85%E5%8D%95"><span class="toc-number">1.2.</span> <span class="toc-text">2. 产物清单</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E8%AE%BE%E5%A4%87%E7%AB%AF%E5%B7%B2%E9%83%A8%E7%BD%B2%EF%BC%88HT0-%E7%8E%B0%E7%8A%B6%EF%BC%8C%E5%AE%9E%E6%B5%8B%E6%A0%B8%E5%AF%B9%EF%BC%89"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 设备端已部署（HT0 现状，实测核对）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E6%9C%AC%E6%9C%BA%EF%BC%88Windows-%E5%B7%A5%E4%BD%9C%E7%9B%AE%E5%BD%95-new-chat-%EF%BC%89%E6%BA%90%E7%A0%81%E4%B8%8E%E9%83%A8%E7%BD%B2%E8%84%9A%E6%9C%AC"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 本机（Windows 工作目录 new-chat\）源码与部署脚本</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-Git-%E6%8F%90%E4%BA%A4%EF%BC%88%E8%AE%BE%E5%A4%87%E9%A1%B9%E7%9B%AE-home-lvgl-demo-lvgl-demo%EF%BC%89"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 Git 提交（设备项目 &#x2F;home&#x2F;lvgl_demo&#x2F;lvgl_demo）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-Skill-%E5%B0%81%E8%A3%85%EF%BC%88%E5%8F%AF%E7%A7%BB%E6%A4%8D%EF%BC%89"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4 Skill 封装（可移植）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%96%B0%E8%AE%BE%E5%A4%87%E9%83%A8%E7%BD%B2%E6%AD%A5%E9%AA%A4%EF%BC%88%E4%BB%8E%E9%9B%B6%E6%8B%89%E8%B5%B7%E8%93%9D%E7%89%99%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 新设备部署步骤（从零拉起蓝牙）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-0-%E7%A1%AE%E8%AE%A4%E5%9F%BA%E7%A1%80%E7%8E%AF%E5%A2%83%EF%BC%88WiFi-%E5%89%8D%E6%8F%90%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">Step 0 确认基础环境（WiFi 前提）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-1-%E4%B8%8A%E4%BC%A0%E5%B9%B6%E9%83%A8%E7%BD%B2%E5%9F%BA%E7%A1%80%E5%B7%A5%E5%85%B7"><span class="toc-number">1.3.2.</span> <span class="toc-text">Step 1 上传并部署基础工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-2-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2-HCI-daemon%EF%BC%88%E6%A0%B8%E5%BF%83%EF%BC%89"><span class="toc-number">1.3.3.</span> <span class="toc-text">Step 2 编译部署 HCI daemon（核心）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-3-%E9%85%8D%E7%BD%AE%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF"><span class="toc-number">1.3.4.</span> <span class="toc-text">Step 3 配置开机自启</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-4%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%89LVGL-%E8%93%9D%E7%89%99%E8%AE%BE%E7%BD%AE%E9%A1%B5"><span class="toc-number">1.3.5.</span> <span class="toc-text">Step 4（可选）LVGL 蓝牙设置页</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-5-%E9%AA%8C%E8%AF%81"><span class="toc-number">1.3.6.</span> <span class="toc-text">Step 5 验证</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%AA%8C%E8%AF%81%E6%A0%87%E5%87%86%EF%BC%88%E5%85%A8%E9%83%A8%E6%BB%A1%E8%B6%B3-%E9%83%A8%E7%BD%B2%E6%88%90%E5%8A%9F%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 验证标准（全部满足 &#x3D; 部署成功）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%EF%BC%88%E6%96%B0%E8%AE%BE%E5%A4%87%E9%83%A8%E7%BD%B2%E6%97%B6%E6%9C%80%E5%8F%AF%E8%83%BD%E8%B8%A9%E7%9A%84%E5%9D%91%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 常见问题（新设备部署时最可能踩的坑）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93%E9%83%A8%E7%BD%B2%E8%B7%AF%E5%BE%84"><span class="toc-number">1.6.</span> <span class="toc-text">6. 一句话总结部署路径</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-A2DP-%E7%9C%9F%E5%AE%9E%E9%9F%B3%E9%A2%91%E6%92%AD%E6%94%BE%EF%BC%88v1-0-3-%E8%93%9D%E7%89%99%E9%9F%B3%E7%AE%B1%E6%94%AF%E6%8C%81%E7%89%88%E6%96%B0%E5%A2%9E%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. A2DP 真实音频播放（v1.0.3 蓝牙音箱支持版新增）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E9%9F%B3%E9%A2%91%E9%93%BE%E8%B7%AF"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 音频链路</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E5%85%B3%E9%94%AE%E9%83%A8%E7%BD%B2%E7%82%B9"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 关键部署点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E6%8E%92%E6%9F%A5%E8%A6%81%E7%82%B9"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 排查要点</span></a></li></ol></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        HT0蓝牙拉起_部署交付文档
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-21T03:47:29.000Z" itemprop="datePublished">2026-09-21</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/WCN/" rel="tag">WCN</a>, <a class="tag-link-link" href="/tags/%E8%93%9D%E7%89%99/" rel="tag">蓝牙</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="HT0-设备蓝牙拉起-——-部署交付文档"><a href="#HT0-设备蓝牙拉起-——-部署交付文档" class="headerlink" title="HT0 设备蓝牙拉起 —— 部署交付文档"></a>HT0 设备蓝牙拉起 —— 部署交付文档</h1><blockquote>
+<p>目的：回答”整个蓝牙流程到底涉及哪些脚本&#x2F;程序？在新设备上怎么部署才能拉起蓝牙？”<br>内容：① 链路全景 → ② 产物清单（设备端&#x2F;本机&#x2F;Git）→ ③ 新设备部署步骤 → ④ 验证 → ⑤ 常见问题<br>适用：同型号设备（HT0 &#x2F; 展讯 SC9832A，安卓内核 + Alpine 用户态）</p>
+</blockquote>
+<hr>
+<h2 id="1-蓝牙链路全景（谁拉起谁）"><a href="#1-蓝牙链路全景（谁拉起谁）" class="headerlink" title="1. 蓝牙链路全景（谁拉起谁）"></a>1. 蓝牙链路全景（谁拉起谁）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">开机</span><br><span class="line"> ├─ /etc/local.d/wifi.start       ① 挂载安卓 system + 搭 chroot + download 烧固件 + 驱动 + wlan0</span><br><span class="line"> ├─ /etc/local.d/bt_bringup.start  ② mdbg 权限 + wcnd + bt_once(BT-OPEN) + bt_wake.sh(btwrite 唤醒)</span><br><span class="line"> ├─ /etc/init.d/bt_daemon          ③ 用户态 HCI daemon（openrc 自启）</span><br><span class="line"> └─ LVGL 桌面                     ④ 蓝牙设置页（socket 与 daemon 通信）</span><br></pre></td></tr></table></figure>
+
+<p><strong>依赖关系</strong>：① 是 ②③④ 的前提（download 烧的 combo 固件含蓝牙部分）；② 是 ③ 的前提（上电 + 唤醒后 HCI 才响应）。</p>
+<hr>
+<h2 id="2-产物清单"><a href="#2-产物清单" class="headerlink" title="2. 产物清单"></a>2. 产物清单</h2><h3 id="2-1-设备端已部署（HT0-现状，实测核对）"><a href="#2-1-设备端已部署（HT0-现状，实测核对）" class="headerlink" title="2.1 设备端已部署（HT0 现状，实测核对）"></a>2.1 设备端已部署（HT0 现状，实测核对）</h3><table>
+<thead>
+<tr>
+<th>类别</th>
+<th>路径</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>固件下载链</td>
+<td><code>/tmp/logdw</code></td>
+<td>download 日志守护（安卓原版拷贝）</td>
+</tr>
+<tr>
+<td></td>
+<td><code>/tmp/aand/bin/download</code></td>
+<td>固件下载引导器（chroot 内）</td>
+</tr>
+<tr>
+<td></td>
+<td><code>/tmp/aand/bin/wcnd</code></td>
+<td>WiFi&#x2F;蓝牙上电守护（chroot 内）</td>
+</tr>
+<tr>
+<td></td>
+<td><code>/tmp/aand/etc/marlinba/*.ini</code></td>
+<td>固件配置（含蓝牙 pskey）</td>
+</tr>
+<tr>
+<td>蓝牙上电&#x2F;唤醒</td>
+<td><code>/tmp/bt_once</code></td>
+<td>BT-OPEN 触发（源码 &#x2F;tmp&#x2F;bt_once.c）</td>
+</tr>
+<tr>
+<td></td>
+<td><code>/tmp/bt_wake.sh</code></td>
+<td>btwrite 周期唤醒（每 2s 写 1）</td>
+</tr>
+<tr>
+<td>HCI 诊断</td>
+<td><code>/tmp/bt_probe_full</code></td>
+<td>HCI 六步探针（源码 &#x2F;tmp&#x2F;bt_probe_full.c）</td>
+</tr>
+<tr>
+<td></td>
+<td><code>/tmp/hci_3m</code></td>
+<td>3M 波特率 HCI 原始测试（早期诊断）</td>
+</tr>
+<tr>
+<td><strong>核心服务</strong></td>
+<td><code>/usr/local/bin/bt_user_daemon</code></td>
+<td><strong>用户态 HCI daemon（生产）</strong>，源码 <code>/tmp/bt_user_daemon.c</code></td>
+</tr>
+<tr>
+<td>自启配置</td>
+<td><code>/etc/local.d/wifi.start</code></td>
+<td>开机 WiFi 链（4991B，含 chroot 搭建）</td>
+</tr>
+<tr>
+<td></td>
+<td><code>/etc/local.d/bt_bringup.start</code></td>
+<td>开机蓝牙上电链（mdbg+wcnd+bt_once+bt_wake）</td>
+</tr>
+<tr>
+<td></td>
+<td><code>/etc/init.d/bt_daemon</code></td>
+<td>daemon openrc 自启（已 <code>rc-update add default</code>）</td>
+</tr>
+<tr>
+<td></td>
+<td><code>/etc/local.d/lvgl_demo.start</code></td>
+<td>LVGL 桌面自启（指向 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;lvgl_demo）</td>
+</tr>
+<tr>
+<td></td>
+<td><code>/root/lvgl_watchdog.sh</code></td>
+<td>桌面看门狗（挂了自动拉起）</td>
+</tr>
+</tbody></table>
+<h3 id="2-2-本机（Windows-工作目录-new-chat-）源码与部署脚本"><a href="#2-2-本机（Windows-工作目录-new-chat-）源码与部署脚本" class="headerlink" title="2.2 本机（Windows 工作目录 new-chat\）源码与部署脚本"></a>2.2 本机（Windows 工作目录 <code>new-chat\</code>）源码与部署脚本</h3><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>bt_user_daemon.c</code></td>
+<td><strong>daemon 源码（核心交付物）</strong>——设备 &#x2F;tmp 有同副本</td>
+</tr>
+<tr>
+<td><code>bt_probe_full.c</code> &#x2F; <code>bt_probe_inquiry.c</code></td>
+<td>HCI 探针源码</td>
+</tr>
+<tr>
+<td><code>bt_deploy_v4.py</code> &#x2F; <code>bt_deploy_all.py</code> &#x2F; <code>bt_full_sequence_test.py</code></td>
+<td>paramiko 一键部署&#x2F;测试脚本</td>
+</tr>
+<tr>
+<td><code>bt_verify_scan.py</code> &#x2F; <code>bt_sock_test.py</code></td>
+<td>扫描&#x2F;socket 验证脚本</td>
+</tr>
+<tr>
+<td><code>bt_ssh_wait_8h.py</code> &#x2F; <code>bt_auto_resume.py</code></td>
+<td>SSH 轮询重连</td>
+</tr>
+<tr>
+<td><code>bluetooth_page.c</code> &#x2F; <code>bluetooth_page.h</code></td>
+<td><strong>LVGL 蓝牙设置页（launcher 已注册）</strong></td>
+</tr>
+<tr>
+<td>四份文档</td>
+<td>操作手册 &#x2F; 流程对比 &#x2F; 工作总结 &#x2F; AI 指导手册</td>
+</tr>
+</tbody></table>
+<h3 id="2-3-Git-提交（设备项目-home-lvgl-demo-lvgl-demo）"><a href="#2-3-Git-提交（设备项目-home-lvgl-demo-lvgl-demo）" class="headerlink" title="2.3 Git 提交（设备项目 &#x2F;home&#x2F;lvgl_demo&#x2F;lvgl_demo）"></a>2.3 Git 提交（设备项目 &#x2F;home&#x2F;lvgl_demo&#x2F;lvgl_demo）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">973e3b5 新增蓝牙设置应用：launcher 注册蓝牙图标，蓝牙页含开关/搜索/设备列表，</span><br><span class="line">        通过 unix socket 与 bt_user_daemon 通信；开机脚本与看门狗统一使用 /usr/local/bin/lvgl_demo</span><br></pre></td></tr></table></figure>
+<p>涉及：<code>lv_pages/bluetooth_page.c</code>、<code>lv_pages/bluetooth_page.h</code>、<code>lv_pages/launcher_page.c</code>（3 处注册）、<code>shell/wifi.start</code></p>
+<h3 id="2-4-Skill-封装（可移植）"><a href="#2-4-Skill-封装（可移植）" class="headerlink" title="2.4 Skill 封装（可移植）"></a>2.4 Skill 封装（可移植）</h3><p><code>workspace\.user_skills\ht0-wcn-radio\</code> —— 含 SKILL.md + references（WiFi&#x2F;蓝牙手册）+ scripts（wifi_bringup&#x2F;bt_status&#x2F;ssh_wait），任何 AI 加载后可直接操作同型设备。</p>
+<hr>
+<h2 id="3-新设备部署步骤（从零拉起蓝牙）"><a href="#3-新设备部署步骤（从零拉起蓝牙）" class="headerlink" title="3. 新设备部署步骤（从零拉起蓝牙）"></a>3. 新设备部署步骤（从零拉起蓝牙）</h2><blockquote>
+<p>前提：同型号设备（HT0&#x2F;SC9832A）、已 switchroot Alpine、SSH root 可用、WiFi 链路能起（<code>/tmp/aand</code> 环境存在或 wifi.start 能自动搭）。</p>
+</blockquote>
+<h3 id="Step-0-确认基础环境（WiFi-前提）"><a href="#Step-0-确认基础环境（WiFi-前提）" class="headerlink" title="Step 0 确认基础环境（WiFi 前提）"></a>Step 0 确认基础环境（WiFi 前提）</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ssh root@&lt;设备IP&gt;</span><br><span class="line"><span class="comment"># 确认安卓 system 可挂载、chroot 可搭（wifi.start 自动做）</span></span><br><span class="line">sh /etc/local.d/wifi.start 2&gt;&amp;1 | <span class="built_in">tail</span> -5    <span class="comment"># 期望: SDIO ready 0x2331 + wlan0 UP</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/mmc2:8800:1/device  <span class="comment"># 0x2331</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>若 wifi.start 不存在：先把 <code>/mnt/android_sys</code>（mmcblk0p17）挂载，从 <code>wifi.start</code> 内容重建 chroot（见 references&#x2F;wifi.md）。</p>
+</blockquote>
+<h3 id="Step-1-上传并部署基础工具"><a href="#Step-1-上传并部署基础工具" class="headerlink" title="Step 1 上传并部署基础工具"></a>Step 1 上传并部署基础工具</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 从本机 scp 到设备 /tmp/</span></span><br><span class="line">scp bt_once bt_wake.sh bt_probe_full logdw root@&lt;设备IP&gt;:/tmp/</span><br><span class="line"><span class="built_in">chmod</span> +x /tmp/bt_once /tmp/bt_wake.sh /tmp/bt_probe_full /tmp/logdw</span><br><span class="line"></span><br><span class="line"><span class="comment"># logdw 也可从安卓 system 拷：</span></span><br><span class="line"><span class="comment"># cp /mnt/android_sys/bin/logdw /tmp/logdw 2&gt;/dev/null || cp /mnt/android_sys/bin/download_logd /tmp/logdw</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Step-2-编译部署-HCI-daemon（核心）"><a href="#Step-2-编译部署-HCI-daemon（核心）" class="headerlink" title="Step 2 编译部署 HCI daemon（核心）"></a>Step 2 编译部署 HCI daemon（核心）</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 上传源码</span></span><br><span class="line">scp bt_user_daemon.c root@&lt;设备IP&gt;:/tmp/</span><br><span class="line"><span class="comment"># 设备端编译</span></span><br><span class="line">gcc -O2 -o /usr/local/bin/bt_user_daemon /tmp/bt_user_daemon.c -lpthread</span><br><span class="line"><span class="comment"># 单实例启动</span></span><br><span class="line">pkill -9 -x bt_user_daemon 2&gt;/dev/null; <span class="built_in">sleep</span> 1</span><br><span class="line">setsid /usr/local/bin/bt_user_daemon &gt;/tmp/btud.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>若设备无 gcc：本机交叉编译（armv7 静态）或从已部署设备拷贝二进制（<code>/usr/local/bin/bt_user_daemon</code> 24KB，架构一致可直接用）。</p>
+</blockquote>
+<h3 id="Step-3-配置开机自启"><a href="#Step-3-配置开机自启" class="headerlink" title="Step 3 配置开机自启"></a>Step 3 配置开机自启</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 3a. 蓝牙上电链脚本</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /etc/local.d/bt_bringup.start &lt;&lt; <span class="string">&#x27;EOF&#x27;</span></span><br><span class="line"><span class="comment">#!/bin/sh</span></span><br><span class="line"><span class="comment"># 蓝牙上电链：mdbg 权限 -&gt; wcnd -&gt; bt_once(BT-OPEN) -&gt; bt_wake(btwrite)</span></span><br><span class="line"><span class="built_in">sleep</span> 8</span><br><span class="line"><span class="built_in">chmod</span> 666 /tmp/aand/proc/mdbg/* 2&gt;/dev/null</span><br><span class="line"><span class="built_in">chmod</span> 666 /proc/mdbg/* 2&gt;/dev/null</span><br><span class="line"><span class="built_in">echo</span> 0 &gt; /proc/mdbg/wdtirq 2&gt;/dev/null</span><br><span class="line">ps -ef | grep -q <span class="string">&#x27;[w]cnd&#x27;</span> || setsid <span class="built_in">chroot</span> /tmp/aand /bin/wcnd &gt;/tmp/wcnd_console.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"><span class="built_in">sleep</span> 2</span><br><span class="line">ps -ef | grep -q <span class="string">&#x27;[b]t_once&#x27;</span> || setsid /tmp/bt_once 900 &gt;/tmp/bt_once.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"><span class="built_in">sleep</span> 2</span><br><span class="line">ps -ef | grep -q <span class="string">&#x27;[b]t_wake&#x27;</span> || setsid /bin/sh /tmp/bt_wake.sh &gt;/dev/null 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line">EOF</span><br><span class="line"><span class="built_in">chmod</span> +x /etc/local.d/bt_bringup.start</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3b. daemon openrc 自启</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /etc/init.d/bt_daemon &lt;&lt; <span class="string">&#x27;EOF&#x27;</span></span><br><span class="line"><span class="comment">#!/sbin/openrc-run</span></span><br><span class="line"><span class="built_in">command</span>=<span class="string">&quot;/usr/local/bin/bt_user_daemon&quot;</span></span><br><span class="line">command_background=<span class="built_in">yes</span></span><br><span class="line">pidfile=<span class="string">&quot;/run/bt_daemon.pid&quot;</span></span><br><span class="line">EOF</span><br><span class="line"><span class="built_in">chmod</span> +x /etc/init.d/bt_daemon</span><br><span class="line">rc-update add bt_daemon default</span><br><span class="line">rc-service bt_daemon start</span><br></pre></td></tr></table></figure>
+
+<h3 id="Step-4（可选）LVGL-蓝牙设置页"><a href="#Step-4（可选）LVGL-蓝牙设置页" class="headerlink" title="Step 4（可选）LVGL 蓝牙设置页"></a>Step 4（可选）LVGL 蓝牙设置页</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 上传页面文件到项目</span></span><br><span class="line">scp bluetooth_page.c bluetooth_page.h root@&lt;设备IP&gt;:/home/lvgl_demo/lvgl_demo/lv_pages/</span><br><span class="line"><span class="comment"># 修改 launcher_page.c 三处：include / 枚举 LAUNCHER_APP_BLUETOOTH / s_apps 数组 / open_app switch</span></span><br><span class="line"><span class="comment"># 编译部署（4 线程）</span></span><br><span class="line"><span class="built_in">cd</span> /home/lvgl_demo/lvgl_demo &amp;&amp; make -j4</span><br><span class="line">install -m 755 build/lvgl_demo /usr/local/bin/lvgl_demo</span><br><span class="line">pkill -9 -x lvgl_demo; setsid /usr/local/bin/lvgl_demo &gt;/tmp/lvgl_demo.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>若新设备没有 LVGL 项目：先部署 wifi&#x2F;蓝牙底层（Step 0–3），页面是最后的应用层。</p>
+</blockquote>
+<h3 id="Step-5-验证"><a href="#Step-5-验证" class="headerlink" title="Step 5 验证"></a>Step 5 验证</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 分层状态</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/mmc2:8800:1/device          <span class="comment"># 0x2331</span></span><br><span class="line">grep <span class="string">&#x27;CMD OK&#x27;</span> /tmp/bt_once.log                        <span class="comment"># WCNBTWIFI-CMD OK</span></span><br><span class="line">ps -eo <span class="built_in">comm</span> | grep -c <span class="string">&#x27;[b]t_user_daemon&#x27;</span>              <span class="comment"># ≥1</span></span><br><span class="line"><span class="comment"># socket 查询（设备端 python3）</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&#x27;state\n&#x27;</span> | <span class="built_in">timeout</span> 5 python3 -c <span class="string">&quot;</span></span><br><span class="line"><span class="string">import socket,sys</span></span><br><span class="line"><span class="string">s=socket.socket(socket.AF_UNIX); s.connect(&#x27;/tmp/bt_ctl.sock&#x27;)</span></span><br><span class="line"><span class="string">s.sendall(sys.stdin.buffer.read()); s.shutdown(socket.SHUT_WR)</span></span><br><span class="line"><span class="string">print(s.recv(4096).decode())&quot;</span>                          <span class="comment"># OK ON</span></span><br><span class="line"><span class="comment"># 扫描</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&#x27;scan 15\n&#x27;</span> | <span class="built_in">timeout</span> 25 python3 -c <span class="string">&quot;</span></span><br><span class="line"><span class="string">import socket,sys</span></span><br><span class="line"><span class="string">s=socket.socket(socket.AF_UNIX); s.connect(&#x27;/tmp/bt_ctl.sock&#x27;)</span></span><br><span class="line"><span class="string">s.sendall(sys.stdin.buffer.read()); s.shutdown(socket.SHUT_WR)</span></span><br><span class="line"><span class="string">d=b&#x27;&#x27;</span></span><br><span class="line"><span class="string">while True:</span></span><br><span class="line"><span class="string">    x=s.recv(4096)</span></span><br><span class="line"><span class="string">    if not x: break</span></span><br><span class="line"><span class="string">    d+=x</span></span><br><span class="line"><span class="string">print(d.decode())&quot;</span>                                     <span class="comment"># OK N + 设备行</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>也可以直接用 Skill 的脚本：<code>python scripts/bt_status.py --host &lt;IP&gt; --password &lt;pwd&gt; --scan 8</code>（本机跑，需 paramiko）。</p>
+</blockquote>
+<hr>
+<h2 id="4-验证标准（全部满足-部署成功）"><a href="#4-验证标准（全部满足-部署成功）" class="headerlink" title="4. 验证标准（全部满足 &#x3D; 部署成功）"></a>4. 验证标准（全部满足 &#x3D; 部署成功）</h2><table>
+<thead>
+<tr>
+<th>#</th>
+<th>检查</th>
+<th>期望</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>SDIO device</td>
+<td><code>0x2331</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>&#x2F;tmp&#x2F;bt_once.log</td>
+<td>含 <code>WCNBTWIFI-CMD OK</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>btwrite</td>
+<td>可写（bt_wake.sh 在跑）</td>
+</tr>
+<tr>
+<td>4</td>
+<td>daemon 进程</td>
+<td>≥1（单实例）</td>
+</tr>
+<tr>
+<td>5</td>
+<td>socket state</td>
+<td><code>OK ON</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>socket scan</td>
+<td><code>OK N</code> + 设备行（N&#x3D;0 不算失败，环境无设备）</td>
+</tr>
+<tr>
+<td>7</td>
+<td>LVGL 蓝牙页（如有）</td>
+<td>开关&#x2F;搜索&#x2F;列表正常</td>
+</tr>
+<tr>
+<td>8</td>
+<td>重启后</td>
+<td>①②③ 全自动拉起（不用手动）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-常见问题（新设备部署时最可能踩的坑）"><a href="#5-常见问题（新设备部署时最可能踩的坑）" class="headerlink" title="5. 常见问题（新设备部署时最可能踩的坑）"></a>5. 常见问题（新设备部署时最可能踩的坑）</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>BT-OPEN FAIL</code></td>
+<td>mdbg 权限 600</td>
+<td><code>chmod 666 /tmp/aand/proc/mdbg/*</code>（bt_bringup.start 已含）</td>
+</tr>
+<tr>
+<td><code>SDIO not enumerated</code></td>
+<td>download 环境不全</td>
+<td>确认 &#x2F;tmp&#x2F;aand 完整（bin&#x2F;lib&#x2F;marlinba&#x2F;节点&#x2F;软链），重跑 wifi.start</td>
+</tr>
+<tr>
+<td><code>bind logdw failed</code></td>
+<td>&#x2F;tmp&#x2F;logdw 缺失</td>
+<td>从 &#x2F;mnt&#x2F;android_sys&#x2F;bin&#x2F; 拷</td>
+</tr>
+<tr>
+<td>daemon 起不来（Not a tty）</td>
+<td>tty ldisc 被占</td>
+<td><code>python3 -c &quot;import fcntl; f=open(&#39;/dev/ttyS0&#39;,2); fcntl.ioctl(f,0x5421,b&#39;\0&#39;*4)&quot;</code></td>
+</tr>
+<tr>
+<td>扫描无结果</td>
+<td>未先 Write Scan Enable</td>
+<td>用 daemon scan（内部已处理），勿裸发 Inquiry</td>
+</tr>
+<tr>
+<td>socket connect 失败</td>
+<td>daemon 多实例</td>
+<td><code>pkill -9 -x bt_user_daemon</code> 后单实例</td>
+</tr>
+<tr>
+<td>gcc 不存在</td>
+<td>Alpine 精简安装</td>
+<td><code>apk add build-base</code>，或直接拷贝已部署设备的二进制</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-一句话总结部署路径"><a href="#6-一句话总结部署路径" class="headerlink" title="6. 一句话总结部署路径"></a>6. 一句话总结部署路径</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">环境就绪(wifi.start) → 传 4 个工具(bt_once/bt_wake.sh/bt_probe_full/logdw)</span><br><span class="line">→ 编译部署 daemon(bt_user_daemon.c) → 两条自启(bt_bringup.start + bt_daemon)</span><br><span class="line">→ 验证(0x2331 + CMD OK + socket OK ON + scan)</span><br><span class="line">→ 可选: LVGL 蓝牙页(bluetooth_page.c/h + launcher 注册 + make -j4)</span><br></pre></td></tr></table></figure>
+
+<p>所有产物都有本机副本（<code>new-chat\</code> 目录）和 Skill 封装（<code>ht0-wcn-radio</code>），新设备部署全程可复用。</p>
+<hr>
+<h2 id="6-A2DP-真实音频播放（v1-0-3-蓝牙音箱支持版新增）"><a href="#6-A2DP-真实音频播放（v1-0-3-蓝牙音箱支持版新增）" class="headerlink" title="6. A2DP 真实音频播放（v1.0.3 蓝牙音箱支持版新增）"></a>6. A2DP 真实音频播放（v1.0.3 蓝牙音箱支持版新增）</h2><blockquote>
+<p>目的：连上蓝牙音箱后，在桌面音乐&#x2F;视频应用点歌，声音直接从蓝牙音箱出（不再是演示蜂鸣音）。</p>
+</blockquote>
+<h3 id="6-1-音频链路"><a href="#6-1-音频链路" class="headerlink" title="6.1 音频链路"></a>6.1 音频链路</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">桌面点歌(music/video_page)</span><br><span class="line">  → 判断蓝牙已连(AF_UNIX socket /tmp/bt_ctl.sock 发 &quot;conn&quot;)</span><br><span class="line">  → mplayer -ao pcm:nowaveheader:fast:file=/tmp/bt_audio.fifo -srate 44100 -channels 2 -format s16le</span><br><span class="line">  → /tmp/bt_audio.fifo (命名管道, 512字节/帧)</span><br><span class="line">  → bt_user_daemon 媒体循环读 PCM → SBC 编码(bp35/7帧/20ms)</span><br><span class="line">  → A2DP → 蓝牙音箱出声</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-2-关键部署点"><a href="#6-2-关键部署点" class="headerlink" title="6.2 关键部署点"></a>6.2 关键部署点</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>fifo 管道</td>
+<td><code>/tmp/bt_audio.fifo</code></td>
+<td>开机脚本 <code>bt_bringup.start</code> 里 <code>mkfifo</code> 创建，重启后自动存在</td>
+</tr>
+<tr>
+<td>mplayer 音频参数</td>
+<td><code>-ao pcm:nowaveheader:fast:file=/tmp/bt_audio.fifo -srate 44100 -channels 2 -format s16le</code></td>
+<td>**必须 <code>-format s16le</code>**，否则 big-endian 导致雪花噪音</td>
+</tr>
+<tr>
+<td>蓝牙判断</td>
+<td><code>bt_audio_connected()</code></td>
+<td><strong>必须在 fork 子进程之前(父进程)调用</strong>；写在 fork 后 dup2 重定向 stdio 的子进程里会 connect 失败，退化成 <code>-ao null</code></td>
+</tr>
+<tr>
+<td>未连蓝牙</td>
+<td>保持 <code>-ao null</code></td>
+<td>不影响进度&#x2F;暂停&#x2F;切歌控制</td>
+</tr>
+</tbody></table>
+<h3 id="6-3-排查要点"><a href="#6-3-排查要点" class="headerlink" title="6.3 排查要点"></a>6.3 排查要点</h3><ul>
+<li><strong>点歌无声</strong>：<code>ps | grep mplayer</code> 看起的参数是 <code>-ao null</code> 还是 fifo。若是 null → <code>bt_audio_connected()</code> 在父进程判断失败，确认 daemon 在跑、socket <code>/tmp/bt_ctl.sock</code> 存在。</li>
+<li><strong>能听出旋律但全是雪花噪音</strong>：mplayer 缺 <code>-format s16le</code>（默认 big-endian PCM，daemon 按 little-endian int16 读）。</li>
+<li><strong>切歌&#x2F;暂停&#x2F;退出无声异常</strong>：确认旧 mplayer 已被杀（新起时先 pkill mplayer），fifo 没被占。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-%E8%AE%BE%E5%A4%87%E8%93%9D%E7%89%99%E6%8B%89%E8%B5%B7-%E2%80%94%E2%80%94-%E9%83%A8%E7%BD%B2%E4%BA%A4%E4%BB%98%E6%96%87%E6%A1%A3"><span class="toc-number">1.</span> <span class="toc-text">HT0 设备蓝牙拉起 —— 部署交付文档</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%93%9D%E7%89%99%E9%93%BE%E8%B7%AF%E5%85%A8%E6%99%AF%EF%BC%88%E8%B0%81%E6%8B%89%E8%B5%B7%E8%B0%81%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1. 蓝牙链路全景（谁拉起谁）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E4%BA%A7%E7%89%A9%E6%B8%85%E5%8D%95"><span class="toc-number">1.2.</span> <span class="toc-text">2. 产物清单</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E8%AE%BE%E5%A4%87%E7%AB%AF%E5%B7%B2%E9%83%A8%E7%BD%B2%EF%BC%88HT0-%E7%8E%B0%E7%8A%B6%EF%BC%8C%E5%AE%9E%E6%B5%8B%E6%A0%B8%E5%AF%B9%EF%BC%89"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 设备端已部署（HT0 现状，实测核对）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E6%9C%AC%E6%9C%BA%EF%BC%88Windows-%E5%B7%A5%E4%BD%9C%E7%9B%AE%E5%BD%95-new-chat-%EF%BC%89%E6%BA%90%E7%A0%81%E4%B8%8E%E9%83%A8%E7%BD%B2%E8%84%9A%E6%9C%AC"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 本机（Windows 工作目录 new-chat\）源码与部署脚本</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-Git-%E6%8F%90%E4%BA%A4%EF%BC%88%E8%AE%BE%E5%A4%87%E9%A1%B9%E7%9B%AE-home-lvgl-demo-lvgl-demo%EF%BC%89"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 Git 提交（设备项目 &#x2F;home&#x2F;lvgl_demo&#x2F;lvgl_demo）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-Skill-%E5%B0%81%E8%A3%85%EF%BC%88%E5%8F%AF%E7%A7%BB%E6%A4%8D%EF%BC%89"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4 Skill 封装（可移植）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%96%B0%E8%AE%BE%E5%A4%87%E9%83%A8%E7%BD%B2%E6%AD%A5%E9%AA%A4%EF%BC%88%E4%BB%8E%E9%9B%B6%E6%8B%89%E8%B5%B7%E8%93%9D%E7%89%99%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 新设备部署步骤（从零拉起蓝牙）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-0-%E7%A1%AE%E8%AE%A4%E5%9F%BA%E7%A1%80%E7%8E%AF%E5%A2%83%EF%BC%88WiFi-%E5%89%8D%E6%8F%90%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">Step 0 确认基础环境（WiFi 前提）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-1-%E4%B8%8A%E4%BC%A0%E5%B9%B6%E9%83%A8%E7%BD%B2%E5%9F%BA%E7%A1%80%E5%B7%A5%E5%85%B7"><span class="toc-number">1.3.2.</span> <span class="toc-text">Step 1 上传并部署基础工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-2-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2-HCI-daemon%EF%BC%88%E6%A0%B8%E5%BF%83%EF%BC%89"><span class="toc-number">1.3.3.</span> <span class="toc-text">Step 2 编译部署 HCI daemon（核心）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-3-%E9%85%8D%E7%BD%AE%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF"><span class="toc-number">1.3.4.</span> <span class="toc-text">Step 3 配置开机自启</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-4%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%89LVGL-%E8%93%9D%E7%89%99%E8%AE%BE%E7%BD%AE%E9%A1%B5"><span class="toc-number">1.3.5.</span> <span class="toc-text">Step 4（可选）LVGL 蓝牙设置页</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Step-5-%E9%AA%8C%E8%AF%81"><span class="toc-number">1.3.6.</span> <span class="toc-text">Step 5 验证</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%AA%8C%E8%AF%81%E6%A0%87%E5%87%86%EF%BC%88%E5%85%A8%E9%83%A8%E6%BB%A1%E8%B6%B3-%E9%83%A8%E7%BD%B2%E6%88%90%E5%8A%9F%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 验证标准（全部满足 &#x3D; 部署成功）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%EF%BC%88%E6%96%B0%E8%AE%BE%E5%A4%87%E9%83%A8%E7%BD%B2%E6%97%B6%E6%9C%80%E5%8F%AF%E8%83%BD%E8%B8%A9%E7%9A%84%E5%9D%91%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 常见问题（新设备部署时最可能踩的坑）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93%E9%83%A8%E7%BD%B2%E8%B7%AF%E5%BE%84"><span class="toc-number">1.6.</span> <span class="toc-text">6. 一句话总结部署路径</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-A2DP-%E7%9C%9F%E5%AE%9E%E9%9F%B3%E9%A2%91%E6%92%AD%E6%94%BE%EF%BC%88v1-0-3-%E8%93%9D%E7%89%99%E9%9F%B3%E7%AE%B1%E6%94%AF%E6%8C%81%E7%89%88%E6%96%B0%E5%A2%9E%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. A2DP 真实音频播放（v1.0.3 蓝牙音箱支持版新增）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E9%9F%B3%E9%A2%91%E9%93%BE%E8%B7%AF"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 音频链路</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E5%85%B3%E9%94%AE%E9%83%A8%E7%BD%B2%E7%82%B9"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 关键部署点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E6%8E%92%E6%9F%A5%E8%A6%81%E7%82%B9"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 排查要点</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&text=HT0蓝牙拉起_部署交付文档"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&title=HT0蓝牙拉起_部署交付文档"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&is_video=false&description=HT0蓝牙拉起_部署交付文档"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=HT0蓝牙拉起_部署交付文档&body=Check out this article: https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&title=HT0蓝牙拉起_部署交付文档"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&title=HT0蓝牙拉起_部署交付文档"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&title=HT0蓝牙拉起_部署交付文档"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&title=HT0蓝牙拉起_部署交付文档"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/21/bt-02-ht0-md/&name=HT0蓝牙拉起_部署交付文档&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

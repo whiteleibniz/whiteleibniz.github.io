@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="展讯 SC9832A 蓝牙芯片打通 —— 人工操作手册 适用范围：保留安卓内核 + switchroot 到 Alpine Linux 的展讯 SC9832A 设备（hostname spd-box，内核 Linux 3.10.65）目的：在不依赖 AI 助手的情况下，人工手动完成蓝牙底层拉起、HCI 通道验证、用户态守护进程部署与开机自启本文所有命令均已在设备上实测通过   0. 前置概念（30">
+<meta property="og:type" content="article">
+<meta property="og:title" content="蓝牙芯片打通_操作手册">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/13/bt-06-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="展讯 SC9832A 蓝牙芯片打通 —— 人工操作手册 适用范围：保留安卓内核 + switchroot 到 Alpine Linux 的展讯 SC9832A 设备（hostname spd-box，内核 Linux 3.10.65）目的：在不依赖 AI 助手的情况下，人工手动完成蓝牙底层拉起、HCI 通道验证、用户态守护进程部署与开机自启本文所有命令均已在设备上实测通过   0. 前置概念（30">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-13T07:27:33.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.635Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="蓝牙">
+<meta property="article:tag" content="WCN">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>蓝牙芯片打通_操作手册</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/13/bt-05-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/13/ht0-references-bluetooth-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/13/bt-06-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&text=蓝牙芯片打通_操作手册"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&title=蓝牙芯片打通_操作手册"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&is_video=false&description=蓝牙芯片打通_操作手册"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=蓝牙芯片打通_操作手册&body=Check out this article: https://whiteleibniz.github.io/2026/09/13/bt-06-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&title=蓝牙芯片打通_操作手册"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&title=蓝牙芯片打通_操作手册"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&title=蓝牙芯片打通_操作手册"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&title=蓝牙芯片打通_操作手册"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&name=蓝牙芯片打通_操作手册&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-%E8%93%9D%E7%89%99%E8%8A%AF%E7%89%87%E6%89%93%E9%80%9A-%E2%80%94%E2%80%94-%E4%BA%BA%E5%B7%A5%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A 蓝牙芯片打通 —— 人工操作手册</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E5%89%8D%E7%BD%AE%E6%A6%82%E5%BF%B5%EF%BC%8830-%E7%A7%92%E5%BB%BA%E7%AB%8B%E7%9B%B4%E8%A7%89%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">0. 前置概念（30 秒建立直觉）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="toc-number">1.2.</span> <span class="toc-text">1. 环境准备</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-%E8%AE%BE%E5%A4%87%E7%8A%B6%E6%80%81%E7%A1%AE%E8%AE%A4"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.1 设备状态确认</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-%E5%B7%A5%E5%85%B7%E6%B8%85%E5%8D%95"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2 工具清单</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%9A%E6%8B%89%E8%B5%B7-WiFi%EF%BC%88%E8%93%9D%E7%89%99%E5%89%8D%E6%8F%90%EF%BC%8C%E4%B8%8D%E8%83%BD%E8%B7%B3%E8%BF%87%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. 第一步：拉起 WiFi（蓝牙前提，不能跳过）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%AC%AC%E4%BA%8C%E6%AD%A5%EF%BC%9A%E8%93%9D%E7%89%99%E4%B8%8A%E7%94%B5%E5%BA%8F%E5%88%97%EF%BC%88BT-OPEN%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">3. 第二步：蓝牙上电序列（BT-OPEN）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E4%BF%AE%E5%A4%8D-mdbg-%E6%9D%83%E9%99%90%EF%BC%88%E5%85%B3%E9%94%AE%EF%BC%81%E9%87%8D%E5%90%AF%E5%90%8E%E5%BF%85%E5%81%9A%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 修复 mdbg 权限（关键！重启后必做）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E5%90%AF%E5%8A%A8-wcnd-%E8%A7%A6%E5%8F%91-BT-OPEN"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 启动 wcnd + 触发 BT-OPEN</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%AC%AC%E4%B8%89%E6%AD%A5%EF%BC%9Abtwrite-%E5%91%A8%E6%9C%9F%E6%80%A7%E5%94%A4%E9%86%92%EF%BC%88%E7%BC%BA%E4%BA%86%E5%AE%83-HCI-%E6%97%A0%E5%93%8D%E5%BA%94%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 第三步：btwrite 周期性唤醒（缺了它 HCI 无响应）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E7%AC%AC%E5%9B%9B%E6%AD%A5%EF%BC%9AHCI-%E9%80%9A%E9%81%93%E8%AF%8A%E6%96%AD%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%8C%E9%AA%8C%E8%AF%81%E5%BA%95%E5%B1%82%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">5. 第四步：HCI 通道诊断（可选，验证底层）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E7%AC%AC%E4%BA%94%E6%AD%A5%EF%BC%9A%E9%83%A8%E7%BD%B2%E7%94%A8%E6%88%B7%E6%80%81-HCI-%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B%EF%BC%88%E7%94%9F%E4%BA%A7%E6%96%B9%E6%A1%88%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. 第五步：部署用户态 HCI 守护进程（生产方案）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E7%BC%96%E8%AF%91-daemon"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 编译 daemon</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E9%83%A8%E7%BD%B2-%E8%87%AA%E5%90%AF%EF%BC%88openrc%EF%BC%89"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 部署 + 自启（openrc）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E9%AA%8C%E8%AF%81%EF%BC%88unix-socket-%E5%AE%A2%E6%88%B7%E7%AB%AF%EF%BC%89"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 验证（unix socket 客户端）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E9%93%BE%E8%B7%AF%EF%BC%88%E9%87%8D%E5%90%AF%E5%90%8E%E5%85%A8%E8%87%AA%E5%8A%A8%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">7. 开机自启链路（重启后全自动）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E5%B8%B8%E8%A7%81%E6%95%85%E9%9A%9C%E9%80%9F%E6%9F%A5"><span class="toc-number">1.9.</span> <span class="toc-text">8. 常见故障速查</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E6%B6%89%E5%8F%8A%E7%9A%84%E5%85%B3%E9%94%AE%E8%8A%82%E7%82%B9-%E5%8F%82%E6%95%B0%E9%80%9F%E6%9F%A5"><span class="toc-number">1.10.</span> <span class="toc-text">9. 涉及的关键节点 &#x2F; 参数速查</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        蓝牙芯片打通_操作手册
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-13T07:27:33.000Z" itemprop="datePublished">2026-09-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/WCN/" rel="tag">WCN</a>, <a class="tag-link-link" href="/tags/%E8%93%9D%E7%89%99/" rel="tag">蓝牙</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="展讯-SC9832A-蓝牙芯片打通-——-人工操作手册"><a href="#展讯-SC9832A-蓝牙芯片打通-——-人工操作手册" class="headerlink" title="展讯 SC9832A 蓝牙芯片打通 —— 人工操作手册"></a>展讯 SC9832A 蓝牙芯片打通 —— 人工操作手册</h1><blockquote>
+<p>适用范围：保留安卓内核 + switchroot 到 Alpine Linux 的展讯 SC9832A 设备（hostname <code>spd-box</code>，内核 <code>Linux 3.10.65</code>）<br>目的：在不依赖 AI 助手的情况下，人工手动完成蓝牙底层拉起、HCI 通道验证、用户态守护进程部署与开机自启<br>本文所有命令均已在设备上实测通过</p>
+</blockquote>
+<hr>
+<h2 id="0-前置概念（30-秒建立直觉）"><a href="#0-前置概念（30-秒建立直觉）" class="headerlink" title="0. 前置概念（30 秒建立直觉）"></a>0. 前置概念（30 秒建立直觉）</h2><p>这台设备的 WiFi 和蓝牙是<strong>同一颗展讯 Marlin combo 芯片</strong>（WCN），SDIO 承载数据通道，UART（ttyS0）承载蓝牙 HCI 控制通道。芯片固件不在系统里”常驻”，每次开机都必须由安卓原版 <code>download</code> 引导器把固件烧进芯片，之后芯片才能工作。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">开机 → download 烧固件 → SDIO 枚举 → 蓝牙固件由 wcnd 触发 BT-OPEN → btwrite 周期性唤醒 → HCI 通道可用</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>文件&#x2F;进程</th>
+<th>干什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>固件烧录</td>
+<td><code>/tmp/aand/bin/download</code>（chroot 安卓环境）</td>
+<td>把 wcnfdl&#x2F;wcnmodem 分区固件经 SDIO 烧进芯片，芯片上电启动</td>
+</tr>
+<tr>
+<td>上电序列</td>
+<td><code>/tmp/aand/bin/wcnd</code></td>
+<td>收到 BT-OPEN 命令后驱动蓝牙子系统上电</td>
+</tr>
+<tr>
+<td>上电确认</td>
+<td><code>/tmp/bt_once 900</code></td>
+<td>发送 BT-OPEN，返回 <code>WCNBTWIFI-CMD OK</code> 即成功</td>
+</tr>
+<tr>
+<td>周期性唤醒</td>
+<td><code>/tmp/bt_wake.sh</code></td>
+<td>每 1.5~2 秒向 <code>/proc/bluetooth/sleep/btwrite</code> 写 1，防止蓝牙引擎休眠</td>
+</tr>
+<tr>
+<td>HCI 服务</td>
+<td><code>/usr/local/bin/bt_user_daemon</code></td>
+<td>打开 &#x2F;dev&#x2F;ttyS0（3M+CRTSCTS）走 H4 协议，提供 unix socket 供应用查询</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="1-环境准备"><a href="#1-环境准备" class="headerlink" title="1. 环境准备"></a>1. 环境准备</h2><h3 id="1-1-设备状态确认"><a href="#1-1-设备状态确认" class="headerlink" title="1.1 设备状态确认"></a>1.1 设备状态确认</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># SSH 登录</span></span><br><span class="line">ssh root@&lt;设备IP&gt;        <span class="comment"># </span></span><br><span class="line"><span class="comment"># 或</span></span><br><span class="line">ssh root@&lt;WiFi-IP&gt;           <span class="comment"># WiFi 网络地址</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 确认内核与主机名</span></span><br><span class="line"><span class="built_in">uname</span> -a                        <span class="comment"># 期望: Linux 3.10.65 ... armv7l</span></span><br><span class="line">hostname                        <span class="comment"># 期望: spd-box</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 确认 chroot 安卓环境存在（download 依赖它）</span></span><br><span class="line"><span class="built_in">ls</span> /tmp/aand/bin/download /tmp/aand/bin/wcnd</span><br><span class="line"><span class="built_in">ls</span> /tmp/aand/etc/marlinba/     <span class="comment"># 期望有 connectivity_configure.ini 等</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ 若 <code>/tmp/aand</code> 不存在：需重新搭建 Android 用户态 chroot 环境（建目录、铺 Android system 库、mount –bind &#x2F;dev、建 wcnfdl&#x2F;wcnmodem 分区软链）。详见 WiFi 操作手册第 4 章。</p>
+</blockquote>
+<h3 id="1-2-工具清单"><a href="#1-2-工具清单" class="headerlink" title="1.2 工具清单"></a>1.2 工具清单</h3><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+<th>位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>download</code></td>
+<td>固件下载引导器</td>
+<td><code>/tmp/aand/bin/download</code>（chroot 内执行）</td>
+</tr>
+<tr>
+<td><code>wcnd</code></td>
+<td>蓝牙&#x2F;WiFi 上电守护</td>
+<td><code>/tmp/aand/bin/wcnd</code>（chroot 内执行）</td>
+</tr>
+<tr>
+<td><code>bt_once</code></td>
+<td>BT-OPEN 一次性上电触发</td>
+<td><code>/tmp/bt_once</code></td>
+</tr>
+<tr>
+<td><code>bt_wake.sh</code></td>
+<td>btwrite 周期唤醒脚本</td>
+<td><code>/tmp/bt_wake.sh</code></td>
+</tr>
+<tr>
+<td><code>bt_probe_full</code></td>
+<td>HCI 全序列探针（诊断）</td>
+<td><code>/tmp/bt_probe_full</code></td>
+</tr>
+<tr>
+<td><code>hci_3m</code></td>
+<td>3M 波特率 HCI 原始测试</td>
+<td><code>/tmp/hci_3m</code>（早期诊断用）</td>
+</tr>
+<tr>
+<td><code>bt_user_daemon</code></td>
+<td>用户态 HCI 守护（生产）</td>
+<td><code>/usr/local/bin/bt_user_daemon</code></td>
+</tr>
+<tr>
+<td>python3</td>
+<td>unix socket 客户端</td>
+<td>设备自带</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-第一步：拉起-WiFi（蓝牙前提，不能跳过）"><a href="#2-第一步：拉起-WiFi（蓝牙前提，不能跳过）" class="headerlink" title="2. 第一步：拉起 WiFi（蓝牙前提，不能跳过）"></a>2. 第一步：拉起 WiFi（蓝牙前提，不能跳过）</h2><p>蓝牙芯片与 WiFi 共用同一固件与电源域，<strong>必须先把 WiFi 芯片拉起来</strong>，蓝牙才有物理基础。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1) 清理残留（不要杀 download！）</span></span><br><span class="line">pkill -9 -f logdw 2&gt;/dev/null</span><br><span class="line">pkill -9 -f <span class="string">&#x27;wcnd&#x27;</span> 2&gt;/dev/null</span><br><span class="line">pkill -9 -x bt_once 2&gt;/dev/null</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) 启动固件下载通道守护</span></span><br><span class="line">setsid /tmp/logdw &gt;/dev/null 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) 固件下载（WiFi 模式，常驻勿杀）</span></span><br><span class="line">setsid <span class="built_in">chroot</span> /tmp/aand /bin/download -i wlan0 &gt;/tmp/dl_run.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4) 等待 SDIO 枚举（10~30 秒）</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/mmc2:8800:1/device    <span class="comment"># 期望: 0x2331</span></span><br><span class="line"><span class="built_in">ls</span> /sys/bus/sdio/devices/                        <span class="comment"># 期望出现 mmc2:8800:1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 5) 加载 WiFi 驱动（顺序不能反）</span></span><br><span class="line">insmod /lib/modules/marlin_fm.ko</span><br><span class="line">insmod /lib/modules/sprdwl.ko</span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> wlan0 up</span><br><span class="line">ip <span class="built_in">link</span> show wlan0                              <span class="comment"># 出现 wlan0 即成功</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>验证标准：<code>mmc2:8800:1</code> 设备号 <code>0x2331</code>，<code>wlan0</code> 接口存在。</p>
+</blockquote>
+<hr>
+<h2 id="3-第二步：蓝牙上电序列（BT-OPEN）"><a href="#3-第二步：蓝牙上电序列（BT-OPEN）" class="headerlink" title="3. 第二步：蓝牙上电序列（BT-OPEN）"></a>3. 第二步：蓝牙上电序列（BT-OPEN）</h2><h3 id="3-1-修复-mdbg-权限（关键！重启后必做）"><a href="#3-1-修复-mdbg-权限（关键！重启后必做）" class="headerlink" title="3.1 修复 mdbg 权限（关键！重启后必做）"></a>3.1 修复 mdbg 权限（关键！重启后必做）</h3><p>BT-OPEN 失败的头号原因：chroot 内 <code>/tmp/aand/proc/mdbg/*</code> 权限为 600，导致上电命令无响应。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chmod</span> 666 /tmp/aand/proc/mdbg/* 2&gt;/dev/null</span><br><span class="line"><span class="built_in">chmod</span> 666 /proc/mdbg/* 2&gt;/dev/null</span><br><span class="line"><span class="built_in">echo</span> 0 &gt; /proc/mdbg/wdtirq 2&gt;/dev/null</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-启动-wcnd-触发-BT-OPEN"><a href="#3-2-启动-wcnd-触发-BT-OPEN" class="headerlink" title="3.2 启动 wcnd + 触发 BT-OPEN"></a>3.2 启动 wcnd + 触发 BT-OPEN</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># wcnd（蓝牙/WiFi 上电守护）</span></span><br><span class="line">ps -ef | grep -q <span class="string">&#x27;[w]cnd&#x27;</span> || setsid <span class="built_in">chroot</span> /tmp/aand /bin/wcnd &gt;/tmp/wcnd_console.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"><span class="built_in">sleep</span> 2</span><br><span class="line"></span><br><span class="line"><span class="comment"># BT-OPEN 一次性触发，期望输出 push(17): WCNBTWIFI-CMD OK</span></span><br><span class="line">setsid /tmp/bt_once 900 &gt;/tmp/bt_once.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"><span class="built_in">sleep</span> 3</span><br><span class="line"><span class="built_in">cat</span> /tmp/bt_once.log          <span class="comment"># 看到 &quot;WCNBTWIFI-CMD OK&quot; 即上电成功</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若输出 <code>FAIL</code>：重新执行 3.1 的 chmod（多半是权限问题），再重跑本步。</p>
+</blockquote>
+<hr>
+<h2 id="4-第三步：btwrite-周期性唤醒（缺了它-HCI-无响应）"><a href="#4-第三步：btwrite-周期性唤醒（缺了它-HCI-无响应）" class="headerlink" title="4. 第三步：btwrite 周期性唤醒（缺了它 HCI 无响应）"></a>4. 第三步：btwrite 周期性唤醒（缺了它 HCI 无响应）</h2><p>蓝牙固件上电后默认进入省电模式，<strong>必须周期性唤醒</strong>才有 HCI 响应。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 启动周期唤醒脚本（每 1.5~2 秒写 1）</span></span><br><span class="line">setsid /bin/sh /tmp/bt_wake.sh &gt;/dev/null 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 手动验证唤醒节点存在且可写</span></span><br><span class="line"><span class="built_in">cat</span> /proc/bluetooth/sleep/btwrite          <span class="comment"># 应返回 0 或 1</span></span><br><span class="line"><span class="built_in">echo</span> 1 &gt; /proc/bluetooth/sleep/btwrite &amp;&amp; <span class="built_in">echo</span> WRITE_OK</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>缺这一步的典型症状：<code>bt_probe_full</code> 发 HCI Reset 后收不到任何响应（或只收到一次 <code>55 7e ... 53 50 52 44 33</code>（SPRD3）身份帧后无后续）。</p>
+</blockquote>
+<hr>
+<h2 id="5-第四步：HCI-通道诊断（可选，验证底层）"><a href="#5-第四步：HCI-通道诊断（可选，验证底层）" class="headerlink" title="5. 第四步：HCI 通道诊断（可选，验证底层）"></a>5. 第四步：HCI 通道诊断（可选，验证底层）</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 完整 HCI 探针：六步全通 = 底层 OK</span></span><br><span class="line">/tmp/bt_probe_full 20 2&gt;&amp;1 | <span class="built_in">tail</span> -30</span><br><span class="line"></span><br><span class="line"><span class="comment"># 期望看到：</span></span><br><span class="line"><span class="comment">#   Reset            → 04 0e 04 01 03 0c 00</span></span><br><span class="line"><span class="comment">#   Read Local Ver   → HCI 6.0, 制造商标识 0x1380（展讯）</span></span><br><span class="line"><span class="comment">#   Read BD_ADDR     → 11:22:14:31:93:27</span></span><br><span class="line"><span class="comment">#   Read Buffer Size / Features → ff ff 8d fe（与 pskey feature_set 一致）</span></span><br><span class="line"><span class="comment">#   Write Scan Enable → 成功</span></span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>探针步骤</th>
+<th>意义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HCI Reset</td>
+<td>芯片 HCI 引擎启动</td>
+</tr>
+<tr>
+<td>Read Local Version</td>
+<td>固件版本 &#x2F; 厂商识别</td>
+</tr>
+<tr>
+<td>Read BD_ADDR</td>
+<td>芯片蓝牙 MAC</td>
+</tr>
+<tr>
+<td>Read Buffer Size</td>
+<td>HCI 缓冲能力</td>
+</tr>
+<tr>
+<td>Read Features</td>
+<td>特性集（验证 pskey 是否生效）</td>
+</tr>
+<tr>
+<td>Set Event Mask + Write Scan Enable</td>
+<td>为扫描做准备</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-第五步：部署用户态-HCI-守护进程（生产方案）"><a href="#6-第五步：部署用户态-HCI-守护进程（生产方案）" class="headerlink" title="6. 第五步：部署用户态 HCI 守护进程（生产方案）"></a>6. 第五步：部署用户态 HCI 守护进程（生产方案）</h2><blockquote>
+<p>说明：为什么不用内核 hci_uart 驱动？该设备内核是 3.10.65 安卓定制内核，用户编译的 hci_uart.ko 硬编码 tty_struct 偏移不匹配，hci0 能注册但 <code>TX=0</code>、<code>hciconfig up</code> 超时，驱动路线不通。用户态方案直接读写 &#x2F;dev&#x2F;ttyS0，不依赖内核协议栈，最可靠。</p>
+</blockquote>
+<h3 id="6-1-编译-daemon"><a href="#6-1-编译-daemon" class="headerlink" title="6.1 编译 daemon"></a>6.1 编译 daemon</h3><p>源码 <code>bt_user_daemon.c</code>（本地保存），在设备上编译：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -O2 -o /usr/local/bin/bt_user_daemon /tmp/bt_user_daemon.c -lpthread</span><br></pre></td></tr></table></figure>
+
+<p>关键实现要点（维护时参考）：</p>
+<ul>
+<li>打开 <code>/dev/ttyS0</code>：<code>B3000000</code>（3M）+ <code>CRTSCTS</code>，<code>VMIN=1</code>（阻塞读）</li>
+<li>H4 协议：按帧头 <code>buf[1]=evt / buf[2]=len</code> 读取完整帧</li>
+<li>扫描前必须先发 <code>Write Scan Enable (0x0c1a, 0x03)</code> 再发 Inquiry（GIAC <code>0x33 0x8b 0x9e</code>），否则固件不回 Inquiry Result</li>
+<li>unix socket <code>/tmp/bt_ctl.sock</code>（0666），文本命令：<code>state</code> &#x2F; <code>on</code> &#x2F; <code>off</code> &#x2F; <code>scan &lt;N&gt;</code> &#x2F; <code>list</code> &#x2F; <code>connect &lt;bd&gt;</code></li>
+</ul>
+<h3 id="6-2-部署-自启（openrc）"><a href="#6-2-部署-自启（openrc）" class="headerlink" title="6.2 部署 + 自启（openrc）"></a>6.2 部署 + 自启（openrc）</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 单实例启动</span></span><br><span class="line">pkill -9 -x bt_user_daemon 2&gt;/dev/null</span><br><span class="line">setsid /usr/local/bin/bt_user_daemon &gt;/tmp/btud.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># openrc 自启</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /etc/init.d/bt_daemon &lt;&lt; <span class="string">&#x27;EOF&#x27;</span></span><br><span class="line"><span class="comment">#!/sbin/openrc-run</span></span><br><span class="line"><span class="built_in">command</span>=<span class="string">&quot;/usr/local/bin/bt_user_daemon&quot;</span></span><br><span class="line">command_background=<span class="built_in">yes</span></span><br><span class="line">pidfile=<span class="string">&quot;/run/bt_daemon.pid&quot;</span></span><br><span class="line">EOF</span><br><span class="line"><span class="built_in">chmod</span> +x /etc/init.d/bt_daemon</span><br><span class="line">rc-update add bt_daemon default</span><br><span class="line">rc-service bt_daemon start</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-3-验证（unix-socket-客户端）"><a href="#6-3-验证（unix-socket-客户端）" class="headerlink" title="6.3 验证（unix socket 客户端）"></a>6.3 验证（unix socket 客户端）</h3><p>设备端 python3（无 socat）：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 查状态</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&#x27;state\n&#x27;</span> | <span class="built_in">timeout</span> 5 python3 -c <span class="string">&quot;</span></span><br><span class="line"><span class="string">import socket,sys</span></span><br><span class="line"><span class="string">s=socket.socket(socket.AF_UNIX); s.connect(&#x27;/tmp/bt_ctl.sock&#x27;)</span></span><br><span class="line"><span class="string">s.sendall(sys.stdin.buffer.read()); s.shutdown(socket.SHUT_WR)</span></span><br><span class="line"><span class="string">print(s.recv(4096).decode())&quot;</span></span><br><span class="line"><span class="comment"># 期望: OK ON</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 扫描 15 秒（读到 EOF）</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&#x27;scan 15\n&#x27;</span> | <span class="built_in">timeout</span> 25 python3 -c <span class="string">&quot;</span></span><br><span class="line"><span class="string">import socket,sys</span></span><br><span class="line"><span class="string">s=socket.socket(socket.AF_UNIX); s.connect(&#x27;/tmp/bt_ctl.sock&#x27;)</span></span><br><span class="line"><span class="string">s.sendall(sys.stdin.buffer.read()); s.shutdown(socket.SHUT_WR)</span></span><br><span class="line"><span class="string">d=b&#x27;&#x27;</span></span><br><span class="line"><span class="string">while True:</span></span><br><span class="line"><span class="string">    x=s.recv(4096)</span></span><br><span class="line"><span class="string">    if not x: break</span></span><br><span class="line"><span class="string">    d+=x</span></span><br><span class="line"><span class="string">print(d.decode())&quot;</span></span><br><span class="line"><span class="comment"># 期望: OK &lt;N&gt;  + 每行一个设备:  bd_addr class rssi</span></span><br><span class="line"><span class="comment"># 实测:  OK 1 / 48:f1:ae:25:7e:48 5a420c 0</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="7-开机自启链路（重启后全自动）"><a href="#7-开机自启链路（重启后全自动）" class="headerlink" title="7. 开机自启链路（重启后全自动）"></a>7. 开机自启链路（重启后全自动）</h2><p>设备重启后由 <code>/etc/local.d/</code> 脚本链自动拉起：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/etc/local.d/wifi.start    → logdw + download（常驻）+ WiFi 驱动 + wlan0</span><br><span class="line">/etc/local.d/lvgl_demo.start → 启动 LVGL 桌面（/usr/local/bin/lvgl_demo）</span><br><span class="line">/etc/init.d/bt_daemon      → bt_user_daemon（openrc）</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>关键红线：</p>
+<ul>
+<li><strong>download 常驻勿杀</strong> —— 全杀会破坏 WiFi&#x2F;蓝牙固件状态，需要重启设备才能恢复</li>
+<li>重启后必须重新执行 3.1 的 <code>chmod 666 /tmp/aand/proc/mdbg/*</code>（脚本里已自动做）</li>
+<li>进程清理一律用 <code>pkill -9 -x bt_user_daemon</code>，不要用 <code>ps | grep</code> 内嵌模式（会误杀执行命令的 shell 自身）</li>
+</ul>
+</blockquote>
+<hr>
+<h2 id="8-常见故障速查"><a href="#8-常见故障速查" class="headerlink" title="8. 常见故障速查"></a>8. 常见故障速查</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>BT-OPEN 返回 FAIL</td>
+<td><code>/tmp/aand/proc/mdbg/*</code> 权限 600</td>
+<td><code>chmod 666 /tmp/aand/proc/mdbg/*</code> 后重试</td>
+</tr>
+<tr>
+<td>HCI 无响应 &#x2F; 只回一次 SPRD3 帧</td>
+<td>缺 btwrite 唤醒</td>
+<td>启动 <code>/tmp/bt_wake.sh</code>，确认 <code>/proc/bluetooth/sleep/btwrite</code> 可写</td>
+</tr>
+<tr>
+<td>扫描不出设备</td>
+<td>未先发 Write Scan Enable</td>
+<td>走 daemon 的 <code>scan</code> 命令（内部已处理），勿裸发 Inquiry</td>
+</tr>
+<tr>
+<td>socket connect 失败</td>
+<td>daemon 多实例抢 socket</td>
+<td><code>pkill -9 -x bt_user_daemon</code> 后单实例重启</td>
+</tr>
+<tr>
+<td>daemon 日志报 “Not a tty”</td>
+<td>tty ldisc 被占</td>
+<td>python <code>fcntl.ioctl(fd, 0x5421, b&#39;\x00\x00\x00\x00&#39;)</code> 恢复 N_TTY</td>
+</tr>
+<tr>
+<td>内核 hci0 注册但 TX&#x3D;0</td>
+<td>3.10 内核 hci_uart 偏移不匹配</td>
+<td>放弃内核驱动，使用用户态 daemon</td>
+</tr>
+<tr>
+<td>WiFi 起不来</td>
+<td>download 被误杀</td>
+<td>重启设备，按第 2 章重新拉起</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-涉及的关键节点-参数速查"><a href="#9-涉及的关键节点-参数速查" class="headerlink" title="9. 涉及的关键节点 &#x2F; 参数速查"></a>9. 涉及的关键节点 &#x2F; 参数速查</h2><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SDIO 设备</td>
+<td><code>/sys/bus/sdio/devices/mmc2:8800:1</code>，device&#x3D;0x2331</td>
+</tr>
+<tr>
+<td>HCI 串口</td>
+<td><code>/dev/ttyS0</code>，波特率 3M（B3000000）+ CRTSCTS，H4 协议</td>
+</tr>
+<tr>
+<td>唤醒节点</td>
+<td><code>/proc/bluetooth/sleep/btwrite</code>（写 1，每 1.5~2s）</td>
+</tr>
+<tr>
+<td>UART 配置节点</td>
+<td><code>/sys/devices/70000000.uart/uart_conf</code>（0x1a1&#x3D;115200，0x341&#x3D;57600）</td>
+</tr>
+<tr>
+<td>socket</td>
+<td><code>/tmp/bt_ctl.sock</code>（0666）</td>
+</tr>
+<tr>
+<td>调试日志</td>
+<td><code>/tmp/btud_dbg.log</code>（TX&#x2F;RX hex）、<code>/tmp/btud.log</code>（stdout）</td>
+</tr>
+<tr>
+<td>固件真实 MAC</td>
+<td><code>11:22:14:31:93:27</code>（固件响应，非伪造）</td>
+</tr>
+<tr>
+<td>pskey</td>
+<td><code>/mnt/android_sys/lib/modules/pskey_bt.txt</code>（feature_set&#x2F;device_addr），download 经 <code>connectivity_configure.ini</code> [SETCTION 6] 下发</td>
+</tr>
+<tr>
+<td>已知可扫设备</td>
+<td><code>48:f1:ae:25:7e:48</code>（class&#x3D;5a420c 手机）</td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-%E8%93%9D%E7%89%99%E8%8A%AF%E7%89%87%E6%89%93%E9%80%9A-%E2%80%94%E2%80%94-%E4%BA%BA%E5%B7%A5%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A 蓝牙芯片打通 —— 人工操作手册</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E5%89%8D%E7%BD%AE%E6%A6%82%E5%BF%B5%EF%BC%8830-%E7%A7%92%E5%BB%BA%E7%AB%8B%E7%9B%B4%E8%A7%89%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">0. 前置概念（30 秒建立直觉）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="toc-number">1.2.</span> <span class="toc-text">1. 环境准备</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-%E8%AE%BE%E5%A4%87%E7%8A%B6%E6%80%81%E7%A1%AE%E8%AE%A4"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.1 设备状态确认</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-%E5%B7%A5%E5%85%B7%E6%B8%85%E5%8D%95"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2 工具清单</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%9A%E6%8B%89%E8%B5%B7-WiFi%EF%BC%88%E8%93%9D%E7%89%99%E5%89%8D%E6%8F%90%EF%BC%8C%E4%B8%8D%E8%83%BD%E8%B7%B3%E8%BF%87%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. 第一步：拉起 WiFi（蓝牙前提，不能跳过）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%AC%AC%E4%BA%8C%E6%AD%A5%EF%BC%9A%E8%93%9D%E7%89%99%E4%B8%8A%E7%94%B5%E5%BA%8F%E5%88%97%EF%BC%88BT-OPEN%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">3. 第二步：蓝牙上电序列（BT-OPEN）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E4%BF%AE%E5%A4%8D-mdbg-%E6%9D%83%E9%99%90%EF%BC%88%E5%85%B3%E9%94%AE%EF%BC%81%E9%87%8D%E5%90%AF%E5%90%8E%E5%BF%85%E5%81%9A%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 修复 mdbg 权限（关键！重启后必做）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E5%90%AF%E5%8A%A8-wcnd-%E8%A7%A6%E5%8F%91-BT-OPEN"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 启动 wcnd + 触发 BT-OPEN</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%AC%AC%E4%B8%89%E6%AD%A5%EF%BC%9Abtwrite-%E5%91%A8%E6%9C%9F%E6%80%A7%E5%94%A4%E9%86%92%EF%BC%88%E7%BC%BA%E4%BA%86%E5%AE%83-HCI-%E6%97%A0%E5%93%8D%E5%BA%94%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 第三步：btwrite 周期性唤醒（缺了它 HCI 无响应）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E7%AC%AC%E5%9B%9B%E6%AD%A5%EF%BC%9AHCI-%E9%80%9A%E9%81%93%E8%AF%8A%E6%96%AD%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%8C%E9%AA%8C%E8%AF%81%E5%BA%95%E5%B1%82%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">5. 第四步：HCI 通道诊断（可选，验证底层）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E7%AC%AC%E4%BA%94%E6%AD%A5%EF%BC%9A%E9%83%A8%E7%BD%B2%E7%94%A8%E6%88%B7%E6%80%81-HCI-%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B%EF%BC%88%E7%94%9F%E4%BA%A7%E6%96%B9%E6%A1%88%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. 第五步：部署用户态 HCI 守护进程（生产方案）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E7%BC%96%E8%AF%91-daemon"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 编译 daemon</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E9%83%A8%E7%BD%B2-%E8%87%AA%E5%90%AF%EF%BC%88openrc%EF%BC%89"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 部署 + 自启（openrc）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E9%AA%8C%E8%AF%81%EF%BC%88unix-socket-%E5%AE%A2%E6%88%B7%E7%AB%AF%EF%BC%89"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 验证（unix socket 客户端）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E9%93%BE%E8%B7%AF%EF%BC%88%E9%87%8D%E5%90%AF%E5%90%8E%E5%85%A8%E8%87%AA%E5%8A%A8%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">7. 开机自启链路（重启后全自动）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E5%B8%B8%E8%A7%81%E6%95%85%E9%9A%9C%E9%80%9F%E6%9F%A5"><span class="toc-number">1.9.</span> <span class="toc-text">8. 常见故障速查</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E6%B6%89%E5%8F%8A%E7%9A%84%E5%85%B3%E9%94%AE%E8%8A%82%E7%82%B9-%E5%8F%82%E6%95%B0%E9%80%9F%E6%9F%A5"><span class="toc-number">1.10.</span> <span class="toc-text">9. 涉及的关键节点 &#x2F; 参数速查</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/13/bt-06-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&text=蓝牙芯片打通_操作手册"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&title=蓝牙芯片打通_操作手册"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&is_video=false&description=蓝牙芯片打通_操作手册"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=蓝牙芯片打通_操作手册&body=Check out this article: https://whiteleibniz.github.io/2026/09/13/bt-06-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&title=蓝牙芯片打通_操作手册"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&title=蓝牙芯片打通_操作手册"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&title=蓝牙芯片打通_操作手册"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&title=蓝牙芯片打通_操作手册"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/13/bt-06-md/&name=蓝牙芯片打通_操作手册&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

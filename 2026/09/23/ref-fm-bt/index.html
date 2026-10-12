@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="参考（细节）— FM 收音机 &#x2F; 蓝牙 A2DP &#x2F; 硬件加速 由 MEMORY.md §8~10 拆出，避免主笔记超限。结论级摘要仍在 MEMORY.md。原始专文：radio_docs&#x2F;（SEEK与场强、ioctl命令表、出声蓝牙路线、上电脚本、DMA勘察）、outputs&#x2F;FM收音机_进度快照_20260922.md、outputs&#x2F;Mali400与硬件加速_勘察结论.m">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ref_FM_蓝牙_硬件加速">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="参考（细节）— FM 收音机 &#x2F; 蓝牙 A2DP &#x2F; 硬件加速 由 MEMORY.md §8~10 拆出，避免主笔记超限。结论级摘要仍在 MEMORY.md。原始专文：radio_docs&#x2F;（SEEK与场强、ioctl命令表、出声蓝牙路线、上电脚本、DMA勘察）、outputs&#x2F;FM收音机_进度快照_20260922.md、outputs&#x2F;Mali400与硬件加速_勘察结论.m">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T12:16:57.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.977Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="蓝牙">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>ref_FM_蓝牙_硬件加速</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/24/bugfix-20260924-03/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/fm-02-fm-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&text=ref_FM_蓝牙_硬件加速"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&title=ref_FM_蓝牙_硬件加速"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&is_video=false&description=ref_FM_蓝牙_硬件加速"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_FM_蓝牙_硬件加速&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&title=ref_FM_蓝牙_硬件加速"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&title=ref_FM_蓝牙_硬件加速"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&title=ref_FM_蓝牙_硬件加速"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&title=ref_FM_蓝牙_硬件加速"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&name=ref_FM_蓝牙_硬件加速&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%EF%BC%88%E7%BB%86%E8%8A%82%EF%BC%89%E2%80%94-FM-%E6%94%B6%E9%9F%B3%E6%9C%BA-%E8%93%9D%E7%89%99-A2DP-%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F"><span class="toc-number">1.</span> <span class="toc-text">参考（细节）— FM 收音机 &#x2F; 蓝牙 A2DP &#x2F; 硬件加速</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-FM-%E6%94%B6%E9%9F%B3%E6%9C%BA%EF%BC%88%E5%BA%94%E7%94%A8%E5%B1%82%E5%AE%8C%E5%B7%A5%EF%BC%9B%E5%87%BA%E5%A3%B0%E6%97%A0%E8%A7%A3%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">A. FM 收音机（应用层完工；出声无解）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-%E8%93%9D%E7%89%99-A2DP-%E2%80%94%E2%80%94-%E2%80%9C%E5%B7%B2%E8%BF%9E%E6%8E%A5%E2%80%9D%E5%BF%85%E9%A1%BB%E7%9C%8B%E6%9C%AB%E7%AB%AF%E8%AF%81%E6%8D%AE%EF%BC%882026-09-23-%E4%BF%AE%E5%A4%8D%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">B. 蓝牙 A2DP —— “已连接”必须看末端证据（2026-09-23 修复）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F%EF%BC%88%E8%AF%A6%E8%A7%81-outputs-Mali400%E4%B8%8E%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F-%E5%8B%98%E5%AF%9F%E7%BB%93%E8%AE%BA-md%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">C. 硬件加速（详见 outputs&#x2F;Mali400与硬件加速_勘察结论.md）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        ref_FM_蓝牙_硬件加速
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T12:16:57.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E8%93%9D%E7%89%99/" rel="tag">蓝牙</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="参考（细节）—-FM-收音机-蓝牙-A2DP-硬件加速"><a href="#参考（细节）—-FM-收音机-蓝牙-A2DP-硬件加速" class="headerlink" title="参考（细节）— FM 收音机 &#x2F; 蓝牙 A2DP &#x2F; 硬件加速"></a>参考（细节）— FM 收音机 &#x2F; 蓝牙 A2DP &#x2F; 硬件加速</h1><blockquote>
+<p>由 <code>MEMORY.md §8~10</code> 拆出，避免主笔记超限。结论级摘要仍在 MEMORY.md。<br>原始专文：<code>radio_docs/</code>（SEEK与场强、ioctl命令表、出声蓝牙路线、上电脚本、DMA勘察）、<br><code>outputs/FM收音机_进度快照_20260922.md</code>、<code>outputs/Mali400与硬件加速_勘察结论.md</code></p>
+</blockquote>
+<h2 id="A-FM-收音机（应用层完工；出声无解）"><a href="#A-FM-收音机（应用层完工；出声无解）" class="headerlink" title="A. FM 收音机（应用层完工；出声无解）"></a>A. FM 收音机（应用层完工；<strong>出声无解</strong>）</h2><ul>
+<li><strong>★★ 结论：整个 AP 音频子系统是死的</strong><ul>
+<li><code>card0</code> capture <code>-5 EIO</code>；播放侧 PCM start 后 DMA 从不搬运；DAPM <code>bias_level</code> 永远 Off（codec 从没上电）</li>
+<li>根因：<strong>sipc 只暴露 LTE 通道、无音频 DSP 通道 → AGDSP 无从加载</strong></li>
+<li>FM 音频 ioctl（<code>OVER_BT_ENABLE</code>&#x2F;<code>I2S_SETTING</code>&#x2F;<code>ANA_SWITCH</code>&#x2F;<code>GET_AUDIO_INFO</code>）在本机 <code>.ko</code> 与上游 <code>marlin2_fm</code><br>全是空实现；蓝牙协议栈无 FM</li>
+<li>→ <strong>FM 经蓝牙出声在用户态不可行</strong>，只剩动内核（需厂商源码）</li>
+</ul>
+</li>
+<li><strong>上电链（FM 可用性的关键）</strong>：<code>01_wifi.start</code> → <code>bt_bringup.start</code>（等 18s）→ 向 @wcnd 发 <code>&quot;wcn FM-OPEN&quot;</code><br>并<strong>长期保连接</strong>（abstract unix socket <code>sun_path[0]=0+&quot;wcnd&quot;</code>），否则 <code>set_marlin_wakeup ack timeout</code></li>
+<li><strong>产物</strong>：<ul>
+<li><code>/usr/local/bin/fm_user_daemon</code>（常开 fd，因为 <code>close(/dev/fm)</code> 会阻塞 ~4s）</li>
+<li>开机 <code>/etc/local.d/zz_fm.start</code> → 调 <code>/root/fm_powerup.sh</code>（拉 daemon + 补电 + 拉 <code>fm_watchdog</code>）</li>
+<li>控制 socket <code>/tmp/fm_ctl.sock</code>：<code>state|on|off|tune &lt;kHz&gt;|vol|mute|ana|rssi|chipid|rds</code></li>
+</ul>
+</li>
+<li><strong>★ <code>daemon 在跑 ≠ FM 工作</code><strong>：必须再发 <code>on</code>(POWER_UP) 射频才起；</strong>socket 写须 <code>MSG_NOSIGNAL</code> + 忽略 <code>SIGPIPE</code></strong><br>（否则客户端断开触发 SIGPIPE 终止进程）；脚本禁用 <code>rssi</code>（每次固定 4.2s 超时）</li>
+<li><strong>★ 场强&#x2F;搜台都做不了（勿再试）</strong>：<code>GETRSSI</code> 每次固定 4.2s <code>-ETIMEDOUT</code> 且回值不变；<code>SEEK</code> 驱动只取频率低字节 →<br>TUNE 到任意频点 SEEK 全回 103.1 → <strong>UI 不要做”搜台”按钮</strong></li>
+</ul>
+<h2 id="B-蓝牙-A2DP-——-“已连接”必须看末端证据（2026-09-23-修复）"><a href="#B-蓝牙-A2DP-——-“已连接”必须看末端证据（2026-09-23-修复）" class="headerlink" title="B. 蓝牙 A2DP —— “已连接”必须看末端证据（2026-09-23 修复）"></a>B. 蓝牙 A2DP —— “已连接”必须看末端证据（2026-09-23 修复）</h2><ul>
+<li><strong>★ <code>conn</code> 只表示 ACL 链路，不等于连接可用</strong>；UI 绝不能拿 <code>conn</code> 当”已连接”</li>
+<li><strong>★ 唯一用户态可见的 A2DP 真相 &#x3D; <code>/tmp/bt_audio.fifo</code> 有无读者</strong>（非阻塞开写端：<code>ENXIO</code>&#x3D;无读者&#x3D;空链路）→<br>已落地 <code>lv_pages/bluetooth_page.c</code> 的 <code>bp_a2dp_ready()</code>（三态：链路+音频&#x3D;绿 &#x2F; 仅链路&#x3D;橙 &#x2F; 仅配对&#x3D;灰）</li>
+<li><strong>★ link key 失效 &#x3D; 音箱类设备一级排查项</strong>：删 <code>/tmp/bt_linkkey.conf</code> 该行 → 真重启 daemon → 重连（走完整 SSP）</li>
+<li><strong>★ <code>openrc restart</code> 不换进程</strong>：改了状态要用真重启（kill -9 + sleep + setsid 拉起 + sleep，并校验 pid 变没变）</li>
+<li>自研 <code>bt_user_daemon</code>（74KB，含 A2DP Sink&#x2F;Source）；音频源 <code>/tmp/bt_audio.fifo</code>（44100&#x2F;2ch&#x2F;S16_LE）；<br>配对设备”小爱音箱-1303”</li>
+</ul>
+<h2 id="C-硬件加速（详见-outputs-Mali400与硬件加速-勘察结论-md）"><a href="#C-硬件加速（详见-outputs-Mali400与硬件加速-勘察结论-md）" class="headerlink" title="C. 硬件加速（详见 outputs/Mali400与硬件加速_勘察结论.md）"></a>C. 硬件加速（详见 <code>outputs/Mali400与硬件加速_勘察结论.md</code>）</h2><ul>
+<li><strong>Mali-400 是 3D GPU 不是显示控制器</strong>；显示归 <code>sprdfb</code>→<code>/dev/fb0</code>；视频硬解在 AP 的 <strong>VSP</strong></li>
+<li><strong>Mali 在本机用不起来</strong>：<code>mali.ko</code> 可 insmod 但唯一 DDK 是 bionic 库、musl 加载不了；mesa 无 <code>lima_dri.so</code>、<br><code>/dev/dri</code> 不存在 → <strong>GPU 不能治卡顿</strong>（卡是 CPU 软解，<code>nproc=2</code>）</li>
+<li><strong>真正该挖的</strong>：VSP 硬解 <code>/dev/sprd_vsp</code>、GSP 2D 加速 <code>/dev/sprd_gsp</code>+ION（硬件缩放 + YUV→RGB，省 swscale）</li>
+<li>视频预转码参数：720x1280 + H.264 baseline + 无 B 帧 + ≤1Mbps + 24fps；<br>mplayer 在 <code>/home/lvgl_demo/lvgl_demo/libs/mplayer/mplayer</code>（不在 PATH）</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%EF%BC%88%E7%BB%86%E8%8A%82%EF%BC%89%E2%80%94-FM-%E6%94%B6%E9%9F%B3%E6%9C%BA-%E8%93%9D%E7%89%99-A2DP-%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F"><span class="toc-number">1.</span> <span class="toc-text">参考（细节）— FM 收音机 &#x2F; 蓝牙 A2DP &#x2F; 硬件加速</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-FM-%E6%94%B6%E9%9F%B3%E6%9C%BA%EF%BC%88%E5%BA%94%E7%94%A8%E5%B1%82%E5%AE%8C%E5%B7%A5%EF%BC%9B%E5%87%BA%E5%A3%B0%E6%97%A0%E8%A7%A3%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">A. FM 收音机（应用层完工；出声无解）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-%E8%93%9D%E7%89%99-A2DP-%E2%80%94%E2%80%94-%E2%80%9C%E5%B7%B2%E8%BF%9E%E6%8E%A5%E2%80%9D%E5%BF%85%E9%A1%BB%E7%9C%8B%E6%9C%AB%E7%AB%AF%E8%AF%81%E6%8D%AE%EF%BC%882026-09-23-%E4%BF%AE%E5%A4%8D%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">B. 蓝牙 A2DP —— “已连接”必须看末端证据（2026-09-23 修复）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F%EF%BC%88%E8%AF%A6%E8%A7%81-outputs-Mali400%E4%B8%8E%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F-%E5%8B%98%E5%AF%9F%E7%BB%93%E8%AE%BA-md%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">C. 硬件加速（详见 outputs&#x2F;Mali400与硬件加速_勘察结论.md）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&text=ref_FM_蓝牙_硬件加速"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&title=ref_FM_蓝牙_硬件加速"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&is_video=false&description=ref_FM_蓝牙_硬件加速"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_FM_蓝牙_硬件加速&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&title=ref_FM_蓝牙_硬件加速"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&title=ref_FM_蓝牙_硬件加速"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&title=ref_FM_蓝牙_硬件加速"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&title=ref_FM_蓝牙_硬件加速"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/ref-fm-bt/&name=ref_FM_蓝牙_硬件加速&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

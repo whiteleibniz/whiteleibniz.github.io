@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="DMA 支持情况 &amp; 从安卓移植的可行性勘察 日期：2026-09-23 问题：本机 DMA 到底支不支持？能不能把安卓那套音频搬过来？ 结论：DMA 硬件与驱动都在，但内核层没有可移植的东西（Alpine 跑的就是原厂安卓内核）；用户态能搬的都试了，全无效。堵点已定位到 12 个音频电源域全部 disabled、codec 数字部分寄存器读出来全是 0。   1. 先纠正一个前提：Alp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DMA支持与安卓移植可行性勘察">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="DMA 支持情况 &amp; 从安卓移植的可行性勘察 日期：2026-09-23 问题：本机 DMA 到底支不支持？能不能把安卓那套音频搬过来？ 结论：DMA 硬件与驱动都在，但内核层没有可移植的东西（Alpine 跑的就是原厂安卓内核）；用户态能搬的都试了，全无效。堵点已定位到 12 个音频电源域全部 disabled、codec 数字部分寄存器读出来全是 0。   1. 先纠正一个前提：Alp">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.647Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>DMA支持与安卓移植可行性勘察</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/fm-02-fm-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/fm-04-fm-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&text=DMA支持与安卓移植可行性勘察"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&title=DMA支持与安卓移植可行性勘察"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&is_video=false&description=DMA支持与安卓移植可行性勘察"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=DMA支持与安卓移植可行性勘察&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&title=DMA支持与安卓移植可行性勘察"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&title=DMA支持与安卓移植可行性勘察"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&title=DMA支持与安卓移植可行性勘察"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&title=DMA支持与安卓移植可行性勘察"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&name=DMA支持与安卓移植可行性勘察&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#DMA-%E6%94%AF%E6%8C%81%E6%83%85%E5%86%B5-%E4%BB%8E%E5%AE%89%E5%8D%93%E7%A7%BB%E6%A4%8D%E7%9A%84%E5%8F%AF%E8%A1%8C%E6%80%A7%E5%8B%98%E5%AF%9F"><span class="toc-number">1.</span> <span class="toc-text">DMA 支持情况 &amp; 从安卓移植的可行性勘察</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%85%88%E7%BA%A0%E6%AD%A3%E4%B8%80%E4%B8%AA%E5%89%8D%E6%8F%90%EF%BC%9AAlpine-%E8%B7%91%E7%9A%84%E5%B0%B1%E6%98%AF%E5%8E%9F%E5%8E%82%E5%AE%89%E5%8D%93%E5%86%85%E6%A0%B8"><span class="toc-number">1.1.</span> <span class="toc-text">1. 先纠正一个前提：Alpine 跑的就是原厂安卓内核</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-DMA-%E6%94%AF%E6%8C%81%E6%83%85%E5%86%B5%EF%BC%9A%E7%A1%AC%E4%BB%B6%E5%92%8C%E9%A9%B1%E5%8A%A8%E9%83%BD%E5%9C%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2. DMA 支持情况：硬件和驱动都在</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%BB%8E%E5%AE%89%E5%8D%93%E6%90%AC%E4%BA%86%E4%BB%80%E4%B9%88%E3%80%81%E7%BB%93%E6%9E%9C%E5%A6%82%E4%BD%95"><span class="toc-number">1.3.</span> <span class="toc-text">3. 从安卓搬了什么、结果如何</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%A0%B5%E7%82%B9%E5%AE%9A%E4%BD%8D%EF%BC%88%E6%9C%AC%E6%AC%A1%E6%9C%80%E9%87%8D%E8%A6%81%E7%9A%84%E5%8F%91%E7%8E%B0%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 堵点定位（本次最重要的发现）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-codec-%E6%95%B0%E5%AD%97%E9%83%A8%E5%88%86%E5%AF%84%E5%AD%98%E5%99%A8%E8%AF%BB%E5%87%BA%E6%9D%A5%E5%85%A8%E6%98%AF-0"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 codec 数字部分寄存器读出来全是 0</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-12-%E4%B8%AA%E9%9F%B3%E9%A2%91%E7%94%B5%E6%BA%90%E5%9F%9F%E5%85%A8%E9%83%A8%E6%B2%A1%E4%BA%BA%E7%94%A8"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 12 个音频电源域全部没人用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E5%AE%8C%E6%95%B4%E5%9B%A0%E6%9E%9C%E9%93%BE"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 完整因果链</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%B7%B2%E7%BB%8F%E8%AF%95%E8%BF%87%E3%80%81%E4%B8%8D%E8%A6%81%E5%86%8D%E9%87%8D%E5%A4%8D%E7%9A%84%E5%8A%A8%E4%BD%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 已经试过、不要再重复的动作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E8%BF%98%E8%83%BD%E5%81%9A%E4%BB%80%E4%B9%88"><span class="toc-number">1.6.</span> <span class="toc-text">6. 还能做什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%8E%B0%E5%9C%BA%E7%8A%B6%E6%80%81%EF%BC%88%E5%8B%98%E5%AF%9F%E5%90%8E%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">7. 现场状态（勘察后）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        DMA支持与安卓移植可行性勘察
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="DMA-支持情况-从安卓移植的可行性勘察"><a href="#DMA-支持情况-从安卓移植的可行性勘察" class="headerlink" title="DMA 支持情况 &amp; 从安卓移植的可行性勘察"></a>DMA 支持情况 &amp; 从安卓移植的可行性勘察</h1><ul>
+<li><strong>日期</strong>：2026-09-23</li>
+<li><strong>问题</strong>：本机 DMA 到底支不支持？能不能把安卓那套音频搬过来？</li>
+<li><strong>结论</strong>：<strong>DMA 硬件与驱动都在，但内核层没有可移植的东西（Alpine 跑的就是原厂安卓内核）</strong>；<br>用户态能搬的都试了，全无效。堵点已定位到 <strong>12 个音频电源域全部 disabled、codec 数字部分寄存器读出来全是 0</strong>。</li>
+</ul>
+<hr>
+<h2 id="1-先纠正一个前提：Alpine-跑的就是原厂安卓内核"><a href="#1-先纠正一个前提：Alpine-跑的就是原厂安卓内核" class="headerlink" title="1. 先纠正一个前提：Alpine 跑的就是原厂安卓内核"></a>1. 先纠正一个前提：Alpine 跑的就是原厂安卓内核</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ uname -a</span><br><span class="line">Linux spd-box 3.10.65 #13 SMP PREEMPT Fri Apr 27 13:23:49 CST 2018 armv7l Linux</span><br><span class="line"></span><br><span class="line">$ cat /proc/cmdline</span><br><span class="line">... androidboot.hardware=sc9832 lcd_id=ID9881 ... androidboot.mode=charger</span><br></pre></td></tr></table></figure>
+
+<p>内核版本、编译时间、<code>androidboot.hardware=sc9832</code> 都指向<strong>厂商原厂内核</strong>，<br>boot 分区 <code>mmcblk0p16</code> 头部是标准 <code>ANDROID!</code> boot.img 魔数。</p>
+<blockquote>
+<p>所以「从安卓移植驱动」这个方向<strong>不成立</strong> —— 驱动本来就在这颗内核里，而且全部是 <strong>builtin</strong><br>（Android 侧 <code>/mnt/android_sys/lib/modules/</code> 里只有 <code>sprdwl.ko / marlin_fm.ko / mali.ko / gator.ko / autotst.ko / mmc_test.ko</code>，<strong>没有任何音频模块</strong>）。</p>
+</blockquote>
+<h2 id="2-DMA-支持情况：硬件和驱动都在"><a href="#2-DMA-支持情况：硬件和驱动都在" class="headerlink" title="2. DMA 支持情况：硬件和驱动都在"></a>2. DMA 支持情况：硬件和驱动都在</h2><table>
+<thead>
+<tr>
+<th>项</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/sys/class/dma</code></td>
+<td><strong>不存在</strong> —— 但这是正常的：sprd 用的是自家 DMA 驱动，<strong>没走内核 dmaengine 框架</strong></td>
+</tr>
+<tr>
+<td><code>0.dma-controller</code> &#x2F; <code>0.dmac</code></td>
+<td>存在（platform device）</td>
+</tr>
+<tr>
+<td><code>sprd_dma_copy.27</code></td>
+<td>存在</td>
+</tr>
+<tr>
+<td><code>i2s.38 / .39 / .40 / .41</code></td>
+<td>存在</td>
+</tr>
+<tr>
+<td><code>sprd-pcm-audio.42</code>、<code>sprd-codec.34</code></td>
+<td>存在</td>
+</tr>
+<tr>
+<td><code>vbc-r2p0.36</code>、<code>vaudio.37</code>、<code>saudio_lte.0</code>、<code>saudio_voip.1</code></td>
+<td>存在</td>
+</tr>
+<tr>
+<td><code>sprd-audio-power.1 ~ .12</code></td>
+<td>12 个音频电源域，均带 <code>regulator</code> 子目录</td>
+</tr>
+<tr>
+<td>regulator framework &#x2F; <code>sc2723-regulator</code></td>
+<td>正常，共 38 个 regulator</td>
+</tr>
+</tbody></table>
+<p><strong>结论：DMA 不是缺驱动，也不是缺硬件。</strong></p>
+<h2 id="3-从安卓搬了什么、结果如何"><a href="#3-从安卓搬了什么、结果如何" class="headerlink" title="3. 从安卓搬了什么、结果如何"></a>3. 从安卓搬了什么、结果如何</h2><table>
+<thead>
+<tr>
+<th>可搬项</th>
+<th>来源</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>audio_para</code></strong></td>
+<td><code>/mnt/android_sys/etc/audio_para</code>（485KB），HAL 字符串里明确有 <code>/etc/audio_para</code> 和 <code>/data/local/media/audio_para</code></td>
+<td>❌ <strong>无效</strong>。已放到 <code>/etc/audio_para</code> + <code>/lib/firmware/audio_para</code> 并<strong>重启</strong>，codec 数字部分寄存器<strong>仍全是 0</strong></td>
+</tr>
+<tr>
+<td><strong>音频 HAL</strong></td>
+<td><code>/mnt/android_sys/lib/hw/audio.primary.sc8830.so</code></td>
+<td>❌ 它是 <strong>bionic</strong> 动态库，本机是 musl，<strong>跑不起来</strong>。不过它里面的控件序列我们早先已还原并实测过（见 §5）</td>
+</tr>
+<tr>
+<td><strong>tinyplay &#x2F; tinycap &#x2F; tinymix</strong></td>
+<td><code>/mnt/android_sys/bin/</code></td>
+<td>❌ 同样是 bionic 二进制。等价功能已用自写工具（<code>fm_cap_scan</code> &#x2F; <code>fm_play_probe</code>）覆盖</td>
+</tr>
+<tr>
+<td><strong>VBC 通路</strong></td>
+<td>HAL 用 <code>/dev/vbpipe6</code>、<code>/dev/pipe/mmi.audio.ctrl</code></td>
+<td>❌ <strong>本机 <code>/dev/vbpipe*</code> 和 <code>/dev/pipe</code> 都不存在</strong></td>
+</tr>
+<tr>
+<td><strong>AGDSP &#x2F; 音频 DSP</strong></td>
+<td>—</td>
+<td>❌ <strong>sipc 只有 <code>sipc-lte</code>(dst 0x5) 和 <code>sipc-pmsys</code>(dst 0x6)<strong>，</strong>没有任何 audio DSP 通道</strong>；<code>/sys/kernel/debug/sipc/</code> 下是 sblock&#x2F;sbuf&#x2F;seblock&#x2F;sipx&#x2F;smem&#x2F;smsg，但 smsg 通道列表里只有 lte&#x2F;pmsys</td>
+</tr>
+</tbody></table>
+<h2 id="4-堵点定位（本次最重要的发现）"><a href="#4-堵点定位（本次最重要的发现）" class="headerlink" title="4. 堵点定位（本次最重要的发现）"></a>4. 堵点定位（本次最重要的发现）</h2><h3 id="4-1-codec-数字部分寄存器读出来全是-0"><a href="#4-1-codec-数字部分寄存器读出来全是-0" class="headerlink" title="4.1 codec 数字部分寄存器读出来全是 0"></a>4.1 codec 数字部分寄存器读出来全是 0</h3><p><code>/proc/asound/sprdphone/sprd-codec</code> 可以直接 dump 寄存器：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">sprd-codec.34 digital part</span><br><span class="line">0x0000 | 0x0000 0x0000 0x0000 0x0000      ← 全 0</span><br><span class="line">0x0010 | 0x0000 0x0000 0x0000 0x0000</span><br><span class="line">0x0020 | 0x0000 0x0000 0x0000 0x0000</span><br><span class="line">0x0030 | 0x0000 0x0000 0x0000 0x0000</span><br><span class="line">sprd-codec.34 analog part</span><br><span class="line">0x0000 | 0x0010 0x0081 0xb400 0x6d3c      ← 模拟部分有正常值</span><br><span class="line">0x0010 | 0x1070 0xa000 0x0000 0x0000</span><br></pre></td></tr></table></figure>
+
+<p>模拟部分（走 SC2723 的 ADI 总线）正常，<strong>数字部分是空的</strong>。<br>放 <code>audio_para</code> + 重启之后<strong>依然全 0</strong>。</p>
+<h3 id="4-2-12-个音频电源域全部没人用"><a href="#4-2-12-个音频电源域全部没人用" class="headerlink" title="4.2 12 个音频电源域全部没人用"></a>4.2 12 个音频电源域全部没人用</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">sprd-audio-power.1 → regulator.26 = SRG_VREG      num_users=0</span><br><span class="line">regulator.27 SRG_VB        regulator.28 SRG_BG</span><br><span class="line">regulator.29 SRG_BG_IBIAS  regulator.30 SRG_VCOM</span><br><span class="line">regulator.31 SRG_VCOM_BUF  regulator.32 SRG_VBO</span><br><span class="line">regulator.33 SRG_VMICBIAS  regulator.34 SRG_MICBIAS</span><br><span class="line">regulator.35 SRG_AUXMICBIAS regulator.36 SRG_HEADMICBIAS ...</span><br></pre></td></tr></table></figure>
+
+<p>全部 <strong>disabled，users&#x3D;0</strong>。DAPM 里 <code>Analog Power / DA Clk / AD Clk</code> 那批 Off 的 widget，<br>对应的就是这些电源域。</p>
+<p><strong><code>/sys/class/regulator/regulator.X/</code> 下只有 <code>device name num_users power subsystem suspend_* type uevent</code>，没有可写的 <code>state</code></strong> → <strong>用户态无法强制 enable</strong>，必须由内核 DAPM 去做。</p>
+<h3 id="4-3-完整因果链"><a href="#4-3-完整因果链" class="headerlink" title="4.3 完整因果链"></a>4.3 完整因果链</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">sipc 无 audio DSP 通道 → VBC/AGDSP 类通路不可用（/dev/vbpipe 也不存在）</span><br><span class="line">                       ↓</span><br><span class="line">DAPM 需要 enable 的 12 个 SRG_* 电源域全部 disabled (users=0)</span><br><span class="line">                       ↓</span><br><span class="line">codec 数字部分上不了电 → 数字寄存器读写不到（全 0）</span><br><span class="line">                       ↓</span><br><span class="line">bias_level 永远 Off，DAPM 不 power up</span><br><span class="line">                       ↓</span><br><span class="line">i2s / DMA 不搬运 → 播放 writei 写一个 buffer 就 EAGAIN、采集 readi 直接 EIO</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-已经试过、不要再重复的动作"><a href="#5-已经试过、不要再重复的动作" class="headerlink" title="5. 已经试过、不要再重复的动作"></a>5. 已经试过、不要再重复的动作</h2><ul>
+<li>按厂商 <code>tiny_hw.xml</code> 配齐 <code>digital-fm</code> + <code>speaker</code> 完整通路，并用 <code>fm_hold</code> 保持 <code>hw:1,4</code> running<br>→ <code>bias_level</code> 仍 Off、ON widget 数为 0</li>
+<li>放 <code>audio_para</code> 到 <code>/etc</code> 和 <code>/lib/firmware</code> 并重启 → 无效</li>
+<li><code>unbind/bind</code> 重新 probe <code>sprd-codec.34</code> → <strong>bind 失败，codec 变成 <code>(null)</code><strong>，<br>只能靠重启恢复。</strong>不要再对 <code>sprd-codec.34</code> 做 unbind</strong>，会把音频子系统搞坏</li>
+</ul>
+<h2 id="6-还能做什么"><a href="#6-还能做什么" class="headerlink" title="6. 还能做什么"></a>6. 还能做什么</h2><ol>
+<li><strong>需要厂商内核源码</strong>才能继续：查 <code>sprd-codec</code> 的 probe &#x2F; <code>set_bias_level</code> 为什么没把 bias 拉到<br>STANDBY、数字寄存器为什么访问不到。本机 <code>/tmp/linux-3.10.65</code> 是 vanilla 树，不含厂商代码。</li>
+<li>次优：用 <code>dynamic_debug</code> 打开 <code>sprd-codec</code> &#x2F; <code>snd_soc</code> 的 dapm 与 bias 相关打印，<br>能看到 DAPM 决策过程（不需要源码也能拿到一些信息）。</li>
+<li><strong>不推荐</strong>的方向：继续在用户态调 kcontrol —— 电源域 enable 不了，控件怎么设都没用。</li>
+</ol>
+<h2 id="7-现场状态（勘察后）"><a href="#7-现场状态（勘察后）" class="headerlink" title="7. 现场状态（勘察后）"></a>7. 现场状态（勘察后）</h2><ul>
+<li>设备已重启一次，一切正常：<code>lvgl_demo</code> &#x2F; <code>bt_user_daemon</code>(1177) &#x2F; <code>fm_user_daemon</code>(1228) &#x2F; <code>lvgl_watchdog</code> 均在跑</li>
+<li><code>/etc/audio_para</code> 与 <code>/lib/firmware/audio_para</code> 已部署（实测无效，留着无害）</li>
+<li>重启后 kcontrol 已回到默认值（此前配的 digital-fm &#x2F; speaker 组合已清空）</li>
+<li>新增工具：<code>/root/fm_cap_scan</code>（采集矩阵扫描）、<code>/root/fm_play_probe</code>（播放矩阵，非阻塞）、<br><code>/root/fm_hold</code>（保持 PCM running）</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#DMA-%E6%94%AF%E6%8C%81%E6%83%85%E5%86%B5-%E4%BB%8E%E5%AE%89%E5%8D%93%E7%A7%BB%E6%A4%8D%E7%9A%84%E5%8F%AF%E8%A1%8C%E6%80%A7%E5%8B%98%E5%AF%9F"><span class="toc-number">1.</span> <span class="toc-text">DMA 支持情况 &amp; 从安卓移植的可行性勘察</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%85%88%E7%BA%A0%E6%AD%A3%E4%B8%80%E4%B8%AA%E5%89%8D%E6%8F%90%EF%BC%9AAlpine-%E8%B7%91%E7%9A%84%E5%B0%B1%E6%98%AF%E5%8E%9F%E5%8E%82%E5%AE%89%E5%8D%93%E5%86%85%E6%A0%B8"><span class="toc-number">1.1.</span> <span class="toc-text">1. 先纠正一个前提：Alpine 跑的就是原厂安卓内核</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-DMA-%E6%94%AF%E6%8C%81%E6%83%85%E5%86%B5%EF%BC%9A%E7%A1%AC%E4%BB%B6%E5%92%8C%E9%A9%B1%E5%8A%A8%E9%83%BD%E5%9C%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2. DMA 支持情况：硬件和驱动都在</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%BB%8E%E5%AE%89%E5%8D%93%E6%90%AC%E4%BA%86%E4%BB%80%E4%B9%88%E3%80%81%E7%BB%93%E6%9E%9C%E5%A6%82%E4%BD%95"><span class="toc-number">1.3.</span> <span class="toc-text">3. 从安卓搬了什么、结果如何</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%A0%B5%E7%82%B9%E5%AE%9A%E4%BD%8D%EF%BC%88%E6%9C%AC%E6%AC%A1%E6%9C%80%E9%87%8D%E8%A6%81%E7%9A%84%E5%8F%91%E7%8E%B0%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 堵点定位（本次最重要的发现）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-codec-%E6%95%B0%E5%AD%97%E9%83%A8%E5%88%86%E5%AF%84%E5%AD%98%E5%99%A8%E8%AF%BB%E5%87%BA%E6%9D%A5%E5%85%A8%E6%98%AF-0"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 codec 数字部分寄存器读出来全是 0</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-12-%E4%B8%AA%E9%9F%B3%E9%A2%91%E7%94%B5%E6%BA%90%E5%9F%9F%E5%85%A8%E9%83%A8%E6%B2%A1%E4%BA%BA%E7%94%A8"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 12 个音频电源域全部没人用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E5%AE%8C%E6%95%B4%E5%9B%A0%E6%9E%9C%E9%93%BE"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 完整因果链</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%B7%B2%E7%BB%8F%E8%AF%95%E8%BF%87%E3%80%81%E4%B8%8D%E8%A6%81%E5%86%8D%E9%87%8D%E5%A4%8D%E7%9A%84%E5%8A%A8%E4%BD%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 已经试过、不要再重复的动作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E8%BF%98%E8%83%BD%E5%81%9A%E4%BB%80%E4%B9%88"><span class="toc-number">1.6.</span> <span class="toc-text">6. 还能做什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%8E%B0%E5%9C%BA%E7%8A%B6%E6%80%81%EF%BC%88%E5%8B%98%E5%AF%9F%E5%90%8E%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">7. 现场状态（勘察后）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&text=DMA支持与安卓移植可行性勘察"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&title=DMA支持与安卓移植可行性勘察"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&is_video=false&description=DMA支持与安卓移植可行性勘察"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=DMA支持与安卓移植可行性勘察&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&title=DMA支持与安卓移植可行性勘察"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&title=DMA支持与安卓移植可行性勘察"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&title=DMA支持与安卓移植可行性勘察"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&title=DMA支持与安卓移植可行性勘察"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/fm-01-dma-md/&name=DMA支持与安卓移植可行性勘察&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

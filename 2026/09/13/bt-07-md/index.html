@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="展讯 SC9832A 蓝牙故障排查手册 —— HT0 &#x2F; spd-box 用途：蓝牙起不来、扫不到、没响应时，按本手册定位根因。每一行命令均取自设备实测。使用方式：先看 §1 分层速查总表定位到层 → 跳到对应章节 → 用「定位命令」确认 → 按「修复」处理。配套：人工操作手册（第 8 章速查表）、AI 指导手册（§7 决策表）为精简版；本文是全量版。   0. 排障纪律（先读，违反会浪">
+<meta property="og:type" content="article">
+<meta property="og:title" content="蓝牙芯片打通_故障排查手册">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/13/bt-07-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="展讯 SC9832A 蓝牙故障排查手册 —— HT0 &#x2F; spd-box 用途：蓝牙起不来、扫不到、没响应时，按本手册定位根因。每一行命令均取自设备实测。使用方式：先看 §1 分层速查总表定位到层 → 跳到对应章节 → 用「定位命令」确认 → 按「修复」处理。配套：人工操作手册（第 8 章速查表）、AI 指导手册（§7 决策表）为精简版；本文是全量版。   0. 排障纪律（先读，违反会浪">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-13T07:58:12.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.641Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="蓝牙">
+<meta property="article:tag" content="WCN">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>蓝牙芯片打通_故障排查手册</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/13/ht0-skill-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/13/wifi-03-wifi-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/13/bt-07-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&text=蓝牙芯片打通_故障排查手册"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&title=蓝牙芯片打通_故障排查手册"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&is_video=false&description=蓝牙芯片打通_故障排查手册"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=蓝牙芯片打通_故障排查手册&body=Check out this article: https://whiteleibniz.github.io/2026/09/13/bt-07-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&title=蓝牙芯片打通_故障排查手册"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&title=蓝牙芯片打通_故障排查手册"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&title=蓝牙芯片打通_故障排查手册"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&title=蓝牙芯片打通_故障排查手册"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&name=蓝牙芯片打通_故障排查手册&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-%E8%93%9D%E7%89%99%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E6%89%8B%E5%86%8C-%E2%80%94%E2%80%94-HT0-spd-box"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A 蓝牙故障排查手册 —— HT0 &#x2F; spd-box</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E6%8E%92%E9%9A%9C%E7%BA%AA%E5%BE%8B%EF%BC%88%E5%85%88%E8%AF%BB%EF%BC%8C%E8%BF%9D%E5%8F%8D%E4%BC%9A%E6%B5%AA%E8%B4%B9%E6%97%B6%E9%97%B4%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">0. 排障纪律（先读，违反会浪费时间）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%88%86%E5%B1%82%E6%95%85%E9%9A%9C%E9%80%9F%E6%9F%A5%E6%80%BB%E8%A1%A8%EF%BC%88%E4%B8%80%E9%A1%B5%E5%AE%9A%E4%BD%8D%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 分层故障速查总表（一页定位）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%89%A9%E7%90%86-%E5%9B%BA%E4%BB%B6%E5%B1%82%EF%BC%88%E2%91%A0-download-%E2%86%92-SDIO%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. 物理 &#x2F; 固件层（① download → SDIO）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-SDIO-not-enumerated-download-may-have-failed"><span class="toc-number">1.3.1.</span> <span class="toc-text">2.1 SDIO not enumerated, download may have failed</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-bind-logdw-failed-No-such-file-or-directory"><span class="toc-number">1.3.2.</span> <span class="toc-text">2.2 bind logdw failed: No such file or directory</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-download-%E8%BF%9B%E7%A8%8B%E5%8F%8D%E5%A4%8D%E9%80%80%E5%87%BA-pid-%E4%B8%BA%E7%A9%BA"><span class="toc-number">1.3.3.</span> <span class="toc-text">2.3 download 进程反复退出 &#x2F; pid 为空</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%93%9D%E7%89%99%E4%B8%8A%E7%94%B5%E5%B1%82%EF%BC%88%E2%91%A1-wcnd-BT-OPEN%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">3. 蓝牙上电层（② wcnd + BT-OPEN）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-BT-OPEN-%E8%BF%94%E5%9B%9E-FAIL%EF%BC%88%E5%A4%B4%E5%8F%B7%E9%97%AE%E9%A2%98%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 BT-OPEN 返回 FAIL（头号问题）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-wcnd-%E6%B2%A1%E8%B5%B7%E6%9D%A5-bt-once-%E6%97%A0%E4%BB%BB%E4%BD%95%E8%BE%93%E5%87%BA"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 wcnd 没起来 &#x2F; bt_once 无任何输出</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%BC%95%E6%93%8E-%E5%94%A4%E9%86%92%E5%B1%82%EF%BC%88%E2%91%A2-btwrite-%E2%86%92-HCI%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 引擎 &#x2F; 唤醒层（③ btwrite → HCI）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-HCI-%E6%97%A0%E5%93%8D%E5%BA%94-%E5%8F%AA%E5%9B%9E%E4%B8%80%E6%AC%A1-SPRD3-%E5%B8%A7%EF%BC%88%E5%85%B3%E9%94%AE%EF%BC%81%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 HCI 无响应 &#x2F; 只回一次 SPRD3 帧（关键！）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-SPRD3-%E5%B8%A7%E7%9A%84%E5%90%AB%E4%B9%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 SPRD3 帧的含义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-daemon-%E6%97%A5%E5%BF%97-%E2%80%9CNot-a-tty%E2%80%9D-HCI-%E5%85%A8%E6%97%A0%E5%93%8D%E5%BA%94"><span class="toc-number">1.5.3.</span> <span class="toc-text">4.3 daemon 日志 “Not a tty” &#x2F; HCI 全无响应</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E6%B3%A2%E7%89%B9%E7%8E%87-UART-%E9%85%8D%E7%BD%AE%E9%97%AE%E9%A2%98"><span class="toc-number">1.5.4.</span> <span class="toc-text">4.4 波特率 &#x2F; UART 配置问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-%E5%86%85%E6%A0%B8-hci0-%E6%B3%A8%E5%86%8C%E4%BD%86-TX-0"><span class="toc-number">1.5.5.</span> <span class="toc-text">4.5 内核 hci0 注册但 TX&#x3D;0</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%BA%94%E7%94%A8%E5%B1%82%EF%BC%88%E2%91%A3-daemon-%E2%86%92-socket-%E2%86%92-LVGL%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">5. 应用层（④ daemon → socket → LVGL）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-socket-connect-%E5%A4%B1%E8%B4%A5"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 socket connect 失败</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-state-%E6%9F%A5%E8%AF%A2%E6%97%A0%E5%93%8D%E5%BA%94%EF%BC%88Terminated%EF%BC%89-%E9%87%8D%E5%90%AF%E5%90%8E%E7%9E%AC%E6%97%B6%E6%97%A0%E5%93%8D%E5%BA%94"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 state 查询无响应（Terminated）&#x2F; 重启后瞬时无响应</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E6%89%AB%E6%8F%8F%E6%97%A0%E7%BB%93%E6%9E%9C%EF%BC%88OK-0%EF%BC%89"><span class="toc-number">1.6.3.</span> <span class="toc-text">5.3 扫描无结果（OK 0）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-4-%E8%93%9D%E7%89%99%E9%A1%B5%E5%BC%80%E5%85%B3%E6%97%A0%E5%8F%8D%E5%BA%94"><span class="toc-number">1.6.4.</span> <span class="toc-text">5.4 蓝牙页开关无反应</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E7%B3%BB%E7%BB%9F-%E8%87%AA%E5%90%AF%E5%B1%82"><span class="toc-number">1.7.</span> <span class="toc-text">6. 系统 &#x2F; 自启层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E9%87%8D%E5%90%AF%E5%90%8E%E8%93%9D%E7%89%99%E4%B8%8D%E8%87%AA%E5%8A%A8%E6%8B%89%E8%B5%B7"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 重启后蓝牙不自动拉起</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-daemon-%E4%B8%8E%E4%B8%8A%E7%94%B5%E9%93%BE%E9%A1%BA%E5%BA%8F%E9%94%99%E4%B9%B1"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 daemon 与上电链顺序错乱</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-LVGL-%E8%93%9D%E7%89%99%E9%A1%B5%E5%8F%8D%E5%A4%8D%E5%8F%98%E5%9B%9E%E6%97%A7%E7%89%88-%E9%A1%B5%E9%9D%A2%E7%BC%BA%E5%A4%B1"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 LVGL 蓝牙页反复变回旧版 &#x2F; 页面缺失</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E9%80%9A%E7%94%A8%E7%B3%BB%E7%BB%9F%E9%97%AE%E9%A2%98"><span class="toc-number">1.8.</span> <span class="toc-text">7. 通用系统问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7%E7%AE%B1%EF%BC%88%E5%85%B3%E9%94%AE%E8%8A%82%E7%82%B9%E9%80%9F%E6%9F%A5%EF%BC%89"><span class="toc-number">1.9.</span> <span class="toc-text">8. 诊断工具箱（关键节点速查）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E5%B7%B2%E9%AA%8C%E8%AF%81%E6%AD%BB%E8%B7%AF%EF%BC%88%E4%B8%8D%E8%A6%81%E9%87%8D%E8%AF%95%EF%BC%89"><span class="toc-number">1.10.</span> <span class="toc-text">9. 已验证死路（不要重试）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E7%BA%A2%E7%BA%BF%EF%BC%88%E4%BB%BB%E4%BD%95%E6%83%85%E5%86%B5%E4%B8%8B%EF%BC%89"><span class="toc-number">1.11.</span> <span class="toc-text">10. 红线（任何情况下）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E5%A5%97%EF%BC%9A%E8%93%9D%E7%89%99%E8%8A%AF%E7%89%87%E6%89%93%E9%80%9A-%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C%EF%BC%88%E4%BA%BA%E7%94%A8%EF%BC%89%E3%80%81%E8%93%9D%E7%89%99%E6%89%93%E9%80%9A-AI%E6%8C%87%E5%AF%BC%E6%89%8B%E5%86%8C%EF%BC%88AI-%E7%94%A8%EF%BC%89%E3%80%81HT0%E8%93%9D%E7%89%99%E6%8B%89%E8%B5%B7-%E9%83%A8%E7%BD%B2%E4%BA%A4%E4%BB%98%E6%96%87%E6%A1%A3%EF%BC%88%E9%83%A8%E7%BD%B2%E7%94%A8%EF%BC%89"><span class="toc-number">1.12.</span> <span class="toc-text">配套：蓝牙芯片打通_操作手册（人用）、蓝牙打通_AI指导手册（AI 用）、HT0蓝牙拉起_部署交付文档（部署用）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        蓝牙芯片打通_故障排查手册
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-13T07:58:12.000Z" itemprop="datePublished">2026-09-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/WCN/" rel="tag">WCN</a>, <a class="tag-link-link" href="/tags/%E8%93%9D%E7%89%99/" rel="tag">蓝牙</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="展讯-SC9832A-蓝牙故障排查手册-——-HT0-spd-box"><a href="#展讯-SC9832A-蓝牙故障排查手册-——-HT0-spd-box" class="headerlink" title="展讯 SC9832A 蓝牙故障排查手册 —— HT0 &#x2F; spd-box"></a>展讯 SC9832A 蓝牙故障排查手册 —— HT0 &#x2F; spd-box</h1><blockquote>
+<p><strong>用途</strong>：蓝牙起不来、扫不到、没响应时，按本手册定位根因。每一行命令均取自设备实测。<br><strong>使用方式</strong>：先看 §1 分层速查总表定位到层 → 跳到对应章节 → 用「定位命令」确认 → 按「修复」处理。<br><strong>配套</strong>：人工操作手册（第 8 章速查表）、AI 指导手册（§7 决策表）为精简版；本文是全量版。</p>
+</blockquote>
+<hr>
+<h2 id="0-排障纪律（先读，违反会浪费时间）"><a href="#0-排障纪律（先读，违反会浪费时间）" class="headerlink" title="0. 排障纪律（先读，违反会浪费时间）"></a>0. 排障纪律（先读，违反会浪费时间）</h2><ol>
+<li><strong>分层定位，不跨层瞎试</strong>：四层模型——①固件&#x2F;物理（download→SDIO 0x2331）→ ②上电（wcnd+BT-OPEN→CMD OK）→ ③引擎（btwrite 唤醒→HCI 响应）→ ④应用（daemon→socket→LVGL）。哪层不过只查该层及其上游。</li>
+<li><strong>先看日志再看进程</strong>：日志顺序 <code>/var/log/wifi_boot.log</code>（wifi 链）→ <code>/tmp/bt_once.log</code>（BT-OPEN）→ <code>/tmp/btud.log</code> + <code>/tmp/btud_dbg.log</code>（daemon）→ <code>dmesg | tail</code>。</li>
+<li><strong>download 常驻勿杀</strong>：全杀会破坏 WiFi&#x2F;蓝牙固件状态，只能整机重启恢复。</li>
+<li>**杀进程一律 <code>pkill -9 -x &lt;名字&gt;</code>**，禁止 <code>ps | grep</code> 内嵌模式（会误杀执行命令的 shell 自身）。</li>
+<li><strong>重启后必做 mdbg chmod</strong>（开机脚本已自动做，手动调试时别忘）：<br><code>chmod 666 /tmp/aand/proc/mdbg/*; chmod 666 /proc/mdbg/*; echo 0 &gt; /proc/mdbg/wdtirq</code></li>
+<li><strong>先确认 WiFi 层</strong>：蓝牙与 WiFi 同芯片，WiFi 没拉起来蓝牙必挂。<code>cat /sys/bus/sdio/devices/mmc2:8800:1/device</code> 必须为 <code>0x2331</code>。</li>
+</ol>
+<hr>
+<h2 id="1-分层故障速查总表（一页定位）"><a href="#1-分层故障速查总表（一页定位）" class="headerlink" title="1. 分层故障速查总表（一页定位）"></a>1. 分层故障速查总表（一页定位）</h2><table>
+<thead>
+<tr>
+<th>现象（症状）</th>
+<th>大概率根因</th>
+<th>定位命令</th>
+<th>章节</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SDIO not enumerated, download may have failed</code></td>
+<td>固件下载未完成 &#x2F; chroot 环境不全</td>
+<td><code>cat /sys/bus/sdio/devices/mmc2:8800:1/device</code></td>
+<td>§2</td>
+</tr>
+<tr>
+<td><code>bind logdw failed: No such file or directory</code></td>
+<td>logdw 未就位</td>
+<td><code>ls -la /tmp/logdw</code></td>
+<td>§2</td>
+</tr>
+<tr>
+<td>download 卡住 &#x2F; pid 为空</td>
+<td>chroot 缺库&#x2F;节点&#x2F;软链</td>
+<td><code>ps -eo pid,comm | grep download</code></td>
+<td>§2</td>
+</tr>
+<tr>
+<td>BT-OPEN 返回 FAIL</td>
+<td>mdbg 权限 600</td>
+<td><code>cat /tmp/bt_once.log</code></td>
+<td>§3</td>
+</tr>
+<tr>
+<td>wcnd 没起 &#x2F; bt_once 无输出</td>
+<td>进程没起来 &#x2F; 时序</td>
+<td><code>ps -ef | grep &#39;[w]cnd&#39;</code></td>
+<td>§3</td>
+</tr>
+<tr>
+<td>HCI 无响应 &#x2F; 只回一次 SPRD3 帧</td>
+<td>缺 btwrite 唤醒</td>
+<td><code>[ -w /proc/bluetooth/sleep/btwrite ]</code></td>
+<td>§4</td>
+</tr>
+<tr>
+<td>daemon 日志 “Not a tty”</td>
+<td>tty ldisc 被占</td>
+<td><code>cat /tmp/btud.log</code></td>
+<td>§4</td>
+</tr>
+<tr>
+<td>扫描无结果（scan 返回 OK 0）</td>
+<td>未先 Write Scan Enable</td>
+<td>用 daemon <code>scan</code> 命令</td>
+<td>§5</td>
+</tr>
+<tr>
+<td>socket connect 失败 &#x2F; state 无响应</td>
+<td>daemon 多实例 &#x2F; 瞬时窗口</td>
+<td><code>ps -eo comm | grep &#39;[b]t_user_daemon&#39;</code></td>
+<td>§5</td>
+</tr>
+<tr>
+<td>重启后蓝牙不自动拉起</td>
+<td>自启链缺失 &#x2F; 顺序错</td>
+<td><code>rc-update show</code></td>
+<td>§6</td>
+</tr>
+<tr>
+<td>LVGL 蓝牙页反复变回旧版</td>
+<td>watchdog 指向 build 路径</td>
+<td><code>cat /root/lvgl_watchdog.sh</code></td>
+<td>§6</td>
+</tr>
+<tr>
+<td>WiFi&#x2F;蓝牙一起没了</td>
+<td>download 被杀</td>
+<td><code>dmesg | tail</code></td>
+<td>§7</td>
+</tr>
+<tr>
+<td>SSH 重启后不通</td>
+<td>USB 口切换</td>
+<td>轮询 <code>&lt;设备IP&gt;</code> &#x2F; <code>&lt;WiFi-IP&gt;</code></td>
+<td>§7</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-物理-固件层（①-download-→-SDIO）"><a href="#2-物理-固件层（①-download-→-SDIO）" class="headerlink" title="2. 物理 &#x2F; 固件层（① download → SDIO）"></a>2. 物理 &#x2F; 固件层（① download → SDIO）</h2><h3 id="2-1-SDIO-not-enumerated-download-may-have-failed"><a href="#2-1-SDIO-not-enumerated-download-may-have-failed" class="headerlink" title="2.1 SDIO not enumerated, download may have failed"></a>2.1 <code>SDIO not enumerated, download may have failed</code></h3><ul>
+<li><strong>定位</strong>：<code>cat /sys/bus/sdio/devices/mmc2:8800:1/device</code>（空 &#x3D; 未枚举）；<code>tail -20 /tmp/logdw.log</code>；<code>dmesg | tail -30</code></li>
+<li><strong>可能根因与修复</strong>：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>根因</th>
+<th>确认</th>
+<th>修复</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>chroot 环境不全</td>
+<td><code>ls /tmp/aand/bin/download /tmp/aand/lib/libiwnpi.so /tmp/aand/etc/marlinba/connectivity_configure.ini</code></td>
+<td>重建 chroot（见 WiFi 操作手册 4.4）或重跑 <code>sh /etc/local.d/wifi.start</code></td>
+</tr>
+<tr>
+<td><code>/dev/power_ctl</code> 不可写</td>
+<td><code>[ -w /dev/power_ctl ] &amp;&amp; echo OK</code></td>
+<td>检查节点权限；download 靠它写 SLEEP→POWER_ON→POWER_RST 上电序列</td>
+</tr>
+<tr>
+<td>by-name 软链缺失</td>
+<td><code>ls -l /tmp/aand/dev/block/platform/sdio_emmc/by-name/</code></td>
+<td><code>ln -sf /dev/block/mmcblk0p14 .../wcnfdl; ln -sf /dev/block/mmcblk0p15 .../wcnmodem</code></td>
+</tr>
+<tr>
+<td>挂载缺失</td>
+<td>&#96;mountpoint -q &#x2F;tmp&#x2F;aand&#x2F;dev</td>
+<td></td>
+</tr>
+<tr>
+<td>DTB 不对（boot 分区）</td>
+<td><code>dmesg | grep -i sdio</code></td>
+<td>确认 p16 已写 Android 原版 dtb（WiFi 操作手册 4.3）</td>
+</tr>
+<tr>
+<td>download 没起来</td>
+<td><code>ps -eo pid,comm | grep download</code></td>
+<td><code>setsid chroot /tmp/aand /bin/download -i wlan0 &gt;/tmp/dl.log 2&gt;&amp;1 &amp;</code></td>
+</tr>
+</tbody></table>
+<h3 id="2-2-bind-logdw-failed-No-such-file-or-directory"><a href="#2-2-bind-logdw-failed-No-such-file-or-directory" class="headerlink" title="2.2 bind logdw failed: No such file or directory"></a>2.2 <code>bind logdw failed: No such file or directory</code></h3><ul>
+<li><strong>根因</strong>：<code>/tmp/logdw</code> 不存在或不可执行（logdw 是 download 的日志守护）。</li>
+<li><strong>修复</strong>：<code>ls -la /tmp/logdw</code>；缺失则 <code>cp /mnt/android_sys/bin/logdw /tmp/logdw 2&gt;/dev/null || cp /mnt/android_sys/bin/download_logd /tmp/logdw; chmod +x /tmp/logdw</code>。</li>
+</ul>
+<h3 id="2-3-download-进程反复退出-pid-为空"><a href="#2-3-download-进程反复退出-pid-为空" class="headerlink" title="2.3 download 进程反复退出 &#x2F; pid 为空"></a>2.3 download 进程反复退出 &#x2F; pid 为空</h3><ul>
+<li><strong>定位</strong>：<code>ps -eo pid,comm | grep download</code>；<code>tail -30 /tmp/dl_run.log</code></li>
+<li><strong>修复</strong>：先 <code>pkill -9 -f logdw; pkill -9 -f &#39;wcnd&#39;</code> 清残留，再 <code>setsid /tmp/logdw &amp;</code>、<code>setsid chroot /tmp/aand /bin/download -i wlan0 &amp;</code>；若仍退，用 <code>strace chroot /tmp/aand /bin/download -i wlan0 2&gt;&amp;1 | grep -E &quot;open|ENOENT&quot;</code> 看缺什么。</li>
+</ul>
+<hr>
+<h2 id="3-蓝牙上电层（②-wcnd-BT-OPEN）"><a href="#3-蓝牙上电层（②-wcnd-BT-OPEN）" class="headerlink" title="3. 蓝牙上电层（② wcnd + BT-OPEN）"></a>3. 蓝牙上电层（② wcnd + BT-OPEN）</h2><h3 id="3-1-BT-OPEN-返回-FAIL（头号问题）"><a href="#3-1-BT-OPEN-返回-FAIL（头号问题）" class="headerlink" title="3.1 BT-OPEN 返回 FAIL（头号问题）"></a>3.1 BT-OPEN 返回 FAIL（头号问题）</h3><ul>
+<li><strong>定位</strong>：<code>cat /tmp/bt_once.log</code>（期望 <code>push(17): WCNBTWIFI-CMD OK</code>；FAIL 则 600 权限问题）</li>
+<li><strong>根因</strong>：chroot 内 <code>/tmp/aand/proc/mdbg/*</code> 权限 600，wcnd 无权限操作调制解调器调试节点。</li>
+<li><strong>修复</strong>：<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chmod</span> 666 /tmp/aand/proc/mdbg/* 2&gt;/dev/null</span><br><span class="line"><span class="built_in">chmod</span> 666 /proc/mdbg/* 2&gt;/dev/null</span><br><span class="line"><span class="built_in">echo</span> 0 &gt; /proc/mdbg/wdtirq 2&gt;/dev/null</span><br><span class="line"><span class="comment"># 重启 wcnd + 重发 BT-OPEN</span></span><br><span class="line">pkill -9 -f <span class="string">&#x27;wcnd&#x27;</span>; <span class="built_in">sleep</span> 1</span><br><span class="line">setsid <span class="built_in">chroot</span> /tmp/aand /bin/wcnd &gt;/tmp/wcnd_console.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"><span class="built_in">sleep</span> 2</span><br><span class="line">setsid /tmp/bt_once 900 &gt;/tmp/bt_once.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"><span class="built_in">sleep</span> 3; <span class="built_in">cat</span> /tmp/bt_once.log</span><br></pre></td></tr></table></figure></li>
+<li><strong>提示</strong>：此权限<strong>重启后必丢</strong>，开机脚本 <code>bt_bringup.start</code> 已自动执行；手动调试时勿忘。</li>
+</ul>
+<h3 id="3-2-wcnd-没起来-bt-once-无任何输出"><a href="#3-2-wcnd-没起来-bt-once-无任何输出" class="headerlink" title="3.2 wcnd 没起来 &#x2F; bt_once 无任何输出"></a>3.2 wcnd 没起来 &#x2F; bt_once 无任何输出</h3><ul>
+<li><strong>定位</strong>：<code>ps -ef | grep &#39;[w]cnd&#39;</code>（wcnd 是 chroot 内进程，<code>comm</code> 可能显示为别的名字，用 <code>-ef</code> 看完整命令行）</li>
+<li><strong>修复</strong>：确保 WiFi 已拉起（SDIO 0x2331）后按 3.1 的启动序列重跑；注意 wcnd 依赖 <code>/tmp/aand</code> 环境和 download 常驻。</li>
+</ul>
+<hr>
+<h2 id="4-引擎-唤醒层（③-btwrite-→-HCI）"><a href="#4-引擎-唤醒层（③-btwrite-→-HCI）" class="headerlink" title="4. 引擎 &#x2F; 唤醒层（③ btwrite → HCI）"></a>4. 引擎 &#x2F; 唤醒层（③ btwrite → HCI）</h2><h3 id="4-1-HCI-无响应-只回一次-SPRD3-帧（关键！）"><a href="#4-1-HCI-无响应-只回一次-SPRD3-帧（关键！）" class="headerlink" title="4.1 HCI 无响应 &#x2F; 只回一次 SPRD3 帧（关键！）"></a>4.1 HCI 无响应 &#x2F; 只回一次 SPRD3 帧（关键！）</h3><ul>
+<li><strong>现象</strong>：<code>bt_probe_full</code> 发 HCI Reset 收不到响应；或只收到一次 <code>55 7e 00 81 00 06 53 50 52 44 33 00 57 0a 7e</code>（SPRD3 身份帧）后无后续。</li>
+<li><strong>根因</strong>：蓝牙引擎上电后默认省电休眠，<strong>必须周期性 btwrite 唤醒</strong>才有 HCI 响应。</li>
+<li><strong>定位</strong>：<code>[ -w /proc/bluetooth/sleep/btwrite ] &amp;&amp; echo WRITABLE || echo NO</code>；<code>ps -eo args | grep &#39;[b]t_wake.sh&#39;</code></li>
+<li><strong>修复</strong>：启动唤醒脚本（每 1.5~2s 写 1）：<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">setsid /bin/sh /tmp/bt_wake.sh &gt;/dev/null 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"><span class="built_in">echo</span> 1 &gt; /proc/bluetooth/sleep/btwrite &amp;&amp; <span class="built_in">echo</span> WRITE_OK</span><br></pre></td></tr></table></figure></li>
+<li><strong>注意</strong>：<code>bt_wake.sh</code> 必须在蓝牙工作期间一直跑；扫描时尤其不能停。</li>
+</ul>
+<h3 id="4-2-SPRD3-帧的含义"><a href="#4-2-SPRD3-帧的含义" class="headerlink" title="4.2 SPRD3 帧的含义"></a>4.2 SPRD3 帧的含义</h3><ul>
+<li><code>55 7e 00 81 ... 53 50 52 44 33 ...</code> 中的 <code>SPRD3</code> 是展讯启动标识——<strong>收到它说明 HCI 通道活了、固件在跑</strong>。此时若标准 HCI 命令无响应，优先查唤醒（4.1）与 daemon 波特率（4.3）。</li>
+</ul>
+<h3 id="4-3-daemon-日志-“Not-a-tty”-HCI-全无响应"><a href="#4-3-daemon-日志-“Not-a-tty”-HCI-全无响应" class="headerlink" title="4.3 daemon 日志 “Not a tty” &#x2F; HCI 全无响应"></a>4.3 daemon 日志 “Not a tty” &#x2F; HCI 全无响应</h3><ul>
+<li><strong>根因</strong>：ttyS0 的 line discipline（ldisc）被占&#x2F;被破坏（早期测试残留），打开失败或收发异常。</li>
+<li><strong>定位</strong>：<code>tail -10 /tmp/btud.log</code></li>
+<li><strong>修复</strong>：用 python 恢复 N_TTY（TIOCSETD&#x3D;0x5421，N_TTY&#x3D;0）：<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">python3 -c <span class="string">&quot;import fcntl; f=open(&#x27;/dev/ttyS0&#x27;,2); fcntl.ioctl(f,0x5421,b&#x27;\x00\x00\x00\x00&#x27;)&quot;</span></span><br><span class="line">pkill -9 -x bt_user_daemon; <span class="built_in">sleep</span> 1</span><br><span class="line">setsid /usr/local/bin/bt_user_daemon &gt;/tmp/btud.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br></pre></td></tr></table></figure></li>
+<li><strong>死路</strong>：<code>/tmp/reset_tty</code> 恢复 ldisc 会段错误，勿用。</li>
+</ul>
+<h3 id="4-4-波特率-UART-配置问题"><a href="#4-4-波特率-UART-配置问题" class="headerlink" title="4.4 波特率 &#x2F; UART 配置问题"></a>4.4 波特率 &#x2F; UART 配置问题</h3><ul>
+<li><strong>节点</strong>：<code>/sys/devices/70000000.uart/uart_conf</code>（<code>0x1a1</code>&#x3D;115200、<code>0x341</code>&#x3D;57600、daemon 用 3M）</li>
+<li><strong>规则</strong>：daemon 直接以 <code>B3000000 + CRTSCTS</code> 打开 ttyS0；<strong>不要</strong>在固件初始化后擅自改 uart_conf，否则固件与 daemon 波特率失配 → HCI 无响应。</li>
+<li><strong>定位</strong>：<code>cat /tmp/btud_dbg.log | tail -20</code>（看 TX&#x2F;RX hex 是否乱码）。</li>
+</ul>
+<h3 id="4-5-内核-hci0-注册但-TX-0"><a href="#4-5-内核-hci0-注册但-TX-0" class="headerlink" title="4.5 内核 hci0 注册但 TX&#x3D;0"></a>4.5 内核 hci0 注册但 TX&#x3D;0</h3><ul>
+<li><strong>根因</strong>：3.10.65 安卓定制内核与自编 <code>hci_uart.ko</code> 的 tty_struct 偏移不匹配；Alpine gcc14.2 编老内核模块报 <code>invalid module format</code>。</li>
+<li><strong>结论（死路）</strong>：<strong>放弃内核驱动路线</strong>，使用用户态 daemon（读写 &#x2F;dev&#x2F;ttyS0，不依赖内核蓝牙协议栈）。</li>
+</ul>
+<hr>
+<h2 id="5-应用层（④-daemon-→-socket-→-LVGL）"><a href="#5-应用层（④-daemon-→-socket-→-LVGL）" class="headerlink" title="5. 应用层（④ daemon → socket → LVGL）"></a>5. 应用层（④ daemon → socket → LVGL）</h2><h3 id="5-1-socket-connect-失败"><a href="#5-1-socket-connect-失败" class="headerlink" title="5.1 socket connect 失败"></a>5.1 socket connect 失败</h3><ul>
+<li><strong>定位</strong>：<code>[ -S /tmp/bt_ctl.sock ] &amp;&amp; echo YES || echo NO</code>；<code>ps -eo comm | grep &#39;[b]t_user_daemon&#39;</code></li>
+<li><strong>根因</strong>：daemon 多实例抢 socket &#x2F; socket 文件残留。</li>
+<li><strong>修复</strong>：<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pkill -9 -x bt_user_daemon; <span class="built_in">sleep</span> 1</span><br><span class="line"><span class="built_in">rm</span> -f /tmp/bt_ctl.sock</span><br><span class="line">setsid /usr/local/bin/bt_user_daemon &gt;/tmp/btud.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="5-2-state-查询无响应（Terminated）-重启后瞬时无响应"><a href="#5-2-state-查询无响应（Terminated）-重启后瞬时无响应" class="headerlink" title="5.2 state 查询无响应（Terminated）&#x2F; 重启后瞬时无响应"></a>5.2 state 查询无响应（Terminated）&#x2F; 重启后瞬时无响应</h3><ul>
+<li><strong>现象</strong>：重启后 socket 存在但 <code>state</code> 查询 6s 超时被杀（返回 Terminated）；稍等几秒后又正常。</li>
+<li><strong>根因</strong>：daemon 启动与蓝牙上电链（bt_bringup.start）无先后保证，daemon 在引擎未就绪时先打开 ttyS0 进入初始化，瞬时阻塞。</li>
+<li><strong>修复（已固化）</strong>：<code>/etc/init.d/bt_daemon</code> 的 <code>depend()</code> 应含 <code>after local</code>（确保上电链先完成）；验证：<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /etc/init.d/bt_daemon | grep -A4 depend</span><br><span class="line">rc-service bt_daemon restart</span><br><span class="line"><span class="comment"># 若仍无响应，等 10~15s 重试 state；仍不行按 5.1 单实例重启</span></span><br></pre></td></tr></table></figure></li>
+<li><strong>快速重试命令</strong>：<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">printf</span> <span class="string">&#x27;state\n&#x27;</span> | <span class="built_in">timeout</span> 5 python3 -c <span class="string">&quot;import socket,sys</span></span><br><span class="line"><span class="string">s=socket.socket(socket.AF_UNIX); s.connect(&#x27;/tmp/bt_ctl.sock&#x27;)</span></span><br><span class="line"><span class="string">s.sendall(sys.stdin.buffer.read()); s.shutdown(socket.SHUT_WR)</span></span><br><span class="line"><span class="string">print(s.recv(4096).decode())&quot;</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="5-3-扫描无结果（OK-0）"><a href="#5-3-扫描无结果（OK-0）" class="headerlink" title="5.3 扫描无结果（OK 0）"></a>5.3 扫描无结果（OK 0）</h3><ul>
+<li><strong>根因</strong>：未先发 <code>Write Scan Enable</code> 就发 Inquiry——固件接受 Inquiry（CMD_STATUS 0x00）但永不回 Inquiry Result。</li>
+<li><strong>修复</strong>：<strong>走 daemon 的 <code>scan</code> 命令</strong>（内部已处理顺序），勿裸发 Inquiry：<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">printf</span> <span class="string">&#x27;scan 15\n&#x27;</span> | <span class="built_in">timeout</span> 25 python3 -c <span class="string">&quot;import socket,sys</span></span><br><span class="line"><span class="string">s=socket.socket(socket.AF_UNIX); s.connect(&#x27;/tmp/bt_ctl.sock&#x27;)</span></span><br><span class="line"><span class="string">s.sendall(sys.stdin.buffer.read()); s.shutdown(socket.SHUT_WR)</span></span><br><span class="line"><span class="string">d=b&#x27;&#x27;</span></span><br><span class="line"><span class="string">while True:</span></span><br><span class="line"><span class="string">    x=s.recv(4096)</span></span><br><span class="line"><span class="string">    if not x: break</span></span><br><span class="line"><span class="string">    d+=x</span></span><br><span class="line"><span class="string">print(d.decode())&quot;</span></span><br><span class="line"><span class="comment"># 期望 OK &lt;N&gt; + 每行 bd_addr class rssi</span></span><br></pre></td></tr></table></figure></li>
+<li>若环境确实无蓝牙设备，N&#x3D;0 不算故障。</li>
+</ul>
+<h3 id="5-4-蓝牙页开关无反应"><a href="#5-4-蓝牙页开关无反应" class="headerlink" title="5.4 蓝牙页开关无反应"></a>5.4 蓝牙页开关无反应</h3><ul>
+<li><strong>定位</strong>：确认 daemon 单实例 + state 返回 <code>OK ON</code>（先过 5.1&#x2F;5.2）；再看 LVGL 日志 <code>/tmp/lvgl_demo.log</code> 是否有 socket 报错。</li>
+<li><strong>修复</strong>：多为 daemon 侧问题，按 5.1 重置；页面本身只做 socket 文本交互，不持有 HCI 状态。</li>
+</ul>
+<hr>
+<h2 id="6-系统-自启层"><a href="#6-系统-自启层" class="headerlink" title="6. 系统 &#x2F; 自启层"></a>6. 系统 &#x2F; 自启层</h2><h3 id="6-1-重启后蓝牙不自动拉起"><a href="#6-1-重启后蓝牙不自动拉起" class="headerlink" title="6.1 重启后蓝牙不自动拉起"></a>6.1 重启后蓝牙不自动拉起</h3><ul>
+<li><strong>定位</strong>：<code>rc-update show | grep -E &#39;bt_daemon|local&#39;</code>；<code>ls /etc/local.d/</code>（应有 wifi.start、bt_bringup.start、lvgl_demo.start）</li>
+<li><strong>修复</strong>：<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 缺上电链脚本则创建（内容见 AI工作流 deploy/bt_bringup.start）</span></span><br><span class="line"><span class="comment"># 缺 daemon 自启则：</span></span><br><span class="line">rc-update add bt_daemon default</span><br><span class="line">rc-service bt_daemon start</span><br></pre></td></tr></table></figure></li>
+<li><strong>完整自启链</strong>：<code>wifi.start</code>（WiFi 前提）→ <code>bt_bringup.start</code>（sleep 8 + mdbg + wcnd + bt_once + bt_wake）→ <code>bt_daemon</code>（openrc，<code>after local</code>）。</li>
+</ul>
+<h3 id="6-2-daemon-与上电链顺序错乱"><a href="#6-2-daemon-与上电链顺序错乱" class="headerlink" title="6.2 daemon 与上电链顺序错乱"></a>6.2 daemon 与上电链顺序错乱</h3><ul>
+<li><strong>症状</strong>：重启后 daemon 进程在但 state 长期无响应。</li>
+<li><strong>修复</strong>：确认 <code>/etc/init.d/bt_daemon</code> 的 <code>depend()</code> 含 <code>after local</code>；改后 <code>rc-update del bt_daemon default; rc-update add bt_daemon default; reboot</code> 验证。</li>
+</ul>
+<h3 id="6-3-LVGL-蓝牙页反复变回旧版-页面缺失"><a href="#6-3-LVGL-蓝牙页反复变回旧版-页面缺失" class="headerlink" title="6.3 LVGL 蓝牙页反复变回旧版 &#x2F; 页面缺失"></a>6.3 LVGL 蓝牙页反复变回旧版 &#x2F; 页面缺失</h3><ul>
+<li><strong>根因</strong>：watchdog &#x2F; 开机脚本指向 <code>build/</code> 旧路径。</li>
+<li><strong>修复</strong>：统一指向 <code>/usr/local/bin/lvgl_demo</code>；确认 <code>bluetooth_page.c/h</code> 已编译进镜像并注册（launcher 图标）。</li>
+</ul>
+<hr>
+<h2 id="7-通用系统问题"><a href="#7-通用系统问题" class="headerlink" title="7. 通用系统问题"></a>7. 通用系统问题</h2><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>根因</th>
+<th>修复</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WiFi&#x2F;蓝牙一起没了</td>
+<td>download 被杀 &#x2F; 固件状态破坏</td>
+<td><strong>整机重启</strong>，别手动”干净重来”；重启后自动链恢复</td>
+</tr>
+<tr>
+<td>重启后 SSH 不通</td>
+<td>USB 口复用切换</td>
+<td>轮询 <code>&lt;设备IP&gt;</code> 与 <code>&lt;WiFi-IP&gt;</code>（本机可用 skill 的 ssh_wait.py）</td>
+</tr>
+<tr>
+<td>日期退回 2016</td>
+<td>RTC 未同步</td>
+<td><code>hwclock -s</code> &#x2F; ntpd；确认 <code>/etc/local.d/time_sync.start</code> 存在</td>
+</tr>
+<tr>
+<td>蓝牙扫描时 WiFi 掉</td>
+<td>罕见共存问题</td>
+<td>确认 download 常驻 + 重启后优先拉起 WiFi 链</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-诊断工具箱（关键节点速查）"><a href="#8-诊断工具箱（关键节点速查）" class="headerlink" title="8. 诊断工具箱（关键节点速查）"></a>8. 诊断工具箱（关键节点速查）</h2><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>路径&#x2F;命令</th>
+<th>期望</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SDIO 枚举</td>
+<td><code>cat /sys/bus/sdio/devices/mmc2:8800:1/device</code></td>
+<td><code>0x2331</code></td>
+</tr>
+<tr>
+<td>固件下载日志</td>
+<td><code>/var/log/wifi_boot.log</code>、<code>/tmp/logdw.log</code>、<code>/tmp/dl_run.log</code></td>
+<td>download 完成、无 ERROR</td>
+</tr>
+<tr>
+<td>BT-OPEN 结果</td>
+<td><code>grep &#39;CMD OK&#39; /tmp/bt_once.log</code></td>
+<td><code>WCNBTWIFI-CMD OK</code></td>
+</tr>
+<tr>
+<td>唤醒节点</td>
+<td><code>[ -w /proc/bluetooth/sleep/btwrite ]</code></td>
+<td>WRITABLE</td>
+</tr>
+<tr>
+<td>UART 配置</td>
+<td><code>cat /sys/devices/70000000.uart/uart_conf</code></td>
+<td>daemon 用 3M 打开</td>
+</tr>
+<tr>
+<td>HCI 探针</td>
+<td><code>/tmp/bt_probe_full 20</code></td>
+<td>六步全通</td>
+</tr>
+<tr>
+<td>daemon 进程</td>
+<td><code>ps -eo comm | grep &#39;[b]t_user_daemon&#39;</code></td>
+<td>单实例</td>
+</tr>
+<tr>
+<td>daemon 日志</td>
+<td><code>/tmp/btud.log</code>（stdout）、<code>/tmp/btud_dbg.log</code>（TX&#x2F;RX hex）</td>
+<td>无 Not a tty、有 RX</td>
+</tr>
+<tr>
+<td>socket</td>
+<td><code>[ -S /tmp/bt_ctl.sock ]</code></td>
+<td>YES</td>
+</tr>
+<tr>
+<td>开机脚本</td>
+<td><code>ls /etc/local.d/</code>、<code>rc-update show</code></td>
+<td>wifi.start &#x2F; bt_bringup.start &#x2F; bt_daemon 均在 default</td>
+</tr>
+</tbody></table>
+<p><strong>进程链</strong>：<code>logdw → download(常驻) → wcnd → bt_once(BT-OPEN) → bt_wake.sh(btwrite) → bt_user_daemon(socket)</code></p>
+<hr>
+<h2 id="9-已验证死路（不要重试）"><a href="#9-已验证死路（不要重试）" class="headerlink" title="9. 已验证死路（不要重试）"></a>9. 已验证死路（不要重试）</h2><table>
+<thead>
+<tr>
+<th>路线</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>内核 <code>hci_uart.ko</code></td>
+<td>hci0 能注册但 TX&#x3D;0 &#x2F; up 超时，驱动偏移不匹配</td>
+</tr>
+<tr>
+<td>vhci 虚拟方案</td>
+<td>用户否决</td>
+</tr>
+<tr>
+<td>反复黑盒试引导命令序列</td>
+<td>不完整、状态不稳定，且不影响扫描功能</td>
+</tr>
+<tr>
+<td><code>/tmp/reset_tty</code> 恢复 ldisc</td>
+<td>段错误，用 python ioctl</td>
+</tr>
+<tr>
+<td>杀 download “重启干净环境”</td>
+<td>破坏固件状态，整机重启才恢复</td>
+</tr>
+<tr>
+<td><code>ps | grep</code> 内嵌杀进程</td>
+<td>误杀 shell 自身</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="10-红线（任何情况下）"><a href="#10-红线（任何情况下）" class="headerlink" title="10. 红线（任何情况下）"></a>10. 红线（任何情况下）</h2><ol>
+<li><strong>download 常驻勿杀</strong>。</li>
+<li><strong>驱动顺序</strong>：<code>marlin_fm.ko</code> 先、<code>sprdwl.ko</code> 后。</li>
+<li>杀进程：<code>pkill -9 -x &lt;名字&gt;</code>。</li>
+<li>重启后 mdbg chmod 666（脚本自动做）。</li>
+<li>蓝牙工作期间 <code>bt_wake.sh</code> 不停。</li>
+<li>不修改 USB OTG &#x2F; 网络模式配置。</li>
+</ol>
+<hr>
+<h2 id="配套：蓝牙芯片打通-操作手册（人用）、蓝牙打通-AI指导手册（AI-用）、HT0蓝牙拉起-部署交付文档（部署用）"><a href="#配套：蓝牙芯片打通-操作手册（人用）、蓝牙打通-AI指导手册（AI-用）、HT0蓝牙拉起-部署交付文档（部署用）" class="headerlink" title="配套：蓝牙芯片打通_操作手册（人用）、蓝牙打通_AI指导手册（AI 用）、HT0蓝牙拉起_部署交付文档（部署用）"></a><em>配套：蓝牙芯片打通_操作手册（人用）、蓝牙打通_AI指导手册（AI 用）、HT0蓝牙拉起_部署交付文档（部署用）</em></h2><blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-%E8%93%9D%E7%89%99%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E6%89%8B%E5%86%8C-%E2%80%94%E2%80%94-HT0-spd-box"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A 蓝牙故障排查手册 —— HT0 &#x2F; spd-box</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E6%8E%92%E9%9A%9C%E7%BA%AA%E5%BE%8B%EF%BC%88%E5%85%88%E8%AF%BB%EF%BC%8C%E8%BF%9D%E5%8F%8D%E4%BC%9A%E6%B5%AA%E8%B4%B9%E6%97%B6%E9%97%B4%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">0. 排障纪律（先读，违反会浪费时间）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%88%86%E5%B1%82%E6%95%85%E9%9A%9C%E9%80%9F%E6%9F%A5%E6%80%BB%E8%A1%A8%EF%BC%88%E4%B8%80%E9%A1%B5%E5%AE%9A%E4%BD%8D%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 分层故障速查总表（一页定位）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%89%A9%E7%90%86-%E5%9B%BA%E4%BB%B6%E5%B1%82%EF%BC%88%E2%91%A0-download-%E2%86%92-SDIO%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. 物理 &#x2F; 固件层（① download → SDIO）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-SDIO-not-enumerated-download-may-have-failed"><span class="toc-number">1.3.1.</span> <span class="toc-text">2.1 SDIO not enumerated, download may have failed</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-bind-logdw-failed-No-such-file-or-directory"><span class="toc-number">1.3.2.</span> <span class="toc-text">2.2 bind logdw failed: No such file or directory</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-download-%E8%BF%9B%E7%A8%8B%E5%8F%8D%E5%A4%8D%E9%80%80%E5%87%BA-pid-%E4%B8%BA%E7%A9%BA"><span class="toc-number">1.3.3.</span> <span class="toc-text">2.3 download 进程反复退出 &#x2F; pid 为空</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%93%9D%E7%89%99%E4%B8%8A%E7%94%B5%E5%B1%82%EF%BC%88%E2%91%A1-wcnd-BT-OPEN%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">3. 蓝牙上电层（② wcnd + BT-OPEN）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-BT-OPEN-%E8%BF%94%E5%9B%9E-FAIL%EF%BC%88%E5%A4%B4%E5%8F%B7%E9%97%AE%E9%A2%98%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 BT-OPEN 返回 FAIL（头号问题）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-wcnd-%E6%B2%A1%E8%B5%B7%E6%9D%A5-bt-once-%E6%97%A0%E4%BB%BB%E4%BD%95%E8%BE%93%E5%87%BA"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 wcnd 没起来 &#x2F; bt_once 无任何输出</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%BC%95%E6%93%8E-%E5%94%A4%E9%86%92%E5%B1%82%EF%BC%88%E2%91%A2-btwrite-%E2%86%92-HCI%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 引擎 &#x2F; 唤醒层（③ btwrite → HCI）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-HCI-%E6%97%A0%E5%93%8D%E5%BA%94-%E5%8F%AA%E5%9B%9E%E4%B8%80%E6%AC%A1-SPRD3-%E5%B8%A7%EF%BC%88%E5%85%B3%E9%94%AE%EF%BC%81%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 HCI 无响应 &#x2F; 只回一次 SPRD3 帧（关键！）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-SPRD3-%E5%B8%A7%E7%9A%84%E5%90%AB%E4%B9%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 SPRD3 帧的含义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-daemon-%E6%97%A5%E5%BF%97-%E2%80%9CNot-a-tty%E2%80%9D-HCI-%E5%85%A8%E6%97%A0%E5%93%8D%E5%BA%94"><span class="toc-number">1.5.3.</span> <span class="toc-text">4.3 daemon 日志 “Not a tty” &#x2F; HCI 全无响应</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E6%B3%A2%E7%89%B9%E7%8E%87-UART-%E9%85%8D%E7%BD%AE%E9%97%AE%E9%A2%98"><span class="toc-number">1.5.4.</span> <span class="toc-text">4.4 波特率 &#x2F; UART 配置问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-%E5%86%85%E6%A0%B8-hci0-%E6%B3%A8%E5%86%8C%E4%BD%86-TX-0"><span class="toc-number">1.5.5.</span> <span class="toc-text">4.5 内核 hci0 注册但 TX&#x3D;0</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%BA%94%E7%94%A8%E5%B1%82%EF%BC%88%E2%91%A3-daemon-%E2%86%92-socket-%E2%86%92-LVGL%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">5. 应用层（④ daemon → socket → LVGL）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-socket-connect-%E5%A4%B1%E8%B4%A5"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 socket connect 失败</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-state-%E6%9F%A5%E8%AF%A2%E6%97%A0%E5%93%8D%E5%BA%94%EF%BC%88Terminated%EF%BC%89-%E9%87%8D%E5%90%AF%E5%90%8E%E7%9E%AC%E6%97%B6%E6%97%A0%E5%93%8D%E5%BA%94"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 state 查询无响应（Terminated）&#x2F; 重启后瞬时无响应</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E6%89%AB%E6%8F%8F%E6%97%A0%E7%BB%93%E6%9E%9C%EF%BC%88OK-0%EF%BC%89"><span class="toc-number">1.6.3.</span> <span class="toc-text">5.3 扫描无结果（OK 0）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-4-%E8%93%9D%E7%89%99%E9%A1%B5%E5%BC%80%E5%85%B3%E6%97%A0%E5%8F%8D%E5%BA%94"><span class="toc-number">1.6.4.</span> <span class="toc-text">5.4 蓝牙页开关无反应</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E7%B3%BB%E7%BB%9F-%E8%87%AA%E5%90%AF%E5%B1%82"><span class="toc-number">1.7.</span> <span class="toc-text">6. 系统 &#x2F; 自启层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E9%87%8D%E5%90%AF%E5%90%8E%E8%93%9D%E7%89%99%E4%B8%8D%E8%87%AA%E5%8A%A8%E6%8B%89%E8%B5%B7"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 重启后蓝牙不自动拉起</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-daemon-%E4%B8%8E%E4%B8%8A%E7%94%B5%E9%93%BE%E9%A1%BA%E5%BA%8F%E9%94%99%E4%B9%B1"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 daemon 与上电链顺序错乱</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-LVGL-%E8%93%9D%E7%89%99%E9%A1%B5%E5%8F%8D%E5%A4%8D%E5%8F%98%E5%9B%9E%E6%97%A7%E7%89%88-%E9%A1%B5%E9%9D%A2%E7%BC%BA%E5%A4%B1"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 LVGL 蓝牙页反复变回旧版 &#x2F; 页面缺失</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E9%80%9A%E7%94%A8%E7%B3%BB%E7%BB%9F%E9%97%AE%E9%A2%98"><span class="toc-number">1.8.</span> <span class="toc-text">7. 通用系统问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7%E7%AE%B1%EF%BC%88%E5%85%B3%E9%94%AE%E8%8A%82%E7%82%B9%E9%80%9F%E6%9F%A5%EF%BC%89"><span class="toc-number">1.9.</span> <span class="toc-text">8. 诊断工具箱（关键节点速查）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E5%B7%B2%E9%AA%8C%E8%AF%81%E6%AD%BB%E8%B7%AF%EF%BC%88%E4%B8%8D%E8%A6%81%E9%87%8D%E8%AF%95%EF%BC%89"><span class="toc-number">1.10.</span> <span class="toc-text">9. 已验证死路（不要重试）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E7%BA%A2%E7%BA%BF%EF%BC%88%E4%BB%BB%E4%BD%95%E6%83%85%E5%86%B5%E4%B8%8B%EF%BC%89"><span class="toc-number">1.11.</span> <span class="toc-text">10. 红线（任何情况下）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E5%A5%97%EF%BC%9A%E8%93%9D%E7%89%99%E8%8A%AF%E7%89%87%E6%89%93%E9%80%9A-%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C%EF%BC%88%E4%BA%BA%E7%94%A8%EF%BC%89%E3%80%81%E8%93%9D%E7%89%99%E6%89%93%E9%80%9A-AI%E6%8C%87%E5%AF%BC%E6%89%8B%E5%86%8C%EF%BC%88AI-%E7%94%A8%EF%BC%89%E3%80%81HT0%E8%93%9D%E7%89%99%E6%8B%89%E8%B5%B7-%E9%83%A8%E7%BD%B2%E4%BA%A4%E4%BB%98%E6%96%87%E6%A1%A3%EF%BC%88%E9%83%A8%E7%BD%B2%E7%94%A8%EF%BC%89"><span class="toc-number">1.12.</span> <span class="toc-text">配套：蓝牙芯片打通_操作手册（人用）、蓝牙打通_AI指导手册（AI 用）、HT0蓝牙拉起_部署交付文档（部署用）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/13/bt-07-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&text=蓝牙芯片打通_故障排查手册"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&title=蓝牙芯片打通_故障排查手册"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&is_video=false&description=蓝牙芯片打通_故障排查手册"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=蓝牙芯片打通_故障排查手册&body=Check out this article: https://whiteleibniz.github.io/2026/09/13/bt-07-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&title=蓝牙芯片打通_故障排查手册"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&title=蓝牙芯片打通_故障排查手册"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&title=蓝牙芯片打通_故障排查手册"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&title=蓝牙芯片打通_故障排查手册"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/13/bt-07-md/&name=蓝牙芯片打通_故障排查手册&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

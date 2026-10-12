@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="HT0 蓝牙原理与移植学习 Wiki 这份文档不是操作手册，而是原理课：讲清楚这颗蓝牙芯片为什么这么启动、安卓原来怎么做、我们为什么改成现在这样、每一行关键代码在干什么。读完你应该能：面对一台”安卓内核 + 别的用户态”的 combo 蓝牙设备，自己分析出该怎么把蓝牙拉起来。   0. 一句话先建立直觉 蓝牙不是一个”软件开关”，而是一颗需要按特定时序上电、唤醒、喂固件、再讲 HCI 协议的小处理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HT0蓝牙原理与移植学习Wiki">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="HT0 蓝牙原理与移植学习 Wiki 这份文档不是操作手册，而是原理课：讲清楚这颗蓝牙芯片为什么这么启动、安卓原来怎么做、我们为什么改成现在这样、每一行关键代码在干什么。读完你应该能：面对一台”安卓内核 + 别的用户态”的 combo 蓝牙设备，自己分析出该怎么把蓝牙拉起来。   0. 一句话先建立直觉 蓝牙不是一个”软件开关”，而是一颗需要按特定时序上电、唤醒、喂固件、再讲 HCI 协议的小处理">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-21T03:57:09.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.600Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="蓝牙">
+<meta property="article:tag" content="WCN">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>HT0蓝牙原理与移植学习Wiki</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/21/lvgl-arch-01-lvgl-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/21/bt-02-ht0-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&text=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&title=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&is_video=false&description=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=HT0蓝牙原理与移植学习Wiki&body=Check out this article: https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&title=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&title=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&title=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&title=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&name=HT0蓝牙原理与移植学习Wiki&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-%E8%93%9D%E7%89%99%E5%8E%9F%E7%90%86%E4%B8%8E%E7%A7%BB%E6%A4%8D%E5%AD%A6%E4%B9%A0-Wiki"><span class="toc-number">1.</span> <span class="toc-text">HT0 蓝牙原理与移植学习 Wiki</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%85%88%E5%BB%BA%E7%AB%8B%E7%9B%B4%E8%A7%89"><span class="toc-number">1.1.</span> <span class="toc-text">0. 一句话先建立直觉</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%A1%AC%E4%BB%B6%E9%95%BF%E4%BB%80%E4%B9%88%E6%A0%B7"><span class="toc-number">1.2.</span> <span class="toc-text">1. 硬件长什么样</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E8%93%9D%E7%89%99%E8%83%BD%E7%94%A8%E7%9A%84%E4%BA%94%E5%B1%82%E6%A8%A1%E5%9E%8B%EF%BC%88%E6%9C%80%E9%87%8D%E8%A6%81%E7%9A%84%E5%88%86%E6%9E%90%E6%A1%86%E6%9E%B6%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. 蓝牙能用的五层模型（最重要的分析框架）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%85%B3%E9%94%AE%E6%A6%82%E5%BF%B5%E9%80%90%E4%B8%AA%E8%AE%B2%E9%80%8F"><span class="toc-number">1.4.</span> <span class="toc-text">3. 关键概念逐个讲透</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-HCI-%E5%92%8C-H4-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 HCI 和 H4 是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E5%91%BD%E4%BB%A4%E6%80%8E%E4%B9%88%E7%BC%96%E7%A0%81"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 命令怎么编码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-SPRD3-%E8%BA%AB%E4%BB%BD%E5%B8%A7%E2%80%94%E2%80%94%E2%80%9C%E5%BC%95%E6%93%8E%E6%B4%BB%E4%BA%86%E2%80%9D%E7%9A%84%E4%BF%A1%E5%8F%B7"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 SPRD3 身份帧——“引擎活了”的信号</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-btwrite%E2%80%94%E2%80%94%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%8F%8D%E5%A4%8D%E5%86%99"><span class="toc-number">1.4.4.</span> <span class="toc-text">3.4 btwrite——为什么要反复写</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-pskey%E2%80%94%E2%80%94%E8%93%9D%E7%89%99%E7%9A%84%E2%80%9D%E5%87%BA%E5%8E%82%E4%B8%AA%E6%80%A7%E5%8C%96%E5%8F%82%E6%95%B0%E2%80%9D"><span class="toc-number">1.4.5.</span> <span class="toc-text">3.5 pskey——蓝牙的”出厂个性化参数”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-6-%E4%B8%80%E4%B8%AA%E5%8E%82%E5%95%86%E9%9A%90%E8%97%8F%E8%A6%81%E6%B1%82%EF%BC%9AWrite-Scan-Enable-%E5%89%8D%E7%BD%AE"><span class="toc-number">1.4.6.</span> <span class="toc-text">3.6 一个厂商隐藏要求：Write Scan Enable 前置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%AE%89%E5%8D%93%E5%8E%9F%E7%94%9F%E6%98%AF%E6%80%8E%E4%B9%88%E5%B9%B2%E7%9A%84%EF%BC%88%E5%AF%B9%E7%85%A7%E6%A0%B7%E6%9C%AC%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 安卓原生是怎么干的（对照样本）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%88%91%E4%BB%AC%E7%9A%84-Alpine-%E6%96%B9%E6%A1%88%EF%BC%9A%E7%94%A8%E6%9C%80%E5%B0%91%E4%BB%A3%E7%A0%81%E6%9B%BF%E6%8D%A2%E4%B8%80%E6%95%B4%E5%A5%97"><span class="toc-number">1.6.</span> <span class="toc-text">5. 我们的 Alpine 方案：用最少代码替换一整套</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E5%90%AF%E5%8A%A8%E9%93%BE%EF%BC%88%E5%BC%80%E6%9C%BA%E8%87%AA%E5%8A%A8%E8%B7%91%EF%BC%89"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 启动链（开机自动跑）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E4%B8%89%E4%B8%AA%E5%85%B3%E9%94%AE%E5%86%B3%E7%AD%96%EF%BC%88%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E4%B9%88%E9%80%89%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 三个关键决策（为什么这么选）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E9%82%A3%E4%B8%AA%E2%80%9D%E6%9D%83%E9%99%90%E5%9D%91%E2%80%9D"><span class="toc-number">1.6.3.</span> <span class="toc-text">5.3 那个”权限坑”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB%EF%BC%9Adaemon-%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="toc-number">1.7.</span> <span class="toc-text">6. 源码解读：daemon 在干什么</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E9%85%8D%E4%B8%B2%E5%8F%A3%EF%BC%883M-%E7%A1%AC%E4%BB%B6%E6%B5%81%E6%8E%A7%EF%BC%89"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 配串口（3M + 硬件流控）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E8%AF%BB%E4%B8%80%E5%B8%A7%E5%AE%8C%E6%95%B4-H4-%E5%8C%85"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 读一帧完整 H4 包</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E6%89%AB%E6%8F%8F%E7%9A%84%E5%AE%8C%E6%95%B4%E6%B5%81%E7%A8%8B"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 扫描的完整流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-4-%E5%AF%B9%E5%A4%96%E6%8E%A5%E5%8F%A3%EF%BC%9Aunix-socket"><span class="toc-number">1.7.4.</span> <span class="toc-text">6.4 对外接口：unix socket</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-A2DP-%E7%9C%9F%E5%AE%9E%E9%9F%B3%E9%A2%91%E6%92%AD%E6%94%BE%EF%BC%88v1-0-3-%E6%96%B0%E5%A2%9E%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">7. A2DP 真实音频播放（v1.0.3 新增）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-%E9%9F%B3%E9%A2%91%E7%AE%A1%E7%BA%BF"><span class="toc-number">1.8.1.</span> <span class="toc-text">7.1 音频管线</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-%E4%B8%89%E4%B8%AA%E8%B8%A9%E5%87%BA%E6%9D%A5%E7%9A%84%E5%85%B3%E9%94%AE%E5%8F%82%E6%95%B0"><span class="toc-number">1.8.2.</span> <span class="toc-text">7.2 三个踩出来的关键参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E6%8E%92%E9%9A%9C%E6%96%B9%E6%B3%95%E8%AE%BA%EF%BC%88%E8%BF%81%E7%A7%BB%E6%97%B6%E7%85%A7%E8%BF%99%E4%B8%AA%E6%9F%A5%EF%BC%89"><span class="toc-number">1.9.</span> <span class="toc-text">8. 排障方法论（迁移时照这个查）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E8%BF%81%E7%A7%BB%E5%88%B0%E7%B1%BB%E4%BC%BC%E8%AE%BE%E5%A4%87%E7%9A%84%E9%80%9A%E7%94%A8%E6%B8%85%E5%8D%95"><span class="toc-number">1.10.</span> <span class="toc-text">9. 迁移到类似设备的通用清单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E8%BF%99%E4%BB%BD-wiki-%E6%83%B3%E8%AE%A9%E4%BD%A0%E8%AE%B0%E4%BD%8F%E7%9A%84"><span class="toc-number">1.11.</span> <span class="toc-text">10. 这份 wiki 想让你记住的</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        HT0蓝牙原理与移植学习Wiki
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-21T03:57:09.000Z" itemprop="datePublished">2026-09-21</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/WCN/" rel="tag">WCN</a>, <a class="tag-link-link" href="/tags/%E8%93%9D%E7%89%99/" rel="tag">蓝牙</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="HT0-蓝牙原理与移植学习-Wiki"><a href="#HT0-蓝牙原理与移植学习-Wiki" class="headerlink" title="HT0 蓝牙原理与移植学习 Wiki"></a>HT0 蓝牙原理与移植学习 Wiki</h1><blockquote>
+<p>这份文档不是操作手册，而是<strong>原理课</strong>：讲清楚这颗蓝牙芯片为什么这么启动、安卓原来怎么做、我们为什么改成现在这样、每一行关键代码在干什么。<br>读完你应该能：面对一台”安卓内核 + 别的用户态”的 combo 蓝牙设备，自己分析出该怎么把蓝牙拉起来。</p>
+</blockquote>
+<hr>
+<h2 id="0-一句话先建立直觉"><a href="#0-一句话先建立直觉" class="headerlink" title="0. 一句话先建立直觉"></a>0. 一句话先建立直觉</h2><blockquote>
+<p>蓝牙不是一个”软件开关”，而是一颗<strong>需要按特定时序上电、唤醒、喂固件、再讲 HCI 协议</strong>的小处理器。<br>安卓用一整套服务（init + download + wcnd + libbt-vendor + Bluedroid）替你把这套时序做了；<br>我们把这套时序<strong>用最少的代码重写了一遍</strong>，跑在 Alpine 用户态上。</p>
+</blockquote>
+<hr>
+<h2 id="1-硬件长什么样"><a href="#1-硬件长什么样" class="headerlink" title="1. 硬件长什么样"></a>1. 硬件长什么样</h2><p>这颗芯片叫 <strong>Marlin combo WCN</strong>（展讯 SC9832A 平台），”combo”&#x3D; 一颗芯片同时做 WiFi 和蓝牙：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">  ┌──────────────────────────────┐</span><br><span class="line">  │      Marlin combo WCN        │</span><br><span class="line">  │  ┌─────────┐   ┌───────────┐ │</span><br><span class="line">  │  │ WiFi     │   │ Bluetooth │ │</span><br><span class="line">  │  │ (wlan0)  │   │ (HCI 引擎)│ │</span><br><span class="line">  │  └─────────┘   └───────────┘ │</span><br><span class="line">  └────┬──────────────────┬──────┘</span><br><span class="line">       │ SDIO             │ UART</span><br><span class="line">       │ (数据/固件)       │ ttyS0 (HCI 控制)</span><br><span class="line">mmc2:8800:1         /proc/bluetooth/sleep/btwrite</span><br><span class="line">(设备ID 0x2331)      (写1=唤醒蓝牙引擎)</span><br></pre></td></tr></table></figure>
+
+<p>两条通道，分工完全不同，这是理解一切的基础：</p>
+<table>
+<thead>
+<tr>
+<th>通道</th>
+<th>走什么</th>
+<th>干什么用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>SDIO</strong></td>
+<td>高速数据总线</td>
+<td>烧固件（WiFi+蓝牙一体的固件镜像大块写进去）、WiFi 数据</td>
+</tr>
+<tr>
+<td><strong>UART ttyS0</strong></td>
+<td>3M 波特率 + 硬件流控(CRTSCTS)</td>
+<td>蓝牙的 <strong>HCI 命令&#x2F;事件通道</strong>（发命令、收事件、传音频包）</td>
+</tr>
+<tr>
+<td><strong>btwrite 节点</strong></td>
+<td>一个 proc 文件</td>
+<td>写 <code>1</code> &#x3D; 把蓝牙引擎从低功耗叫醒</td>
+</tr>
+</tbody></table>
+<p><strong>关键认知</strong>：WiFi 和蓝牙<strong>共用同一份固件</strong>。所以”把 WiFi 拉起来”的同时，蓝牙固件也已经烧进芯片了——蓝牙缺的不是固件，而是<strong>上电、唤醒、有人跟它说话</strong>。</p>
+<hr>
+<h2 id="2-蓝牙能用的五层模型（最重要的分析框架）"><a href="#2-蓝牙能用的五层模型（最重要的分析框架）" class="headerlink" title="2. 蓝牙能用的五层模型（最重要的分析框架）"></a>2. 蓝牙能用的五层模型（最重要的分析框架）</h2><p>任何蓝牙设备能用，都要五层全通。**每一层都有明确的”验通标准”**，不通就停在那一层查，别跨层瞎试。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">① 物理/固件层   固件烧进去了吗？芯片上电了吗？</span><br><span class="line">                验通：SDIO 枚举出 0x2331；BT-OPEN 返回 OK</span><br><span class="line">② 通道层        HCI 串口能读写吗？</span><br><span class="line">                验通：往 ttyS0 发 Reset，能收到固件回的事件</span><br><span class="line">③ 引擎层        蓝牙引擎醒着吗？跑起来了吗？</span><br><span class="line">                验通：btwrite 唤醒后，固件回 &quot;SPRD3&quot; 身份帧</span><br><span class="line">④ 协议层        标准 HCI 命令它认吗？</span><br><span class="line">                验通：Read Version / Read BD_ADDR / Read Features 都回正常</span><br><span class="line">⑤ 应用层        UI 怎么调用？音频怎么流？</span><br><span class="line">                验通：扫描出设备、能连接、A2DP 能出声</span><br></pre></td></tr></table></figure>
+
+<p>我们这次几乎每踩一个坑，都是”误以为在上层，其实卡在下层”。比如：</p>
+<ul>
+<li>扫描不出设备 → 不是协议问题，是<strong>没先开扫描使能</strong>（第④层的厂商隐藏要求）；</li>
+<li>发命令没反应 → 不是命令错，是<strong>没唤醒引擎</strong>（第③层）；</li>
+<li>BT-OPEN 失败 → 不是命令错，是<strong>chroot 里 proc 节点权限 600</strong>（第①层的权限问题）。</li>
+</ul>
+<hr>
+<h2 id="3-关键概念逐个讲透"><a href="#3-关键概念逐个讲透" class="headerlink" title="3. 关键概念逐个讲透"></a>3. 关键概念逐个讲透</h2><h3 id="3-1-HCI-和-H4-是什么"><a href="#3-1-HCI-和-H4-是什么" class="headerlink" title="3.1 HCI 和 H4 是什么"></a>3.1 HCI 和 H4 是什么</h3><p><strong>HCI</strong>（Host Controller Interface）&#x3D; 主机（CPU）和蓝牙控制器（芯片）之间的标准对话协议。<br><strong>H4</strong> &#x3D; 在 UART 上传 HCI 的”打包格式”。每一包第一个字节是包类型：</p>
+<table>
+<thead>
+<tr>
+<th>首字节</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0x01</code></td>
+<td>Command（主机→芯片，命令）</td>
+</tr>
+<tr>
+<td><code>0x02</code></td>
+<td>ACL Data（双向，连接数据&#x2F;音频）</td>
+</tr>
+<tr>
+<td><code>0x04</code></td>
+<td>Event（芯片→主机，事件&#x2F;响应）</td>
+</tr>
+</tbody></table>
+<p>所以我们的 daemon 干的事，本质就是：**往 ttyS0 写 <code>0x01 + 命令码 + 参数</code>，再从 ttyS0 读 <code>0x04 + 事件码 + 数据</code>**。</p>
+<h3 id="3-2-命令怎么编码"><a href="#3-2-命令怎么编码" class="headerlink" title="3.2 命令怎么编码"></a>3.2 命令怎么编码</h3><p>一个 HCI 命令 &#x3D; 类型(1) + Opcode(2) + 参数长度(1) + 参数。<br>Opcode 拆成 OGF（组，高 6 位）和 OCF（命令，低 10 位）：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">opcode = (OGF &lt;&lt; <span class="number">10</span>) | OCF</span><br><span class="line"><span class="comment">// 例如 Inquiry(扫描)：OGF=0x01(链路控制), OCF=0x0001</span></span><br><span class="line"><span class="comment">// → opcode = (0x01&lt;&lt;10)|0x0001 = 0x0401</span></span><br></pre></td></tr></table></figure>
+
+<p>源码里 <code>send_cmd()</code> 就是把这个拼出来：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pkt[<span class="number">0</span>] = H4_CMD;              <span class="comment">// 0x01</span></span><br><span class="line">pkt[<span class="number">1</span>] = opcode &amp; <span class="number">0xff</span>;       <span class="comment">// opcode 低字节</span></span><br><span class="line">pkt[<span class="number">2</span>] = (opcode&gt;&gt;<span class="number">8</span>) &amp; <span class="number">0xff</span>;  <span class="comment">// opcode 高字节</span></span><br><span class="line">pkt[<span class="number">3</span>] = plen;                <span class="comment">// 参数长度</span></span><br><span class="line"><span class="built_in">memcpy</span>(pkt+<span class="number">4</span>, params, plen);  <span class="comment">// 参数</span></span><br><span class="line">write(fd, pkt, <span class="number">4</span>+plen);</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-SPRD3-身份帧——“引擎活了”的信号"><a href="#3-3-SPRD3-身份帧——“引擎活了”的信号" class="headerlink" title="3.3 SPRD3 身份帧——“引擎活了”的信号"></a>3.3 SPRD3 身份帧——“引擎活了”的信号</h3><p>唤醒后，固件会主动吐出一串：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">55 7e 00 81 00 06 53 50 52 44 33 00 57 0a 7e</span><br><span class="line">                  └──── &quot;SPRD3&quot; = 展讯芯片的 ASCII 标识</span><br></pre></td></tr></table></figure>
+<p>看到 <code>SPRD3</code> 就说明：蓝牙引擎已经从引导状态跑起来了，HCI 通道是活的，可以开始发标准命令了。<strong>这是第③层的验收标志。</strong></p>
+<h3 id="3-4-btwrite——为什么要反复写"><a href="#3-4-btwrite——为什么要反复写" class="headerlink" title="3.4 btwrite——为什么要反复写"></a>3.4 btwrite——为什么要反复写</h3><p>蓝牙引擎有<strong>低功耗睡眠</strong>。空闲时它会睡，这时候你发命令它根本不理。<br><code>/proc/bluetooth/sleep/btwrite</code> 写 <code>1</code> &#x3D; 踹它一脚醒来。</p>
+<ul>
+<li>安卓是每 30 秒周期性踹一次（libbt-vendor 干的）；</li>
+<li>我们没有 libbt-vendor，所以自写脚本 <strong>每 1.5~2 秒踹一次</strong>，比安卓还勤，保证扫描&#x2F;连接期间它别睡过去。</li>
+</ul>
+<blockquote>
+<p>教训：早期所有”发命令没反应”的测试，根因都是<strong>缺这一脚</strong>。</p>
+</blockquote>
+<h3 id="3-5-pskey——蓝牙的”出厂个性化参数”"><a href="#3-5-pskey——蓝牙的”出厂个性化参数”" class="headerlink" title="3.5 pskey——蓝牙的”出厂个性化参数”"></a>3.5 pskey——蓝牙的”出厂个性化参数”</h3><p>pskey 是芯片的个性化配置（蓝牙地址、功能位、UART 参数、发射功率等），结构是厂商定义的一大坨字段。<br><strong>关键认知</strong>：我们没单独发 pskey，因为——</p>
+<ul>
+<li><code>connectivity_configure.ini</code> 文件里的 <code>[SETCTION 6]</code> 就是这份 pskey；</li>
+<li><code>download</code> 在烧固件时<strong>自己读这个文件，已经把 pskey 下发了</strong>；</li>
+<li>实测 <code>Read Features</code> 返回的功能位和 pskey 文件里的完全一致 → <strong>证明它已经生效了</strong>。</li>
+</ul>
+<p>所以”要不要补 pskey”是个伪问题。<strong>用证据验证，别凭感觉死磕。</strong></p>
+<h3 id="3-6-一个厂商隐藏要求：Write-Scan-Enable-前置"><a href="#3-6-一个厂商隐藏要求：Write-Scan-Enable-前置" class="headerlink" title="3.6 一个厂商隐藏要求：Write Scan Enable 前置"></a>3.6 一个厂商隐藏要求：Write Scan Enable 前置</h3><p>标准蓝牙逻辑里，发 Inquiry 就能扫设备。但这颗展讯固件<strong>不听话</strong>：<br>直接发 Inquiry，它回”收到了”（CMD_STATUS&#x3D;0），然后<strong>永远不返回扫描结果</strong>。</p>
+<p>排查发现：必须**先发 <code>Write Scan Enable (0x0c1a)</code> 设成 <code>0x03</code>**（同时打开”可发现”+”可连接”），Inquiry 才会真正出结果。</p>
+<blockquote>
+<p>这就是”厂商固件特性”——规范上没写，只能靠<strong>对照实验</strong>（哪次成功的那次多做了什么）反推出来。</p>
+</blockquote>
+<hr>
+<h2 id="4-安卓原生是怎么干的（对照样本）"><a href="#4-安卓原生是怎么干的（对照样本）" class="headerlink" title="4. 安卓原生是怎么干的（对照样本）"></a>4. 安卓原生是怎么干的（对照样本）</h2><p>安卓开机时，<code>init</code> 按 <code>init.board.rc</code> 自动拉起这一串：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">init</span><br><span class="line"> ├─ download        烧 combo 固件（读 configure.ini，含 pskey）</span><br><span class="line"> ├─ wcnd           蓝牙子系统上电（BT-OPEN 命令）</span><br><span class="line"> ├─ btld / bt_rm   低功耗管理、射频管理</span><br><span class="line"> └─ Bluedroid 协议栈</span><br><span class="line">      ├─ libbt-vendor: 周期 btwrite 唤醒、发 pskey、管 UART 波特率</span><br><span class="line">      └─ bluetooth.default.so: 完整 HCI/ATT/A2DP/RFCOMM 协议栈</span><br><span class="line">           └─ BluetoothCtrl（你看到的设置界面）</span><br></pre></td></tr></table></figure>
+
+<p><strong>为什么安卓不用内核 hci_uart 驱动？</strong> 因为展讯定制方案里，<code>libbt-vendor</code> 直接打开 UART 自己管 HCI，是”用户态直连”。这给了我们灵感。</p>
+<hr>
+<h2 id="5-我们的-Alpine-方案：用最少代码替换一整套"><a href="#5-我们的-Alpine-方案：用最少代码替换一整套" class="headerlink" title="5. 我们的 Alpine 方案：用最少代码替换一整套"></a>5. 我们的 Alpine 方案：用最少代码替换一整套</h2><h3 id="5-1-启动链（开机自动跑）"><a href="#5-1-启动链（开机自动跑）" class="headerlink" title="5.1 启动链（开机自动跑）"></a>5.1 启动链（开机自动跑）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">开机</span><br><span class="line"> ├─ wifi.start          ① chroot 安卓环境 + download 烧固件 + SDIO 0x2331 + WiFi 驱动</span><br><span class="line"> ├─ bt_bringup.start   ② chmod 666 mdbg → wcnd → bt_once(BT-OPEN) → bt_wake.sh(btwrite 周期唤醒)</span><br><span class="line"> ├─ bt_daemon(openrc)   ③ 自写用户态 daemon 打开 ttyS0，监听 unix socket</span><br><span class="line"> └─ LVGL 桌面            ④ 蓝牙设置页通过 socket 发命令</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-2-三个关键决策（为什么这么选）"><a href="#5-2-三个关键决策（为什么这么选）" class="headerlink" title="5.2 三个关键决策（为什么这么选）"></a>5.2 三个关键决策（为什么这么选）</h3><table>
+<thead>
+<tr>
+<th>决策</th>
+<th>我们选了</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>内核 hci_uart.ko vs 用户态直连</td>
+<td><strong>用户态直连</strong></td>
+<td>这内核是安卓定制 3.10.65，hci_uart.ko 里写死的 tty_struct 偏移对不上，<code>hciconfig up</code> 超时、TX&#x3D;0（一个字节都发不出去）。用户态直接 <code>open(&quot;/dev/ttyS0&quot;)</code> 绕开内核协议栈，反而最稳——安卓 vendor 本来就这么干</td>
+</tr>
+<tr>
+<td>移植 Bluedroid vs 自写最小 daemon</td>
+<td><strong>自写 daemon</strong></td>
+<td>Alpine 没有 Bluedroid 那一大串依赖（HAL、属性服务、共享库），完整移植成本远高于”只实现需要的几个 HCI 命令”</td>
+</tr>
+<tr>
+<td>自写 download vs 复用安卓原版</td>
+<td><strong>复用原版（chroot 里跑）</strong></td>
+<td>download 的上电时序、握手、分区读取是芯片的”黑魔法”，自写风险极高。把安卓二进制连同它需要的库&#x2F;节点&#x2F;分区软链一起，在 chroot 里原样跑</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>核心思想：<strong>能借就借（download&#x2F;wcnd 直接用原版），要重写的只写最小必要部分（HCI 命令集）。</strong></p>
+</blockquote>
+<h3 id="5-3-那个”权限坑”"><a href="#5-3-那个”权限坑”" class="headerlink" title="5.3 那个”权限坑”"></a>5.3 那个”权限坑”</h3><p>移植最容易踩的不是技术，是<strong>权限</strong>：<br><code>wcnd</code> 在 chroot 里以 system 用户跑，要读 <code>/tmp/aand/proc/mdbg/*</code>，但那节点是 <code>600</code>（只有 root 能读）→ BT-OPEN 一直 FAIL。<br><code>chmod 666</code> 一秒解决。这种”移植后权限模型变了”的问题，会反复出现。</p>
+<hr>
+<h2 id="6-源码解读：daemon-在干什么"><a href="#6-源码解读：daemon-在干什么" class="headerlink" title="6. 源码解读：daemon 在干什么"></a>6. 源码解读：daemon 在干什么</h2><p>核心就三件事：<strong>配串口、发命令、读事件</strong>。</p>
+<h3 id="6-1-配串口（3M-硬件流控）"><a href="#6-1-配串口（3M-硬件流控）" class="headerlink" title="6.1 配串口（3M + 硬件流控）"></a>6.1 配串口（3M + 硬件流控）</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">t.c_cflag = B3000000 | CS8 | CREAD | CLOCAL | CRTSCTS;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>B3000000</code>：300 万波特率（蓝牙引擎初始化后切到这个高速档）</li>
+<li><code>CRTSCTS</code>：开硬件流控（UART 两根线做流量控制，高速下不开会丢包）</li>
+<li><code>VMIN=1</code>：阻塞读，读到至少 1 字节才返回——<strong>这是早期帧截断 bug 的修复关键</strong></li>
+</ul>
+<h3 id="6-2-读一帧完整-H4-包"><a href="#6-2-读一帧完整-H4-包" class="headerlink" title="6.2 读一帧完整 H4 包"></a>6.2 读一帧完整 H4 包</h3><p>不能瞎 read，要按帧头长度读全：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">read(fd, buf, <span class="number">1</span>);              <span class="comment">// 先读类型字节</span></span><br><span class="line"><span class="keyword">if</span>(buf[<span class="number">0</span>] == H4_EVT) &#123;         <span class="comment">// 0x04 = 事件</span></span><br><span class="line">    read(fd, buf+<span class="number">1</span>, <span class="number">2</span>);        <span class="comment">// 读 事件码(1) + 长度(1)</span></span><br><span class="line">    plen = buf[<span class="number">2</span>];</span><br><span class="line">    <span class="keyword">while</span>(没读够 plen) read(...); <span class="comment">// 把参数读完</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>早期 bug：用非阻塞读，一次只读到 7 字节就返回，导致命令响应解析错乱。改成”按帧头长度读全”才稳。</p>
+</blockquote>
+<h3 id="6-3-扫描的完整流程"><a href="#6-3-扫描的完整流程" class="headerlink" title="6.3 扫描的完整流程"></a>6.3 扫描的完整流程</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">send_cmd(<span class="number">0x0c1a</span>, <span class="number">0x03</span>);        <span class="comment">// ① 先开扫描使能（厂商隐藏要求！）</span></span><br><span class="line">send_cmd(OGF_INQUIRY, inq);     <span class="comment">// ② 发 Inquiry</span></span><br><span class="line"><span class="keyword">while</span>(没到超时) &#123;</span><br><span class="line">    read_pkt(...);</span><br><span class="line">    <span class="keyword">if</span>(事件是 Inquiry Result)  解析出 BD_ADDR / 设备类 / RSSI</span><br><span class="line">    <span class="title function_">if</span><span class="params">(事件是 Inquiry Complete)</span> <span class="keyword">break</span>;</span><br><span class="line">&#125;</span><br><span class="line">send_cmd(OCF_INQUIRY_CANCEL);   <span class="comment">// ③ 取消扫描</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="6-4-对外接口：unix-socket"><a href="#6-4-对外接口：unix-socket" class="headerlink" title="6.4 对外接口：unix socket"></a>6.4 对外接口：unix socket</h3><p>daemon 不起复杂协议，就开一个 <code>/tmp/bt_ctl.sock</code>，GUI 连上来发一行文本命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">state            → 返回 ON/OFF</span><br><span class="line">on / off         → 开关</span><br><span class="line">scan 8           → 扫 8 秒，返回 OK + 设备列表(BD_ADDR 设备类 RSSI)</span><br><span class="line">connect &lt;mac&gt;    → 连接指定设备</span><br></pre></td></tr></table></figure>
+
+<p>GUI（LVGL 页面）只管发字符串、收字符串，<strong>完全不用懂蓝牙</strong>。这就是分层的价值。</p>
+<hr>
+<h2 id="7-A2DP-真实音频播放（v1-0-3-新增）"><a href="#7-A2DP-真实音频播放（v1-0-3-新增）" class="headerlink" title="7. A2DP 真实音频播放（v1.0.3 新增）"></a>7. A2DP 真实音频播放（v1.0.3 新增）</h2><p>前面只是”能连接”。要真出声，得走 <strong>A2DP</strong>（高级音频分发协议）。</p>
+<h3 id="7-1-音频管线"><a href="#7-1-音频管线" class="headerlink" title="7.1 音频管线"></a>7.1 音频管线</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">屏幕点歌</span><br><span class="line">  → mplayer -ao pcm:file=/tmp/bt_audio.fifo -format s16le</span><br><span class="line">  → /tmp/bt_audio.fifo (命名管道)</span><br><span class="line">  → daemon 读 PCM → SBC 编码 → 打成 ACL 数据包</span><br><span class="line">  → UART → 蓝牙音箱 → 喇叭出声</span><br></pre></td></tr></table></figure>
+
+<p>为什么用**命名管道(fifo)**？因为 Alpine 没有 PulseAudio 这种音频服务器。最朴素的办法：<br>mplayer 把解码后的 PCM 不送声卡，而是写进一个文件（fifo），daemon 从这个文件里读 PCM，编码后发给音箱。</p>
+<h3 id="7-2-三个踩出来的关键参数"><a href="#7-2-三个踩出来的关键参数" class="headerlink" title="7.2 三个踩出来的关键参数"></a>7.2 三个踩出来的关键参数</h3><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>现象</th>
+<th>真相</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>字节序</strong></td>
+<td>能听出旋律，但全是雪花噪音</td>
+<td>mplayer 默认输出 <strong>big-endian</strong> PCM，daemon 按本机 <strong>little-endian</strong> int16 读 → 数据全乱。加 <code>-format s16le</code>（强制小端）就清晰了</td>
+</tr>
+<tr>
+<td><strong>判断时机</strong></td>
+<td>点歌没声，mplayer 走了 <code>-ao null</code></td>
+<td>蓝牙状态判断 <code>bt_audio_connected()</code> 写在了 fork 子进程里、stdout 被 dup2 重定向之后，导致连 socket 失败。必须挪到 <strong>fork 之前的父进程</strong>里判断</td>
+</tr>
+<tr>
+<td><strong>帧参数</strong></td>
+<td>播几秒就断</td>
+<td>按安卓金标准：SBC bitpool&#x3D;35、每包 7 帧、20ms 单发、浅发送窗口、Start 前退出 Sniff 模式——照抄安卓才稳定</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>方法论：**”能出声但不对”要先怀疑数据格式（字节序&#x2F;采样率&#x2F;声道），不是协议错。**</p>
+</blockquote>
+<hr>
+<h2 id="8-排障方法论（迁移时照这个查）"><a href="#8-排障方法论（迁移时照这个查）" class="headerlink" title="8. 排障方法论（迁移时照这个查）"></a>8. 排障方法论（迁移时照这个查）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">没反应/连不上</span><br><span class="line">  ├─ 第①层：SDIO 枚举了吗？BT-OPEN OK 吗？权限够吗？</span><br><span class="line">  ├─ 第②层：往 ttyS0 发 Reset，收得到事件吗？(收不到=串口/波特率/流控错)</span><br><span class="line">  ├─ 第③层：btwrite 唤醒了吗？回 SPRD3 了吗？</span><br><span class="line">  ├─ 第④层：标准命令 Read Version 正常吗？扫描前开 Scan Enable 了吗？</span><br><span class="line">  └─ 第⑤层：UI 命令发对了吗？socket 连上 daemon 了吗？</span><br><span class="line"></span><br><span class="line">有声不对</span><br><span class="line">  ├─ 字节序(s16le)、采样率(44100)、声道(2)</span><br><span class="line">  └─ SBC 参数(bitpool/每包帧数)</span><br><span class="line"></span><br><span class="line">莫名复位</span><br><span class="line">  └─ 看串口有没有回引导器帧(7e...7e)= 引擎崩了，多半是唤醒/发送时序问题</span><br></pre></td></tr></table></figure>
+
+<p><strong>对照机是金矿</strong>：这台设备同款有一台跑原生安卓的机器。把它接上 ADB，抓它开机&#x2F;开蓝牙时 ttyS0 的真实流量，比黑盒猜快十倍。我们的 <code>btwrite</code>、<code>Scan Enable</code>、SBC 参数，全是这么对照出来的。</p>
+<hr>
+<h2 id="9-迁移到类似设备的通用清单"><a href="#9-迁移到类似设备的通用清单" class="headerlink" title="9. 迁移到类似设备的通用清单"></a>9. 迁移到类似设备的通用清单</h2><p>下次遇到”安卓内核 + 别的用户态，蓝牙要重拉”，照这个顺序：</p>
+<ol>
+<li><strong>认芯片</strong>：查是不是 combo 芯片，数据走 SDIO 还是别的，HCI 走 UART 还是 SDIO。</li>
+<li><strong>找原厂时序</strong>：读原厂 <code>init.*.rc</code> &#x2F; <code>ueventd.rc</code>，找 download、上电、唤醒、HCI 节点。<strong>能复用的二进制（download&#x2F;wcnd）直接在 chroot 里复用。</strong></li>
+<li><strong>验分层</strong>：每层按 §2 的验收标准，一层一层验，不跳层。</li>
+<li><strong>解决权限</strong>：chroot 里 proc&#x2F;sys 节点权限、属主，是移植头号坑。</li>
+<li><strong>写最小 daemon</strong>：只实现你要用的命令（开关&#x2F;扫描&#x2F;连接&#x2F;音频），别上来就移植整套协议栈。</li>
+<li><strong>抓对照包</strong>：有同型号原厂机，ADB 抓真实流量重放，省无数黑盒时间。</li>
+<li><strong>固化开机</strong>：把整个链路写成开机脚本，重启自动拉起。</li>
+</ol>
+<hr>
+<h2 id="10-这份-wiki-想让你记住的"><a href="#10-这份-wiki-想让你记住的" class="headerlink" title="10. 这份 wiki 想让你记住的"></a>10. 这份 wiki 想让你记住的</h2><ul>
+<li><strong>蓝牙 &#x3D; 一颗需要时序伺候的小处理器</strong>，不是软件开关。</li>
+<li><strong>combo 芯片的固件是 WiFi+BT 一体的</strong>，拉起 WiFi 常等于蓝牙固件已就位。</li>
+<li><strong>分层验证</strong>是万能钥匙：每层一个验收标准，不通不跳层。</li>
+<li><strong>厂商隐藏要求</strong>（Scan Enable、btwrite 周期唤醒、SBC 参数）只能靠<strong>对照实验</strong>和<strong>原厂对照机</strong>发现，规范书上没有。</li>
+<li><strong>移植 &#x3D; 能借就借，重写最小</strong>：原版二进制时序直接复用，只重写最必要的 HCI 层。</li>
+<li><strong>“没反应”先怀疑下层&#x2F;权限&#x2F;唤醒；”有声不对”先怀疑数据格式。</strong></li>
+</ul>
+<hr>
+<blockquote>
+<p>配套文档：</p>
+<ul>
+<li><code>HT0蓝牙拉起_部署交付文档.md</code> —— 怎么在新设备上部署（操作层）</li>
+<li><code>蓝牙芯片打通_操作手册.md</code> —— 手工排障步骤</li>
+<li><code>蓝牙打通_工作过程总结.md</code> —— 这次踩坑的完整时间线</li>
+<li><code>蓝牙启动流程_安卓vsAlpine对比.md</code> —— 逐环节对照</li>
+<li>本文 —— 为什么这么做（原理层）</li>
+</ul>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-%E8%93%9D%E7%89%99%E5%8E%9F%E7%90%86%E4%B8%8E%E7%A7%BB%E6%A4%8D%E5%AD%A6%E4%B9%A0-Wiki"><span class="toc-number">1.</span> <span class="toc-text">HT0 蓝牙原理与移植学习 Wiki</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%85%88%E5%BB%BA%E7%AB%8B%E7%9B%B4%E8%A7%89"><span class="toc-number">1.1.</span> <span class="toc-text">0. 一句话先建立直觉</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%A1%AC%E4%BB%B6%E9%95%BF%E4%BB%80%E4%B9%88%E6%A0%B7"><span class="toc-number">1.2.</span> <span class="toc-text">1. 硬件长什么样</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E8%93%9D%E7%89%99%E8%83%BD%E7%94%A8%E7%9A%84%E4%BA%94%E5%B1%82%E6%A8%A1%E5%9E%8B%EF%BC%88%E6%9C%80%E9%87%8D%E8%A6%81%E7%9A%84%E5%88%86%E6%9E%90%E6%A1%86%E6%9E%B6%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. 蓝牙能用的五层模型（最重要的分析框架）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%85%B3%E9%94%AE%E6%A6%82%E5%BF%B5%E9%80%90%E4%B8%AA%E8%AE%B2%E9%80%8F"><span class="toc-number">1.4.</span> <span class="toc-text">3. 关键概念逐个讲透</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-HCI-%E5%92%8C-H4-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 HCI 和 H4 是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E5%91%BD%E4%BB%A4%E6%80%8E%E4%B9%88%E7%BC%96%E7%A0%81"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 命令怎么编码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-SPRD3-%E8%BA%AB%E4%BB%BD%E5%B8%A7%E2%80%94%E2%80%94%E2%80%9C%E5%BC%95%E6%93%8E%E6%B4%BB%E4%BA%86%E2%80%9D%E7%9A%84%E4%BF%A1%E5%8F%B7"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 SPRD3 身份帧——“引擎活了”的信号</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-btwrite%E2%80%94%E2%80%94%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%8F%8D%E5%A4%8D%E5%86%99"><span class="toc-number">1.4.4.</span> <span class="toc-text">3.4 btwrite——为什么要反复写</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-pskey%E2%80%94%E2%80%94%E8%93%9D%E7%89%99%E7%9A%84%E2%80%9D%E5%87%BA%E5%8E%82%E4%B8%AA%E6%80%A7%E5%8C%96%E5%8F%82%E6%95%B0%E2%80%9D"><span class="toc-number">1.4.5.</span> <span class="toc-text">3.5 pskey——蓝牙的”出厂个性化参数”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-6-%E4%B8%80%E4%B8%AA%E5%8E%82%E5%95%86%E9%9A%90%E8%97%8F%E8%A6%81%E6%B1%82%EF%BC%9AWrite-Scan-Enable-%E5%89%8D%E7%BD%AE"><span class="toc-number">1.4.6.</span> <span class="toc-text">3.6 一个厂商隐藏要求：Write Scan Enable 前置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%AE%89%E5%8D%93%E5%8E%9F%E7%94%9F%E6%98%AF%E6%80%8E%E4%B9%88%E5%B9%B2%E7%9A%84%EF%BC%88%E5%AF%B9%E7%85%A7%E6%A0%B7%E6%9C%AC%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">4. 安卓原生是怎么干的（对照样本）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%88%91%E4%BB%AC%E7%9A%84-Alpine-%E6%96%B9%E6%A1%88%EF%BC%9A%E7%94%A8%E6%9C%80%E5%B0%91%E4%BB%A3%E7%A0%81%E6%9B%BF%E6%8D%A2%E4%B8%80%E6%95%B4%E5%A5%97"><span class="toc-number">1.6.</span> <span class="toc-text">5. 我们的 Alpine 方案：用最少代码替换一整套</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E5%90%AF%E5%8A%A8%E9%93%BE%EF%BC%88%E5%BC%80%E6%9C%BA%E8%87%AA%E5%8A%A8%E8%B7%91%EF%BC%89"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 启动链（开机自动跑）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E4%B8%89%E4%B8%AA%E5%85%B3%E9%94%AE%E5%86%B3%E7%AD%96%EF%BC%88%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E4%B9%88%E9%80%89%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 三个关键决策（为什么这么选）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E9%82%A3%E4%B8%AA%E2%80%9D%E6%9D%83%E9%99%90%E5%9D%91%E2%80%9D"><span class="toc-number">1.6.3.</span> <span class="toc-text">5.3 那个”权限坑”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB%EF%BC%9Adaemon-%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="toc-number">1.7.</span> <span class="toc-text">6. 源码解读：daemon 在干什么</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E9%85%8D%E4%B8%B2%E5%8F%A3%EF%BC%883M-%E7%A1%AC%E4%BB%B6%E6%B5%81%E6%8E%A7%EF%BC%89"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 配串口（3M + 硬件流控）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E8%AF%BB%E4%B8%80%E5%B8%A7%E5%AE%8C%E6%95%B4-H4-%E5%8C%85"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 读一帧完整 H4 包</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E6%89%AB%E6%8F%8F%E7%9A%84%E5%AE%8C%E6%95%B4%E6%B5%81%E7%A8%8B"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 扫描的完整流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-4-%E5%AF%B9%E5%A4%96%E6%8E%A5%E5%8F%A3%EF%BC%9Aunix-socket"><span class="toc-number">1.7.4.</span> <span class="toc-text">6.4 对外接口：unix socket</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-A2DP-%E7%9C%9F%E5%AE%9E%E9%9F%B3%E9%A2%91%E6%92%AD%E6%94%BE%EF%BC%88v1-0-3-%E6%96%B0%E5%A2%9E%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">7. A2DP 真实音频播放（v1.0.3 新增）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-%E9%9F%B3%E9%A2%91%E7%AE%A1%E7%BA%BF"><span class="toc-number">1.8.1.</span> <span class="toc-text">7.1 音频管线</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-%E4%B8%89%E4%B8%AA%E8%B8%A9%E5%87%BA%E6%9D%A5%E7%9A%84%E5%85%B3%E9%94%AE%E5%8F%82%E6%95%B0"><span class="toc-number">1.8.2.</span> <span class="toc-text">7.2 三个踩出来的关键参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E6%8E%92%E9%9A%9C%E6%96%B9%E6%B3%95%E8%AE%BA%EF%BC%88%E8%BF%81%E7%A7%BB%E6%97%B6%E7%85%A7%E8%BF%99%E4%B8%AA%E6%9F%A5%EF%BC%89"><span class="toc-number">1.9.</span> <span class="toc-text">8. 排障方法论（迁移时照这个查）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E8%BF%81%E7%A7%BB%E5%88%B0%E7%B1%BB%E4%BC%BC%E8%AE%BE%E5%A4%87%E7%9A%84%E9%80%9A%E7%94%A8%E6%B8%85%E5%8D%95"><span class="toc-number">1.10.</span> <span class="toc-text">9. 迁移到类似设备的通用清单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E8%BF%99%E4%BB%BD-wiki-%E6%83%B3%E8%AE%A9%E4%BD%A0%E8%AE%B0%E4%BD%8F%E7%9A%84"><span class="toc-number">1.11.</span> <span class="toc-text">10. 这份 wiki 想让你记住的</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&text=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&title=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&is_video=false&description=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=HT0蓝牙原理与移植学习Wiki&body=Check out this article: https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&title=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&title=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&title=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&title=HT0蓝牙原理与移植学习Wiki"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/21/bt-01-ht0-wiki-md/&name=HT0蓝牙原理与移植学习Wiki&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

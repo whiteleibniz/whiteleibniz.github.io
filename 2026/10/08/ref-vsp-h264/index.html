@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="SC8830 硬解攻关 — h264dec 反汇编定案（2026-10-08） 本机工作区不是 git 仓库；代码在设备 &#x2F;tmp&#x2F;sprd_msg.c，构建脚本 &#x2F;tmp&#x2F;smb.sh。全部结论来自 objdump -d &#x2F;mnt&#x2F;android_sys&#x2F;lib&#x2F;libstagefright_sprd_h264dec.so。  一、onQueueFilled 真实体（0x7cec 起）的完整闸门">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ref_h264硬解_h264dec定案">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="SC8830 硬解攻关 — h264dec 反汇编定案（2026-10-08） 本机工作区不是 git 仓库；代码在设备 &#x2F;tmp&#x2F;sprd_msg.c，构建脚本 &#x2F;tmp&#x2F;smb.sh。全部结论来自 objdump -d &#x2F;mnt&#x2F;android_sys&#x2F;lib&#x2F;libstagefright_sprd_h264dec.so。  一、onQueueFilled 真实体（0x7cec 起）的完整闸门">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-08T11:08:38.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.966Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="H264">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>ref_h264硬解_h264dec定案</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/10/aiwf-handoff/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/30/mali-02-mali400-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&text=ref_h264硬解_h264dec定案"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&title=ref_h264硬解_h264dec定案"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&is_video=false&description=ref_h264硬解_h264dec定案"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_h264硬解_h264dec定案&body=Check out this article: https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&title=ref_h264硬解_h264dec定案"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&title=ref_h264硬解_h264dec定案"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&title=ref_h264硬解_h264dec定案"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&title=ref_h264硬解_h264dec定案"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&name=ref_h264硬解_h264dec定案&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#SC8830-%E7%A1%AC%E8%A7%A3%E6%94%BB%E5%85%B3-%E2%80%94-h264dec-%E5%8F%8D%E6%B1%87%E7%BC%96%E5%AE%9A%E6%A1%88%EF%BC%882026-10-08%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">SC8830 硬解攻关 — h264dec 反汇编定案（2026-10-08）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81onQueueFilled-%E7%9C%9F%E5%AE%9E%E4%BD%93%EF%BC%880x7cec-%E8%B5%B7%EF%BC%89%E7%9A%84%E5%AE%8C%E6%95%B4%E9%97%B8%E9%97%A8%E9%93%BE"><span class="toc-number">1.1.</span> <span class="toc-text">一、onQueueFilled 真实体（0x7cec 起）的完整闸门链</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%97%E6%AE%B5%E8%AF%AD%E4%B9%89%E6%80%BB%E8%A1%A8%EF%BC%88%E2%98%85-%E9%83%BD%E6%98%AF%E8%B8%A9%E8%BF%87%E5%9D%91%E5%AE%9A%E6%A1%88%E7%9A%84%EF%BC%89"><span class="toc-number">1.1.1.</span> <span class="toc-text">字段语义总表（★ 都是踩过坑定案的）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E2%98%85-%E4%B8%89%E4%B8%AA%E5%8F%8D%E6%95%88%E6%9E%9C%E7%9A%84%E6%89%8B%E5%8A%A8%E5%B9%B2%E9%A2%84%EF%BC%88%E9%83%BD%E8%AF%95%E8%BF%87%E5%B9%B6%E5%9B%9E%E9%80%80%EF%BC%8C%E5%8B%BF%E9%87%8D%E7%8A%AF%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">二、★ 三个反效果的手动干预（都试过并回退，勿重犯）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%89%8B%E5%8A%A8%E7%BD%AE-0x9c-%E2%80%94%E2%80%94-%E4%BC%9A%E5%A0%B5%E6%AD%BB%E5%BE%AA%E7%8E%AF"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. 手动置 [0x9c] —— 会堵死循环</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%89%8B%E5%8A%A8%E7%BD%AE-0x1f0-%E6%9C%89%E6%95%88%EF%BC%8C%E4%BD%86%E6%AF%8F%E8%BD%AE%E9%83%BD%E8%A6%81%E9%87%8D%E7%BD%AE"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. 手动置 [0x1f0] 有效，但每轮都要重置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%90%8C%E4%B8%80%E4%B8%AA-in-buffer-%E4%BA%8C%E6%AC%A1-empty-%E4%BC%9A-ASSERT"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. 同一个 in buffer 二次 empty 会 ASSERT</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81gralloc-handle-%E4%B8%89%E5%B1%82%E5%B8%83%E5%B1%80%EF%BC%88%E5%85%A8%E9%83%A8%E5%AE%9E%E6%B5%8B%E5%AE%9A%E6%A1%88%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、gralloc &#x2F; handle 三层布局（全部实测定案）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E2%98%85-%E8%AF%BB%E5%B8%A7%E8%B7%AF%E5%BE%84%EF%BC%88%E4%B8%89%E7%BA%A7%E5%9B%9E%E9%80%80%EF%BC%8C%E7%AC%AC%E2%91%A0%E7%BA%A7%E5%B7%B2%E9%AA%8C%E8%AF%81%E6%88%90%E5%8A%9F%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">四、★ 读帧路径（三级回退，第①级已验证成功）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E2%98%85%E2%98%85%E2%98%85-0x92-IOMMU-%E5%BC%80%E5%85%B3-%E2%80%94%E2%80%94-%E4%B9%8B%E5%89%8D%E6%89%80%E6%9C%89%E5%AE%9E%E9%AA%8C%E9%83%BD%E8%B7%91%E5%9C%A8%E9%94%99%E8%AF%AF%E8%B7%AF%E5%BE%84%E4%B8%8A"><span class="toc-number">1.5.</span> <span class="toc-text">五、★★★ [0x92] &#x3D; IOMMU 开关 —— 之前所有实验都跑在错误路径上</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%9A%A0-%E7%9B%B4%E6%8E%A5%E6%81%A2%E5%A4%8D-0x92-1-%E4%BC%9A%E5%9C%A8-useBuffer-%E6%AE%B5-Segfault"><span class="toc-number">1.5.1.</span> <span class="toc-text">⚠ 直接恢复 [0x92]&#x3D;1 会在 useBuffer 段 Segfault</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E2%98%85%E2%98%85-%E4%B8%A4%E6%9D%A1%E4%BA%92%E6%96%A5%E8%B7%AF%E5%BE%84%EF%BC%882026-10-08-%E6%94%B6%E5%B0%BE%E5%8F%91%E7%8E%B0%E7%9A%84%E6%AD%BB%E7%BB%93%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">六、★★ 两条互斥路径（2026-10-08 收尾发现的死结）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%BB%E7%BB%93"><span class="toc-number">1.6.1.</span> <span class="toc-text">死结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%B2%E6%8E%92%E9%99%A4%E7%9A%84%E5%81%87%E8%AE%BE%EF%BC%88A-B-%E5%AE%9E%E9%AA%8C%E5%AE%9E%E6%B5%8B%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">已排除的假设（A&#x2F;B 实验实测）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#internalUseBuffer-0x4514-%E7%9A%84%E7%BB%93%E6%9E%84%EF%BC%88-0x92-1-%E5%B4%A9%E5%9C%A8%E8%BF%99%E9%87%8C%EF%BC%89"><span class="toc-number">1.6.3.</span> <span class="toc-text">internalUseBuffer@0x4514 的结构（[0x92]&#x3D;1 崩在这里）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E5%BD%93%E5%89%8D%E5%8D%A1%E7%82%B9%EF%BC%88%E4%B8%8B%E4%B8%80%E6%AD%A5%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">七、当前卡点（下一步）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E6%9E%84%E5%BB%BA-%E8%BF%90%E8%A1%8C"><span class="toc-number">1.8.</span> <span class="toc-text">六、构建&#x2F;运行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E2%98%85%E2%98%85-IOVA-%E9%93%BE%E8%B7%AF%E6%94%BB%E5%9D%9A%E5%AE%9A%E6%A1%88%EF%BC%882026-10-08-%E4%B8%8B%E5%8D%88%EF%BC%8CSPRD-IOMMU-1-%E8%B7%AF%E5%BE%84%EF%BC%89"><span class="toc-number">1.9.</span> <span class="toc-text">八、★★ IOVA 链路攻坚定案（2026-10-08 下午，SPRD_IOMMU&#x3D;1 路径）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%B2%E4%BF%AE%E5%A4%8D%EF%BC%88%E5%85%A8%E9%83%A8%E5%AE%9E%E6%B5%8B%EF%BC%89"><span class="toc-number">1.9.1.</span> <span class="toc-text">已修复（全部实测）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BD%93%E5%89%8D%E7%8A%B6%E6%80%81%EF%BC%88run-iova3%EF%BC%89"><span class="toc-number">1.9.2.</span> <span class="toc-text">当前状态（run_iova3）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A1%A5%E5%85%85%E5%AE%9A%E6%A1%88%EF%BC%880x8090-0x8190-VSP-DecodeFrame-%E5%8F%82%E6%95%B0%EF%BC%89"><span class="toc-number">1.9.3.</span> <span class="toc-text">补充定案（0x8090-0x8190 VSP DecodeFrame 参数）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E2%98%85%E2%98%85%E2%98%85-2026-10-08-%E4%B8%8B%E5%8D%88%EF%BC%9A%E7%A1%AC%E8%A7%A3%E5%87%BA%E5%9B%BE%EF%BC%88%E9%87%8C%E7%A8%8B%E7%A2%91%EF%BC%89"><span class="toc-number">1.10.</span> <span class="toc-text">九、★★★ 2026-10-08 下午：硬解出图（里程碑）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0%E9%93%BE%EF%BC%88%E6%9C%AC%E6%AC%A1%E5%85%A8%E9%83%A8%E5%AE%9E%E8%AF%81%EF%BC%89"><span class="toc-number">1.10.1.</span> <span class="toc-text">根因链（本次全部实证）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%BA%E5%9B%BE%E6%97%B6%E7%9A%84%E8%A1%A8%E7%8E%B0"><span class="toc-number">1.10.2.</span> <span class="toc-text">出图时的表现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%A9%E4%BD%99%E5%B7%A5%E4%BD%9C"><span class="toc-number">1.10.3.</span> <span class="toc-text">剩余工作</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E3%80%81%E2%98%85%E2%98%85%E2%98%85-2026-10-08-%E6%99%9A%EF%BC%9A%E8%BF%9E%E7%BB%AD%E5%A4%9A%E5%B8%A7%E8%A7%A3%E7%A0%81%E6%89%93%E9%80%9A"><span class="toc-number">1.11.</span> <span class="toc-text">十、★★★ 2026-10-08 晚：连续多帧解码打通</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%B8%80%E3%80%81%E2%98%85%E2%98%85%E2%98%85-2026-10-08-%E6%99%9A%EF%BC%9A%E7%9C%9F%E5%AE%9E%E6%B5%81-NAL-%E6%B5%81%E5%BC%8F%E7%A1%AC%E8%A7%A3%E6%89%93%E9%80%9A%EF%BC%88%E7%BA%A6-95-%EF%BC%89"><span class="toc-number">1.12.</span> <span class="toc-text">十一、★★★ 2026-10-08 晚：真实流 NAL 流式硬解打通（约 95%）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8A%95%E5%96%82%E6%A8%A1%E5%9E%8B%E5%AE%9A%E6%A1%88"><span class="toc-number">1.12.1.</span> <span class="toc-text">投喂模型定案</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85-error-flag-Need-I-frame-%E6%AD%BB%E9%94%81%E9%93%BE%EF%BC%88%E5%8F%8D%E6%B1%87%E7%BC%96%E5%AE%9A%E6%A1%88%EF%BC%8Clibomx-avcdec-hw-sprd-so%EF%BC%89"><span class="toc-number">1.12.2.</span> <span class="toc-text">★ error_flag&#x2F;Need I frame 死锁链（反汇编定案，libomx_avcdec_hw_sprd.so）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E8%B4%A6%E6%9C%AC%EF%BC%88CMA-%E6%B1%A0-7MB%EF%BC%8Chid-0-%E5%8C%BA-0x9fd20000-%E8%B5%B7%E8%BF%9E%E7%BB%AD%E7%BA%BF%E6%80%A7%E5%88%86%E9%85%8D%EF%BC%89"><span class="toc-number">1.12.3.</span> <span class="toc-text">内存账本（CMA 池 ~7MB，hid&#x3D;0 区 0x9fd20000 起连续线性分配）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%81%97%E7%95%99%E5%9D%8F%E5%B8%A7%EF%BC%88%E5%94%AF%E4%B8%80%E5%89%A9%E4%BD%99%E9%97%AE%E9%A2%98%EF%BC%8C%E7%BA%A6-1-3-%E5%B8%A7%EF%BC%89"><span class="toc-number">1.12.4.</span> <span class="toc-text">遗留坏帧（唯一剩余问题，约 1&#x2F;3 帧）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E7%A8%8B%E6%9D%82%E9%A1%B9"><span class="toc-number">1.12.5.</span> <span class="toc-text">工程杂项</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%BA%8C%E3%80%81%E2%98%85%E2%98%85%E2%98%85-2026-10-08-%E6%99%9A-2%EF%BC%9Afb-%E7%9B%B4%E6%98%BE%E6%89%93%E9%80%9A%EF%BC%88%E7%BA%A6-97-%EF%BC%89"><span class="toc-number">1.13.</span> <span class="toc-text">十二、★★★ 2026-10-08 晚 2：fb 直显打通（约 97%）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%81%97%E7%95%99%E5%9D%8F%E5%B8%A7%E5%AE%9A%E6%A1%88%EF%BC%88%E9%87%8D%E8%A6%81%E5%8F%8D%E8%BD%AC%EF%BC%89"><span class="toc-number">1.13.1.</span> <span class="toc-text">遗留坏帧定案（重要反转）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#fb-%E7%9B%B4%E6%98%BE%E7%AE%A1%E7%BA%BF%EF%BC%88sprd-msg-c-%E5%86%85-fb-init-fb-render-fb-home%EF%BC%89"><span class="toc-number">1.13.2.</span> <span class="toc-text">fb 直显管线（sprd_msg.c 内 fb_init&#x2F;fb_render&#x2F;fb_home）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%A9%E4%BD%99%E5%B7%A5%E4%BD%9C-1"><span class="toc-number">1.13.3.</span> <span class="toc-text">剩余工作</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%B8%89%E3%80%81%E2%98%85%E2%98%85%E2%98%85-2026-10-08-%E6%99%9A-3%EF%BC%9A%E6%92%AD%E6%94%BE%E5%99%A8%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%8C%E6%88%90%EF%BC%88%E7%BA%A6-98-%EF%BC%89"><span class="toc-number">1.14.</span> <span class="toc-text">十三、★★★ 2026-10-08 晚 3：播放器二进制完成（约 98%）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%92%AD%E6%94%BE%E5%99%A8%E7%94%A8%E6%B3%95%EF%BC%88sprd-msg-%E5%B7%B2%E6%92%AD%E6%94%BE%E5%99%A8%E5%8C%96%EF%BC%89"><span class="toc-number">1.14.1.</span> <span class="toc-text">播放器用法（sprd_msg 已播放器化）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E5%AE%9A%E4%BD%8D%E6%96%B9%E6%B3%95%E8%AE%BA%E4%B8%8E%E7%BB%93%E8%AE%BA%EF%BC%88-ms-%E6%97%B6%E9%97%B4%E6%88%B3%E9%80%90%E6%AD%A5%E6%8E%92%E9%99%A4%E6%B3%95%EF%BC%89"><span class="toc-number">1.14.2.</span> <span class="toc-text">性能定位方法论与结论（@ms 时间戳逐步排除法）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85%E2%98%85-%E4%B8%A4%E6%AC%A1%E5%86%85%E6%A0%B8%E5%B4%A9%E6%BA%83%EF%BC%88%E5%90%8C%E4%B8%80%E6%A0%B9%E5%9B%A0%EF%BC%89"><span class="toc-number">1.14.3.</span> <span class="toc-text">★★ 两次内核崩溃（同一根因）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85-mbinfo-OOM-%E5%BC%BA%E5%88%B6%E5%9B%9E%E8%90%BD-LRU"><span class="toc-number">1.14.4.</span> <span class="toc-text">★ mbinfo OOM 强制回落 LRU</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8B%E6%95%85%E4%B8%8E%E6%95%99%E8%AE%AD"><span class="toc-number">1.14.5.</span> <span class="toc-text">事故与教训</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%A9%E4%BD%99%EF%BC%88%E9%9C%80%E7%94%A8%E6%88%B7%E5%8F%82%E4%B8%8E%EF%BC%89"><span class="toc-number">1.14.6.</span> <span class="toc-text">剩余（需用户参与）</span></a></li></ol></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        ref_h264硬解_h264dec定案
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-08T11:08:38.000Z" itemprop="datePublished">2026-10-08</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/H264/" rel="tag">H264</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="SC8830-硬解攻关-—-h264dec-反汇编定案（2026-10-08）"><a href="#SC8830-硬解攻关-—-h264dec-反汇编定案（2026-10-08）" class="headerlink" title="SC8830 硬解攻关 — h264dec 反汇编定案（2026-10-08）"></a>SC8830 硬解攻关 — h264dec 反汇编定案（2026-10-08）</h1><blockquote>
+<p>本机工作区不是 git 仓库；代码在设备 <code>/tmp/sprd_msg.c</code>，构建脚本 <code>/tmp/smb.sh</code>。<br>全部结论来自 <code>objdump -d /mnt/android_sys/lib/libstagefright_sprd_h264dec.so</code>。</p>
+</blockquote>
+<h2 id="一、onQueueFilled-真实体（0x7cec-起）的完整闸门链"><a href="#一、onQueueFilled-真实体（0x7cec-起）的完整闸门链" class="headerlink" title="一、onQueueFilled 真实体（0x7cec 起）的完整闸门链"></a>一、onQueueFilled 真实体（<code>0x7cec</code> 起）的完整闸门链</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">7d78 ldr ip,[r4,#0x9c] ; cmp #0 ; bne 84f0    ← 入口: [0x9c]!=0 走 84f0</span><br><span class="line">7d7c-7d88 bl initDecoder / freeOutputBufferIOVA</span><br><span class="line">7da4 bl getPortQueue(0) → [sp+0x34]   (in 队列)</span><br><span class="line">7db4 bl getPortQueue(1) → sl          (out 队列)</span><br><span class="line">7dbc ldrb r8,[r4,#0x9a] ; cmp #0 ; bne 83dc   ★ [0x9a]!=0 → 直接 return</span><br><span class="line">7dc8 ldr r5,[r4,#0x84] ; cmp #0 ; bne 7de8   ← [0x84]!=0 强制进解码区</span><br><span class="line">7dd4 ldr fp,[r2,#4] / 7de4 beq 83dc           ← in 队列空 → return</span><br><span class="line">7de8 ldr r8,[sl,#4] / 7df4 beq 83dc           ★ out 队列空 → return</span><br><span class="line">7df8 cmp r5,#1 ; beq 8718                     ← [0x84]==1 走 drainAllOutputBuffers</span><br></pre></td></tr></table></figure>
+
+<h3 id="字段语义总表（★-都是踩过坑定案的）"><a href="#字段语义总表（★-都是踩过坑定案的）" class="headerlink" title="字段语义总表（★ 都是踩过坑定案的）"></a>字段语义总表（★ 都是踩过坑定案的）</h3><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>语义</th>
+<th>写入者</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>[0x84]</code></td>
+<td>解码开关。<code>!=0</code> 强制进解码区；<code>==1</code> 额外走 8718 drainAllOutputBuffers</td>
+<td><code>0x7ee0</code> (nFlags&amp;1)、跑完变 2</td>
+</tr>
+<tr>
+<td><code>[0x88]</code></td>
+<td>端口尺寸变更待处理闸门（非 0 直接 return）</td>
+<td>handlePortSettingChangeEvent</td>
+</tr>
+<tr>
+<td><code>[0x8c]</code></td>
+<td>内部 drain 循环开关。<code>0x83c4 ldrb; cmp #0; bne 8334</code></td>
+<td>手动置 1 可打开</td>
+</tr>
+<tr>
+<td><code>[0x9a]</code></td>
+<td><strong>停止标志</strong>。非 0 → 入口 7dbc 直接 return</td>
+<td><code>0x83b0</code>（<code>[0x9c]!=0</code> 时自动置 1）</td>
+</tr>
+<tr>
+<td><code>[0x9c]</code></td>
+<td>待处理字节数。<code>0x7f68 beq 8518</code> &#x3D; 跳过 scratch 拷贝</td>
+<td>★<strong>不要手动置</strong>，见下</td>
+</tr>
+<tr>
+<td><code>[0x1dc]</code></td>
+<td>SPS 已落位标志</td>
+<td><code>0x8240</code>（VSP 回填 <code>[sp+0xa4]</code>）</td>
+</tr>
+<tr>
+<td><code>[0x1dd]</code></td>
+<td>PPS 已落位标志</td>
+<td><code>0x8248</code>（VSP 回填 <code>[sp+0xa5]</code>）</td>
+</tr>
+<tr>
+<td><code>[0x1e0]/[0x1e4]</code></td>
+<td>SPS 缓冲 &#x2F; 长度（长度上限 1024，<code>cmp #0x400</code>）</td>
+<td><code>0x7ccc</code></td>
+</tr>
+<tr>
+<td><code>[0x1e8]/[0x1ec]</code></td>
+<td>PPS 缓冲 &#x2F; 长度（同上限）</td>
+<td><code>0x7ca4</code></td>
+</tr>
+<tr>
+<td><code>[0x1f0]</code></td>
+<td><strong>出帧总闸，一次性</strong>。<code>0x8314 ldrb; beq 85fc</code></td>
+<td><code>0x8710</code>，且 <code>0x8324</code> 用完立即清 0</td>
+</tr>
+<tr>
+<td><code>[0x228]</code></td>
+<td>IOVA&#x2F;gbMapper 通路。<code>!=0</code> → <code>0x8254 bne 85c0</code> 走 IOVA 分支</td>
+<td>setParameter(port1)</td>
+</tr>
+<tr>
+<td><code>[0x234]/[0x238]</code></td>
+<td>crop w&#x2F;h（日志首行 1920&#x2F;1088）。<code>0x82d0/0x82e4</code> 与 scratch 位置比较，不匹配跳 <code>87a8</code></td>
+<td>SPS 解析</td>
+</tr>
+<tr>
+<td><code>[0x64]/[0x68]</code></td>
+<td>VSP 侧输出 w&#x2F;h</td>
+<td>handlePortSettingChangeEvent</td>
+</tr>
+<tr>
+<td><code>[0xac]/[0xb0]/[0xb4]</code></td>
+<td>VSP scratch(1MB malloc) &#x2F; 写指针 &#x2F; 长度</td>
+<td>initDecoder</td>
+</tr>
+<tr>
+<td><code>[0x208]</code></td>
+<td>VSP DecodeFrame 函数指针</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<h2 id="二、★-三个反效果的手动干预（都试过并回退，勿重犯）"><a href="#二、★-三个反效果的手动干预（都试过并回退，勿重犯）" class="headerlink" title="二、★ 三个反效果的手动干预（都试过并回退，勿重犯）"></a>二、★ 三个反效果的手动干预（都试过并回退，勿重犯）</h2><h3 id="1-手动置-0x9c-——-会堵死循环"><a href="#1-手动置-0x9c-——-会堵死循环" class="headerlink" title="1. 手动置 [0x9c] —— 会堵死循环"></a>1. 手动置 <code>[0x9c]</code> —— 会堵死循环</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">839c ldr r0,[r4,#0x9c] ; cmp #0</span><br><span class="line">83b0 strbne r2,[r4,#0x9a]    ★ [0x9c]!=0 → [0x9a]=1</span><br><span class="line">7dbc ldrb r8,[r4,#0x9a] ; bne 83dc  ← 下轮入口直接 return</span><br></pre></td></tr></table></figure>
+<p><code>[0x9c]</code> 必须留给厂商自己维护。实测置 <code>[0x1f0]=1</code> 后 <code>consume byte</code> 从恒 41 变成全字节数。</p>
+<h3 id="2-手动置-0x1f0-有效，但每轮都要重置"><a href="#2-手动置-0x1f0-有效，但每轮都要重置" class="headerlink" title="2. 手动置 [0x1f0] 有效，但每轮都要重置"></a>2. 手动置 <code>[0x1f0]</code> 有效，但<strong>每轮都要重置</strong></h3><ul>
+<li><code>0x7f04 ldrb [0x1dd] ; bne 7f24</code> → <code>7f10 tst r0,#0x80 ; bne 853c</code><br>投 config 带 <code>OMX_BF_CODECONFIG(0x80)</code> ⇒ 永远走 853c ⇒ 到不了 <code>7f18 → 86e4 → 8710</code> ⇒ 厂商永不置 <code>[0x1f0]</code>。</li>
+<li>兜底置 1 &#x3D; 等效补做 8710。<strong>效果已验证</strong>：<code>consume byte</code> 41 → 14527&#x2F;14482&#x2F;14474&#x2F;14465（全量）。</li>
+<li>但 <code>0x8314</code> 检查后 <code>0x8324 strb r0,[0x1f0]</code> 立即清 0 ⇒ 流式循环<strong>每轮都要重置</strong>。</li>
+</ul>
+<h3 id="3-同一个-in-buffer-二次-empty-会-ASSERT"><a href="#3-同一个-in-buffer-二次-empty-会-ASSERT" class="headerlink" title="3. 同一个 in buffer 二次 empty 会 ASSERT"></a>3. 同一个 in buffer 二次 empty 会 ASSERT</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">##### ASSERT #####</span><br><span class="line">[!(!buffer-&gt;mOwnedByUs)]  [SprdSimpleOMXComponent]</span><br></pre></td></tr></table></figure>
+<p><code>mOwnedByUs=1</code> 表示所有权已归组件；正常由 EmptyBufferDone 回调清 0，我们无 looper ⇒ 每次 empty 前必须 <code>set_owned(hdr, 0)</code>。</p>
+<h2 id="三、gralloc-handle-三层布局（全部实测定案）"><a href="#三、gralloc-handle-三层布局（全部实测定案）" class="headerlink" title="三、gralloc &#x2F; handle 三层布局（全部实测定案）"></a>三、gralloc &#x2F; handle 三层布局（全部实测定案）</h2><ul>
+<li><strong><code>alloc</code> 真实签名只有 7 参</strong>：<code>int alloc(dev,w,h,format,usage,native_handle_t**,int*stride)</code><br>按 AOSP 10 参调用时第 6 参字面量 0 落到 <code>handle**</code> → <code>0x2192 cmp r9,#0; beq 0x244a</code> → <code>mvn r4,#21</code> &#x3D; <strong>-22</strong>。这是历史上 gralloc alloc 全失败的真因。</li>
+<li><strong>format 白名单</strong>：<code>1 2 3 4 5 / 17(YCbCr_420_SP) / 19 20 21 / 33 34 35</code> + 字面量 <code>0x32315659</code>(“YV12”)。<br>实测 <code>fmt=17, usage=0x300(HW_TEXTURE|HW_RENDER)</code> 一次成功，<code>stride=1920</code>。<br>⚠ <code>usage &amp; 0x1000</code> 且 w,h&gt;1 会绕去 framebuffer 路径（<code>0x22ba</code>）首调必失败。</li>
+<li>**<code>hw_module_t</code>**：<code>+0x00</code>&#x3D;0x48574d54(“HMW”)、<code>+0x04</code>&#x3D;1、<code>+0x08..0x18</code>&#x3D;register[0..4]、<code>+0x80..0x8c</code>&#x3D;perform[0..3]。</li>
+<li>**<code>alloc_device_t</code>**：<code>+0x00</code>&#x3D;0x48574454(“HWAT”)、<code>+0x08</code>&#x3D;module、<code>+0x3c</code>&#x3D;name、<code>+0x40</code>&#x3D;alloc、<code>+0x44</code>&#x3D;free、<code>+0xcc</code>&#x3D;ion_fd。<br>⚠ <code>+0x40</code> <strong>直接就是函数指针</strong>（不是指针的指针，多解一层必崩）。</li>
+<li>**<code>native_handle</code>**（实测 dump <code>12 1 18 7 &lt;off&gt; 4 768 3133440 1920 1088 17 1920 &lt;pa&gt;</code>）：<br><code>data[0]=ints[3]</code>&#x3D;<strong>dmabuf fd</strong>、<code>ints[7]</code>&#x3D;size、<code>ints[12]</code>&#x3D;物理地址。</li>
+</ul>
+<h2 id="四、★-读帧路径（三级回退，第①级已验证成功）"><a href="#四、★-读帧路径（三级回退，第①级已验证成功）" class="headerlink" title="四、★ 读帧路径（三级回退，第①级已验证成功）"></a>四、★ 读帧路径（三级回退，第①级已验证成功）</h2><p>设备**没有 <code>/dev/mem</code>**，gralloc 用 <strong>dmabuf 不是 ion</strong>（<code>/proc/self/maps</code> 出现 <code>anon_inode:dmabuf</code>），<br>所以 handle 里的整数不能当 ion fd mmap。但：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">out_fd = ((<span class="type">int</span>*)ghOut)[<span class="number">3</span>];                  <span class="comment">/* = dmabuf fd */</span></span><br><span class="line">pb = mmap(<span class="literal">NULL</span>, size, PROT_READ, MAP_SHARED, out_fd, <span class="number">0</span>);   <span class="comment">/* ★ 实测成功 */</span></span><br></pre></td></tr></table></figure>
+<p>实测：<code>① mmap dmabuf fd=7 size=3133440 → 0xb3cc3000 ★</code></p>
+<p>佐证 VSP 输出走 CPU 指针而非物理地址：<code>0x8140 add r1, ip, r1</code>（ip &#x3D; mapper.lock 的返回地址）。</p>
+<h2 id="五、★★★-0x92-IOMMU-开关-——-之前所有实验都跑在错误路径上"><a href="#五、★★★-0x92-IOMMU-开关-——-之前所有实验都跑在错误路径上" class="headerlink" title="五、★★★ [0x92] &#x3D; IOMMU 开关 —— 之前所有实验都跑在错误路径上"></a>五、★★★ <code>[0x92]</code> &#x3D; IOMMU 开关 —— 之前所有实验都跑在错误路径上</h2><p><strong>这是本轮最重要的发现。</strong> 日志实测：<code>解码器原值: [0x92]=1 [0x94]=1</code><br>—— 解码器出厂就是 <strong>IOMMU 开启</strong>，而我们历史上 <code>force [0x92]=0</code> 把它<strong>关掉了</strong>。</p>
+<p><code>initDecoder@0x5808</code> 的分岔：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">5808 ldrb r3,[r4,#0x92]</span><br><span class="line">5810 cmp r3,#0</span><br><span class="line">5814 beq 5950                ← [0x92]==0 → 跳过 get_iova!</span><br><span class="line">5818 ldr r1,[r4,#0x94]       ← get_iova 的 which 参数</span><br><span class="line">5824 bl  get_iova</span><br><span class="line">5830 ldr r0,[r4,#0xa8] / 5834 bl MemoryHeapIon::getBase</span><br><span class="line">5840 str r6,[r4,#0xac]       ← scratch = ION 的 base(不是 malloc)</span><br><span class="line">585c str r2,[r4,#0xb4] / 5860 str r5,[r4,#0xb0]</span><br></pre></td></tr></table></figure>
+<p>同样的闸门在 <code>VSP_malloc_cb@0x6d50</code> + 另外 3 处（共 <strong>5 处</strong> <code>get_iova</code> 调用：<br><code>0x4784</code>&#x2F;<code>0x4b24</code>&#x2F;<code>0x5824</code>&#x2F;<code>0x6d6c</code>&#x2F;<code>0x7050</code>）。</p>
+<p><code>[0x92]==0</code> 分支（<code>0x5950</code>）实测：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">5960 mov r0,#0x200000 ; bl malloc</span><br><span class="line">5968 str r0,[r4,#0xac]      ← scratch = 普通堆内存</span><br><span class="line">5970 str r5,[r4,#0xb0] / 5974 str r1,[r4,#0xb4]=2MB</span><br></pre></td></tr></table></figure>
+<p>日志实测 <code>scratch[0xac]=0xb4a36000 [0xb0]=... [0xb4]=2097152</code> 完全吻合。</p>
+<h3 id="⚠-直接恢复-0x92-1-会在-useBuffer-段-Segfault"><a href="#⚠-直接恢复-0x92-1-会在-useBuffer-段-Segfault" class="headerlink" title="⚠ 直接恢复 [0x92]=1 会在 useBuffer 段 Segfault"></a>⚠ 直接恢复 <code>[0x92]=1</code> 会在 useBuffer 段 Segfault</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">internalUseBuffer, header=0xb6d4ed70, pBuffer=0x0, size=18565 → Segmentation fault</span><br></pre></td></tr></table></figure>
+<p>⇒ IOMMU 路径下 <code>useBuffer</code> 内部还要拿 buffer 的 IOVA（走 gralloc →<br><code>MemoryHeapIon::Get_iova</code>），而我们的 gralloc alloc 出的是 <strong>dmabuf</strong>（<code>ints[3]=fd</code>），<br>没经过 <code>ion_share</code>&#x2F;IOVA 映射 ⇒ 拿不到就崩。</p>
+<p><strong>下一步必须先解决</strong>：给 gralloc 分配的 buffer 建立 IOVA 映射，<br>然后才能把 <code>[0x92]</code> 切回 1。可用素材：</p>
+<ul>
+<li><code>libomxvpu.so</code> 导出：<code>getIOMMUPhyAddr@0x33e0</code>、<code>lockAndroidBufferHandle@0x3700</code>、<br><code>getAndroidNativeBufferHandleInfo@0x3524</code>、<code>getAndroidNativeBufferInfo@0x3454</code>、<br><code>checkUseAndroidNativeBufferHeader@0x30e4</code>、<code>lockAndroidNativeBuffer@0x35c8</code>、<br><code>StoreMetaDataBuffer@0x3584</code>、<code>enableAndroidBuffer@0x3100</code></li>
+<li>h264dec 未定义符号（我们已 mock 了一部分）：<br><code>MemoryHeapIon::Get_iova(int,int,unsigned long*,unsigned*)</code>、<br><code>get_iova(...)</code>、<code>free_iova(int,unsigned,unsigned)</code>、<br><code>IOMMU_is_enabled(int)</code>、<br><code>SprdSimpleOMXComponent::freeOutputBufferIOVA()</code></li>
+<li><code>libomxvpu.so</code> 里 <code>getIOMMUPhyAddr</code> 反汇编（Thumb）：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">33f0 ldr r4,[r0,#0x24]        ; MemoryHeapIon 对象</span><br><span class="line">33f4 movs r0,#1</span><br><span class="line">33f6 blx MemoryHeapIon::IOMMU_is_enabled(int)</span><br><span class="line">33fa cbz r0, 3442             ; ==0 → 返回</span><br><span class="line">33fc blx gettid</span><br><span class="line">3414 ldr r2,[r4,#0x8] / 341a ldr r0,[r4,#0x12]   ; size / fd</span><br><span class="line">3434 blx MemoryHeapIon::Free_iova(int,int,int,unsigned)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="六、★★-两条互斥路径（2026-10-08-收尾发现的死结）"><a href="#六、★★-两条互斥路径（2026-10-08-收尾发现的死结）" class="headerlink" title="六、★★ 两条互斥路径（2026-10-08 收尾发现的死结）"></a>六、★★ 两条互斥路径（2026-10-08 收尾发现的死结）</h2><p><code>0x7f04-0x7f24</code> 与 <code>0x84a8-0x84ec</code> 是<strong>两条互斥</strong>的送 VSP 路径，只能走一条：</p>
+<p><strong>路径 A：送全量码流</strong>（需 <code>[0x1dd]</code> 已置位）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">7f04 ldrb r2,[r4,#0x1dd] ; cmp #0 ; bne 7f24   ← [0x1dd]!=0 直接跳 7f24</span><br><span class="line">7f24 vldr d0,[r5,#0x38]</span><br><span class="line">7f28 ldr r3,[r4,#0x9c]                          ← ★ [0x9c] 必须非 0</span><br><span class="line">7f68 beq 8518                                   ← [0x9c]==0 跳过整段拷贝</span><br><span class="line">7fd4-7ffc strb 写 &quot;00 00 00 01&quot; 到 [0xac]</span><br><span class="line">8020 bl memcpy(scratch+4, header-&gt;pBuffer, [0x9c]+4)</span><br></pre></td></tr></table></figure>
+<p>实测：置 <code>[0x1dd]=1</code> + <code>[0x9c]=n</code> → <strong><code>consume byte</code> &#x3D; 全量 14527</strong> ✓<br>⚠ 但 <code>[0x9c]!=0</code> 会触发 <code>0x83b0 strbne [0x9a]=1</code> → 入口 <code>7dbc</code> 下轮直接 return。</p>
+<p><strong>路径 B：单独送 SPS 建参数集</strong>（需 <code>[0x1dd]==0</code> 且 <code>[0x9c]==0</code>）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">84a8 tst r0,#0x80 ; bne 853c          ← 要求 nFlags 不带 CODECONFIG</span><br><span class="line">84b0 ldr r3,[r4,#0x1e4] ; cmp #0 ; beq 7f24   ← SPS长度==0 直接跳过</span><br><span class="line">84dc ldr r8,[r4,#0x1e0]               ← SPS 缓冲</span><br><span class="line">84e4 strb r0,[r4,#0x1f0]              ★ 厂商在这里置 [0x1f0]=1</span><br><span class="line">84ec b 7f24</span><br></pre></td></tr></table></figure>
+<p>实测：不置 <code>[0x1dc]/[0x1dd]</code> → 走这里 → 但 <code>[0x9c]=0</code> 在 <code>7f68</code> 挡拷贝 → <strong><code>consume byte</code> 恒 41</strong>。</p>
+<h3 id="死结"><a href="#死结" class="headerlink" title="死结"></a>死结</h3><ul>
+<li>走 A 需要 <code>[0x9c]!=0</code>，但那会置 <code>[0x9a]=1</code> 让下轮 return。</li>
+<li>走 B 需要 <code>[0x9c]==0</code>，但那样 VSP 拿不到 IDR 码流。</li>
+<li><code>[0x1f0]=1</code> 必须<strong>每轮重置</strong>（<code>0x8314</code> 检查后 <code>0x8324</code> 立即清 0）。</li>
+</ul>
+<h3 id="已排除的假设（A-B-实验实测）"><a href="#已排除的假设（A-B-实验实测）" class="headerlink" title="已排除的假设（A&#x2F;B 实验实测）"></a>已排除的假设（A&#x2F;B 实验实测）</h3><ul>
+<li><strong><code>[0x228]</code>（IOVA 开关）不是关键</strong>：<code>SPRD_NO_IOVA=1</code> 强制 <code>[0x228]=0</code> 后，<br><code>consume byte</code> 同样是全量 14527，<code>frameEffective</code> 同样 0。与 <code>[0x228]=1</code> 无差别。</li>
+<li><strong><code>nOffset</code> 推进会把码流切碎</strong>（探针实证）：按 consume byte 推进后 scratch 内容变成<br><code>轮0=SPS / 轮1=PPS字节 / 轮2=IDR中段 / 轮3=切片</code> ⇒ VSP 永远看不到完整 SPS 开头。<br><strong>必须恒 <code>nOffset=0</code> + 每轮投全量</strong>。</li>
+<li><strong><code>mCropWidth</code>&#x2F;<code>picWidth</code> 日志一次都没出现</strong> ⇒ <code>handlePortSettingChangeEvent</code> 从未被调用。</li>
+</ul>
+<h3 id="internalUseBuffer-0x4514-的结构（-0x92-1-崩在这里）"><a href="#internalUseBuffer-0x4514-的结构（-0x92-1-崩在这里）" class="headerlink" title="internalUseBuffer@0x4514 的结构（[0x92]=1 崩在这里）"></a>internalUseBuffer@0x4514 的结构（<code>[0x92]=1</code> 崩在这里）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">4654 mov r0,#0x18 ; bl operator new(24)     ; new BufferPrivateStruct(24)</span><br><span class="line">465c str r5,[r0,#4]                          ; [+4] = r5(端口私有数据)</span><br><span class="line">4660 ldr r5,[r4] ; 4664 str r0,[r5,#0x24]    ; portInfo-&gt;[0x24] = 新对象</span><br><span class="line">4668 ldr sl,[r4] ; 466c ldr r5,[sl,#0x24]     ; 读回</span><br><span class="line">4670 cmp r5,#0 ; beq 4748                    ; → __android_log_assert</span><br><span class="line">4678 ldrb lr,[r9,#0x90]                      ; ★ 又一个开关 [0x90]</span><br><span class="line">467c ldr r0,[r9,#0x94] ; 4688 str r0,[r5,#0x20] ; 只是存字段, 不是解引用</span><br><span class="line">4684 cmp lr,#0 ; beq 46f4                     ; [0x90]==0 走 46f4</span><br><span class="line">4690 ldr lr,[sp,#0x40] ; 4698 beq 47c0</span><br><span class="line">46a4-46c8 RefBase::incStrong/decStrong       ; 我们已 no-op 掉</span><br></pre></td></tr></table></figure>
+<p>实测 <code>SPRD_IOMMU=1</code> 时：日志停在 <code>internalUseBuffer, header=..., pBuffer=0x0, size=18565</code><br>（<code>[0x92]=0</code> 时同一位置会打<strong>两次</strong>，in&#x2F;out 各一次）⇒ 崩在第一次 useBuffer 内部，<br>且**<code>★ Get_iova</code> 一次都没打印** ⇒ 根本没调到 get_iova，是更早的分支就炸了。</p>
+<p>开关矩阵（当前默认值 &#x3D; 已知可跑通的基线）：</p>
+<ul>
+<li><code>SPRD_IOMMU=1</code> → <code>[0x92]=1 [0x94]=1</code> → useBuffer 段 Segfault（未定位）</li>
+<li>默认（无 env） → <code>[0x92]=0 [0x94]=0</code> → 跑完全流程，<code>consume byte</code> 全量，<br><code>scratch非零=43/64</code>，但 <code>frameEffective=0</code></li>
+</ul>
+<h2 id="七、当前卡点（下一步）"><a href="#七、当前卡点（下一步）" class="headerlink" title="七、当前卡点（下一步）"></a>七、当前卡点（下一步）</h2><p>日志固定为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">dec_out.frameEffective: 0, consume byte: &lt;全量 14527&gt;, SPS:0, PPS:0</span><br><span class="line">failed to get decoder information.        ← H264DecGetInfo 返回空</span><br><span class="line">[0x64]/[0x68]=1920/1088 ✓  spsLen=41 ppsLen=8 ✓</span><br><span class="line">[0x1e0]SPS=00 00 00 01 67 64 00 2a ...  [0x1e8]PPS=00 00 00 01 68 ee 3c b0  ✓</span><br><span class="line">scratch[0..15]=00 00 00 01 67 64 00 2a ...  ✓  scratch非零=43/64</span><br></pre></td></tr></table></figure>
+
+<p>已排除：<code>nFlags</code>、<code>[0x9c]</code>(单独)、<code>[0x8c]</code>、<code>[0x1f0]</code>、<code>[0x1dc]/[0x1dd]</code>、port1 尺寸、<br><code>[0x84]/[0x9a]</code>、mOwnedByUs、gralloc handle、mapper.lock、<code>[0x228]</code>、nOffset 推进。</p>
+<p><strong><code>mCropWidth</code>&#x2F;<code>picWidth</code> 日志一次都没出现</strong> ⇒ <code>handlePortSettingChangeEvent</code> 从未被调用<br>⇒ VSP 从没回填尺寸 ⇒ <code>H264DecGetInfo</code> 返回空。</p>
+<p><strong>头号嫌疑（已定位，未修）</strong>：<code>[0x92]</code> 被我们强制成 0 关掉了 IOMMU。<br>解码器原值是 1，走 IOMMU 时 VSP 要的是 <strong>IOVA</strong>（<code>MemoryHeapIon::Get_iova</code>），<br>而我们的 <code>get_iova</code> mock 返回的是裸物理地址 <code>base + g_phys_bias</code>，<br>VSP 用它访问内存必然失败 → 不出帧、<code>SPS:0/PPS:0</code>。</p>
+<p><strong>次号嫌疑</strong>：gralloc 出来的 dmabuf 没有 IOVA 映射，导致 <code>[0x92]=1</code> 时 useBuffer 直接崩。</p>
+<h2 id="六、构建-运行"><a href="#六、构建-运行" class="headerlink" title="六、构建&#x2F;运行"></a>六、构建&#x2F;运行</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> DEV_IP=192.168.137.100 MSYS_NO_PATHCONV=1   <span class="comment"># ★ 不加会 SFTP 报不存在</span></span><br><span class="line">python ssh_tools/dev.py --push outputs/sprd_msg.c /tmp/sprd_msg.c</span><br><span class="line">python ssh_tools/dev.py <span class="string">&quot;sh /tmp/smb.sh 2&gt;&amp;1 | grep -E &#x27;BUILD|error:&#x27;&quot;</span></span><br><span class="line">python ssh_tools/dev.py <span class="string">&quot;rm -f /tmp/run.log; timeout 150 /tmp/sprd_msg &gt; /tmp/run.log 2&gt;&amp;1&quot;</span></span><br><span class="line">python ssh_tools/dev.py --get /tmp/run.log outputs/run.log</span><br></pre></td></tr></table></figure>
+<p><code>smb.sh</code> 末尾会自己跑一遍；单独跑要手动重定向存日志。<br>反汇编：<code>python ssh_tools/dev.py &quot;objdump -d --start-address=0x7f00 --stop-address=0x8030 /mnt/android_sys/lib/libstagefright_sprd_h264dec.so&quot;</code></p>
+<h2 id="八、★★-IOVA-链路攻坚定案（2026-10-08-下午，SPRD-IOMMU-1-路径）"><a href="#八、★★-IOVA-链路攻坚定案（2026-10-08-下午，SPRD-IOMMU-1-路径）" class="headerlink" title="八、★★ IOVA 链路攻坚定案（2026-10-08 下午，SPRD_IOMMU&#x3D;1 路径）"></a>八、★★ IOVA 链路攻坚定案（2026-10-08 下午，SPRD_IOMMU&#x3D;1 路径）</h2><h3 id="已修复（全部实测）"><a href="#已修复（全部实测）" class="headerlink" title="已修复（全部实测）"></a>已修复（全部实测）</h3><ol>
+<li><strong>useBuffer 参数错位（本轮最大 bug）</strong>：真实签名<br><code>useBuffer(this, hdr**, port, priv, size, pBuf, out**)</code>——旧调用把 pInBuf<br>放 priv 槽、pBuf 槽传 0 → internalUseBuffer 的 header-&gt;pBuffer&#x3D;0 →<br>[0x92]&#x3D;1 时 <code>0x477c ldr r1,[pBuffer,#12]</code> 解引用 0xc → SEGV。<br>旧 [0x92]&#x3D;0 路径不碰 pBuffer 所以侥幸不崩。</li>
+<li><strong>internalUseBuffer out 端口 4 分支定案</strong>（0x4678 起）：<br><code>[0x90]!=0</code> → 把 arg6 当 sp<GraphicBuffer>* 做 incStrong（传 native_handle 必崩）；<br><code>[0x90]==0 &amp;&amp; [0x92]!=0</code> → ION&#x2F;IOVA 路径 0x476c（安全）：Get_iova([0x94], pBuffer[12])<br>→ priv-&gt;[8]&#x3D;fd, priv-&gt;[12]&#x3D;iova, priv-&gt;[16]&#x3D;size。<br><strong>pBuffer[12] &#x3D; native_handle data[3] &#x3D; dmabuf fd</strong>。</li>
+<li><strong>Get_iova 参数语义</strong>：<code>Get_iova(fd1_unused, fd2_real, &amp;iova, &amp;size)</code> ——<br><strong>第二个参数才是 dmabuf fd</strong>（&#x3D;handle ints[3]&#x3D;7），第一个是 [0x94]（原值 1）。<br>旧 mock 用第一参查表 → 恒失败 → priv-&gt;[12] 栈垃圾。</li>
+<li><strong>map_add 时序</strong>：必须在 gralloc alloc 后立即登记（internalUseBuffer 在<br>useBuffer <strong>内部</strong>调 Get_iova，晚登记&#x3D;时序倒挂）。</li>
+<li><strong>pBufCtrl（this+0x48 指向，24B）</strong>：[0]&#x3D;phyAddr（VSP 回调链填，<strong>VSP 自己<br>管理的 IOVA</strong>，每次运行变化 0xb48x0000&#x2F;0xb49x0000 &#x3D; 驱动动态分配）；<br>onQueueFilled 0x805c：<code>[0x92]!=0 且 priv-&gt;[12]==0 → fail</code>（0x8860 打<br>“pBufCtrl-&gt;phyAddr&#x3D;&#x3D;0, fail”）。<strong>fail&#x3D;0 已达成</strong>。</li>
+<li><strong>[0x8e]&#x3D;1 是 openDecoder 失败后的降级标志</strong>（0x7d68 厂商置位）：<br>initDecoder 0x5770 查 [0x8e]!&#x3D;0 → malloc scratch（跳过 ION）→<br>[0x92]&#x3D;0 旧路径实为降级路径，VSP 拿 malloc 内存 DMA 不可读 → 解不出帧的死因。<br>allocateBuffer 0x4a88 同样查 [0x8e]&#x2F;[0x8f]。</li>
+</ol>
+<h3 id="当前状态（run-iova3）"><a href="#当前状态（run-iova3）" class="headerlink" title="当前状态（run_iova3）"></a>当前状态（run_iova3）</h3><ul>
+<li><code>consume byte: 41→8→14469</code>（SPS&#x2F;PPS&#x2F;IDR 三段式全消费）、<code>decRet: 0</code>、<br><code>pBufCtrl fail=0</code>、scratch 有完整 SPS ✓</li>
+<li><strong>卡点</strong>：<code>0ms</code> 立即返回 + <code>frameEffective:0</code> + <code>SPS:0,PPS:0</code> —— VSP 没真解</li>
+<li><strong>头号嫌疑</strong>：h264dec memcpy 码流到 [0xac]（我们 C1 分配的 ION getBase），<br>但 VSP 读的是 pBufCtrl-&gt;phyAddr（<strong>VSP_malloc_cb@0x6ba0 分配的 bitstream<br>buffer 的 IOVA</strong>）——若 VSP_malloc_cb 从<strong>另一块</strong> ION 分配（非 [0xac] 同块），<br>则 CPU 写&#x2F; DMA 读错位 → VSP 读到空 → 0 帧。下一步核对 VSP_malloc_cb（0x6ba0，<br>走回调 0x20c&#x2F;0x214，结尾写 [0x8c]）返回地址与 [0xac] 的关系。</li>
+<li>ioctl 0xc0084906（真实现的 Get_phy_addr）内核确认不支持；pagemap 在 ARM32<br>读不出页帧（scratch_pa&#x3D;0）——两条拿物理地址的路都死，但 VSP 内部 IOVA 可用。</li>
+</ul>
+<h3 id="补充定案（0x8090-0x8190-VSP-DecodeFrame-参数）"><a href="#补充定案（0x8090-0x8190-VSP-DecodeFrame-参数）" class="headerlink" title="补充定案（0x8090-0x8190 VSP DecodeFrame 参数）"></a>补充定案（0x8090-0x8190 VSP DecodeFrame 参数）</h3><ul>
+<li><code>0x8124 ldr r0,[r4,#0x48]</code> → <strong>VSP DecodeFrame([0x208]) 第一参数 &#x3D; pBufCtrl</strong><br>（VSP 从 pBufCtrl-&gt;phyAddr 读码流，[0xac] scratch 是 CPU 侧 memcpy 目标）</li>
+<li><code>r2 = [sp+0x54] = priv-&gt;[12] = gralloc out 的 iova(0xb4543000)</code> → VSP 写帧物理地址 ✓</li>
+<li><code>0x815c [0xac] 只进 dump_strm(日志)</code>，非 VSP 参数</li>
+<li>判断：h264dec 上层（IOVA&#x2F;phyAddr&#x2F;consume）<strong>全部打通</strong>，剩 <code>0ms 无帧</code> 问题<br>在 <strong>libomx_avcdec_hw_sprd.so 内部 H264DecDecode_NALU</strong>（ believed 无可解数据）。<br>下一步：反汇编 H264DecDecode_NALU（或 ptrace 抓 VSP 库输入指针），核对<br>pBufCtrl-&gt;phyAddr 是否真对应 [0xac] 的物理（VSP init 回调链 [0x1f8] 可能<br>就是对 [0xac] 做的映射 —— 若是则数据应可达，疑点转向 VSP 内部状态机）。</li>
+</ul>
+<h2 id="九、★★★-2026-10-08-下午：硬解出图（里程碑）"><a href="#九、★★★-2026-10-08-下午：硬解出图（里程碑）" class="headerlink" title="九、★★★ 2026-10-08 下午：硬解出图（里程碑）"></a>九、★★★ 2026-10-08 下午：硬解出图（里程碑）</h2><blockquote>
+<p>结论先行：<strong>VSP 硬件已完整解出 1920x1080 真画面</strong>（outputs&#x2F;out_frame.png 可见台标&#x2F;字幕&#x2F;人脸）。</p>
+</blockquote>
+<h3 id="根因链（本次全部实证）"><a href="#根因链（本次全部实证）" class="headerlink" title="根因链（本次全部实证）"></a>根因链（本次全部实证）</h3><ol>
+<li><code>read_bits</code> 是 <strong>VSP 硬件寄存器位流引擎</strong>（写 0x60908008 触发、0x60908010 读回），<br>不是读内存。硬件读码流用的物理地址来自 decoder region 表。</li>
+<li><strong>region 表</strong> &#x3D; <code>H264Dec_MemV2P@0xbf8c</code>：region 结构 ctx+id*16，<code>[0x88]=pbase, [0x8c]=vbase</code>，<br><code>phys = vaddr + (pbase - vbase)</code>。region0 &#x3D; VSPDev 内部工作区（vbase&#x3D;0xef58）。</li>
+<li><strong>ION 真接口定案（&#x2F;dev&#x2F;ion, kernel 无 IOMMU 映射接口）</strong>：<ul>
+<li>ALLOC  &#x3D; <code>0xc0144900</code>（20B 结构 {len,align,mask,flags,handle}）</li>
+<li>fd导出 &#x3D; <code>0xc0084904</code>（{handle,fd}，<strong>不是 03</strong>！）</li>
+<li>FREE   &#x3D; <code>0xc0044901</code></li>
+<li>PHYS   &#x3D; <code>ION_IOC_CUSTOM 0xc0084906</code>，arg&#x3D;{cmd&#x3D;0, arg&#x3D;&amp;{int fd; ulong phys; uint size}}<br>→ 真物理地址（如 0x9f800000）。<strong>heap mask&#x3D;8 的分配才能查</strong>（mask 2&#x2F;4 EINVAL）</li>
+<li>cmd9(get_iova) <strong>内核不存在</strong>（1024 组合扫描全 EINVAL）→ IOMMU 路径死路，<br><strong>必须走物理地址</strong>（VSP 无独立 MMU，phys&#x3D;总线地址）</li>
+<li>⚠ cmd&#x3D;1 会 SEGV 杀进程，永远只调 cmd&#x3D;0</li>
+</ul>
+</li>
+<li>历史失败的根因：mock Get_iova 返回 CPU 虚拟地址（0xb4xxxxxx）当物理地址 →<br>VSP DMA 读到垃圾 → NAL 解析失败（profile_idc INVALID）或假完成。<br>[0x92] 默认改回 1（原厂值），配合 cmd0 真查后链路全通。</li>
+<li><strong>输出 buffer 必须自管 ION</strong>（heap 8）：gralloc.sc8830 分配的是 IOMMU heap<br>（无物理连续 backing）→ cmd0 查不到 → 只能给假地址 → VSP 写帧失败。<br>自管 ION + fake gralloc handle（照抄真 handle 的 magic 字段 fh[0..2],[4..6]，<br>换 fd[3]&#x2F;size[7]&#x2F;base[12]，否则 mapper.lock 报 “Locking invalid buffer”）。<br><strong>4 个输出 buffer</strong>（DPB 参照帧需要，1 个会 -9 缺帧buffer）。</li>
+<li>关键寄存器定案：H264DecDecode 每轮写 0x8000&#x3D;len|0x80000000、0x8004&#x3D;acc|0xc0000000、<br>0x8008&#x3D;6、0x1060&#x2F;0x1064&#x3D;dataLen&gt;&gt;3，pStream[cap..cap+3] 写哨兵 f4 68 28 f1；<br>0x8034&#x3D;本轮硬件消费量，VSPDev+0x984&#x3D;累计。acc&gt;&#x3D;总量 → 跳过 NALU 直接返回<br>（真 PA 修好后消费模式变为 4 字节起始码 + read_bits 软件解析）。</li>
+<li><code>vsp_read_reg_poll@0x12a10</code>（libomx 内部）返回 0&#x3D;成功；hook 用 <strong>GOT patch</strong><br>（lib_base+0x1de90），导出同名符号拦不住（bionic 先命中自身）。<br>⚠ hook 内读寄存器必须在 VSP 会话中（0x8018 轮询时），empty 返回后读必崩<br>（VSP_RELEASE_Dev 已释放）。</li>
+</ol>
+<h3 id="出图时的表现"><a href="#出图时的表现" class="headerlink" title="出图时的表现"></a>出图时的表现</h3><ul>
+<li>SPS 轮 decRet&#x3D;-9（2ms，SPS:1 PPS:0，报 PortSettingChange 1920x1088 ✓）</li>
+<li>IDR 轮 decRet&#x3D;-7（35-44ms 真解码！”failed to decode video frame, hardware error”<br>是<strong>非致命</strong>状态位 error_flag&#x3D;0x8，帧实际已写到输出 buffer）</li>
+<li>Y 平面 93.5% 非零、U 97%、V 89%，画面完全正确</li>
+<li>落盘判定不依赖 OMX 头回显（nFilledLen 不可信），直接按 YUV 非零比例判</li>
+<li>探针尾部 RC&#x3D;139（Segfault）是收尾阶段的既有 bug，不影响出图</li>
+</ul>
+<h3 id="剩余工作"><a href="#剩余工作" class="headerlink" title="剩余工作"></a>剩余工作</h3><ul>
+<li>① 每轮帧落到不同 out buffer 轮转确认（4 路已注册）</li>
+<li>② 帧几何绿带：落盘按 stride*1088 布局切（当前按 1080 切导致 chroma 错位）</li>
+<li>③ VPP&#x2F;FBIOPAN 显示集成 + nettv_page</li>
+<li>④ 提交推送</li>
+</ul>
+<h2 id="十、★★★-2026-10-08-晚：连续多帧解码打通"><a href="#十、★★★-2026-10-08-晚：连续多帧解码打通" class="headerlink" title="十、★★★ 2026-10-08 晚：连续多帧解码打通"></a>十、★★★ 2026-10-08 晚：连续多帧解码打通</h2><ul>
+<li><strong>8&#x2F;8 轮全部真解码</strong>（33-37ms&#x2F;帧 ≈ 28fps 能力），逐帧落盘 &#x2F;tmp&#x2F;frame_NN.yuv（0x2FC000 原始 NV12）。</li>
+<li><strong>组件 [this_d+0x92] 默认改 0</strong>（关键）：fail 分支(dec.asm 0x8064→0x8860 打 “pBufCtrl-&gt;phyAddr&#x3D;&#x3D;0,fail”)<br>只在 [0x92]!&#x3D;0 且 priv[12]&#x3D;&#x3D;0 时触发；&#x3D;0 时 onQueueFilled 走 Get_phy_addr_from_ion(mock&#x3D;ion_phys cmd0)<br>→ 自管 ION 路拿真PA，gralloc 路 [12]&#x3D;0 但不拦流程。VSPDev 内部 IOMMU 开关是另一个字节，不受影响。</li>
+<li><strong>内存预算定案</strong>：连续池仅 ~2×3MB。early(main 开头)抢 2 路或 1 路 → 组件内部 DPB 分配失败<br>(decRet&#x3D;-3 “failed to allocate memory” → 自动切软解 → 全灭)。<strong>成功配置 &#x3D; 完全不 early 抢，<br>组件先拿足内存，out[0] 在 init 后用 try_sz{0x320000,0x300000,0x400000} 分配，out[1..3] 用 gralloc</strong>。</li>
+<li>轮转中的坑（均已修在探针里）：<ul>
+<li>VSPDev ctx(pBufCtrl-&gt;[0]) 第 0 轮 VSP_RELEASE 后被清 0 → 每轮 empty 前恢复（g_vspdev0）</li>
+<li>out header 的 priv(+0x24)-&gt;[12] 可能为 0 → 每轮扫描，fd 取自 header-&gt;pBuffer ints[3]（priv[8] 不可靠）</li>
+<li>OMX out header 永不回显 nFilledLen（drain 只发空帧）→ 出帧判定必须按内存内容（Y 抽稀非零）</li>
+<li>8 轮全部 FilledDone 同一个 h（组件总选第一个空 out）→ 画面持续写在 out[0] 的 ION</li>
+</ul>
+</li>
+<li>遗留：error_flag&#x3D;0x8 状态位非致命（decRet&#x3D;-7 但帧正确）；当前是同一 IDR 切片重复解码验证，<br>连续播放需按 AU 流式投喂（nettv 集成时做）。</li>
+<li>下一步：VPP&#x2F;FBIOPAN 显示（YUV→RGB 或直接 NV12 tile？需查 fb 格式）+ nettv_page 集成 + 提交推送。</li>
+</ul>
+<h2 id="十一、★★★-2026-10-08-晚：真实流-NAL-流式硬解打通（约-95-）"><a href="#十一、★★★-2026-10-08-晚：真实流-NAL-流式硬解打通（约-95-）" class="headerlink" title="十一、★★★ 2026-10-08 晚：真实流 NAL 流式硬解打通（约 95%）"></a>十一、★★★ 2026-10-08 晚：真实流 NAL 流式硬解打通（约 95%）</h2><blockquote>
+<p>es_fix.h264（5.2MB 直播 ES，1016 AU &#x2F; 333 有效 NAL）连续流式解码 82-103 帧 decRet&#x3D;0。</p>
+</blockquote>
+<h3 id="投喂模型定案"><a href="#投喂模型定案" class="headerlink" title="投喂模型定案"></a>投喂模型定案</h3><ul>
+<li><strong>VSP 每次 empty 只消费一个 NAL</strong>（实证：AU&#x3D;[AUD+slice] 时 consume&#x3D;6 只吃 AUD；<br>文件头垃圾 NAL(type0) 挡在第一个 → IDR 进不去 → needIVOP&#x3D;1 → 全部帧被丢）。</li>
+<li><strong>投喂单位&#x3D;单个 NAL</strong>（type 1&#x2F;5&#x2F;6&#x2F;7&#x2F;8；跳过 type 0 垃圾和 9 AUD）。<br>与 config 段成功路径一致（SPS&#x2F;PPS&#x2F;IDR 各一次 empty）。</li>
+<li>in buffer 32KB 足够（最大 NAL 实测 23918B）；1MB 会挤占 CMA 池提前 -3。</li>
+</ul>
+<h3 id="★-error-flag-Need-I-frame-死锁链（反汇编定案，libomx-avcdec-hw-sprd-so）"><a href="#★-error-flag-Need-I-frame-死锁链（反汇编定案，libomx-avcdec-hw-sprd-so）" class="headerlink" title="★ error_flag&#x2F;Need I frame 死锁链（反汇编定案，libomx_avcdec_hw_sprd.so）"></a>★ error_flag&#x2F;Need I frame 死锁链（反汇编定案，libomx_avcdec_hw_sprd.so）</h3><ol>
+<li>NALU 内 0x11724 bl VSP_POLL_COMPLETE → 返回值 int_ret</li>
+<li>0x11738 <code>ands r3,r0,#1</code>：<strong>bit0&#x3D;1 → [H264Dec ctx+0xc] |&#x3D; 8</strong>（0x11750）</li>
+<li>NALU 尾 0x11884 查 [0xc]!&#x3D;0 → 976 行日志 “error_flag&#x3D;0x8” + return（decRet&#x3D;-7）</li>
+<li><strong>下一个 NAL 进来，0x10e38 查 [r4+0xc]!&#x3D;0 → 886 行 “Need I frame!” → return -1</strong>（上层 -5 stream error）<br>→ IDR 虽然出图但 error_flag 污染 ctx，后续所有 P 帧被拦。</li>
+<li>IDR 日志恒 <code>VSP_POLL_COMPLETE int_ret: 1</code>（硬件每轮报 bit0）。</li>
+</ol>
+<ul>
+<li><strong>修复</strong>：GOT patch VSP_POLL_COMPLETE（GOT 0x1dfa0，符号@0x12800），<br>hook 里 <code>r &amp;= ~1</code> 抑制 bit0 → 流程走 0x118cc “正常完成”路径 → error_flag 不再被置。</li>
+<li>效果：IDR&#x2F;P 帧 decRet&#x3D;0、needIVOP&#x3D;0、14-20ms&#x2F;帧（1080p ≈ 50-70fps 能力）。</li>
+</ul>
+<h3 id="内存账本（CMA-池-7MB，hid-0-区-0x9fd20000-起连续线性分配）"><a href="#内存账本（CMA-池-7MB，hid-0-区-0x9fd20000-起连续线性分配）" class="headerlink" title="内存账本（CMA 池 ~7MB，hid&#x3D;0 区 0x9fd20000 起连续线性分配）"></a>内存账本（CMA 池 ~7MB，hid&#x3D;0 区 0x9fd20000 起连续线性分配）</h3><ul>
+<li>out[0] 自管 ION 3.2MB（mask8 区 0x9fa00000）+ in 32KB + mbinfo 5×653824&#x3D;3.2MB ≈ 满</li>
+<li><strong>mbinfo idx 0,1,2,… 每 ~2 帧递增分配 653824B 且从不 free</strong>（组件行为）</li>
+<li>C1 LRU 重用（C1_REUSE_MAX&#x3D;5）已写好未触发；池满 → decRet&#x3D;-3 → 组件切软解全灭</li>
+<li>⚠ <strong>禁忌</strong>：mbinfo 换 mask8 裸分配（out[0] 同区）→ VSP DMA 写该区 → <strong>内核崩溃设备重启</strong>。<br>C1 分配只能 hid&#x3D;0。</li>
+</ul>
+<h3 id="遗留坏帧（唯一剩余问题，约-1-3-帧）"><a href="#遗留坏帧（唯一剩余问题，约-1-3-帧）" class="headerlink" title="遗留坏帧（唯一剩余问题，约 1&#x2F;3 帧）"></a>遗留坏帧（唯一剩余问题，约 1&#x2F;3 帧）</h3><ul>
+<li>模式：间歇性（好 7 帧→坏 1→好 3→坏 2→好 9→坏 4…），chroma 全 0（U-mean&#x3D;0）+ Y 宏块错乱。</li>
+<li>根因：out[1..3] 是 gralloc（IOMMU heap）——cmd0(0xc0084906) 和 0xc008602a 都查不到真 PA<br>→ VSP DPB 参照写到无效地址 → P 帧参照错乱。参照恰好用 out[0] 时帧完美（frame_00&#x2F;05）。</li>
+<li>解法方向：out[1..3] 换可查 PA 的内存（池不够 3×3.2MB）→ 需 mbinfo 出池（mask8 崩溃不可行）<br>或 VSP 输出降分辨率（1280x720 → 每 out 1.4MB，2 路 ION 2.8+mbinfo 3.2+in ≈ 6.5MB 可行，待验证）</li>
+<li>验证工具：U 通道均值（offset 1920*1088 起 &gt;40&#x3D;好帧）；yuv2png.py（NV12 stride1088 切图）</li>
+</ul>
+<h3 id="工程杂项"><a href="#工程杂项" class="headerlink" title="工程杂项"></a>工程杂项</h3><ul>
+<li>编译补 <code>-Wl,-l:libion.so -Wl,-l:libhardware.so</code>（ion_open&#x2F;ion_alloc&#x2F;hw_get_module）</li>
+<li>musl 头把 gettimeofday&#x2F;clock_gettime 重定向 __*_time64（bionic 无）→ 裸 <code>syscall(78,&amp;tv,0)</code> 取毫秒</li>
+<li>杀残留探针：cmdline 匹配 <code>/tmp/sprd_msg*</code>——宽松匹配 “sprd_msg” 会命中 bash 自己（踩过）</li>
+<li>落盘判重：Y 抽稀 DJB2 签名，画面没变不重复落盘</li>
+</ul>
+<h2 id="十二、★★★-2026-10-08-晚-2：fb-直显打通（约-97-）"><a href="#十二、★★★-2026-10-08-晚-2：fb-直显打通（约-97-）" class="headerlink" title="十二、★★★ 2026-10-08 晚 2：fb 直显打通（约 97%）"></a>十二、★★★ 2026-10-08 晚 2：fb 直显打通（约 97%）</h2><h3 id="遗留坏帧定案（重要反转）"><a href="#遗留坏帧定案（重要反转）" class="headerlink" title="遗留坏帧定案（重要反转）"></a>遗留坏帧定案（重要反转）</h3><ul>
+<li>本地 ffmpeg(OpenCV) 解同一条 es_fix.h264：<strong>同样报一堆 “error while decoding MB … bytestream -5”</strong><ul>
+<li>“non-existing PPS 2” → <strong>源流本身丢包损伤</strong>（网络抓包丢失），非 VSP 缺陷。<br>ffmpeg 会错误掩盖（复制邻近 MB）所以不出黑 chroma 帧；VSP 掩盖策略差 → 花屏+chroma 0。<br>坏帧位置跨运行逐字节相同（确定性）&#x3D; 与内存配置无关的流损伤特征。<br>→ 实况直播集成时属正常网络损伤，VSP 管线不需要再修。</li>
+</ul>
+</li>
+<li>另修：mbinfo PA —— C1 里 0xc008602a 失败后追加 cmd0(0xc0084906) 兜底，6 个 mbinfo 全拿到真 PA。</li>
+</ul>
+<h3 id="fb-直显管线（sprd-msg-c-内-fb-init-fb-render-fb-home）"><a href="#fb-直显管线（sprd-msg-c-内-fb-init-fb-render-fb-home）" class="headerlink" title="fb 直显管线（sprd_msg.c 内 fb_init&#x2F;fb_render&#x2F;fb_home）"></a>fb 直显管线（sprd_msg.c 内 fb_init&#x2F;fb_render&#x2F;fb_home）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">out[0] NV12 1920x1088</span><br><span class="line">  → pass1: 顺序 NV12→ARGB (yuv2px BT.601, 字节序 [R,G,B,X])</span><br><span class="line">  → pass2a: 16x16 块转置+水平镜像 → targb[c*1080+(1079-r)] = argb[r*1920+c]</span><br><span class="line">  → pass2b: targb 顺序行 3/2 NN 采样 → fb 页(720x1280)</span><br><span class="line">  → FBIOPAN 双页 1/2 交替</span><br></pre></td></tr></table></figure>
+<ul>
+<li>★ CW 旋转定案：out[oy][ox] &#x3D; in[row&#x3D;1079-ox<em>3&#x2F;2, col&#x3D;oy</em>3&#x2F;2]<br>（台标落在右上、文字顺时针 90°，与 LVGL rotation 900 方向一致）</li>
+<li>★★ FBIOPAN 必须用真 fb_var_screeninfo：FBIOGET_VSCREENINFO → 改 yoffset → FBIOPAN_DISPLAY。<br><strong>自制 24 字节短结构体 &#x3D; copy_from_user 半拷贝 → 内核栈残留垃圾 yoffset → DPU DMA 取非法地址<br>→ 内核崩溃设备重启（已踩，勿再犯）</strong></li>
+<li>fb0: 720x1280x4, yres_virtual&#x3D;3840(3页), stride 2880；argb&#x2F;targb 各 malloc 8.3MB（普通内存，非 CMA）</li>
+<li>性能：pass1 ~6ms + 转置 ~5ms + pass2b ~3ms ≈ 15ms&#x2F;帧，与 VSP 解码 15ms 并行够 25fps</li>
+<li>验证方法论：连续渲染时 grab_screen 抓到条纹 &#x3D; 抓屏慢(秒级)与 30ms&#x2F;帧渲染混帧的假象；<br>冻结首帧(只渲染 1 帧)再抓 &#x3D; 0.821 非黑干净画面。真机目测才是金标准。</li>
+<li>fbtest.c(直映射)&#x2F;fbtest2p.c(2-pass) 独立验证工具；es_check.py 本地 cv2 软解对比工具；<br>grab_screen.py 已改读 DEV_IP 环境变量。</li>
+<li>停桌面：kill $(pidof lvgl_watchdog) 按 comm 前缀 &#x2F;lvgl&#x2F; awk 匹配（comm 截断 15 字符）；<br>恢复：sh &#x2F;etc&#x2F;local.d&#x2F;00_lvgl_demo.start</li>
+</ul>
+<h3 id="剩余工作-1"><a href="#剩余工作-1" class="headerlink" title="剩余工作"></a>剩余工作</h3><p>① 播放器二进制：curl 实时流 → demux ES → 本管线循环（替换文件读）<br>② nettv_page.c 集成：照 psp_game_page 暂停 LVGL+拦截器模式拉起<br>③ 提交推送（设备仓库 bundle 中转）</p>
+<h2 id="十三、★★★-2026-10-08-晚-3：播放器二进制完成（约-98-）"><a href="#十三、★★★-2026-10-08-晚-3：播放器二进制完成（约-98-）" class="headerlink" title="十三、★★★ 2026-10-08 晚 3：播放器二进制完成（约 98%）"></a>十三、★★★ 2026-10-08 晚 3：播放器二进制完成（约 98%）</h2><h3 id="播放器用法（sprd-msg-已播放器化）"><a href="#播放器用法（sprd-msg-已播放器化）" class="headerlink" title="播放器用法（sprd_msg 已播放器化）"></a>播放器用法（sprd_msg 已播放器化）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">/tmp/sprd_msg                    # 探针模式(旧行为)</span><br><span class="line">/tmp/sprd_msg /path/es.h264      # 循环播放文件, SIGTERM 退出</span><br><span class="line">/tmp/sprd_msg http://x/y.ts      # curl 25s 下载→播→再下载(直播持续)</span><br><span class="line">/tmp/sprd_msg &lt;src&gt; &lt;N&gt;          # 播 N 帧自动退出(0/缺省=无限)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>参数经 &#x2F;proc&#x2F;self&#x2F;cmdline（无 crt0 不能用 argc&#x2F;argv）</li>
+<li>load_chunk(): URL→curl 下载 &#x2F;tmp&#x2F;nettv.es→重切 NAL 表→chunk 循环重入(config 不重走)</li>
+</ul>
+<h3 id="性能定位方法论与结论（-ms-时间戳逐步排除法）"><a href="#性能定位方法论与结论（-ms-时间戳逐步排除法）" class="headerlink" title="性能定位方法论与结论（@ms 时间戳逐步排除法）"></a>性能定位方法论与结论（@ms 时间戳逐步排除法）</h3><table>
+<thead>
+<tr>
+<th>实验</th>
+<th>帧率</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>基线</td>
+<td>2.8s&#x2F;帧</td>
+<td>慢</td>
+</tr>
+<tr>
+<td>无落盘</td>
+<td>3s&#x2F;帧</td>
+<td>落盘非瓶颈</td>
+</tr>
+<tr>
+<td>&#x2F;dev&#x2F;null</td>
+<td>-</td>
+<td>日志非瓶颈(500KB)</td>
+</tr>
+<tr>
+<td>DRIVE usleep 120ms→分档</td>
+<td>1.3s&#x2F;帧</td>
+<td>每 NAL×120ms 是大头之一</td>
+</tr>
+<tr>
+<td>no-pan</td>
+<td>不变</td>
+<td>pan 非瓶颈</td>
+</tr>
+<tr>
+<td>no-fb_render</td>
+<td>30ms&#x2F;NAL ★</td>
+<td><strong>fb_render ~550ms&#x2F;帧</strong></td>
+</tr>
+</tbody></table>
+<ul>
+<li>fb_render 热点 &#x3D; pass2a 转置 tb[c*1080+..] 列跳写(每 4B 一条 cache line, 128MB 流量)<br>→ 修复: tile 16x16 读入局部数组, 固定输出行 col 连续写 → 75ms&#x2F;帧(13fps)</li>
+<li>DRIVE 延时分档: slice(t&#x3D;1&#x2F;5) 20ms &#x2F; SPS&#x2F;PPS&#x2F;SEI 2ms &#x2F; refill 1ms（全局 g_drive_ms）</li>
+<li>前段每 2 帧 570ms &#x3D; mbinfo idx 0-4 真分配期（LRU 后消失），稳态 50-75ms&#x2F;帧</li>
+</ul>
+<h3 id="★★-两次内核崩溃（同一根因）"><a href="#★★-两次内核崩溃（同一根因）" class="headerlink" title="★★ 两次内核崩溃（同一根因）"></a>★★ 两次内核崩溃（同一根因）</h3><p>快速版(75ms&#x2F;帧)跑完<strong>立即退出</strong> → VSP 队列还有 DMA → 进程 exit → 内核 ion 驱动<br>回收 dmabuf → VSP DMA 写已释放页 → 内核崩重启。修 &#x3D; 退出前 usleep(800000) 排空。<br>-O3 -mfpu&#x3D;neon 版同样崩在退出期（非 NEON 之过），<strong>禁用 -O3</strong>，保持 -O2。<br>另：慢版(2.8s&#x2F;帧)从未崩 —— 因为缓冲自然存在。</p>
+<h3 id="★-mbinfo-OOM-强制回落-LRU"><a href="#★-mbinfo-OOM-强制回落-LRU" class="headerlink" title="★ mbinfo OOM 强制回落 LRU"></a>★ mbinfo OOM 强制回落 LRU</h3><p>C1 分配失败(rc!&#x3D;0) &amp;&amp; size&#x3D;&#x3D;653824 &amp;&amp; g_c1r_n&gt;0 → 直接复用最早槽（旧条件<br>g_c1r_n&gt;&#x3D;MAX(5) 永远达不到 —— 第 5 块就 ENOMEM）。效果：组件不再 -3 切软解<br>（mDecoderSwFlag:1 从此消失），decRet:-9 从 137 降到 12。</p>
+<h3 id="事故与教训"><a href="#事故与教训" class="headerlink" title="事故与教训"></a>事故与教训</h3><ul>
+<li>本地 python 脚本 <code>open(p,&#39;w&#39;).write()</code> 在 write 前抛异常 → <strong>sprd_msg.c 被清空</strong>。<br>设备 &#x2F;tmp&#x2F;sprd_msg.c 是最新备份源（每次 push 都完整上传）→ –get 拉回恢复。<br>教训：批量替换脚本先写临时文件再 rename，或用 Edit 工具。</li>
+</ul>
+<h3 id="剩余（需用户参与）"><a href="#剩余（需用户参与）" class="headerlink" title="剩余（需用户参与）"></a>剩余（需用户参与）</h3><ul>
+<li>nettv_page.c 集成（拉起 &#x2F;tmp&#x2F;sprd_msg URL、照 psp_game_page 暂停 LVGL 模式）</li>
+<li>提交推送（设备仓库 bundle 中转，需 GITEE_TOKEN）</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#SC8830-%E7%A1%AC%E8%A7%A3%E6%94%BB%E5%85%B3-%E2%80%94-h264dec-%E5%8F%8D%E6%B1%87%E7%BC%96%E5%AE%9A%E6%A1%88%EF%BC%882026-10-08%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">SC8830 硬解攻关 — h264dec 反汇编定案（2026-10-08）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81onQueueFilled-%E7%9C%9F%E5%AE%9E%E4%BD%93%EF%BC%880x7cec-%E8%B5%B7%EF%BC%89%E7%9A%84%E5%AE%8C%E6%95%B4%E9%97%B8%E9%97%A8%E9%93%BE"><span class="toc-number">1.1.</span> <span class="toc-text">一、onQueueFilled 真实体（0x7cec 起）的完整闸门链</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%97%E6%AE%B5%E8%AF%AD%E4%B9%89%E6%80%BB%E8%A1%A8%EF%BC%88%E2%98%85-%E9%83%BD%E6%98%AF%E8%B8%A9%E8%BF%87%E5%9D%91%E5%AE%9A%E6%A1%88%E7%9A%84%EF%BC%89"><span class="toc-number">1.1.1.</span> <span class="toc-text">字段语义总表（★ 都是踩过坑定案的）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E2%98%85-%E4%B8%89%E4%B8%AA%E5%8F%8D%E6%95%88%E6%9E%9C%E7%9A%84%E6%89%8B%E5%8A%A8%E5%B9%B2%E9%A2%84%EF%BC%88%E9%83%BD%E8%AF%95%E8%BF%87%E5%B9%B6%E5%9B%9E%E9%80%80%EF%BC%8C%E5%8B%BF%E9%87%8D%E7%8A%AF%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">二、★ 三个反效果的手动干预（都试过并回退，勿重犯）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%89%8B%E5%8A%A8%E7%BD%AE-0x9c-%E2%80%94%E2%80%94-%E4%BC%9A%E5%A0%B5%E6%AD%BB%E5%BE%AA%E7%8E%AF"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. 手动置 [0x9c] —— 会堵死循环</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%89%8B%E5%8A%A8%E7%BD%AE-0x1f0-%E6%9C%89%E6%95%88%EF%BC%8C%E4%BD%86%E6%AF%8F%E8%BD%AE%E9%83%BD%E8%A6%81%E9%87%8D%E7%BD%AE"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. 手动置 [0x1f0] 有效，但每轮都要重置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%90%8C%E4%B8%80%E4%B8%AA-in-buffer-%E4%BA%8C%E6%AC%A1-empty-%E4%BC%9A-ASSERT"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. 同一个 in buffer 二次 empty 会 ASSERT</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81gralloc-handle-%E4%B8%89%E5%B1%82%E5%B8%83%E5%B1%80%EF%BC%88%E5%85%A8%E9%83%A8%E5%AE%9E%E6%B5%8B%E5%AE%9A%E6%A1%88%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、gralloc &#x2F; handle 三层布局（全部实测定案）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E2%98%85-%E8%AF%BB%E5%B8%A7%E8%B7%AF%E5%BE%84%EF%BC%88%E4%B8%89%E7%BA%A7%E5%9B%9E%E9%80%80%EF%BC%8C%E7%AC%AC%E2%91%A0%E7%BA%A7%E5%B7%B2%E9%AA%8C%E8%AF%81%E6%88%90%E5%8A%9F%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">四、★ 读帧路径（三级回退，第①级已验证成功）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E2%98%85%E2%98%85%E2%98%85-0x92-IOMMU-%E5%BC%80%E5%85%B3-%E2%80%94%E2%80%94-%E4%B9%8B%E5%89%8D%E6%89%80%E6%9C%89%E5%AE%9E%E9%AA%8C%E9%83%BD%E8%B7%91%E5%9C%A8%E9%94%99%E8%AF%AF%E8%B7%AF%E5%BE%84%E4%B8%8A"><span class="toc-number">1.5.</span> <span class="toc-text">五、★★★ [0x92] &#x3D; IOMMU 开关 —— 之前所有实验都跑在错误路径上</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%9A%A0-%E7%9B%B4%E6%8E%A5%E6%81%A2%E5%A4%8D-0x92-1-%E4%BC%9A%E5%9C%A8-useBuffer-%E6%AE%B5-Segfault"><span class="toc-number">1.5.1.</span> <span class="toc-text">⚠ 直接恢复 [0x92]&#x3D;1 会在 useBuffer 段 Segfault</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E2%98%85%E2%98%85-%E4%B8%A4%E6%9D%A1%E4%BA%92%E6%96%A5%E8%B7%AF%E5%BE%84%EF%BC%882026-10-08-%E6%94%B6%E5%B0%BE%E5%8F%91%E7%8E%B0%E7%9A%84%E6%AD%BB%E7%BB%93%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">六、★★ 两条互斥路径（2026-10-08 收尾发现的死结）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%BB%E7%BB%93"><span class="toc-number">1.6.1.</span> <span class="toc-text">死结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%B2%E6%8E%92%E9%99%A4%E7%9A%84%E5%81%87%E8%AE%BE%EF%BC%88A-B-%E5%AE%9E%E9%AA%8C%E5%AE%9E%E6%B5%8B%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">已排除的假设（A&#x2F;B 实验实测）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#internalUseBuffer-0x4514-%E7%9A%84%E7%BB%93%E6%9E%84%EF%BC%88-0x92-1-%E5%B4%A9%E5%9C%A8%E8%BF%99%E9%87%8C%EF%BC%89"><span class="toc-number">1.6.3.</span> <span class="toc-text">internalUseBuffer@0x4514 的结构（[0x92]&#x3D;1 崩在这里）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E5%BD%93%E5%89%8D%E5%8D%A1%E7%82%B9%EF%BC%88%E4%B8%8B%E4%B8%80%E6%AD%A5%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">七、当前卡点（下一步）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E6%9E%84%E5%BB%BA-%E8%BF%90%E8%A1%8C"><span class="toc-number">1.8.</span> <span class="toc-text">六、构建&#x2F;运行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E2%98%85%E2%98%85-IOVA-%E9%93%BE%E8%B7%AF%E6%94%BB%E5%9D%9A%E5%AE%9A%E6%A1%88%EF%BC%882026-10-08-%E4%B8%8B%E5%8D%88%EF%BC%8CSPRD-IOMMU-1-%E8%B7%AF%E5%BE%84%EF%BC%89"><span class="toc-number">1.9.</span> <span class="toc-text">八、★★ IOVA 链路攻坚定案（2026-10-08 下午，SPRD_IOMMU&#x3D;1 路径）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%B2%E4%BF%AE%E5%A4%8D%EF%BC%88%E5%85%A8%E9%83%A8%E5%AE%9E%E6%B5%8B%EF%BC%89"><span class="toc-number">1.9.1.</span> <span class="toc-text">已修复（全部实测）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BD%93%E5%89%8D%E7%8A%B6%E6%80%81%EF%BC%88run-iova3%EF%BC%89"><span class="toc-number">1.9.2.</span> <span class="toc-text">当前状态（run_iova3）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A1%A5%E5%85%85%E5%AE%9A%E6%A1%88%EF%BC%880x8090-0x8190-VSP-DecodeFrame-%E5%8F%82%E6%95%B0%EF%BC%89"><span class="toc-number">1.9.3.</span> <span class="toc-text">补充定案（0x8090-0x8190 VSP DecodeFrame 参数）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E2%98%85%E2%98%85%E2%98%85-2026-10-08-%E4%B8%8B%E5%8D%88%EF%BC%9A%E7%A1%AC%E8%A7%A3%E5%87%BA%E5%9B%BE%EF%BC%88%E9%87%8C%E7%A8%8B%E7%A2%91%EF%BC%89"><span class="toc-number">1.10.</span> <span class="toc-text">九、★★★ 2026-10-08 下午：硬解出图（里程碑）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0%E9%93%BE%EF%BC%88%E6%9C%AC%E6%AC%A1%E5%85%A8%E9%83%A8%E5%AE%9E%E8%AF%81%EF%BC%89"><span class="toc-number">1.10.1.</span> <span class="toc-text">根因链（本次全部实证）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%BA%E5%9B%BE%E6%97%B6%E7%9A%84%E8%A1%A8%E7%8E%B0"><span class="toc-number">1.10.2.</span> <span class="toc-text">出图时的表现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%A9%E4%BD%99%E5%B7%A5%E4%BD%9C"><span class="toc-number">1.10.3.</span> <span class="toc-text">剩余工作</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E3%80%81%E2%98%85%E2%98%85%E2%98%85-2026-10-08-%E6%99%9A%EF%BC%9A%E8%BF%9E%E7%BB%AD%E5%A4%9A%E5%B8%A7%E8%A7%A3%E7%A0%81%E6%89%93%E9%80%9A"><span class="toc-number">1.11.</span> <span class="toc-text">十、★★★ 2026-10-08 晚：连续多帧解码打通</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%B8%80%E3%80%81%E2%98%85%E2%98%85%E2%98%85-2026-10-08-%E6%99%9A%EF%BC%9A%E7%9C%9F%E5%AE%9E%E6%B5%81-NAL-%E6%B5%81%E5%BC%8F%E7%A1%AC%E8%A7%A3%E6%89%93%E9%80%9A%EF%BC%88%E7%BA%A6-95-%EF%BC%89"><span class="toc-number">1.12.</span> <span class="toc-text">十一、★★★ 2026-10-08 晚：真实流 NAL 流式硬解打通（约 95%）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8A%95%E5%96%82%E6%A8%A1%E5%9E%8B%E5%AE%9A%E6%A1%88"><span class="toc-number">1.12.1.</span> <span class="toc-text">投喂模型定案</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85-error-flag-Need-I-frame-%E6%AD%BB%E9%94%81%E9%93%BE%EF%BC%88%E5%8F%8D%E6%B1%87%E7%BC%96%E5%AE%9A%E6%A1%88%EF%BC%8Clibomx-avcdec-hw-sprd-so%EF%BC%89"><span class="toc-number">1.12.2.</span> <span class="toc-text">★ error_flag&#x2F;Need I frame 死锁链（反汇编定案，libomx_avcdec_hw_sprd.so）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E8%B4%A6%E6%9C%AC%EF%BC%88CMA-%E6%B1%A0-7MB%EF%BC%8Chid-0-%E5%8C%BA-0x9fd20000-%E8%B5%B7%E8%BF%9E%E7%BB%AD%E7%BA%BF%E6%80%A7%E5%88%86%E9%85%8D%EF%BC%89"><span class="toc-number">1.12.3.</span> <span class="toc-text">内存账本（CMA 池 ~7MB，hid&#x3D;0 区 0x9fd20000 起连续线性分配）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%81%97%E7%95%99%E5%9D%8F%E5%B8%A7%EF%BC%88%E5%94%AF%E4%B8%80%E5%89%A9%E4%BD%99%E9%97%AE%E9%A2%98%EF%BC%8C%E7%BA%A6-1-3-%E5%B8%A7%EF%BC%89"><span class="toc-number">1.12.4.</span> <span class="toc-text">遗留坏帧（唯一剩余问题，约 1&#x2F;3 帧）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E7%A8%8B%E6%9D%82%E9%A1%B9"><span class="toc-number">1.12.5.</span> <span class="toc-text">工程杂项</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%BA%8C%E3%80%81%E2%98%85%E2%98%85%E2%98%85-2026-10-08-%E6%99%9A-2%EF%BC%9Afb-%E7%9B%B4%E6%98%BE%E6%89%93%E9%80%9A%EF%BC%88%E7%BA%A6-97-%EF%BC%89"><span class="toc-number">1.13.</span> <span class="toc-text">十二、★★★ 2026-10-08 晚 2：fb 直显打通（约 97%）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%81%97%E7%95%99%E5%9D%8F%E5%B8%A7%E5%AE%9A%E6%A1%88%EF%BC%88%E9%87%8D%E8%A6%81%E5%8F%8D%E8%BD%AC%EF%BC%89"><span class="toc-number">1.13.1.</span> <span class="toc-text">遗留坏帧定案（重要反转）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#fb-%E7%9B%B4%E6%98%BE%E7%AE%A1%E7%BA%BF%EF%BC%88sprd-msg-c-%E5%86%85-fb-init-fb-render-fb-home%EF%BC%89"><span class="toc-number">1.13.2.</span> <span class="toc-text">fb 直显管线（sprd_msg.c 内 fb_init&#x2F;fb_render&#x2F;fb_home）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%A9%E4%BD%99%E5%B7%A5%E4%BD%9C-1"><span class="toc-number">1.13.3.</span> <span class="toc-text">剩余工作</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%B8%89%E3%80%81%E2%98%85%E2%98%85%E2%98%85-2026-10-08-%E6%99%9A-3%EF%BC%9A%E6%92%AD%E6%94%BE%E5%99%A8%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%8C%E6%88%90%EF%BC%88%E7%BA%A6-98-%EF%BC%89"><span class="toc-number">1.14.</span> <span class="toc-text">十三、★★★ 2026-10-08 晚 3：播放器二进制完成（约 98%）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%92%AD%E6%94%BE%E5%99%A8%E7%94%A8%E6%B3%95%EF%BC%88sprd-msg-%E5%B7%B2%E6%92%AD%E6%94%BE%E5%99%A8%E5%8C%96%EF%BC%89"><span class="toc-number">1.14.1.</span> <span class="toc-text">播放器用法（sprd_msg 已播放器化）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E5%AE%9A%E4%BD%8D%E6%96%B9%E6%B3%95%E8%AE%BA%E4%B8%8E%E7%BB%93%E8%AE%BA%EF%BC%88-ms-%E6%97%B6%E9%97%B4%E6%88%B3%E9%80%90%E6%AD%A5%E6%8E%92%E9%99%A4%E6%B3%95%EF%BC%89"><span class="toc-number">1.14.2.</span> <span class="toc-text">性能定位方法论与结论（@ms 时间戳逐步排除法）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85%E2%98%85-%E4%B8%A4%E6%AC%A1%E5%86%85%E6%A0%B8%E5%B4%A9%E6%BA%83%EF%BC%88%E5%90%8C%E4%B8%80%E6%A0%B9%E5%9B%A0%EF%BC%89"><span class="toc-number">1.14.3.</span> <span class="toc-text">★★ 两次内核崩溃（同一根因）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85-mbinfo-OOM-%E5%BC%BA%E5%88%B6%E5%9B%9E%E8%90%BD-LRU"><span class="toc-number">1.14.4.</span> <span class="toc-text">★ mbinfo OOM 强制回落 LRU</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8B%E6%95%85%E4%B8%8E%E6%95%99%E8%AE%AD"><span class="toc-number">1.14.5.</span> <span class="toc-text">事故与教训</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%A9%E4%BD%99%EF%BC%88%E9%9C%80%E7%94%A8%E6%88%B7%E5%8F%82%E4%B8%8E%EF%BC%89"><span class="toc-number">1.14.6.</span> <span class="toc-text">剩余（需用户参与）</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&text=ref_h264硬解_h264dec定案"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&title=ref_h264硬解_h264dec定案"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&is_video=false&description=ref_h264硬解_h264dec定案"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_h264硬解_h264dec定案&body=Check out this article: https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&title=ref_h264硬解_h264dec定案"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&title=ref_h264硬解_h264dec定案"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&title=ref_h264硬解_h264dec定案"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&title=ref_h264硬解_h264dec定案"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/08/ref-vsp-h264/&name=ref_h264硬解_h264dec定案&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

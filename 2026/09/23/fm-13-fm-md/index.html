@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="展讯 SC9832A FM 收音故障排查手册 —— spd-box 读者对象：执行 FM 打通时遇到问题的工程师 &#x2F; AI排障铁律：自上而下分层定位，不许跳层。任意一层没通就往上层猜，必然浪费时间核心价值：把”现象 → 最可能根因 → 验证命令 → 修复”串成一张决策表，5 分钟内定位到层   0. 排障纪律（先读，违反会浪费时间） 先分层，后动手。五层：①固件 ②上电 ③驱动 ④dae">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM收音芯片打通_故障排查手册">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="展讯 SC9832A FM 收音故障排查手册 —— spd-box 读者对象：执行 FM 打通时遇到问题的工程师 &#x2F; AI排障铁律：自上而下分层定位，不许跳层。任意一层没通就往上层猜，必然浪费时间核心价值：把”现象 → 最可能根因 → 验证命令 → 修复”串成一张决策表，5 分钟内定位到层   0. 排障纪律（先读，违反会浪费时间） 先分层，后动手。五层：①固件 ②上电 ③驱动 ④dae">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.722Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM收音芯片打通_故障排查手册</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/fm-12-fm-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/fm-14-ht0fm-wiki-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&text=FM收音芯片打通_故障排查手册"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&title=FM收音芯片打通_故障排查手册"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&is_video=false&description=FM收音芯片打通_故障排查手册"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音芯片打通_故障排查手册&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&title=FM收音芯片打通_故障排查手册"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&title=FM收音芯片打通_故障排查手册"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&title=FM收音芯片打通_故障排查手册"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&title=FM收音芯片打通_故障排查手册"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&name=FM收音芯片打通_故障排查手册&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-FM-%E6%94%B6%E9%9F%B3%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E6%89%8B%E5%86%8C-%E2%80%94%E2%80%94-spd-box"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A FM 收音故障排查手册 —— spd-box</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E6%8E%92%E9%9A%9C%E7%BA%AA%E5%BE%8B%EF%BC%88%E5%85%88%E8%AF%BB%EF%BC%8C%E8%BF%9D%E5%8F%8D%E4%BC%9A%E6%B5%AA%E8%B4%B9%E6%97%B6%E9%97%B4%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">0. 排障纪律（先读，违反会浪费时间）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%88%86%E5%B1%82%E6%95%85%E9%9A%9C%E9%80%9F%E6%9F%A5%E6%80%BB%E8%A1%A8%EF%BC%88%E4%B8%80%E9%A1%B5%E5%AE%9A%E4%BD%8D%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 分层故障速查总表（一页定位）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%9B%BA%E4%BB%B6-%E4%B8%8A%E7%94%B5%E5%B1%82%EF%BC%88%E2%91%A0%E2%91%A1%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. 固件 &#x2F; 上电层（①②）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-SDIO-%E8%AF%BB%E4%B8%8D%E5%88%B0-device-%E4%B8%8D%E7%AD%89%E4%BA%8E-0x2331"><span class="toc-number">1.3.1.</span> <span class="toc-text">2.1 SDIO 读不到 &#x2F; device 不等于 0x2331</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-WiFi-%E6%AD%A3%E5%B8%B8%E4%BD%86-FM-%E5%8F%91%E5%91%BD%E4%BB%A4%E6%97%A0%E5%93%8D%E5%BA%94"><span class="toc-number">1.3.2.</span> <span class="toc-text">2.2 WiFi 正常但 FM 发命令无响应</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%A9%B1%E5%8A%A8%E5%B1%82%EF%BC%88%E2%91%A2%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">3. 驱动层（③）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-dev-fm-%E4%B8%8D%E5%AD%98%E5%9C%A8"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 &#x2F;dev&#x2F;fm 不存在</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-ioctl-%E8%BF%94%E5%9B%9E-EINVAL-ENOTTY%EF%BC%88%E6%9C%AC%E9%A1%B9%E7%9B%AE%E5%A4%B4%E5%8F%B7%E6%95%85%E9%9A%9C%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 ioctl 返回 -EINVAL &#x2F; -ENOTTY（本项目头号故障）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-dmesg-%E5%87%BA%E7%8E%B0-seek-Timeout-d-sec-fm-seek-end"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 dmesg 出现 seek Timeout(%d sec), fm seek end !</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%9F%B3%E9%A2%91%E5%B1%82%EF%BC%88%E5%87%BA%E5%A3%B0%E4%B8%8E%E5%90%A6%EF%BC%89%E2%80%94%E2%80%94-%E6%9C%80%E5%AE%B9%E6%98%93%E2%80%9D%E4%BB%A5%E4%B8%BA%E5%A5%BD%E4%BA%86%E2%80%9D%E7%9A%84%E4%B8%80%E5%B1%82"><span class="toc-number">1.5.</span> <span class="toc-text">4. 音频层（出声与否）—— 最容易”以为好了”的一层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-ioctl-%E6%88%90%E5%8A%9F%E4%BD%86%E6%B2%A1%E6%9C%89%E5%A3%B0%E9%9F%B3"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 ioctl 成功但没有声音</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E5%A3%B0%E9%9F%B3%E6%96%AD%E7%BB%AD-%E6%9C%89%E5%8D%A1%E9%A1%BF%E6%84%9F"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 声音断续 &#x2F; 有卡顿感</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E9%9F%B3%E9%87%8F%E4%B8%8D%E5%AF%B9-SETVOL-%E6%97%A0%E6%95%88"><span class="toc-number">1.5.3.</span> <span class="toc-text">4.3 音量不对 &#x2F; SETVOL 无效</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E8%B0%83%E8%B0%90-%E6%89%AB%E6%8F%8F%E5%B1%82"><span class="toc-number">1.6.</span> <span class="toc-text">5. 调谐 &#x2F; 扫描层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-RSSI-%E6%81%92%E4%B8%BA-0-%E6%88%96%E6%81%92%E5%AE%9A%E6%9E%81%E5%80%BC"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 RSSI 恒为 0 或恒定极值</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E6%89%AB%E6%8F%8F%E5%BE%88%E6%85%A2-%E4%B8%AD%E9%80%94%E5%81%9C%E4%B8%8D%E4%B8%8B%E6%9D%A5"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 扫描很慢 &#x2F; 中途停不下来</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%BA%94%E7%94%A8%E5%B1%82%EF%BC%88%E2%91%A3%E2%91%A4-daemon-%E2%86%92-socket-%E2%86%92-LVGL%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. 应用层（④⑤ daemon → socket → LVGL）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-LVGL-%E9%A1%B5%E9%9D%A2%E5%8D%A1%E6%AD%BB-%E5%88%87%E9%A1%B5%E6%97%A0%E5%93%8D%E5%BA%94"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 LVGL 页面卡死 &#x2F; 切页无响应</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-connect-tmp-fm-ctl-sock-%E5%A4%B1%E8%B4%A5"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 connect &#x2F;tmp&#x2F;fm_ctl.sock 失败</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-FM-%E4%B8%8E%E8%93%9D%E7%89%99-A2DP-%E6%9C%AC%E5%9C%B0%E6%92%AD%E6%94%BE%E5%90%8C%E6%97%B6%E5%87%BA%E5%A3%B0"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 FM 与蓝牙 A2DP &#x2F; 本地播放同时出声</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-4-%E8%BF%94%E5%9B%9E%E6%A1%8C%E9%9D%A2%E5%90%8E%E5%81%9C%E5%8F%B0-%E6%81%AF%E5%B1%8F%E6%8E%89%E5%8F%B0"><span class="toc-number">1.7.4.</span> <span class="toc-text">6.4 返回桌面后停台 &#x2F; 息屏掉台</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%B3%BB%E7%BB%9F-%E8%87%AA%E5%90%AF%E5%B1%82"><span class="toc-number">1.8.</span> <span class="toc-text">7. 系统 &#x2F; 自启层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-%E9%87%8D%E5%90%AF%E5%90%8E-FM-%E4%B8%8D%E8%87%AA%E5%8A%A8%E5%8F%AF%E7%94%A8"><span class="toc-number">1.8.1.</span> <span class="toc-text">7.1 重启后 FM 不自动可用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-daemon-%E5%8F%8D%E5%A4%8D%E9%87%8D%E5%90%AF"><span class="toc-number">1.8.2.</span> <span class="toc-text">7.2 daemon 反复重启</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-3-%E6%81%AF%E5%B1%8F-%E7%B3%BB%E7%BB%9F%E6%8C%82%E8%B5%B7%E5%90%8E-FM-%E6%8E%89%E5%8F%B0"><span class="toc-number">1.8.3.</span> <span class="toc-text">7.3 息屏 &#x2F; 系统挂起后 FM 掉台</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7%E7%AE%B1%EF%BC%88%E5%85%B3%E9%94%AE%E8%8A%82%E7%82%B9%E9%80%9F%E6%9F%A5%EF%BC%89"><span class="toc-number">1.9.</span> <span class="toc-text">8. 诊断工具箱（关键节点速查）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E8%BF%98%E9%9C%80%E5%AE%9E%E6%B5%8B%E5%AE%9A%E6%A0%87%E7%9A%84%E9%A1%B9%EF%BC%88%E5%BD%93%E5%89%8D%E4%B8%8D%E6%98%AF%E6%97%A2%E5%AE%9A%E4%BA%8B%E5%AE%9E%EF%BC%89"><span class="toc-number">1.10.</span> <span class="toc-text">9. 还需实测定标的项（当前不是既定事实）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E5%B7%B2%E9%AA%8C%E8%AF%81%E6%AD%BB%E8%B7%AF%EF%BC%88%E4%B8%8D%E8%A6%81%E9%87%8D%E8%AF%95%EF%BC%89"><span class="toc-number">1.11.</span> <span class="toc-text">10. 已验证死路（不要重试）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-%E7%BA%A2%E7%BA%BF%EF%BC%88%E4%BB%BB%E4%BD%95%E6%83%85%E5%86%B5%E4%B8%8B%EF%BC%89"><span class="toc-number">1.12.</span> <span class="toc-text">11. 红线（任何情况下）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM收音芯片打通_故障排查手册
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="展讯-SC9832A-FM-收音故障排查手册-——-spd-box"><a href="#展讯-SC9832A-FM-收音故障排查手册-——-spd-box" class="headerlink" title="展讯 SC9832A FM 收音故障排查手册 —— spd-box"></a>展讯 SC9832A FM 收音故障排查手册 —— spd-box</h1><blockquote>
+<p><strong>读者对象</strong>：执行 FM 打通时遇到问题的工程师 &#x2F; AI<br><strong>排障铁律</strong>：<strong>自上而下分层定位</strong>，不许跳层。任意一层没通就往上层猜，必然浪费时间<br><strong>核心价值</strong>：把”现象 → 最可能根因 → 验证命令 → 修复”串成一张决策表，5 分钟内定位到层</p>
+</blockquote>
+<hr>
+<h2 id="0-排障纪律（先读，违反会浪费时间）"><a href="#0-排障纪律（先读，违反会浪费时间）" class="headerlink" title="0. 排障纪律（先读，违反会浪费时间）"></a>0. 排障纪律（先读，违反会浪费时间）</h2><ol>
+<li><strong>先分层，后动手</strong>。五层：①固件 ②上电 ③驱动 ④daemon ⑤UI。用 §1 速查表定位到层。</li>
+<li><strong>显示&#x2F;音频类结论必须人眼人耳确认</strong>，不许用”日志返回 OK”代替”真的有画面&#x2F;有声音”。</li>
+<li><strong>每条路都先写一刀切的最小复现</strong>，再谈修复。</li>
+<li><strong>不要重复已确认的硬事实</strong>（见 <code>FM收音打通_AI指导手册.md</code> §2），也不要重走已验证死路（§10）。</li>
+</ol>
+<hr>
+<h2 id="1-分层故障速查总表（一页定位）"><a href="#1-分层故障速查总表（一页定位）" class="headerlink" title="1. 分层故障速查总表（一页定位）"></a>1. 分层故障速查总表（一页定位）</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>层</th>
+<th>首选验证命令</th>
+<th>跳转</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/dev/fm</code> 打不开（ENOENT）</td>
+<td>③ 驱动</td>
+<td><code>ls /dev/fm &amp;&amp; grep -w fm /proc/misc</code></td>
+<td>§3.1</td>
+</tr>
+<tr>
+<td>SDIO 读不到 <code>0x2331</code></td>
+<td>①② 固件&#x2F;上电</td>
+<td><code>cat /sys/bus/sdio/devices/*/device</code></td>
+<td>§2.1</td>
+</tr>
+<tr>
+<td>WiFi 好，FM 无响应</td>
+<td>② 上电</td>
+<td><code>ps | grep wcnd</code></td>
+<td>§2.2</td>
+</tr>
+<tr>
+<td>ioctl 返回 <code>-EINVAL</code></td>
+<td>③ 命令号错</td>
+<td><code>dmesg | tail</code>（看有无 <code>----&lt;命令名&gt;----</code>）</td>
+<td>§3.2</td>
+</tr>
+<tr>
+<td>ioctl OK 但<strong>没声音</strong></td>
+<td>③&#x2F;④ 音频通路</td>
+<td><code>cat /proc/asound/pcm | grep -i fm</code></td>
+<td>§4</td>
+</tr>
+<tr>
+<td>有声音但<strong>杂音&#x2F;音量极小</strong></td>
+<td>④ 音量链路</td>
+<td>比对 <code>GETVOL</code> 与实际听感</td>
+<td>§4.3</td>
+</tr>
+<tr>
+<td>RSSI 恒为 0 或极值</td>
+<td>③&#x2F;⑤ 调谐失败</td>
+<td>针对已知强信号电台做单点 TUNE</td>
+<td>§5.1</td>
+</tr>
+<tr>
+<td>seek 不返回 &#x2F; 卡住</td>
+<td>③ 驱动超时</td>
+<td><code>dmesg | grep &#39;seek Timeout&#39;</code></td>
+<td>§5.2</td>
+</tr>
+<tr>
+<td><strong>LVGL 页面卡死</strong></td>
+<td>⑤ socket 阻塞</td>
+<td>检查是否设了 <code>SO_RCVTIMEO</code></td>
+<td>§6.1</td>
+</tr>
+<tr>
+<td>FM 与蓝牙<strong>同时出声</strong></td>
+<td>⑤ 缺仲裁</td>
+<td>检查音频焦点模块</td>
+<td>§6.3</td>
+</tr>
+<tr>
+<td>重启后 FM 失效</td>
+<td>自启顺序</td>
+<td><code>rc-service fm-radio status</code></td>
+<td>§7.1</td>
+</tr>
+<tr>
+<td>息屏&#x2F;后台<strong>掉台</strong></td>
+<td>③ PM 挂起</td>
+<td><code>dmesg | grep -i suspend</code></td>
+<td>§7.3</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-固件-上电层（①②）"><a href="#2-固件-上电层（①②）" class="headerlink" title="2. 固件 &#x2F; 上电层（①②）"></a>2. 固件 &#x2F; 上电层（①②）</h2><h3 id="2-1-SDIO-读不到-device-不等于-0x2331"><a href="#2-1-SDIO-读不到-device-不等于-0x2331" class="headerlink" title="2.1 SDIO 读不到 &#x2F; device 不等于 0x2331"></a>2.1 SDIO 读不到 &#x2F; <code>device</code> 不等于 <code>0x2331</code></h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/*/modalias   <span class="comment"># 期望 sdio:c00v0000d2331</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/*/device     <span class="comment"># 期望 0x2331</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>根因</strong>：<code>download</code> 没跑起来或固件未烧入 → combo 芯片整体未在线，<strong>FM 当然也不存在</strong>。</li>
+<li><strong>修复</strong>：先按 <code>01_WiFi打通</code> 文档把 WiFi 拉起来。<code>download</code> 必须<strong>常驻</strong>，不要杀。</li>
+<li><strong>备注</strong>：SDIO 上只有这一个设备，WiFi&#x2F;蓝牙&#x2F;FM 三者共享它；**没有独立的”FM 枚举”**。</li>
+</ul>
+<h3 id="2-2-WiFi-正常但-FM-发命令无响应"><a href="#2-2-WiFi-正常但-FM-发命令无响应" class="headerlink" title="2.2 WiFi 正常但 FM 发命令无响应"></a>2.2 WiFi 正常但 FM 发命令无响应</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ps | grep <span class="string">&#x27;[w]cnd&#x27;</span>      <span class="comment"># 期望有进程</span></span><br><span class="line">ps | grep <span class="string">&#x27;[d]ownload&#x27;</span>  <span class="comment"># 期望常驻</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>根因</strong>：缺少 wcnd 上电环节，芯片带电状态不完整（FM 部分尤其明显）。</li>
+<li><strong>修复</strong>：补 <code>wcnd</code> + <code>bt_once(BT-OPEN)</code> 环节，参考 <code>02_蓝牙打通/docs/蓝牙芯片打通_操作手册.md</code> §3。</li>
+</ul>
+<hr>
+<h2 id="3-驱动层（③）"><a href="#3-驱动层（③）" class="headerlink" title="3. 驱动层（③）"></a>3. 驱动层（③）</h2><h3 id="3-1-dev-fm-不存在"><a href="#3-1-dev-fm-不存在" class="headerlink" title="3.1 /dev/fm 不存在"></a>3.1 <code>/dev/fm</code> 不存在</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">lsmod | grep marlin_fm            <span class="comment"># 期望：marlin_fm ... Used by sprdwl</span></span><br><span class="line">insmod /lib/modules/marlin_fm.ko</span><br><span class="line"><span class="built_in">ls</span> -l /dev/fm ; grep -w fm /proc/misc</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>注意</strong>：<code>marlin_fm</code> 被 <code>sprdwl</code> 依赖（<code>lsmod</code> 里 <code>Used by sprdwl</code>），<br>卸载时要一并处理依赖方，<strong>不要对正在跑业务的 WiFi 贸然 rmmod</strong>。</li>
+<li>正常情况下这不该发生：该模块在 WiFi 打通时已经自动加载。</li>
+</ul>
+<h3 id="3-2-ioctl-返回-EINVAL-ENOTTY（本项目头号故障）"><a href="#3-2-ioctl-返回-EINVAL-ENOTTY（本项目头号故障）" class="headerlink" title="3.2 ioctl 返回 -EINVAL &#x2F; -ENOTTY（本项目头号故障）"></a>3.2 ioctl 返回 <code>-EINVAL</code> &#x2F; <code>-ENOTTY</code>（<strong>本项目头号故障</strong>）</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dmesg -c &gt;/dev/null</span><br><span class="line"><span class="comment"># 再发一次你的 ioctl 命令</span></span><br><span class="line">dmesg | <span class="built_in">tail</span> -30</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><strong>判断</strong>：驱动为每个命令打 <code>----&lt;命令名&gt;----</code>。</p>
+<ul>
+<li>若发的是甲命令，<code>dmesg</code> 却打出 <code>/----乙----/</code> → <strong>命令号映射错了</strong>；</li>
+<li>若 <code>dmesg</code> 完全没有新打印 → <strong>命令号根本没落到任何已知分支</strong>。</li>
+</ul>
+</li>
+<li><p><strong>修法</strong>：查《FM收音ioctl命令表_逆向还原》的结论表核对 <code>nr</code>。命令号已全部还原，此处只剩”抄错”或”用了未定义区间”两种可能，<strong>不再是阻塞项</strong>。</p>
+</li>
+<li><p>🔒 <strong>不要用暴力全量遍历</strong>：乱发 ioctl 可能让固件进入异常状态。只做受控单步试探，并准备复位手段。</p>
+</li>
+</ul>
+<h3 id="3-3-dmesg-出现-seek-Timeout-d-sec-fm-seek-end"><a href="#3-3-dmesg-出现-seek-Timeout-d-sec-fm-seek-end" class="headerlink" title="3.3 dmesg 出现 seek Timeout(%d sec), fm seek end !"></a>3.3 <code>dmesg</code> 出现 <code>seek Timeout(%d sec), fm seek end !</code></h3><ul>
+<li><strong>这是驱动自带的 seek 超时机制</strong>，不是 bug（字符串来自驱动源码）。</li>
+<li><strong>上层必须配套</strong>：daemon&#x2F;UI 也要有自己的超时兜底，并在超时后给出”未找到电台”提示，避免界面一直转圈。</li>
+</ul>
+<hr>
+<h2 id="4-音频层（出声与否）——-最容易”以为好了”的一层"><a href="#4-音频层（出声与否）——-最容易”以为好了”的一层" class="headerlink" title="4. 音频层（出声与否）—— 最容易”以为好了”的一层"></a>4. 音频层（出声与否）—— 最容易”以为好了”的一层</h2><h3 id="4-1-ioctl-成功但没有声音"><a href="#4-1-ioctl-成功但没有声音" class="headerlink" title="4.1 ioctl 成功但没有声音"></a>4.1 ioctl 成功但没有声音</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /proc/asound/pcm | grep -i fm</span><br><span class="line"><span class="comment"># 期望看到：01-04: Dfm sprd-codec-fm-4 : : playback 1</span></span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>可能原因</th>
+<th>排查</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>未选择正确的音频路径</td>
+<td>依次试 <code>ANA_SWITCH</code>（默认）→ <code>I2S_SETTING</code> → <code>OVER_BT_ENABLE</code>，<strong>每条都用耳朵确认</strong></td>
+</tr>
+<tr>
+<td>主输出音量没打开</td>
+<td>本机没有 <code>amixer</code>，只能写代码用 <code>libasound.so.2</code> 查 mixer；<code>SETVOL</code> 可能只是 FM 模块内部增益</td>
+</tr>
+<tr>
+<td><strong>没插耳机而设计依赖耳机天线</strong></td>
+<td>不插耳机 TUNE 到最强电台试听；若必须插耳机，UI 要有明确提示</td>
+</tr>
+<tr>
+<td>声道被别人占着（A2DP&#x2F;本地播放）</td>
+<td>见 §6.3</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ <strong>不许用日志判定出声</strong>。TUNE 返回 OK 与”听到广播”之间没有必然联系。</p>
+</blockquote>
+<h3 id="4-2-声音断续-有卡顿感"><a href="#4-2-声音断续-有卡顿感" class="headerlink" title="4.2 声音断续 &#x2F; 有卡顿感"></a>4.2 声音断续 &#x2F; 有卡顿感</h3><ul>
+<li>检查 <code>fm_suspend</code> &#x2F; <code>fm_resume</code>：驱动实现了 dev_pm_ops，<strong>系统挂起时 FM 很可能被一起挂起</strong>（见 §7.3）。</li>
+<li>检查 SDIO 带宽：FM 与 WiFi&#x2F;蓝牙共享 SDIO，WiFi 高吞吐时可能有影响——这是共享芯片的固有特性，需实测评估。</li>
+</ul>
+<h3 id="4-3-音量不对-SETVOL-无效"><a href="#4-3-音量不对-SETVOL-无效" class="headerlink" title="4.3 音量不对 &#x2F; SETVOL 无效"></a>4.3 音量不对 &#x2F; <code>SETVOL</code> 无效</h3><ul>
+<li>先确认 <code>GETVOL</code> 返回值是否随你写的值变化：<ul>
+<li>变化 → FM 内部增益生效，但主输出（codec&#x2F;扬声器）音量是另一条链路，需走 ALSA；</li>
+<li>不变 → 命令没成功或取值范围不对（取值范围需实测标定）。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="5-调谐-扫描层"><a href="#5-调谐-扫描层" class="headerlink" title="5. 调谐 &#x2F; 扫描层"></a>5. 调谐 &#x2F; 扫描层</h2><h3 id="5-1-RSSI-恒为-0-或恒定极值"><a href="#5-1-RSSI-恒为-0-或恒定极值" class="headerlink" title="5.1 RSSI 恒为 0 或恒定极值"></a>5.1 RSSI 恒为 0 或恒定极值</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 用本地已知最强电台做单点基准</span></span><br><span class="line">python3 - &lt;&lt;<span class="string">&#x27;EOF&#x27;</span></span><br><span class="line">import socket,<span class="keyword">time</span></span><br><span class="line">s=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM); s.settimeout(5)</span><br><span class="line">s.connect(<span class="string">&#x27;/tmp/fm_ctl.sock&#x27;</span>)</span><br><span class="line">def cmd(c):</span><br><span class="line">    s.sendall((c+&quot;\n&quot;).encode()); time.sleep(0.3); <span class="built_in">return</span> s.recv(4096).decode().strip()</span><br><span class="line"><span class="built_in">print</span>(cmd(<span class="string">&quot;tune 97400&quot;</span>))   <span class="comment"># 换成你手边最强的那个频点（单位 kHz）</span></span><br><span class="line"><span class="built_in">print</span>(cmd(<span class="string">&quot;rssi&quot;</span>))</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>单点都拿不到合理值 → 回到 §3.2（命令号）或 §4（天线&#x2F;通路）。</li>
+<li>单点 OK 但扫描不对 → 检查 <code>SCAN</code> &#x2F; <code>SCAN_GETRSSI</code> 的用法。</li>
+</ul>
+<h3 id="5-2-扫描很慢-中途停不下来"><a href="#5-2-扫描很慢-中途停不下来" class="headerlink" title="5.2 扫描很慢 &#x2F; 中途停不下来"></a>5.2 扫描很慢 &#x2F; 中途停不下来</h3><ul>
+<li>全频段 87.5–108.0 MHz，步进 100 kHz ≈ 205 个频点，每点要驻留测量 → 慢是<strong>正常的</strong>。</li>
+<li>UI 必须：① 显示百分比进度；② 显示已发现台数；③ 提供可点击的<strong>停止</strong>按钮（<code>STOP_SCAN</code>）。</li>
+<li>daemon 侧也要设总体超时，不能无限等。</li>
+</ul>
+<hr>
+<h2 id="6-应用层（④⑤-daemon-→-socket-→-LVGL）"><a href="#6-应用层（④⑤-daemon-→-socket-→-LVGL）" class="headerlink" title="6. 应用层（④⑤ daemon → socket → LVGL）"></a>6. 应用层（④⑤ daemon → socket → LVGL）</h2><h3 id="6-1-LVGL-页面卡死-切页无响应"><a href="#6-1-LVGL-页面卡死-切页无响应" class="headerlink" title="6.1 LVGL 页面卡死 &#x2F; 切页无响应"></a>6.1 LVGL 页面卡死 &#x2F; 切页无响应</h3><ul>
+<li><strong>根因</strong>：LVGL 定时器回调里做 socket I&#x2F;O，而 daemon 没响应 → UI 线程被阻塞。</li>
+<li><strong>修复（必须）</strong>：<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">tv</span> =</span> &#123; .tv_sec = <span class="number">0</span>, .tv_usec = <span class="number">200</span>*<span class="number">1000</span> &#125;;</span><br><span class="line">setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &amp;tv, <span class="keyword">sizeof</span>(tv));</span><br><span class="line">setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &amp;tv, <span class="keyword">sizeof</span>(tv));</span><br></pre></td></tr></table></figure></li>
+<li>这与蓝牙页踩过的坑完全一致。</li>
+</ul>
+<h3 id="6-2-connect-tmp-fm-ctl-sock-失败"><a href="#6-2-connect-tmp-fm-ctl-sock-失败" class="headerlink" title="6.2 connect /tmp/fm_ctl.sock 失败"></a>6.2 <code>connect /tmp/fm_ctl.sock</code> 失败</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ls</span> -l /tmp/fm_ctl.sock          <span class="comment"># 期望 socket 且权限 0666</span></span><br><span class="line">ps | grep <span class="string">&#x27;[f]m_radio_daemon&#x27;</span>   <span class="comment"># 期望进程在</span></span><br><span class="line"><span class="built_in">tail</span> -30 /tmp/fm_daemon.log     <span class="comment"># 看 daemon 启动有没有报错</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>daemon 没起来 → 手工跑一次看输出（<code>./fm_radio_daemon</code> 前台跑）。</li>
+<li>socket 存在但连不上 → 检查是否残留旧 socket 文件（daemon 应在启动时 <code>unlink</code> 旧套接字）。</li>
+</ul>
+<h3 id="6-3-FM-与蓝牙-A2DP-本地播放同时出声"><a href="#6-3-FM-与蓝牙-A2DP-本地播放同时出声" class="headerlink" title="6.3 FM 与蓝牙 A2DP &#x2F; 本地播放同时出声"></a>6.3 FM 与蓝牙 A2DP &#x2F; 本地播放<strong>同时出声</strong></h3><ul>
+<li><strong>根因</strong>：三者共用一套音频输出，没有仲裁。</li>
+<li><strong>修复</strong>：实现音频焦点模块（见 <code>FM收音机_LVGL界面设计与交互规格.md</code> §5.4）：<ul>
+<li>FM 遇 A2DP → 自动 <strong>mute（不是 close）</strong>，A2DP 结束后询问是否恢复；</li>
+<li>A2DP 遇 FM → 弹确认框，用户同意后暂停&#x2F;断开 A2DP 再由 FM 接管；</li>
+<li>本地播放与 FM 互相独占。</li>
+</ul>
+</li>
+<li>⚠️ 注意 <code>OVER_BT_ENABLE</code> 的语义尚未确认（是”FM 声音送给蓝牙”还是”允许共存”），<strong>先实测再写仲裁</strong>。</li>
+</ul>
+<h3 id="6-4-返回桌面后停台-息屏掉台"><a href="#6-4-返回桌面后停台-息屏掉台" class="headerlink" title="6.4 返回桌面后停台 &#x2F; 息屏掉台"></a>6.4 返回桌面后停台 &#x2F; 息屏掉台</h3><ul>
+<li><code>onPause</code> 里<strong>不许</strong>调用 close 或 mute，只停 UI 定时器&#x2F;回调。</li>
+<li>播放状态由 <strong>daemon 持有</strong>，与页面生命周期解耦。</li>
+<li>若息屏掉台：查 <code>fm_suspend</code> 是否被系统 PM 触发（见 §7.3）。</li>
+</ul>
+<hr>
+<h2 id="7-系统-自启层"><a href="#7-系统-自启层" class="headerlink" title="7. 系统 &#x2F; 自启层"></a>7. 系统 &#x2F; 自启层</h2><h3 id="7-1-重启后-FM-不自动可用"><a href="#7-1-重启后-FM-不自动可用" class="headerlink" title="7.1 重启后 FM 不自动可用"></a>7.1 重启后 FM 不自动可用</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rc-service fm-radio status</span><br><span class="line">rc-status | grep -E <span class="string">&#x27;fm-radio|download|wcnd&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>头号根因</strong>：自启顺序早于 WiFi 上电链，FM 起来时芯片还没电。</li>
+<li><strong>修复</strong>：openrc service 的 <code>depend()</code> 里声明 <code>after</code> WiFi&#x2F;上电相关服务。<br>正确链：**<code>logdw → download → wcnd → bt_once → bt_wake → bt_user_daemon → fm_radio_daemon</code>**。</li>
+</ul>
+<h3 id="7-2-daemon-反复重启"><a href="#7-2-daemon-反复重启" class="headerlink" title="7.2 daemon 反复重启"></a>7.2 daemon 反复重启</h3><ul>
+<li>检查是否是<code>&lt;设备上的 watchdog&gt;</code>误判；调试期间注意按 PID 杀进程，<br>**不要用 <code>pkill -f &lt;pattern&gt;</code>**——它会匹配到承载该命令的 shell 自身，把自己的 SSH 会话杀掉。</li>
+</ul>
+<h3 id="7-3-息屏-系统挂起后-FM-掉台"><a href="#7-3-息屏-系统挂起后-FM-掉台" class="headerlink" title="7.3 息屏 &#x2F; 系统挂起后 FM 掉台"></a>7.3 息屏 &#x2F; 系统挂起后 FM 掉台</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dmesg | grep -i <span class="string">&#x27;suspend\|resume&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>驱动符号里有 <code>fm_suspend</code> &#x2F; <code>fm_resume</code>（静态函数，<code>nm</code> 显示为 <code>t</code>），说明实现了 dev_pm_ops。</li>
+<li>若产品要求”息屏续听”，需要额外处理（持锁或阻止 suspend）——<strong>这项必须实测确认，不可假定</strong>。</li>
+</ul>
+<hr>
+<h2 id="8-诊断工具箱（关键节点速查）"><a href="#8-诊断工具箱（关键节点速查）" class="headerlink" title="8. 诊断工具箱（关键节点速查）"></a>8. 诊断工具箱（关键节点速查）</h2><table>
+<thead>
+<tr>
+<th>目的</th>
+<th>命令</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>一次性体检</td>
+<td>见 <code>操作手册.md</code> §1.2 六段脚本</td>
+</tr>
+<tr>
+<td>驱动命令名清单</td>
+<td><code>strings /lib/modules/marlin_fm.ko | grep -- &#39;----&#39; | sed &#39;s/.*----//;s/----//&#39; | sort</code></td>
+</tr>
+<tr>
+<td>RDS 函数清单</td>
+<td><code>nm /lib/modules/marlin_fm.ko | grep &#39; T &#39; | grep rds_</code></td>
+</tr>
+<tr>
+<td>共享 SDIO 的证据</td>
+<td><code>strings /lib/modules/marlin_fm.ko | grep description=</code></td>
+</tr>
+<tr>
+<td>ioctl 是否落到正确分支</td>
+<td><code>dmesg -c &gt;/dev/null</code> → 发命令 → <code>dmesg | tail</code> 看 <code>----&lt;命令名&gt;----</code></td>
+</tr>
+<tr>
+<td>FM PCM 是否存在</td>
+<td><code>cat /proc/asound/pcm | grep -i fm</code></td>
+</tr>
+<tr>
+<td>socket 连通性</td>
+<td>见 §6.1 的 python3 片段</td>
+</tr>
+<tr>
+<td>seek 超时日志</td>
+<td><code>dmesg | grep &#39;seek Timeout&#39;</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-还需实测定标的项（当前不是既定事实）"><a href="#9-还需实测定标的项（当前不是既定事实）" class="headerlink" title="9. 还需实测定标的项（当前不是既定事实）"></a>9. 还需实测定标的项（当前<strong>不是</strong>既定事实）</h2><table>
+<thead>
+<tr>
+<th>项</th>
+<th>为什么重要</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ioctl <strong>命令号</strong></td>
+<td>阻塞全流程</td>
+</tr>
+<tr>
+<td>是否依赖<strong>耳机当天线</strong></td>
+<td>决定 UI 是否要”请插入耳机”提示</td>
+</tr>
+<tr>
+<td><code>OVER_BT_ENABLE</code> 确切语义</td>
+<td>决定声道仲裁怎么写</td>
+</tr>
+<tr>
+<td><code>SETVOL</code> 与主输出音量的关系</td>
+<td>决定音量控制走哪条链路</td>
+</tr>
+<tr>
+<td><strong>RSSI 阈值</strong>分界</td>
+<td>决定信号条几格怎么画（不要照搬网上 dBm 值，本机返回的是驱动原始值）</td>
+</tr>
+<tr>
+<td>系统 suspend 时 FM 行为</td>
+<td>决定”息屏续听”可行性</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="10-已验证死路（不要重试）"><a href="#10-已验证死路（不要重试）" class="headerlink" title="10. 已验证死路（不要重试）"></a>10. 已验证死路（不要重试）</h2><table>
+<thead>
+<tr>
+<th>路线</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>在 <code>/tmp/linux-3.10.65</code> 找展讯 FM 源码</td>
+<td>❌ 那是 vanilla 树，没有私有 FM 源码</td>
+</tr>
+<tr>
+<td>找现成 FM 命令行工具</td>
+<td>❌ 全盘没有，必须自己写 daemon</td>
+</tr>
+<tr>
+<td>用 <code>amixer</code>&#x2F;<code>tinymix</code> 切通路</td>
+<td>❌ 本机没装这些工具，只能写代码调 ALSA lib</td>
+</tr>
+<tr>
+<td>直接动态加载 Android 的 <code>libFMHalSource.so</code></td>
+<td>❌ 依赖 Android 运行时，Alpine 下跑不起来</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="11-红线（任何情况下）"><a href="#11-红线（任何情况下）" class="headerlink" title="11. 红线（任何情况下）"></a>11. 红线（任何情况下）</h2><ol>
+<li>文档中<strong>禁止</strong>写 SSH 密码&#x2F;账号&#x2F;真实 IP。</li>
+<li>音频&#x2F;显示结论<strong>必须人耳人眼确认</strong>，不接受”日志 OK”作为通过判据。</li>
+<li>LVGL 内做 socket I&#x2F;O <strong>必须</strong>设超时。</li>
+<li>杀进程<strong>按 PID</strong>，禁止 <code>pkill -f</code> 匹配可能命中自身命令行的串。</li>
+<li>提交前核对 <code>git diff --stat</code> 与 <code>git diff --ignore-cr-at-eol --stat</code>（<code>main.c</code> 是全仓唯一 CRLF 文件）。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%AE%AF-SC9832A-FM-%E6%94%B6%E9%9F%B3%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E6%89%8B%E5%86%8C-%E2%80%94%E2%80%94-spd-box"><span class="toc-number">1.</span> <span class="toc-text">展讯 SC9832A FM 收音故障排查手册 —— spd-box</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E6%8E%92%E9%9A%9C%E7%BA%AA%E5%BE%8B%EF%BC%88%E5%85%88%E8%AF%BB%EF%BC%8C%E8%BF%9D%E5%8F%8D%E4%BC%9A%E6%B5%AA%E8%B4%B9%E6%97%B6%E9%97%B4%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">0. 排障纪律（先读，违反会浪费时间）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%88%86%E5%B1%82%E6%95%85%E9%9A%9C%E9%80%9F%E6%9F%A5%E6%80%BB%E8%A1%A8%EF%BC%88%E4%B8%80%E9%A1%B5%E5%AE%9A%E4%BD%8D%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1. 分层故障速查总表（一页定位）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%9B%BA%E4%BB%B6-%E4%B8%8A%E7%94%B5%E5%B1%82%EF%BC%88%E2%91%A0%E2%91%A1%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. 固件 &#x2F; 上电层（①②）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-SDIO-%E8%AF%BB%E4%B8%8D%E5%88%B0-device-%E4%B8%8D%E7%AD%89%E4%BA%8E-0x2331"><span class="toc-number">1.3.1.</span> <span class="toc-text">2.1 SDIO 读不到 &#x2F; device 不等于 0x2331</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-WiFi-%E6%AD%A3%E5%B8%B8%E4%BD%86-FM-%E5%8F%91%E5%91%BD%E4%BB%A4%E6%97%A0%E5%93%8D%E5%BA%94"><span class="toc-number">1.3.2.</span> <span class="toc-text">2.2 WiFi 正常但 FM 发命令无响应</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%A9%B1%E5%8A%A8%E5%B1%82%EF%BC%88%E2%91%A2%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">3. 驱动层（③）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-dev-fm-%E4%B8%8D%E5%AD%98%E5%9C%A8"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 &#x2F;dev&#x2F;fm 不存在</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-ioctl-%E8%BF%94%E5%9B%9E-EINVAL-ENOTTY%EF%BC%88%E6%9C%AC%E9%A1%B9%E7%9B%AE%E5%A4%B4%E5%8F%B7%E6%95%85%E9%9A%9C%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 ioctl 返回 -EINVAL &#x2F; -ENOTTY（本项目头号故障）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-dmesg-%E5%87%BA%E7%8E%B0-seek-Timeout-d-sec-fm-seek-end"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 dmesg 出现 seek Timeout(%d sec), fm seek end !</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%9F%B3%E9%A2%91%E5%B1%82%EF%BC%88%E5%87%BA%E5%A3%B0%E4%B8%8E%E5%90%A6%EF%BC%89%E2%80%94%E2%80%94-%E6%9C%80%E5%AE%B9%E6%98%93%E2%80%9D%E4%BB%A5%E4%B8%BA%E5%A5%BD%E4%BA%86%E2%80%9D%E7%9A%84%E4%B8%80%E5%B1%82"><span class="toc-number">1.5.</span> <span class="toc-text">4. 音频层（出声与否）—— 最容易”以为好了”的一层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-ioctl-%E6%88%90%E5%8A%9F%E4%BD%86%E6%B2%A1%E6%9C%89%E5%A3%B0%E9%9F%B3"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 ioctl 成功但没有声音</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E5%A3%B0%E9%9F%B3%E6%96%AD%E7%BB%AD-%E6%9C%89%E5%8D%A1%E9%A1%BF%E6%84%9F"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 声音断续 &#x2F; 有卡顿感</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E9%9F%B3%E9%87%8F%E4%B8%8D%E5%AF%B9-SETVOL-%E6%97%A0%E6%95%88"><span class="toc-number">1.5.3.</span> <span class="toc-text">4.3 音量不对 &#x2F; SETVOL 无效</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E8%B0%83%E8%B0%90-%E6%89%AB%E6%8F%8F%E5%B1%82"><span class="toc-number">1.6.</span> <span class="toc-text">5. 调谐 &#x2F; 扫描层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-RSSI-%E6%81%92%E4%B8%BA-0-%E6%88%96%E6%81%92%E5%AE%9A%E6%9E%81%E5%80%BC"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 RSSI 恒为 0 或恒定极值</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E6%89%AB%E6%8F%8F%E5%BE%88%E6%85%A2-%E4%B8%AD%E9%80%94%E5%81%9C%E4%B8%8D%E4%B8%8B%E6%9D%A5"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 扫描很慢 &#x2F; 中途停不下来</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%BA%94%E7%94%A8%E5%B1%82%EF%BC%88%E2%91%A3%E2%91%A4-daemon-%E2%86%92-socket-%E2%86%92-LVGL%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">6. 应用层（④⑤ daemon → socket → LVGL）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-LVGL-%E9%A1%B5%E9%9D%A2%E5%8D%A1%E6%AD%BB-%E5%88%87%E9%A1%B5%E6%97%A0%E5%93%8D%E5%BA%94"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 LVGL 页面卡死 &#x2F; 切页无响应</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-connect-tmp-fm-ctl-sock-%E5%A4%B1%E8%B4%A5"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 connect &#x2F;tmp&#x2F;fm_ctl.sock 失败</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-FM-%E4%B8%8E%E8%93%9D%E7%89%99-A2DP-%E6%9C%AC%E5%9C%B0%E6%92%AD%E6%94%BE%E5%90%8C%E6%97%B6%E5%87%BA%E5%A3%B0"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 FM 与蓝牙 A2DP &#x2F; 本地播放同时出声</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-4-%E8%BF%94%E5%9B%9E%E6%A1%8C%E9%9D%A2%E5%90%8E%E5%81%9C%E5%8F%B0-%E6%81%AF%E5%B1%8F%E6%8E%89%E5%8F%B0"><span class="toc-number">1.7.4.</span> <span class="toc-text">6.4 返回桌面后停台 &#x2F; 息屏掉台</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%B3%BB%E7%BB%9F-%E8%87%AA%E5%90%AF%E5%B1%82"><span class="toc-number">1.8.</span> <span class="toc-text">7. 系统 &#x2F; 自启层</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-%E9%87%8D%E5%90%AF%E5%90%8E-FM-%E4%B8%8D%E8%87%AA%E5%8A%A8%E5%8F%AF%E7%94%A8"><span class="toc-number">1.8.1.</span> <span class="toc-text">7.1 重启后 FM 不自动可用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-daemon-%E5%8F%8D%E5%A4%8D%E9%87%8D%E5%90%AF"><span class="toc-number">1.8.2.</span> <span class="toc-text">7.2 daemon 反复重启</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-3-%E6%81%AF%E5%B1%8F-%E7%B3%BB%E7%BB%9F%E6%8C%82%E8%B5%B7%E5%90%8E-FM-%E6%8E%89%E5%8F%B0"><span class="toc-number">1.8.3.</span> <span class="toc-text">7.3 息屏 &#x2F; 系统挂起后 FM 掉台</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7%E7%AE%B1%EF%BC%88%E5%85%B3%E9%94%AE%E8%8A%82%E7%82%B9%E9%80%9F%E6%9F%A5%EF%BC%89"><span class="toc-number">1.9.</span> <span class="toc-text">8. 诊断工具箱（关键节点速查）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E8%BF%98%E9%9C%80%E5%AE%9E%E6%B5%8B%E5%AE%9A%E6%A0%87%E7%9A%84%E9%A1%B9%EF%BC%88%E5%BD%93%E5%89%8D%E4%B8%8D%E6%98%AF%E6%97%A2%E5%AE%9A%E4%BA%8B%E5%AE%9E%EF%BC%89"><span class="toc-number">1.10.</span> <span class="toc-text">9. 还需实测定标的项（当前不是既定事实）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E5%B7%B2%E9%AA%8C%E8%AF%81%E6%AD%BB%E8%B7%AF%EF%BC%88%E4%B8%8D%E8%A6%81%E9%87%8D%E8%AF%95%EF%BC%89"><span class="toc-number">1.11.</span> <span class="toc-text">10. 已验证死路（不要重试）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-%E7%BA%A2%E7%BA%BF%EF%BC%88%E4%BB%BB%E4%BD%95%E6%83%85%E5%86%B5%E4%B8%8B%EF%BC%89"><span class="toc-number">1.12.</span> <span class="toc-text">11. 红线（任何情况下）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&text=FM收音芯片打通_故障排查手册"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&title=FM收音芯片打通_故障排查手册"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&is_video=false&description=FM收音芯片打通_故障排查手册"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音芯片打通_故障排查手册&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&title=FM收音芯片打通_故障排查手册"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&title=FM收音芯片打通_故障排查手册"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&title=FM收音芯片打通_故障排查手册"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&title=FM收音芯片打通_故障排查手册"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/fm-13-fm-md/&name=FM收音芯片打通_故障排查手册&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

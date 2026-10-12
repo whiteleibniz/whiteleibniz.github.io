@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_05 — GBA 画面呈纵向条纹&#x2F;撕裂（源 pitch 被忽略） 现象：有画面了，但满屏规则的纵向条纹、内容横向错位，像是”撕裂”。根因层：miniretro 帧回调 video_cb 的源行跨距（pitch）寻址 + 帧缓冲并发扫描。修复工作量：extern&#x2F;miniretro&#x2F;miniretro.c 累计 +81&#x2F;-13（含本项与 bugfi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA画面纵向条纹撕裂">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_05 — GBA 画面呈纵向条纹&#x2F;撕裂（源 pitch 被忽略） 现象：有画面了，但满屏规则的纵向条纹、内容横向错位，像是”撕裂”。根因层：miniretro 帧回调 video_cb 的源行跨距（pitch）寻址 + 帧缓冲并发扫描。修复工作量：extern&#x2F;miniretro&#x2F;miniretro.c 累计 +81&#x2F;-13（含本项与 bugfi">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T10:08:27.822Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA画面纵向条纹撕裂</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+          <li><a href="https://github.com/whiteleibniz">projects</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-03/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/bugfix-20260923-06/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&text=GBA画面纵向条纹撕裂"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&title=GBA画面纵向条纹撕裂"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&is_video=false&description=GBA画面纵向条纹撕裂"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA画面纵向条纹撕裂&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&title=GBA画面纵向条纹撕裂"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&title=GBA画面纵向条纹撕裂"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&title=GBA画面纵向条纹撕裂"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&title=GBA画面纵向条纹撕裂"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&name=GBA画面纵向条纹撕裂&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-05-%E2%80%94-GBA-%E7%94%BB%E9%9D%A2%E5%91%88%E7%BA%B5%E5%90%91%E6%9D%A1%E7%BA%B9-%E6%92%95%E8%A3%82%EF%BC%88%E6%BA%90-pitch-%E8%A2%AB%E5%BF%BD%E7%95%A5%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_05 — GBA 画面呈纵向条纹&#x2F;撕裂（源 pitch 被忽略）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E8%BF%87%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解决办法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81"><span class="toc-number">1.6.</span> <span class="toc-text">验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%8F%E9%AA%8C%E6%95%99%E8%AE%AD"><span class="toc-number">1.7.</span> <span class="toc-text">经验教训</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA画面纵向条纹撕裂
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-05-—-GBA-画面呈纵向条纹-撕裂（源-pitch-被忽略）"><a href="#bugfix-20260923-05-—-GBA-画面呈纵向条纹-撕裂（源-pitch-被忽略）" class="headerlink" title="bugfix_20260923_05 — GBA 画面呈纵向条纹&#x2F;撕裂（源 pitch 被忽略）"></a>bugfix_20260923_05 — GBA 画面呈纵向条纹&#x2F;撕裂（源 pitch 被忽略）</h1><blockquote>
+<p><strong>现象</strong>：有画面了，但满屏<strong>规则的纵向条纹</strong>、内容横向错位，像是”撕裂”。<br><strong>根因层</strong>：<code>miniretro</code> 帧回调 <code>video_cb</code> 的<strong>源行跨距（pitch）寻址</strong> + 帧缓冲并发扫描。<br><strong>修复工作量</strong>：<code>extern/miniretro/miniretro.c</code> 累计 +81&#x2F;-13（含本项与 <code>bugfix_20260923_04</code> 黑屏修复；本项为主要部分）。<br><strong>文件名</strong>：<code>bugfix_20260923_05_GBA画面纵向条纹撕裂.md</code><br><strong>关联提交</strong>：（待提交后回填）<br><strong>日期</strong>：2026-09-23</p>
+</blockquote>
+<h2 id="现象"><a href="#现象" class="headerlink" title="现象"></a>现象</h2><ol>
+<li>GBA 游戏能进了（见 <code>bugfix_20260923_04</code>），但屏幕上是<strong>规则的纵向条纹</strong>：内容被切成一条条竖带，<br>带与带之间有黑缝，整体横向错位、不可读（用户描述为”撕裂状”）。</li>
+<li>对照：FC 游戏画面完全正常、无条纹。</li>
+</ol>
+<p>初步疑点：这是<strong>时序撕裂</strong>（vsync 缺失）还是<strong>寻址错位</strong>？两者外观可能都”像撕裂”，必须先区分。</p>
+<h2 id="影响范围"><a href="#影响范围" class="headerlink" title="影响范围"></a>影响范围</h2><ul>
+<li><strong>受影响</strong>：GBA（240×160, RGB565, pitch&#x3D;512）。</li>
+<li><strong>不受影响</strong>：FC（fceumm，pitch 恰等于 width×2）——线性读也正确，故一直正常。<br>本次改动对 FC 透明。</li>
+</ul>
+<h2 id="根因"><a href="#根因" class="headerlink" title="根因"></a>根因</h2><p><code>miniretro.c</code> 的 <code>video_cb</code> <strong>完全忽略核心给的行跨距</strong>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">video_cb</span><span class="params">(<span class="type">const</span> <span class="type">void</span> *data, <span class="type">unsigned</span> width, <span class="type">unsigned</span> height, <span class="type">size_t</span> pitch)</span></span><br><span class="line">&#123;</span><br><span class="line">    (<span class="type">void</span>)pitch;                       <span class="comment">/* ← pitch 被丢弃 */</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="type">const</span> <span class="type">uint16_t</span> *src16 = (<span class="type">const</span> <span class="type">uint16_t</span> *)data;</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; (<span class="type">int</span>)(width * height); i++)   <span class="comment">/* ← 线性读, 步长=width */</span></span><br><span class="line">        temp32[i] = convert(src16[i]);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>FC：<code>pitch = 256 × 2 = 512</code> 字节，恰好 <code>= width × 2</code> → 线性读 <strong>碰巧正确</strong>。</li>
+<li>GBA：核心日志实测 <code>video_cb: 240x160 pitch=512</code> —— 即<strong>每行 256 像素，而可视宽度只有 240</strong>。<br>线性读时每行少跳过 <code>(256-240)=16</code> 像素，<strong>逐行累积错位 160 行 ≈ 10 行源数据</strong>，<br>于是画面被横向剪切、并因跨行回卷产生规则条纹。</li>
+</ul>
+<p><strong>实锤证据</strong>：在 <code>video_cb</code> 加一次性打印，重编后日志输出<br><code>[miniretro] video_cb: 240x160 pitch=512 fmt=2 (每行像素=256)</code> —— pitch 与 width 确实不一致。</p>
+<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><ol>
+<li><strong>弯路一（关键）</strong>：最初判定为 <strong>vsync 撕裂</strong>，于是给 <code>miniretro</code> 加了<strong>双缓冲页翻转</strong><br>（fb 有 <code>yres_virtual=3840</code> 即 3 页，用 <code>FBIOPAN_DISPLAY</code> 换页）。<br>但用户反馈”还是这样没修复” → 说明<strong>根本不是撕裂，是数据错位</strong>。</li>
+<li><strong>抓屏区分</strong>：人眼看不见设备屏幕，于是<strong>实机抓屏</strong>——<br>设备端 <code>python3 os.pread</code> dump <code>/dev/fb0</code>（按当前 <code>yoffset</code> 抓前台页）→ SFTP 取回 → 本地按 <code>[R,G,B,X]</code> 解成 PNG → 打开看图。<br>一看便知：是<strong>规则的纵向条纹</strong>（内容错位、有黑缝），<strong>不是</strong>撕裂线。方向立刻转到寻址。</li>
+<li><strong>定位到 pitch</strong>：读 <code>video_cb</code> 源码，发现 <code>(void)pitch;</code> 与线性读；<br>再加一次性打印确认 <code>pitch=512 ≠ 240×2=480</code>。</li>
+<li><strong>排除双缓冲是元凶</strong>：双缓冲保留（无副作用，且对未来真撕裂有防御价值），但补上 pitch 修复才是根治。</li>
+</ol>
+<h2 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h2><p><code>extern/miniretro/miniretro.c</code> 的 <code>video_cb</code>：</p>
+<ol>
+<li><p><strong>三个像素格式分支全部改为按 stride 逐行取数</strong>（<code>pitch==0</code> 时回退 <code>width*2</code>）：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(pitch == <span class="number">0</span>) pitch = (<span class="type">size_t</span>)width * <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* RGB565 */</span></span><br><span class="line"><span class="type">const</span> <span class="type">uint16_t</span> *src16 = (<span class="type">const</span> <span class="type">uint16_t</span> *)data;</span><br><span class="line"><span class="type">size_t</span> stride = pitch / <span class="number">2</span>;                     <span class="comment">/* 字节 → 像素 */</span></span><br><span class="line"><span class="keyword">for</span>(<span class="type">unsigned</span> y = <span class="number">0</span>; y &lt; height; y++) &#123;</span><br><span class="line">    <span class="type">const</span> <span class="type">uint16_t</span> *row = src16 + (<span class="type">size_t</span>)y * stride;</span><br><span class="line">    <span class="type">uint32_t</span> *dst = temp32 + (<span class="type">size_t</span>)y * width;</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">unsigned</span> x = <span class="number">0</span>; x &lt; width; x++) &#123;</span><br><span class="line">        <span class="type">uint16_t</span> p = row[x];</span><br><span class="line">        dst[x] = <span class="number">0xFF000000U</span> | (((p&gt;&gt;<span class="number">11</span>)&amp;<span class="number">0x1F</span>)&lt;&lt;<span class="number">19</span>) | (((p&gt;&gt;<span class="number">5</span>)&amp;<span class="number">0x3F</span>)&lt;&lt;<span class="number">10</span>) | ((p&amp;<span class="number">0x1F</span>)&lt;&lt;<span class="number">3</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">scale_rotate90(temp32, fb_dst, width, height, fb_w, fb_h);</span><br></pre></td></tr></table></figure>
+
+<p><code>XRGB8888</code>（pitch&#x2F;4）与 <code>0RGB1555</code>（pitch&#x2F;2）同理。<br>注意结果仍是 <code>0xAARRGGBB</code>，由 <code>scale_rotate90</code> 统一做 R&#x2F;B 字节交换后落盘。</p>
+</li>
+<li><p><strong>保留双缓冲页翻转</strong>（<code>g_dbuf</code>，<code>FBIOPAN_DISPLAY</code>；首次失败自动降级单缓冲）——<br>本机 <code>FBIO_WAITFORVSYNC</code> 返回 <code>EPERM</code> 不可用，换页是唯一可行的防撕裂手段。</p>
+</li>
+<li><p>重编：<code>cd extern/miniretro &amp;&amp; sh build.sh</code>。</p>
+</li>
+</ol>
+<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><ul>
+<li><strong>受控自测</strong>：修复后单独跑 <code>miniretro mgba_libretro.so &lt;rom&gt;</code>，实机抓屏 <strong>20 帧连拍</strong>：<ul>
+<li>标题画面（橙色道服角色 + 青色放射背景）、开场动画（多角色立绘）<strong>满屏清晰</strong>；</li>
+<li><strong>无纵向条纹、无撕裂、无黑缝</strong>。</li>
+</ul>
+</li>
+<li><strong>日志</strong>：<code>双缓冲页翻转已启用(yres_virtual=3840)</code>、<code>video_cb: 240x160 pitch=512</code>。</li>
+<li><strong>设备终态</strong>：1×<code>lvgl_demo</code> + 1×<code>lvgl_watchdog.sh</code>，无 <code>miniretro</code> 残留。</li>
+<li><strong>待用户实机确认</strong>：桌面 → 「GBA游戏」→ 确认键启动 → 目视无条纹&#x2F;撕裂 → 买单键（116）退出。</li>
+</ul>
+<h2 id="经验教训"><a href="#经验教训" class="headerlink" title="经验教训"></a>经验教训</h2><ol>
+<li><strong>“撕裂”与”条纹&#x2F;错位”是两种病，必须先分开。</strong><ul>
+<li>撕裂 &#x3D; <strong>时序</strong>问题（帧缓冲正被扫描时被改写）→ 双缓冲&#x2F;页翻转&#x2F;vsync。</li>
+<li>条纹 &#x3D; <strong>寻址</strong>问题（每行步长算错）→ 核对 pitch&#x2F;stride。<br>不加区分就上双缓冲，会白改一轮（本 bug 就是如此，浪费了一次往返）。</li>
+</ul>
+</li>
+<li><strong>接不同 libretro 核心时，<code>pitch</code> 必须用，绝不能假设 <code>pitch == width × bpp/8</code>。</strong><br>mGBA 的缓冲行对齐到 256 像素，导致 <code>pitch/2 = 256 ≠ width(240)</code>。<br>线性读在 width 恰好整除 pitch 时”碰巧对”，换个分辨率立刻暴露。</li>
+<li><strong>看不到设备屏幕时，实机抓屏是最高性价比的诊断手段</strong>：<br><code>os.pread(&quot;/dev/fb0&quot;)</code> → SFTP → 本地按 <code>[R,G,B,X]</code> 解 PNG → 人眼看图。<br>一眼看出是条纹还是撕裂，胜过一堆日志推理。</li>
+<li>**”非黑像素占比”这类量化指标只能证明”有画面”**，证明不了”画面正确”；<br>判”画面对不对”必须人眼。</li>
+<li><strong>别把”改了没效果”当噪声</strong>：用户两次说”还是这样”，恰恰是”根因判断错了”的最强信号。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+          <li>
+            <a href="https://github.com/whiteleibniz">
+              projects
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-05-%E2%80%94-GBA-%E7%94%BB%E9%9D%A2%E5%91%88%E7%BA%B5%E5%90%91%E6%9D%A1%E7%BA%B9-%E6%92%95%E8%A3%82%EF%BC%88%E6%BA%90-pitch-%E8%A2%AB%E5%BF%BD%E7%95%A5%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_05 — GBA 画面呈纵向条纹&#x2F;撕裂（源 pitch 被忽略）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-number">1.2.</span> <span class="toc-text">影响范围</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E8%BF%87%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解决办法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81"><span class="toc-number">1.6.</span> <span class="toc-text">验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%8F%E9%AA%8C%E6%95%99%E8%AE%AD"><span class="toc-number">1.7.</span> <span class="toc-text">经验教训</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&text=GBA画面纵向条纹撕裂"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&title=GBA画面纵向条纹撕裂"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&is_video=false&description=GBA画面纵向条纹撕裂"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA画面纵向条纹撕裂&body=Check out this article: https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&title=GBA画面纵向条纹撕裂"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&title=GBA画面纵向条纹撕裂"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&title=GBA画面纵向条纹撕裂"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&title=GBA画面纵向条纹撕裂"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/09/23/bugfix-20260923-05/&name=GBA画面纵向条纹撕裂&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+          <!--<li><a href="https://github.com/whiteleibniz">projects</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    var inputArea = document.querySelector("#search-input");
+    var $resultArea = $("#search-result");
+
+    inputArea.onfocus = function () {
+        var search_path = "search.xml";
+        if (search_path.length == 0) {
+            search_path = "search.xml";
+        }
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    }
+
+    inputArea.onkeydown = function () {
+        if (event.keyCode == 13) {
+            return false
+        }
+    }
+
+    $resultArea.bind("DOMNodeRemoved DOMNodeInserted", function (e) {
+        if (!$(e.target).text()) {
+            $(".search-no-result").show(200);
+        } else {
+            $(".search-no-result").hide();
+        }
+    })
+</script>
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
