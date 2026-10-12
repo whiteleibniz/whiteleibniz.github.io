@@ -156,13 +156,13 @@
 <li>试过 <code>-ftls-model=local-exec</code> 重编，被链接器以 <code>R_ARM_TLS_LE32 not permitted in shared object</code> 拒绝（shared lib 里不能用 local-exec）。</li>
 </ol>
 <p>以上做完，TLS 动态重定位确实清零了，但新 core 依然在 dlopen 时崩。用二分法关掉 init_array 里的构造函数，定位到崩在 libstdc++ 的 <code>std::ios_base::Init</code> 全局构造；而老 core 里同一个构造函数却能正常跑。新工具链的构造函数链与老 bionic linker 之间还有更深的不兼容，我决定不再深挖——<strong>老 core 本来就完好，回退</strong>。</p>
-<h2 id="第二层：FBO-读回黑洞"><a href="#第二层：FBO-读回黑洞" class="headerlink" title="第二层：FBO 读回黑洞"></a>第二层：FBO 读回黑洞</h2><p>换回老 core 后 GL 后端能激活，但屏幕全黑，抓屏非黑像素占比 0.08%。这里我走了最长的弯路：之前我把前端改成了「自建 FBO → PPSSPP 渲染到 FBO → glReadPixels 读回 → 软件缩放旋转 → 写 framebuffer」的路径，并且加过 POT 纹理、缓存扫除、rmmod/insmod 等各种排除实验。</p>
+<h2 id="第二层：FBO-读回黑洞"><a href="#第二层：FBO-读回黑洞" class="headerlink" title="第二层：FBO 读回黑洞"></a>第二层：FBO 读回黑洞</h2><p>换回老 core 后 GL 后端能激活，但屏幕全黑，抓屏非黑像素占比 0.08%。这里我走了最长的弯路：之前我把前端改成了「自建 FBO → PPSSPP 渲染到 FBO → glReadPixels 读回 → 软件缩放旋转 → 写 framebuffer」的路径，并且加过 POT 纹理、缓存扫除、rmmod&#x2F;insmod 等各种排除实验。</p>
 <p>最终用一个专门写的 EGL 探针程序做出判决：<strong>这颗 Mali DDK 上，从 FBO 做 glReadPixels 读回的内容恒为 0（连 glClear 都不行），但从默认帧缓冲（pbuffer）在真实 draw 之后读回是正常的</strong>。也就是说，0af7630 时代能跑通的老前端，<code>hw_get_current_framebuffer()</code> 返回的本来就是 0、读的本来就是默认面——是我自己后来改坏了。</p>
 <p>修复：把前端恢复成历史验证过的路径——FB0 直读、EGL_SURFACE_TYPE 只留 PBUFFER_BIT、删掉自建 FBO 全套代码。立即出画面。</p>
 <h2 id="第三层：useEmuThread-与-GL-上下文"><a href="#第三层：useEmuThread-与-GL-上下文" class="headerlink" title="第三层：useEmuThread 与 GL 上下文"></a>第三层：useEmuThread 与 GL 上下文</h2><p>PPSSPP 的 libretro glue 有个逻辑：GL 后端激活时（<code>GetGPUCore() == GPUCORE_GLES</code>）会启用 EmuThread，把所有 GL 调用搬到 core 自己的线程上跑。而 EGL 上下文 current 在前端线程，于是 GL 全部无效。core 源码里 <code>useEmuThread = false;</code> 一行修复。这个问题在老 core 上不存在（当年的构建已等价处理），但如果你要重编 core，这里是必踩的坑。</p>
 <h1 id="额外的坑"><a href="#额外的坑" class="headerlink" title="额外的坑"></a>额外的坑</h1><ul>
-<li><strong>fb mmap 断连</strong>：fb 驱动被多次 FBIOPAN/FBIOPUT 实验折腾后，新进程 mmap /dev/fb0 的写入到不了真实显存（pread 读回全 0，连 memset 都无效），重启才恢复。诊断方法：用 python 的 <code>os.pwrite/os.pread</code> 走文件路径验证读写一致性，再对比进程自己 mmap 区域的内容。</li>
-<li><strong>重启后静默退软渲</strong>：设备重启后必须 <code>mount</code> Android 分区（保证 /system/lib 的 EGL 库链路存在）+ <code>insmod mali.ko</code>，否则 EGL 初始化失败，前端静默退回软渲——表面症状只是 fps 从 33 变 20。</li>
+<li><strong>fb mmap 断连</strong>：fb 驱动被多次 FBIOPAN&#x2F;FBIOPUT 实验折腾后，新进程 mmap &#x2F;dev&#x2F;fb0 的写入到不了真实显存（pread 读回全 0，连 memset 都无效），重启才恢复。诊断方法：用 python 的 <code>os.pwrite/os.pread</code> 走文件路径验证读写一致性，再对比进程自己 mmap 区域的内容。</li>
+<li><strong>重启后静默退软渲</strong>：设备重启后必须 <code>mount</code> Android 分区（保证 &#x2F;system&#x2F;lib 的 EGL 库链路存在）+ <code>insmod mali.ko</code>，否则 EGL 初始化失败，前端静默退回软渲——表面症状只是 fps 从 33 变 20。</li>
 <li><strong>bionic sigset_t 只有 16 字节</strong>：在裸 bionic 探针里装信号处理器时，如果按 glibc 的 128 字节排布 sigaction 结构体，会静默失败。</li>
 <li><strong>bison linker 拒收 local-exec</strong>：shared library 里 <code>-ftls-model=local-exec</code> 编出的 <code>R_ARM_TLS_LE32</code> 不被允许，TLS 修复只能走「源头消灭 TLS」路线。</li>
 </ul>
@@ -174,7 +174,7 @@
 </ol>
 <hr>
 <blockquote>
-<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章，版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io">https://whiteleibniz.github.io</a></p>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章，版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
 </blockquote>
 
   </div>
