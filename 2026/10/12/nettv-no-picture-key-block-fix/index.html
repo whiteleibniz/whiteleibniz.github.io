@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="nettv 播放器无画面与按键阻塞故障修复一、故障现象用户在桌面点击「网络电视」的频道后：  后台能看到 nettv_player 进程在跑，甚至同时存在多个历史残留进程； 前端没有任何画面； 导航按键全部失灵（只能按买单键，界面像卡死）。  二、根因链（三层，一层比一层深）1. 直接原因：频道源全部失效设备实测频道表 8 个源，curl 全部返回 000（连接超时）。公开直播源（voc、各地 P">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="nettv 播放器无画面与按键阻塞故障修复一、故障现象用户在桌面点击「网络电视」的频道后：  后台能看到 nettv_player 进程在跑，甚至同时存在多个历史残留进程； 前端没有任何画面； 导航按键全部失灵（只能按买单键，界面像卡死）。  二、根因链（三层，一层比一层深）1. 直接原因：频道源全部失效设备实测频道表 8 个源，curl 全部返回 000（连接超时）。公开直播源（voc、各地 P">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-12T13:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T13:17:42.082Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="VSP硬解">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="故障修复">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a href="/">home</a></li>
+        
+          <li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>
+        
+          <li><a href="/archives/">article</a></li>
+        
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2026/10/12/mali-400-tbdr-working-principle/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&text=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&title=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&is_video=false&description=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启&body=Check out this article: https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&title=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&title=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&title=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&title=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&name=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#nettv-%E6%92%AD%E6%94%BE%E5%99%A8%E6%97%A0%E7%94%BB%E9%9D%A2%E4%B8%8E%E6%8C%89%E9%94%AE%E9%98%BB%E5%A1%9E%E6%95%85%E9%9A%9C%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.</span> <span class="toc-text">nettv 播放器无画面与按键阻塞故障修复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E6%95%85%E9%9A%9C%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">一、故障现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%A0%B9%E5%9B%A0%E9%93%BE%EF%BC%88%E4%B8%89%E5%B1%82%EF%BC%8C%E4%B8%80%E5%B1%82%E6%AF%94%E4%B8%80%E5%B1%82%E6%B7%B1%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">二、根因链（三层，一层比一层深）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%9B%B4%E6%8E%A5%E5%8E%9F%E5%9B%A0%EF%BC%9A%E9%A2%91%E9%81%93%E6%BA%90%E5%85%A8%E9%83%A8%E5%A4%B1%E6%95%88"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. 直接原因：频道源全部失效</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%B7%B1%E5%B1%82%E5%8E%9F%E5%9B%A0%EF%BC%9A%E6%92%AD%E6%94%BE%E5%99%A8%E5%AF%B9%E3%80%8C%E6%BA%90%E4%B8%8D%E5%8F%AF%E8%BE%BE%E3%80%8D%E7%9A%84%E5%A4%84%E7%90%86%E6%98%AF%E6%97%A0%E9%99%90%E9%87%8D%E5%90%AF"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. 深层原因：播放器对「源不可达」的处理是无限重启</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%9C%80%E6%B7%B1%E7%9A%84%E5%9D%91%EF%BC%9A%E4%BF%AE%E3%80%8C%E6%BA%90%E4%B8%8D%E5%8F%AF%E8%BE%BE%E9%80%80%E5%87%BA%E3%80%8D%E6%97%B6%E8%BF%9E%E7%BB%AD%E8%B8%A9%E4%BA%86%E4%B8%89%E4%B8%AA%E6%97%B6%E5%BA%8F%E7%AB%9E%E4%BA%89"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. 最深的坑：修「源不可达退出」时连续踩了三个时序竞争</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88"><span class="toc-number">1.3.</span> <span class="toc-text">三、修复方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%92%AD%E6%94%BE%E5%99%A8%E4%BE%A7%EF%BC%88sprd-msg-np-c%EF%BC%8C4-%E5%A4%84%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">播放器侧（sprd_msg_np.c，4 处）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UI-%E9%A1%B5%E4%BE%A7%EF%BC%88nettv-page-c%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">UI 页侧（nettv_page.c）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%91%E9%81%93%E8%A1%A8"><span class="toc-number">1.3.3.</span> <span class="toc-text">频道表</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%AA%8C%E8%AF%81%E7%BB%93%E6%9E%9C"><span class="toc-number">1.4.</span> <span class="toc-text">四、验证结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">1.5.</span> <span class="toc-text">五、经验总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%81%97%E7%95%99%E9%97%AE%E9%A2%98"><span class="toc-number">1.6.</span> <span class="toc-text">六、遗留问题</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-12T13:00:00.000Z" itemprop="datePublished">2026-10-12</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/VSP%E7%A1%AC%E8%A7%A3/" rel="tag">VSP硬解</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E6%95%85%E9%9A%9C%E4%BF%AE%E5%A4%8D/" rel="tag">故障修复</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="nettv-播放器无画面与按键阻塞故障修复"><a href="#nettv-播放器无画面与按键阻塞故障修复" class="headerlink" title="nettv 播放器无画面与按键阻塞故障修复"></a>nettv 播放器无画面与按键阻塞故障修复</h1><h2 id="一、故障现象"><a href="#一、故障现象" class="headerlink" title="一、故障现象"></a>一、故障现象</h2><p>用户在桌面点击「网络电视」的频道后：</p>
+<ul>
+<li>后台能看到 <code>nettv_player</code> 进程在跑，甚至同时存在多个历史残留进程；</li>
+<li>前端没有任何画面；</li>
+<li>导航按键全部失灵（只能按买单键，界面像卡死）。</li>
+</ul>
+<h2 id="二、根因链（三层，一层比一层深）"><a href="#二、根因链（三层，一层比一层深）" class="headerlink" title="二、根因链（三层，一层比一层深）"></a>二、根因链（三层，一层比一层深）</h2><h3 id="1-直接原因：频道源全部失效"><a href="#1-直接原因：频道源全部失效" class="headerlink" title="1. 直接原因：频道源全部失效"></a>1. 直接原因：频道源全部失效</h3><p>设备实测频道表 8 个源，<code>curl</code> 全部返回 <code>000</code>（连接超时）。公开直播源（voc、各地 P2P 流）平均存活期只有几周，失效是常态。</p>
+<h3 id="2-深层原因：播放器对「源不可达」的处理是无限重启"><a href="#2-深层原因：播放器对「源不可达」的处理是无限重启" class="headerlink" title="2. 深层原因：播放器对「源不可达」的处理是无限重启"></a>2. 深层原因：播放器对「源不可达」的处理是无限重启</h3><p><code>nettv_player</code>（sprd_msg 基线）的结构是「监控父进程 + 解码子进程」：</p>
+<ul>
+<li>子进程拉不到 m3u8 → <code>load_chunk</code> 失败 → <code>_exit(10)</code>；</li>
+<li>监控父进程<strong>不看退出码</strong>，150ms 后重新 fork → 再次失败 → 再次重启……</li>
+</ul>
+<p>于是进程永远不退出、永远解不出帧。这直接造成两个用户可见症状：</p>
+<ul>
+<li><strong>无画面</strong>：没有任何帧被解码出来；</li>
+<li><strong>按键阻塞</strong>：UI 页（<code>nettv_page.c</code>）在启动播放器时暂停了 LVGL 主循环并安装按键拦截器，由一个等待线程 <code>waitpid</code> 阻塞收尸——播放器不退出，等待线程就永不返回，界面和按键就一直不恢复。</li>
+</ul>
+<h3 id="3-最深的坑：修「源不可达退出」时连续踩了三个时序竞争"><a href="#3-最深的坑：修「源不可达退出」时连续踩了三个时序竞争" class="headerlink" title="3. 最深的坑：修「源不可达退出」时连续踩了三个时序竞争"></a>3. 最深的坑：修「源不可达退出」时连续踩了三个时序竞争</h3><p>第一版补丁很直观——连续 3 次拉不到播放列表就判死刑、退出码 98、监控见到 98 就不重启。但实测<strong>完全不生效</strong>，日志里依旧是无限重启。逐层拆解后发现是三个竞争：</p>
+<ol>
+<li><strong>停滞看门狗误杀取源阶段</strong>：看门狗的逻辑是「启动宽限 8s + 之后 5s 无新帧就杀掉重启」。可 VSP 组件 init 本身就要数秒，3 次 curl 重试又要 15~25s——看门狗在子进程走到「拉列表」之前就把它毙了，退出码 98 根本没机会产生。</li>
+<li><strong>两次拉取之间的空窗</strong>：即使加了「拉列表中」共享旗标，旗标只在 <code>hls_pick()</code> 内置位，段间 <code>sleep(1)</code> 和 curl fork 的空窗里旗标是 0，看门狗照样开火。</li>
+<li><strong>启动期与播放期的宽限混为一谈</strong>：从未出过帧（启动期）和出过帧后挂起（VSP 挂死）用的是同一个 8s 宽限，而启动期合法耗时（组件 init + 取源 + 下载 25s）本就该长得多。</li>
+</ol>
+<h2 id="三、修复方案"><a href="#三、修复方案" class="headerlink" title="三、修复方案"></a>三、修复方案</h2><h3 id="播放器侧（sprd-msg-np-c，4-处）"><a href="#播放器侧（sprd-msg-np-c，4-处）" class="headerlink" title="播放器侧（sprd_msg_np.c，4 处）"></a>播放器侧（<code>sprd_msg_np.c</code>，4 处）</h3><ol>
+<li><code>hls_pick()</code> 返回值语义化：<code>1</code>&#x3D;拿到新段，<code>0</code>&#x3D;直播还没刷新，<code>-1</code>&#x3D;播放列表都拉不到（源不可达）；</li>
+<li><code>load_chunk()</code>：连续 3 次 <code>-1</code> 判死刑，置 <code>g_src_dead</code> 并<strong>通过共享内存旗标 <code>shm[1]=98</code> 立刻通知监控</strong>（不用等退出码，0.4s 内响应）；</li>
+<li>监控父进程：见到旗标 98 → 杀掉子进程 → <code>_exit(98)</code>，绝不重启；同时保留退出码 98 的第二道判定；</li>
+<li><strong>停滞看门狗按语义分档</strong>：<code>prev&gt;0</code>（出过帧，VSP 挂死）维持 8s+5s 快速重启；<code>prev==0</code>（从未出帧&#x3D;启动期）宽限 90s。取源阶段（含 sleep&#x2F;curl 空窗）全程置 <code>shm[2]=1</code> 免看门狗，连续拉列表超 60s 仍兜底。</li>
+</ol>
+<h3 id="UI-页侧（nettv-page-c）"><a href="#UI-页侧（nettv-page-c）" class="headerlink" title="UI 页侧（nettv_page.c）"></a>UI 页侧（<code>nettv_page.c</code>）</h3><p>等待线程收尸后按退出码分流：<code>WEXITSTATUS(status)==98</code> 时通过 <code>lv_async_call</code> 在主线程把状态栏改成「频道源不可达, 已自动返回 (换台或编辑频道表)」。LVGL 对象只能主线程碰，跨线程提示必须走 <code>lv_async_call</code>。</p>
+<h3 id="频道表"><a href="#频道表" class="headerlink" title="频道表"></a>频道表</h3><p>8 个源全死后，设备实测替换为 4 个存活源（钱江都市&#x2F;上虞&#x2F;松潘&#x2F;泸县，均返回有效 m3u8），旧表备份为 <code>stations.m3u.bak_20261012</code>。</p>
+<h2 id="四、验证结果"><a href="#四、验证结果" class="headerlink" title="四、验证结果"></a>四、验证结果</h2><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>修复前</th>
+<th>修复后</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>点死源频道</td>
+<td>播放器无限重启、界面永久卡死、只能断电</td>
+<td>约 40s 自动退出（退出码 98），界面与按键恢复，状态栏提示源不可达</td>
+</tr>
+<tr>
+<td>点活源频道</td>
+<td>—</td>
+<td>正常解码出帧（钱江都市实测每轮 4 帧后撞上已知的「第二个 IDR 挂起」，监控重启循环，属遗留问题）</td>
+</tr>
+</tbody></table>
+<h2 id="五、经验总结"><a href="#五、经验总结" class="headerlink" title="五、经验总结"></a>五、经验总结</h2><ol>
+<li><strong>「后台进程在跑」不等于「在工作」</strong>：本例中进程在跑恰恰是故障本身——无限重启循环。判断健康要看功能真值（出帧数、退出码），不能看进程存在性。</li>
+<li><strong>看门狗的宽限必须按语义分档</strong>：启动期（含网络取源）和运行期挂死的合法耗时差一个量级，混用一个 8s 宽限就会在启动期误杀，把「本来会自己退出的流程」打成「无限重启」。</li>
+<li><strong>修「该退出」类 bug 时，先确认没有更底层的「提前杀死」机制</strong>：退出码设计得再对，被看门狗抢先 SIGKILL 就永远传不出来。父子进程通信优先用共享内存旗标（即时），退出码只作兜底。</li>
+<li><strong>幂等操作不要加前置判断，等待条件不要用计时</strong>：本例看门狗的退出条件表面是「无新帧」事件，实际混入了「8s 计时」，一混就错（与「等子进程循环不设时长上限」是同一类错误的镜像）。</li>
+<li><strong>UI 阻塞类故障先问「谁在等一个永不到来的事件」</strong>：本例是 <code>waitpid</code> 等一个永不退出的播放器。让子进程保证会退出（退出码 98 + SIGKILL 兜底），阻塞等待就是安全的。</li>
+</ol>
+<h2 id="六、遗留问题"><a href="#六、遗留问题" class="headerlink" title="六、遗留问题"></a>六、遗留问题</h2><ul>
+<li><strong>第二个 IDR 挂起</strong>（<code>addr=0x747474</code> 段错误或永久挂起）：1080p 直播流第一个 GOP 出约 4 帧后喂第二个 IDR 必发，监控重启只能换来「4 帧一轮」的幻灯模式。这是 nettv 流畅播放的最后障碍，已列入每日定时攻坚任务。</li>
+<li>直播源需要定期巡检替换，频道表平均几周失效一轮。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a href="/">
+              home
+            </a>
+          </li>
+          
+          <li>
+            <a href="/%E5%85%B3%E4%BA%8E/">
+              about
+            </a>
+          </li>
+          
+          <li>
+            <a href="/archives/">
+              article
+            </a>
+          </li>
+          
+          <li>
+            <a href="/Search/">
+              Search
+            </a>
+          </li>
+          
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#nettv-%E6%92%AD%E6%94%BE%E5%99%A8%E6%97%A0%E7%94%BB%E9%9D%A2%E4%B8%8E%E6%8C%89%E9%94%AE%E9%98%BB%E5%A1%9E%E6%95%85%E9%9A%9C%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.</span> <span class="toc-text">nettv 播放器无画面与按键阻塞故障修复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E6%95%85%E9%9A%9C%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">一、故障现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%A0%B9%E5%9B%A0%E9%93%BE%EF%BC%88%E4%B8%89%E5%B1%82%EF%BC%8C%E4%B8%80%E5%B1%82%E6%AF%94%E4%B8%80%E5%B1%82%E6%B7%B1%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">二、根因链（三层，一层比一层深）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%9B%B4%E6%8E%A5%E5%8E%9F%E5%9B%A0%EF%BC%9A%E9%A2%91%E9%81%93%E6%BA%90%E5%85%A8%E9%83%A8%E5%A4%B1%E6%95%88"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. 直接原因：频道源全部失效</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%B7%B1%E5%B1%82%E5%8E%9F%E5%9B%A0%EF%BC%9A%E6%92%AD%E6%94%BE%E5%99%A8%E5%AF%B9%E3%80%8C%E6%BA%90%E4%B8%8D%E5%8F%AF%E8%BE%BE%E3%80%8D%E7%9A%84%E5%A4%84%E7%90%86%E6%98%AF%E6%97%A0%E9%99%90%E9%87%8D%E5%90%AF"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. 深层原因：播放器对「源不可达」的处理是无限重启</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%9C%80%E6%B7%B1%E7%9A%84%E5%9D%91%EF%BC%9A%E4%BF%AE%E3%80%8C%E6%BA%90%E4%B8%8D%E5%8F%AF%E8%BE%BE%E9%80%80%E5%87%BA%E3%80%8D%E6%97%B6%E8%BF%9E%E7%BB%AD%E8%B8%A9%E4%BA%86%E4%B8%89%E4%B8%AA%E6%97%B6%E5%BA%8F%E7%AB%9E%E4%BA%89"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. 最深的坑：修「源不可达退出」时连续踩了三个时序竞争</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88"><span class="toc-number">1.3.</span> <span class="toc-text">三、修复方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%92%AD%E6%94%BE%E5%99%A8%E4%BE%A7%EF%BC%88sprd-msg-np-c%EF%BC%8C4-%E5%A4%84%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">播放器侧（sprd_msg_np.c，4 处）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UI-%E9%A1%B5%E4%BE%A7%EF%BC%88nettv-page-c%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">UI 页侧（nettv_page.c）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%91%E9%81%93%E8%A1%A8"><span class="toc-number">1.3.3.</span> <span class="toc-text">频道表</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%AA%8C%E8%AF%81%E7%BB%93%E6%9E%9C"><span class="toc-number">1.4.</span> <span class="toc-text">四、验证结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">1.5.</span> <span class="toc-text">五、经验总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%81%97%E7%95%99%E9%97%AE%E9%A2%98"><span class="toc-number">1.6.</span> <span class="toc-text">六、遗留问题</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&text=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&title=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&is_video=false&description=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启&body=Check out this article: https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&title=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&title=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&title=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&title=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/&name=nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
