@@ -65,17 +65,19 @@
     }
   };
 
+  /* 兼容带/不带尾斜杠: /en 与 /en/ 都识别为 en */
   function detect(path) {
-    if (path.indexOf('/en/') === 0) return 'en';
-    if (path.indexOf('/zh-tw/') === 0) return 'zh-TW';
+    if (/^\/en(\/|$)/.test(path)) return 'en';
+    if (/^\/zh-tw(\/|$)/.test(path)) return 'zh-TW';
     return 'zh-CN';
   }
 
   /* 关于页各语言 slug 不同(中文站 /关于/, 英文站 /en/about/) */
   var ABOUT = { 'zh-CN': '/关于/', 'zh-TW': '/zh-tw/关于/', 'en': '/en/about/' };
 
+  /* 兼容带/不带尾斜杠的前缀剥离 */
   function stripPrefix(path) {
-    return path.replace(/^\/(en|zh-tw)\//, '/');
+    return path.replace(/^\/(en|zh-tw)(\/|$)/, '/');
   }
 
   function switchUrl(path, target) {
@@ -104,24 +106,24 @@
     return s.replace(/%d/g, function () { return args[i++]; });
   }
 
-  /* ① 语言切换器 */
-  var switches = document.querySelectorAll('.lang-switch a[data-lang]');
-  Array.prototype.forEach.call(switches, function (a) {
-    var target = a.getAttribute('data-lang');
-    a.setAttribute('href', switchUrl(location.pathname, target));
-    if (target === lang) a.className = 'current';
-  });
+  /* ① 语言切换器: 链接与 current 高亮已由 header.ejs 服务端直出, 此处不再改写,
+        以免覆盖服务端结果(尤其无尾斜杠地址 /en 下 switchUrl 会误算)。 */
 
   /* ② 站内链接加语言前缀(导航/分类下拉/正文内链; 资源路径除外) */
   var ASSET = /^\/(images|lib|css|js|downloads|favicon[^/]*)/;
   function localizeLink(a) {
+    /* 语言切换器链接由 header.ejs 服务端直出, 勿被 .content a 等本地化逻辑改写
+       (header 被包在 .content 内, 否则会把 zh-CN 的 "/" 误加成 "/en/") */
+    if (a.closest && a.closest('.lang-switch')) return;
     var href = a.getAttribute('href');
     if (!href || href.charAt(0) !== '/' || href.indexOf('//') === 0) return;
     if (ASSET.test(href)) return;
     if (href.indexOf('/en/') === 0 || href.indexOf('/zh-tw/') === 0) return;
-    if (href === '/关于/' || href.indexOf('/关于/') === 0) {
-      if (lang === 'en') { a.setAttribute('href', href.replace('/关于/', '/en/about/')); return; }
-      if (lang === 'zh-TW') { a.setAttribute('href', href.replace('/关于/', '/zh-tw/关于/')); return; }
+    /* about 链接可能已被 url_for 编码为 /%E5%85%B3%E4%BA%8E/ , 需解码后匹配 */
+    var dec = decodeURIComponent(href);
+    if (dec === '/关于/' || dec.indexOf('/关于/') === 0) {
+      if (lang === 'en') { a.setAttribute('href', '/en/about/'); return; }
+      if (lang === 'zh-TW') { a.setAttribute('href', '/zh-tw/关于/'); return; }
       return;
     }
     if (pre === '') return;
