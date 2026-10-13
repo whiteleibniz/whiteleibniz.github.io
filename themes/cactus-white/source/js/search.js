@@ -11,6 +11,18 @@ var searchFunc = function (path, search_id, content_id) {
   var datas = null;   // 缓存
   var timer = null;
 
+  /* 只搜当前语言的文章(URL 前缀: 根站=简体, /en/=English, /zh-tw/=繁體) */
+  var L = (window.I18N && window.I18N.lang) || 'zh-CN';
+  function langOk(url) {
+    if (L === 'en') return url.indexOf('/en/') === 0;
+    if (L === 'zh-TW') return url.indexOf('/zh-tw/') === 0;
+    return url.indexOf('/en/') !== 0 && url.indexOf('/zh-tw/') !== 0;
+  }
+  function msg(key, fallback) {
+    var v = window.I18N && window.I18N.t ? window.I18N.t(key) : null;
+    return v || fallback;
+  }
+
   function esc(s) {
     return s.replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
@@ -57,7 +69,7 @@ var searchFunc = function (path, search_id, content_id) {
 
     $result.innerHTML = str;
     if ($noResult) $noResult.style.display = hits.length ? 'none' : 'block';
-    if ($count) $count.textContent = '共找到 ' + hits.length + ' 篇文章';
+    if ($count) $count.textContent = window.I18N.fmt(msg('search.found', '共找到 %d 篇文章'), hits.length);
   }
 
   function load(cb) {
@@ -71,12 +83,12 @@ var searchFunc = function (path, search_id, content_id) {
             content: $('content', this).text(),
             url: $('url', this).text()
           };
-        }).get();
-        if ($count) $count.textContent = '已索引 ' + datas.length + ' 篇文章';
+        }).get().filter(function (d) { return langOk(d.url); });
+        if ($count) $count.textContent = window.I18N.fmt(msg('search.indexed', '已索引 %d 篇文章'), datas.length);
         cb();
       },
       error: function () {
-        if ($count) $count.textContent = '索引加载失败，请刷新重试';
+        if ($count) $count.textContent = msg('search.failed', '索引加载失败，请刷新重试');
       }
     });
   }

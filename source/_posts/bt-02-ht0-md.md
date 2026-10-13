@@ -1,6 +1,7 @@
 ---
 title: "HT0蓝牙拉起_部署交付文档"
 date: 2026-09-21 11:47:29
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

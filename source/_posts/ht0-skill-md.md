@@ -1,6 +1,7 @@
 ---
 title: "ht0-wcn-radio Skill 说明"
 date: 2026-09-13 16:05:17
+lang: zh-CN
 search: true
 categories:
 - AI工作流

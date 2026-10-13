@@ -1,6 +1,7 @@
 ---
 title: "LVGL桌面应用架构与第三方接入规范"
 date: 2026-09-21 12:26:56
+lang: zh-CN
 search: true
 categories:
 - 应用框架

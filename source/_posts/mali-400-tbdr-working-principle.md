@@ -1,6 +1,7 @@
 ---
 title: Mali-400 工作原理：TBDR 延迟渲染与它的坏脾气
 date: 2026-10-12 18:10:00
+lang: zh-CN
 search: true
 categories:
 - 嵌入式硬件

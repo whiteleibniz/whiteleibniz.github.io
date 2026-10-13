@@ -1,6 +1,7 @@
 ---
 title: "bugfix 复盘归档说明"
 date: 2026-09-24 16:17:57
+lang: zh-CN
 search: true
 categories:
 - 排障手记

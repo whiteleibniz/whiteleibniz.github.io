@@ -1,6 +1,7 @@
 ---
 title: Quick Start Guide MarkDown
 date: 2018-07-12 14:53:24
+lang: zh-CN
 tags:
 - Quick Start Guide
 - MarkDown

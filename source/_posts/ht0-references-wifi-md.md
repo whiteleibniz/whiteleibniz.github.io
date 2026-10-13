@@ -1,6 +1,7 @@
 ---
 title: "wifi"
 date: 2026-09-13 15:27:33
+lang: zh-CN
 search: true
 categories:
 - AI工作流

@@ -1,6 +1,7 @@
 ---
 title: PSP 硬渲恢复复盘：从 20fps 到 33fps
 date: 2026-10-12 18:00:00
+lang: zh-CN
 search: true
 categories:
 - 排障手记

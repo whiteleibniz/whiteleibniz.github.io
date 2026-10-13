@@ -1,6 +1,7 @@
 ---
 title: "handoff_doubao_2026-10-10"
 date: 2026-10-10 17:10:35
+lang: zh-CN
 search: true
 categories:
 - AI工作流

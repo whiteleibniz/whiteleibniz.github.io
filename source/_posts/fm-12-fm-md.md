@@ -1,6 +1,7 @@
 ---
 title: "FM收音芯片打通_操作手册"
 date: 2026-09-23 12:16:40
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

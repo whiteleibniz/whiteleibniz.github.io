@@ -1,6 +1,7 @@
 ---
 title: "Mali400与硬件加速_勘察结论"
 date: 2026-09-23 11:06:07
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

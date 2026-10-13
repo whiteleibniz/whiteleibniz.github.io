@@ -1,6 +1,7 @@
 ---
 title: Quick Start Guide JavaScript
 date: 2018-07-18 06:09:18
+lang: zh-CN
 tags:
 - Quick Start Guide
 - JavaScript

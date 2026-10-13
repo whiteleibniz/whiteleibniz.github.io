@@ -1,6 +1,7 @@
 ---
 title: "FM收音机_进度快照_20260922"
 date: 2026-09-22 23:28:06
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

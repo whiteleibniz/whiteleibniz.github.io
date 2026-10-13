@@ -1,6 +1,7 @@
 ---
 title: "ref_FM_蓝牙_硬件加速"
 date: 2026-09-23 20:16:57
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

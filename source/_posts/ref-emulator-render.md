@@ -1,6 +1,7 @@
 ---
 title: "ref_模拟器_渲染与退出"
 date: 2026-09-29 18:05:26
+lang: zh-CN
 search: true
 categories:
 - 多媒体与模拟器

@@ -1,6 +1,7 @@
 ---
 title: "Mali400_故障排查手册"
 date: 2026-09-30 16:44:04
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

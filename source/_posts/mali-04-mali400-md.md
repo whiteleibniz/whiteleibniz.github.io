@@ -1,6 +1,7 @@
 ---
 title: "Mali400_新应用接入操作手册"
 date: 2026-09-30 17:52:17
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

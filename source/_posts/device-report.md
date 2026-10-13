@@ -1,6 +1,7 @@
 ---
 title: "SC9832A_设备软硬件信息报告"
 date: 2026-09-24 21:36:03
+lang: zh-CN
 search: true
 categories:
 - 设备档案

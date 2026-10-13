@@ -1,6 +1,7 @@
 ---
 title: "FM出声_厂商官方音频通路与实操步骤"
 date: 2026-09-23 12:16:40
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

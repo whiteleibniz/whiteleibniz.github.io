@@ -1,6 +1,7 @@
 ---
 title: "Mali400_摆脱安卓可行性分析"
 date: 2026-09-30 18:50:38
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

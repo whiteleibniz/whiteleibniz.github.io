@@ -1,6 +1,7 @@
 ---
 title: "nettv 播放器无画面与按键阻塞故障修复：源不可达必须退出，而不是无限重启"
 date: 2026-10-12 21:00:00
+lang: zh-CN
 search: true
 categories:
 - 排障手记

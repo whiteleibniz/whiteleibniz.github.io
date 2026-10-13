@@ -1,6 +1,7 @@
 ---
 title: Quick Start Guide Vue2
 date: 2019-01-09 20:18:56
+lang: zh-CN
 tags: 
 - Quick Start Guide
 - Vue

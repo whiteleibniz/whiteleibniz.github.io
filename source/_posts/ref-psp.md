@@ -1,6 +1,7 @@
 ---
 title: "ref_PSP模拟器"
 date: 2026-09-24 14:18:10
+lang: zh-CN
 search: true
 categories:
 - 多媒体与模拟器

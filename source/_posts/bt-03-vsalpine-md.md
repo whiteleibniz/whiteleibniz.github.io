@@ -1,6 +1,7 @@
 ---
 title: "蓝牙启动流程_安卓vsAlpine对比"
 date: 2026-09-13 15:27:33
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

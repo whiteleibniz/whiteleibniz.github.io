@@ -1,6 +1,7 @@
 ---
 title: "WiFi芯片打通_部署交付文档"
 date: 2026-09-13 15:58:12
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

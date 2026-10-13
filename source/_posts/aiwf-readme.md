@@ -1,6 +1,7 @@
 ---
 title: "AI 工作流归档规范"
 date: 2026-09-22 20:38:54
+lang: zh-CN
 search: true
 categories:
 - AI工作流

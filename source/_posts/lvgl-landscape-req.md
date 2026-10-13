@@ -1,6 +1,7 @@
 ---
 title: "需求_切换桌面横屏菜单_20260924"
 date: 2026-09-24 15:02:37
+lang: zh-CN
 search: true
 categories:
 - 应用框架

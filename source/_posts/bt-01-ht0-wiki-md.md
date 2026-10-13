@@ -1,6 +1,7 @@
 ---
 title: "HT0蓝牙原理与移植学习Wiki"
 date: 2026-09-21 11:57:09
+lang: zh-CN
 search: true
 categories:
 - 硬件模块打通

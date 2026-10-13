@@ -1,6 +1,7 @@
 ---
 title: "ref_LVGL_页面框架"
 date: 2026-09-24 16:17:01
+lang: zh-CN
 search: true
 categories:
 - 应用框架

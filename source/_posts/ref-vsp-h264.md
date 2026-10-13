@@ -1,6 +1,7 @@
 ---
 title: "ref_h264硬解_h264dec定案"
 date: 2026-10-08 19:08:38
+lang: zh-CN
 search: true
 categories:
 - 多媒体与模拟器
