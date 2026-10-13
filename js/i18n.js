@@ -106,8 +106,16 @@
     return s.replace(/%d/g, function () { return args[i++]; });
   }
 
-  /* ① 语言切换器: 链接与 current 高亮已由 header.ejs 服务端直出, 此处不再改写,
-        以免覆盖服务端结果(尤其无尾斜杠地址 /en 下 switchUrl 会误算)。 */
+  /* ① 语言切换器: 模板里的 a 初始为 javascript:void(0), 此处改写为真实目标 URL。
+        即便 header.ejs 已服务端直出正确 href(双保险), 这里再设一次也是幂等;
+        且对尚未部署服务端直出版本的旧页面(void(0))正是修复切换的关键。
+        localizeLink 已对 .lang-switch 内链接做 closest 防御, 不会篡改本段结果。 */
+  var switches = document.querySelectorAll('.lang-switch a[data-lang]');
+  Array.prototype.forEach.call(switches, function (a) {
+    var target = a.getAttribute('data-lang');
+    a.setAttribute('href', switchUrl(location.pathname, target));
+    if (target === lang) a.className = 'current';
+  });
 
   /* ② 站内链接加语言前缀(导航/分类下拉/正文内链; 资源路径除外) */
   var ASSET = /^\/(images|lib|css|js|downloads|favicon[^/]*)/;
