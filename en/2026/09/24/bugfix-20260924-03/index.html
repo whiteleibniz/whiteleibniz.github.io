@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260924_03 — “Switch desktop” landscape shows only half (the root cause is the pivot not being set, not transform being unavailable) Related commit: 2341fad   Date: 2026-09-24 Scope of impact:">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260924_03 — “Switch desktop” landscape shows only half (the root cause is the pivot not being set, not transform being unavailable) Related commit: 2341fad   Date: 2026-09-24 Scope of impact:">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-24T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.950Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="桌面UI">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/24/bugfix-20260924-02/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/24/bugfix-20260924-01/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&text=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&title=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&is_video=false&description=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&title=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&title=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&title=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&title=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&name=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260924-03-%E2%80%94-%E2%80%9CSwitch-desktop%E2%80%9D-landscape-shows-only-half-the-root-cause-is-the-pivot-not-being-set-not-transform-being-unavailable"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260924_03 — “Switch desktop” landscape shows only half (the root cause is the pivot not being set, not transform being unavailable)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom-and-requirement"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom and requirement</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Localization-why-02-concluded-%E2%80%9Ctransform-is-unavailable%E2%80%9D"><span class="toc-number">1.2.</span> <span class="toc-text">2. Localization: why 02 concluded “transform is unavailable”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Root-cause"><span class="toc-number">1.3.</span> <span class="toc-text">3. Root cause</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Fix"><span class="toc-number">1.4.</span> <span class="toc-text">4. Fix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-The-landscape-desktop-switches-back-to-canvas-rotation-lv-pages-launcher-page-c"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 The landscape desktop switches back to canvas rotation (lv_pages&#x2F;launcher_page.c)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-The-coordinate-system-and-directions-after-rotation-confirmed-by-measurement-this-round"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 The coordinate system and directions after rotation (confirmed by measurement this round)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Roll-back-fb-rotate-main-c"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 Roll back fb_rotate (main.c)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-The-back-key-item-4-of-the-user%E2%80%99s-7-pieces-of-feedback"><span class="toc-number">1.4.4.</span> <span class="toc-text">4.4 The back key (item 4 of the user’s 7 pieces of feedback)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Lessons-anti-pattern-record"><span class="toc-number">1.6.</span> <span class="toc-text">6. Lessons (anti-pattern record)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Leftovers"><span class="toc-number">1.7.</span> <span class="toc-text">7. Leftovers</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-24T04:00:00.000Z" itemprop="datePublished">2026-09-24</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A1%8C%E9%9D%A2UI/" rel="tag">桌面UI</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260924-03-—-“Switch-desktop”-landscape-shows-only-half-the-root-cause-is-the-pivot-not-being-set-not-transform-being-unavailable"><a href="#bugfix-20260924-03-—-“Switch-desktop”-landscape-shows-only-half-the-root-cause-is-the-pivot-not-being-set-not-transform-being-unavailable" class="headerlink" title="bugfix_20260924_03 — “Switch desktop” landscape shows only half (the root cause is the pivot not being set, not transform being unavailable)"></a>bugfix_20260924_03 — “Switch desktop” landscape shows only half (the root cause is the pivot not being set, not transform being unavailable)</h1><blockquote>
+<p>Related commit: 2341fad</p>
+</blockquote>
+<ul>
+<li>Date: 2026-09-24</li>
+<li>Scope of impact: <code>lv_pages/launcher_page.c</code> (landscape desktop), <code>main.c</code> (rollback), <code>lv_pages/launcher_page.h</code></li>
+<li><strong>This article also overturns</strong> the conclusion of <code>bugfix_20260924_02</code>.</li>
+<li>One-sentence conclusion: <strong>transform has always been available on this device</strong>; 02’s white-screen root cause was<br><strong><code>transform_pivot</code> not being set</strong> (the default is the object’s top-left corner; the 1300x720 canvas rotates 90° around its top-left corner and moves entirely out of the visible area).<br>The correct approach for landscape &#x3D; exactly the same as <code>lv_pages/fc_game_page.c</code>: 1280x720 logical canvas + <code>lv_obj_center</code> +<br><code>transform_pivot=50%</code> + <code>transform_rotation=900</code>.</li>
+</ul>
+<hr>
+<h2 id="1-Symptom-and-requirement"><a href="#1-Symptom-and-requirement" class="headerlink" title="1. Symptom and requirement"></a>1. Symptom and requirement</h2><ul>
+<li>After 02, landscape switched to “full-screen transposition at the flush layer” (<code>lv_hardware/fb_rotate.c</code> + changing the display resolution at runtime).</li>
+<li>User feedback: <strong>“the desktop only shows half”</strong>, together with a request to <strong>“implement landscape display with reference to the FC game page source”</strong>.</li>
+</ul>
+<p>The user’s hint is itself the correct answer: <code>fc_game_page.c</code> is <strong>a landscape page long in use in the same project</strong>,<br>and it uses exactly <code>transform_rotation</code>.</p>
+<h2 id="2-Localization-why-02-concluded-“transform-is-unavailable”"><a href="#2-Localization-why-02-concluded-“transform-is-unavailable”" class="headerlink" title="2. Localization: why 02 concluded “transform is unavailable”"></a>2. Localization: why 02 concluded “transform is unavailable”</h2><p>Put the two implementations side by side and diff them; the difference is only one line:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>02’s failing version</th>
+<th><code>fc_game_page.c</code> (always normal)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Logical canvas</td>
+<td>1280x720</td>
+<td>1280x720</td>
+</tr>
+<tr>
+<td><code>lv_obj_center(canvas)</code></td>
+<td>present</td>
+<td>present</td>
+</tr>
+<tr>
+<td><strong><code>transform_pivot_x/y = lv_pct(50)</code></strong></td>
+<td><strong>absent</strong></td>
+<td><strong>present</strong></td>
+</tr>
+<tr>
+<td><code>transform_rotation</code></td>
+<td>900</td>
+<td>900</td>
+</tr>
+<tr>
+<td>Parent container</td>
+<td>page root</td>
+<td>page root</td>
+</tr>
+</tbody></table>
+<p>The answer was written in <code>fc_game_page.c</code>‘s comment all along:</p>
+<blockquote>
+<p>旋转支点必须显式设成中心！这台 LVGL style 默认的 <code>transform_pivot</code> 是对象左上角，<br>不设的话画布会绕左上角转出屏幕外，<strong>整页一个像素都看不到</strong>。</p>
+</blockquote>
+<p><strong>“整页一个像素都看不到” &#x3D; the white screen observed in 02</strong>. The root cause was in the comment all along.</p>
+<h2 id="3-Root-cause"><a href="#3-Root-cause" class="headerlink" title="3. Root cause"></a>3. Root cause</h2><ol>
+<li><strong>Direct cause</strong>: <code>transform_pivot</code> not set → the default pivot &#x3D; the object’s top-left corner. After the 1280x720 canvas rotates 90° around its top-left corner,<br>the visible area falls outside the screen → it looks like “the container and the cards are all gone”.</li>
+<li><strong>02’s misjudgment chain</strong>:<ul>
+<li>Observed “objects with transform are not drawn” (the observation was correct);</li>
+<li>but escalated it to a <strong>device-level characterization</strong> “this device’s transform rendering path is unavailable” (the conclusion was wrong);</li>
+<li>the counterexample was in the same repository (<code>fc_game_page.c</code>), <strong>but nobody searched for it at the time</strong>.</li>
+<li>So the correct approach was abandoned, and full-screen framebuffer transposition was done instead — that path led to “only half is displayed”, costing two more rounds.</li>
+</ul>
+</li>
+</ol>
+<h2 id="4-Fix"><a href="#4-Fix" class="headerlink" title="4. Fix"></a>4. Fix</h2><h3 id="4-1-The-landscape-desktop-switches-back-to-canvas-rotation-lv-pages-launcher-page-c"><a href="#4-1-The-landscape-desktop-switches-back-to-canvas-rotation-lv-pages-launcher-page-c" class="headerlink" title="4.1 The landscape desktop switches back to canvas rotation (lv_pages/launcher_page.c)"></a>4.1 The landscape desktop switches back to canvas rotation (<code>lv_pages/launcher_page.c</code>)</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">s_cover_canvas = lv_obj_create(s_launcher_root);</span><br><span class="line">lv_obj_set_size(s_cover_canvas, <span class="number">1280</span>, <span class="number">720</span>);</span><br><span class="line">lv_obj_center(s_cover_canvas);</span><br><span class="line">lv_obj_set_style_transform_pivot_x(s_cover_canvas, lv_pct(<span class="number">50</span>), <span class="number">0</span>);   <span class="comment">/* ★ 必须 */</span></span><br><span class="line">lv_obj_set_style_transform_pivot_y(s_cover_canvas, lv_pct(<span class="number">50</span>), <span class="number">0</span>);   <span class="comment">/* ★ 必须 */</span></span><br><span class="line">lv_obj_set_style_transform_rotation(s_cover_canvas, <span class="number">900</span>, <span class="number">0</span>);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>The cards&#x2F;status bar&#x2F;title are all built inside this canvas, with coordinates using the <strong>unrotated logical coordinates</strong>;</li>
+<li>enter&#x2F;exit &#x3D; create&#x2F;delete the canvas, no longer touching the display resolution and flush.</li>
+</ul>
+<h3 id="4-2-The-coordinate-system-and-directions-after-rotation-confirmed-by-measurement-this-round"><a href="#4-2-The-coordinate-system-and-directions-after-rotation-confirmed-by-measurement-this-round" class="headerlink" title="4.2 The coordinate system and directions after rotation (confirmed by measurement this round)"></a>4.2 The coordinate system and directions after rotation (confirmed by measurement this round)</h3><p>After the canvas rotates 90°: <strong>physical (px, py) &#x3D; (720 - ly, lx)</strong>, so</p>
+<ul>
+<li><strong>visual x ≡ logical x</strong> ⇒ when the cards are arranged along logical x, <strong>the direction keys need no conversion at all</strong>,<br><code>app_runtime_set_ui_rotation(0)</code> (previously setting 1 as for the FC page would reverse the left&#x2F;right keys).</li>
+<li><strong>visual y &#x3D; 720 - logical y</strong> ⇒ “visually up” &#x3D; small logical y. The places that need to change accordingly:<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Visual expectation</th>
+<th>Logical approach</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Card title</td>
+<td>below the card</td>
+<td>stick to the cell <strong>top</strong> (<code>LV_ALIGN_TOP_MID, 0, 0</code>)</td>
+</tr>
+<tr>
+<td>Glass reflection strip</td>
+<td>top of the card</td>
+<td>stick to the box <strong>bottom</strong> (<code>LV_ALIGN_BOTTOM_MID, 0, -(10+k*22)</code>)</td>
+</tr>
+<tr>
+<td>Shadow</td>
+<td>downward</td>
+<td><code>shadow_ofs_y</code> takes a <strong>negative</strong> value</td>
+</tr>
+<tr>
+<td>Root container gradient “dark on top, light on bottom”</td>
+<td>vertical</td>
+<td><code>LV_GRAD_DIR_HOR</code></td>
+</tr>
+</tbody></table>
+</li>
+</ul>
+<h3 id="4-3-Roll-back-fb-rotate-main-c"><a href="#4-3-Roll-back-fb-rotate-main-c" class="headerlink" title="4.3 Roll back fb_rotate (main.c)"></a>4.3 Roll back fb_rotate (<code>main.c</code>)</h3><ul>
+<li>Restore the native <code>fb_flush_cb</code> (including the R&#x2F;B byte swap) — the fb_rotate version <strong>missed the R&#x2F;B swap</strong>, so even if the picture appeared the colors would be reversed;</li>
+<li>remove <code>fbr_init</code> &#x2F; <code>fbr_map_pointer</code> &#x2F; the display resolution switch;</li>
+<li>delete <code>lv_hardware/fb_rotate.c</code> &#x2F; <code>.h</code> (the Makefile uses <code>wildcard</code>, so deleting the files removes them completely).</li>
+</ul>
+<h3 id="4-4-The-back-key-item-4-of-the-user’s-7-pieces-of-feedback"><a href="#4-4-The-back-key-item-4-of-the-user’s-7-pieces-of-feedback" class="headerlink" title="4.4 The back key (item 4 of the user’s 7 pieces of feedback)"></a>4.4 The back key (item 4 of the user’s 7 pieces of feedback)</h3><p>No longer relying on <code>fbr_request_exit</code>, changed to the launcher providing externally:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* lv_pages/launcher_page.h */</span></span><br><span class="line"><span class="type">bool</span> <span class="title function_">launcher_cover_active</span><span class="params">(<span class="type">void</span>)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">launcher_cover_close</span><span class="params">(<span class="type">void</span>)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>Both ESC paths in <code>main.c</code> (physical key &#x2F; USB keyboard) are changed to<br><code>if(launcher_cover_active()) &#123; launcher_cover_close(); return; &#125;</code><br>⇒ pressing the “pay-bill” (买单) key on the landscape desktop first returns to the portrait desktop, instead of exiting the desktop.</p>
+<h2 id="5-Verification"><a href="#5-Verification" class="headerlink" title="5. Verification"></a>5. Verification</h2><ul>
+<li>Enter landscape and capture a frame (<code>ssh_tools/grab_screen.py</code>): <strong>100% of the screen non-black</strong>, no longer white screen&#x2F;half screen;<br>the picture contains 3 cards (left&#x2F;enlarged middle&#x2F;right), and the four status bar elements (time, WiFi, Bluetooth, battery).</li>
+<li>After correcting the decoration directions, capture another frame: the reflection strip at the top of the card, the title below the card, icons centered, shadow downward.</li>
+<li><strong>Regression</strong>: delete the temporary self-check switch and restart → the portrait desktop’s 20 icons + status bar are all normal; the landscape changes did not break the original desktop.</li>
+<li>Long-term observation on the device: the process is alive, no segfault, log <code>[cover] landscape on, items=N canvas=1280x720 rot=900</code>.</li>
+</ul>
+<h2 id="6-Lessons-anti-pattern-record"><a href="#6-Lessons-anti-pattern-record" class="headerlink" title="6. Lessons (anti-pattern record)"></a>6. Lessons (anti-pattern record)</h2><ol>
+<li><strong>★ Before characterizing “device&#x2F;platform does not support X”, first search for a successful use case of X in this project.</strong><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grep -rn <span class="string">&quot;transform_rotation\|transform_scale&quot;</span> --include=*.c lv_pages/</span><br></pre></td></tr></table></figure>
+If there is a precedent → diff item by item (size &#x2F; parent container &#x2F; pivot &#x2F; draw order &#x2F; state), and the difference is the root cause.<br><strong>One failure ≠ the capability does not exist</strong>; escalating a failure to a characterization &#x3D; covering a small mistake with a bigger one.</li>
+<li><strong>★ Comments must be read by scope</strong>. <code>/* transform disabled */</code> written in <code>launcher_start_zoom()</code>,<br>means “this press-zoom animation is turned off”, <strong>not</strong> “transform is unavailable on the whole machine”.<br>02 treated it as evidence of the latter, and the direction was reversed.</li>
+<li><strong>The user’s pointer is often the shortest path</strong>. The user said “implement it with reference to the FC game page source”,<br>which is equivalent to “there is a ready-made correct implementation in the repository” — the source should be read first thing, instead of starting a separate set.</li>
+<li><strong>Changing the implementation means colors must be re-verified</strong>. The fb_rotate version missed the R&#x2F;B swap, showing that when “rewriting the flush path” one must<br>compare item by item against the original implementation (byte order, stride, page flipping).</li>
+<li><strong>After overturning an old conclusion, the archived documents and Skills must be corrected</strong>, otherwise the wrong conclusion will pollute the next judgment<br>(this round has synchronized corrections to <code>ref_LVGL_页面框架.md</code> and the <code>gui-render-blank-diagnosis</code> Skill).</li>
+</ol>
+<h2 id="7-Leftovers"><a href="#7-Leftovers" class="headerlink" title="7. Leftovers"></a>7. Leftovers</h2><ul>
+<li>The landscape card sizes (unselected 300, selected ~492 logical pixels) and status bar positions are already usable; the icons are still limited by<br><strong>the maximum font size <code>lv_font_montserrat_48</code></strong>, so “bigger icons” requires making another large font glyph or image-type icons.</li>
+<li>The USB mouse coordinates in landscape are not mapped (currently sampled with the portrait origin); the desktop mainly uses physical four-key navigation, so this does not matter for now.</li>
+<li>The debug entry <code>touch /tmp/cover_auto</code> followed by restarting the app enters landscape directly (marked with a TEMP comment in the source), facilitating future self-tests.</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260924-03-%E2%80%94-%E2%80%9CSwitch-desktop%E2%80%9D-landscape-shows-only-half-the-root-cause-is-the-pivot-not-being-set-not-transform-being-unavailable"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260924_03 — “Switch desktop” landscape shows only half (the root cause is the pivot not being set, not transform being unavailable)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom-and-requirement"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom and requirement</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Localization-why-02-concluded-%E2%80%9Ctransform-is-unavailable%E2%80%9D"><span class="toc-number">1.2.</span> <span class="toc-text">2. Localization: why 02 concluded “transform is unavailable”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Root-cause"><span class="toc-number">1.3.</span> <span class="toc-text">3. Root cause</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Fix"><span class="toc-number">1.4.</span> <span class="toc-text">4. Fix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-The-landscape-desktop-switches-back-to-canvas-rotation-lv-pages-launcher-page-c"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 The landscape desktop switches back to canvas rotation (lv_pages&#x2F;launcher_page.c)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-The-coordinate-system-and-directions-after-rotation-confirmed-by-measurement-this-round"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 The coordinate system and directions after rotation (confirmed by measurement this round)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Roll-back-fb-rotate-main-c"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 Roll back fb_rotate (main.c)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-The-back-key-item-4-of-the-user%E2%80%99s-7-pieces-of-feedback"><span class="toc-number">1.4.4.</span> <span class="toc-text">4.4 The back key (item 4 of the user’s 7 pieces of feedback)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Lessons-anti-pattern-record"><span class="toc-number">1.6.</span> <span class="toc-text">6. Lessons (anti-pattern record)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Leftovers"><span class="toc-number">1.7.</span> <span class="toc-text">7. Leftovers</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&text=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&title=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&is_video=false&description=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&title=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&title=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&title=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&title=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-03/&name=Landscape desktop shows only half: the root cause is the pivot not being set, not transform being unavailable&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

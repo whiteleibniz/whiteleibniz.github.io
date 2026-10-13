@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="參考 · LVGL 9.6 &#x2F; 頁面框架細節（MEMORY.md §5 的明細） 主筆記只留結論與鐵律，這裡放”改代碼時才需要的細節”。  A. 基礎坑 中文字體：lv_font_cn_16（LV_FONT_DEFAULT 會出 tofu）。line_height&#x3D;31, base_line&#x3D;9 旋轉：lv_obj_set_style_transform_rotation(obj, 90">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ref_LVGL_頁面框架">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="參考 · LVGL 9.6 &#x2F; 頁面框架細節（MEMORY.md §5 的明細） 主筆記只留結論與鐵律，這裡放”改代碼時才需要的細節”。  A. 基礎坑 中文字體：lv_font_cn_16（LV_FONT_DEFAULT 會出 tofu）。line_height&#x3D;31, base_line&#x3D;9 旋轉：lv_obj_set_style_transform_rotation(obj, 90">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-24T08:17:01.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:47.047Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="LVGL">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>ref_LVGL_頁面框架</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/24/ref-lvgl-page/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/24/lvgl-landscape-req/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&text=ref_LVGL_頁面框架"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&title=ref_LVGL_頁面框架"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&is_video=false&description=ref_LVGL_頁面框架"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_LVGL_頁面框架&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&title=ref_LVGL_頁面框架"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&title=ref_LVGL_頁面框架"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&title=ref_LVGL_頁面框架"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&title=ref_LVGL_頁面框架"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&name=ref_LVGL_頁面框架&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%83%E8%80%83-%C2%B7-LVGL-9-6-%E9%A0%81%E9%9D%A2%E6%A1%86%E6%9E%B6%E7%B4%B0%E7%AF%80%EF%BC%88MEMORY-md-%C2%A75-%E7%9A%84%E6%98%8E%E7%B4%B0%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">參考 · LVGL 9.6 &#x2F; 頁面框架細節（MEMORY.md §5 的明細）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-%E5%9F%BA%E7%A4%8E%E5%9D%91"><span class="toc-number">1.1.</span> <span class="toc-text">A. 基礎坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-%E5%9C%96%E6%A8%99%EF%BC%88%E5%AF%A6%E6%B8%AC%E6%95%B8%E6%93%9A%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">B. 圖標（實測數據）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-%E7%8B%80%E6%85%8B%E6%AC%84-%E7%B3%BB%E7%B5%B1%E6%8E%A5%E5%8F%A3%EF%BC%88lv-pages-launcher-page-c%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">C. 狀態欄 &#x2F; 系統接口（lv_pages&#x2F;launcher_page.c）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#D-%E9%A0%81%E9%9D%A2%E6%A1%86%E6%9E%B6"><span class="toc-number">1.4.</span> <span class="toc-text">D. 頁面框架</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#E-launcher-%E5%8A%A0%E6%87%89%E7%94%A8"><span class="toc-number">1.5.</span> <span class="toc-text">E. launcher 加應用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85%E2%98%85%E2%98%85-transform%EF%BC%88%E6%97%8B%E8%BD%89-%E7%B8%AE%E6%94%BE%EF%BC%89%E5%8F%AF%E7%94%A8-%E2%80%94%E2%80%94-pivot-%E5%BF%85%E9%A0%88%E9%A1%AF%E5%BC%8F%E8%A8%AD-50-%EF%BC%882026-09-24-%E7%B3%BE%E6%AD%A3-bugfix-02%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">★★★ transform（旋轉&#x2F;縮放）可用 —— pivot 必須顯式設 50%（2026-09-24 糾正 bugfix_02）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        ref_LVGL_頁面框架
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-24T08:17:01.000Z" itemprop="datePublished">2026-09-24</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/LVGL/" rel="tag">LVGL</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="參考-·-LVGL-9-6-頁面框架細節（MEMORY-md-§5-的明細）"><a href="#參考-·-LVGL-9-6-頁面框架細節（MEMORY-md-§5-的明細）" class="headerlink" title="參考 · LVGL 9.6 &#x2F; 頁面框架細節（MEMORY.md §5 的明細）"></a>參考 · LVGL 9.6 &#x2F; 頁面框架細節（MEMORY.md §5 的明細）</h1><blockquote>
+<p>主筆記只留結論與鐵律，這裡放”改代碼時才需要的細節”。</p>
+</blockquote>
+<h2 id="A-基礎坑"><a href="#A-基礎坑" class="headerlink" title="A. 基礎坑"></a>A. 基礎坑</h2><ul>
+<li><strong>中文字體</strong>：<code>lv_font_cn_16</code>（<code>LV_FONT_DEFAULT</code> 會出 tofu）。<code>line_height=31, base_line=9</code></li>
+<li><strong>旋轉</strong>：<code>lv_obj_set_style_transform_rotation(obj, 900, 0)</code>（0.1° 單位）；<strong>旋轉後坐標&#x2F;鄰居判斷仍用未旋轉的邏輯座標</strong></li>
+<li><strong>★ <code>lv_obj_get_width/height/x()</code> 讀的是緩存 <code>obj-&gt;coords</code></strong> → <strong>onCreate 裡剛 <code>set_size</code> 完立刻 get 會返回 0</strong>；<br>靠寬度算座標必須自己緩存，或先 <code>lv_obj_update_layout()</code></li>
+<li><strong>★ <code>lv_obj_clean(parent)</code> 會刪掉所有子對象</strong> → 常駐句柄別掛在會被 clean 的容器下</li>
+</ul>
+<h2 id="B-圖標（實測數據）"><a href="#B-圖標（實測數據）" class="headerlink" title="B. 圖標（實測數據）"></a>B. 圖標（實測數據）</h2><ul>
+<li><code>launcher_app_t</code> 只有 <code>symbol</code> 一個<strong>字符串</strong>字段，<code>create_app_icon()</code> 用 <code>lv_label</code> + <code>lv_font_montserrat_24</code><br>畫在圓角色塊上（<strong>結構體無圖片字段</strong>）</li>
+<li><strong>★ 字形必須實證，不可假設</strong>：<code>lv_font_cn_16</code> 與 <code>lv_font_montserrat_24</code> <strong>都只有 60 個碼位、全是 LVGL 符號集</strong><ul>
+<li>無”電臺&#x2F;天線”形 → FM 圖標用 <code>LV_SYMBOL_VOLUME_MAX</code>(F028)</li>
+<li><strong>無手柄形</strong> → <code>F11B</code>(gamepad)、<code>F26C</code>、<code>F12E</code> 全缺；FC&#x2F;GBA 原都退化成 <code>LV_SYMBOL_FILE</code>(F15B)</li>
+<li>枚舉工具：<code>ssh_tools/_tmp/glyph_ic.sh</code>（設備端掃 0xE000~0xFAFF 打印實際存在的碼位）</li>
+</ul>
+</li>
+<li><strong>手柄圖標已落地</strong>：<code>launcher_page.c</code> 的 <code>gamepad_icon_create()</code>，用 LVGL 圖元拼（白色膠囊機身 + <strong>用底色</strong>挖空<br>十字鍵與雙圓鈕，如同從機身上”挖空”）；其餘應用仍走字體字形</li>
+<li><strong>★ 自繪圖標必須用固定像素，不能按容器百分比</strong>：字體字形尺寸由字號決定、<strong>不隨 <code>icon_box</code> 縮放</strong><ul>
+<li>實測在用圖標字形 box 多為 <strong>24×24</strong>（WIFI 30×23、EDIT 25×25、SETTINGS 24×24、DIRECTORY 24×18）</li>
+<li>手柄初版按 <code>88px × 70%</code> &#x3D; <strong>61×31</strong>，比旁邊大兩倍半 → 已改<strong>固定 26×17</strong></li>
+<li>量字形尺寸的工具：<code>ssh_tools/_tmp/font_metrics.sh</code>（打印 box_w&#x2F;box_h&#x2F;adv）</li>
+<li>幾何避坑：兩個圓鈕的<strong>偏移量若正好等於直徑會相切成”葫蘆”</strong> → 需留縫（<code>off = dot*9/10</code>）</li>
+</ul>
+</li>
+<li><strong>遊戲列表頁的封面是真圖片</strong>（<code>lv_image</code> 載同名 <code>.png</code>）→ <strong>本機 PNG 解碼可用</strong>，圖片型圖標這條路可行</li>
+</ul>
+<h2 id="C-狀態欄-系統接口（lv-pages-launcher-page-c）"><a href="#C-狀態欄-系統接口（lv-pages-launcher-page-c）" class="headerlink" title="C. 狀態欄 &#x2F; 系統接口（lv_pages/launcher_page.c）"></a>C. 狀態欄 &#x2F; 系統接口（<code>lv_pages/launcher_page.c</code>）</h2><table>
+<thead>
+<tr>
+<th>項</th>
+<th>接口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WiFi</td>
+<td><code>/sys/class/net/wlan0/operstate</code></td>
+</tr>
+<tr>
+<td>rfkill</td>
+<td><code>/sys/class/rfkill/rfkill0/soft</code></td>
+</tr>
+<tr>
+<td>藍牙</td>
+<td><code>/tmp/bt_ctl.sock</code></td>
+</tr>
+<tr>
+<td>電池</td>
+<td><code>/sys/class/power_supply/battery/capacity</code></td>
+</tr>
+</tbody></table>
+<p>（左側 <code>time_label</code>、右側 <code>launcher_battery_icon_create</code>）</p>
+<h2 id="D-頁面框架"><a href="#D-頁面框架" class="headerlink" title="D. 頁面框架"></a>D. 頁面框架</h2><ul>
+<li><code>onDestroy</code>：釋放<strong>自己的</strong>定時器&#x2F;回調，<strong>不能刪 <code>page-&gt;root</code></strong></li>
+<li><code>LV_PAGE_MAX_STACK_SIZE = 8</code></li>
+<li><code>lv_finish_activity</code> 帶 <code>PM_BUSY_TIMEOUT_MS = 2000</code> 兜底 → “頁面切換中”不是永久卡</li>
+<li><strong>★ 默認焦點組全局共享，進&#x2F;出必須成對</strong>：已下沉到框架層，<code>lv_page_manager.cc</code> 的 <code>pm_page_destroy</code> 統一<br><code>pm_purge_group_objs_of(root)</code> → 新頁不用自己管；殘留會打 <code>[pm] 頁面 &#39;x&#39; 離場，摘掉 N 個…</code></li>
+<li><strong>★ 判定”控件能否被選中”必須祖先感知</strong>：<code>LV_OBJ_FLAG_HIDDEN</code> <strong>只看自己</strong>；隱藏面板隱藏的是<strong>外層容器</strong><br>→ 子控件會被選中成”無 user_data 焦點”（表現：焦點框消失）。<code>main.c</code> 的 <code>group_find_neighbor</code> 已改 <code>nav_obj_visible(o)</code></li>
+</ul>
+<h2 id="E-launcher-加應用"><a href="#E-launcher-加應用" class="headerlink" title="E. launcher 加應用"></a>E. launcher 加應用</h2><ol>
+<li>加枚舉</li>
+<li>加 <code>s_apps[]</code> 條目（<strong>數組順序 &#x3D; 視覺順序</strong>）</li>
+<li>加 <code>open_app</code> 的 switch 分支</li>
+<li>跳轉：<code>lv_start_activity(&amp;g_xxx_page, LV_PAGE_FLAG_DEFAULT, LV_PAGE_ANIM_SLIDE_LEFT, 220)</code></li>
+</ol>
+<p><strong>★ 兩個陷阱</strong>：</p>
+<ul>
+<li><strong>桌面初始焦點 &#x3D; <code>s_apps[]</code> 索引 8</strong>（歷史：0 文件管理 … 7 藍牙 <strong>8 收音機</strong> 9 圖庫 10 任務管理 11 原廠桌面；<br>加 GBA&#x2F;FC 後索引後移）→ <strong>改完 <code>s_apps[]</code> 必須回看這一行</strong></li>
+<li><strong>桌面焦點隨頁面棧保留</strong>（要重啟 app 才回索引 8）；<strong>左右不跨行</strong></li>
+</ul>
+<h2 id="★★★-transform（旋轉-縮放）可用-——-pivot-必須顯式設-50-（2026-09-24-糾正-bugfix-02）"><a href="#★★★-transform（旋轉-縮放）可用-——-pivot-必須顯式設-50-（2026-09-24-糾正-bugfix-02）" class="headerlink" title="★★★ transform（旋轉&#x2F;縮放）可用 —— pivot 必須顯式設 50%（2026-09-24 糾正 bugfix_02）"></a>★★★ transform（旋轉&#x2F;縮放）<strong>可用</strong> —— pivot 必須顯式設 50%（2026-09-24 糾正 bugfix_02）</h2><ul>
+<li><strong>結論：可用</strong>。長期在用的 <code>fc_game_page.c</code> 就是「1280x720 畫布 + <code>lv_obj_center</code> +<br><code>transform_rotation=900</code>」，橫屏列表一直正常。</li>
+<li>**★★ 鐵律：<code>transform_pivot_x/y</code> 必須顯式設 <code>lv_pct(50)</code>**。本機 style 默認 pivot &#x3D; <strong>對象左上角</strong>；<br>大畫布繞左上角轉 90° → 內容整體轉出可視區 → **”整頁一個像素都看不到”**（觀感&#x3D;白屏&#x2F;半屏）。<br>這是 02 那條”transform 不可用”錯誤結論的真實根因。</li>
+<li><strong>旋轉後座標系（實測）：物理 (px,py) &#x3D; (720-ly, lx)<br>→ 視覺 x ≡ 邏輯 x</strong>（所以卡片沿邏輯 x 排列時<strong>方向鍵不需要換算</strong>，<code>app_runtime_set_ui_rotation(0)</code>）<br><strong>→ 視覺 y &#x3D; 720 - 邏輯 y</strong>（”視覺上方” &#x3D; 邏輯 y <strong>小</strong>）。易錯清單：<br>標題貼 cell <strong>頂</strong>、玻璃反光條貼 box <strong>底</strong>、<code>shadow_ofs_y</code> 取<strong>負</strong>、容器漸變用 <code>LV_GRAD_DIR_HOR</code>。</li>
+<li><strong>❌ 已廢棄的兩條錯路</strong>：把一次白屏定性為”本機 transform 渲染路徑不可用”（02），<br>並因此繞道做整屏 framebuffer 轉置 <code>fb_rotate</code>（又出”只顯示一半”）。<strong>兩者均已刪除。</strong></li>
+<li><strong>★ 教訓</strong>：下”設備&#x2F;平臺不支持 X”的定性前，<strong>先在本項目 grep X 的成功用例並逐項 diff</strong>；<br>註釋按<strong>作用域</strong>讀 —— <code>/* transform disabled */</code> 只針對 <code>launcher_start_zoom()</code> 那個按下動畫。</li>
+<li>放大&#x2F;位移動畫仍優先用 <code>lv_obj_set_size</code> + <code>lv_obj_align</code> + <code>lv_anim</code>（無需 pivot，成本更低）；<br>字體不隨縮放變（圖標變大需另做大字號字形或圖片型圖標）。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%83%E8%80%83-%C2%B7-LVGL-9-6-%E9%A0%81%E9%9D%A2%E6%A1%86%E6%9E%B6%E7%B4%B0%E7%AF%80%EF%BC%88MEMORY-md-%C2%A75-%E7%9A%84%E6%98%8E%E7%B4%B0%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">參考 · LVGL 9.6 &#x2F; 頁面框架細節（MEMORY.md §5 的明細）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-%E5%9F%BA%E7%A4%8E%E5%9D%91"><span class="toc-number">1.1.</span> <span class="toc-text">A. 基礎坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-%E5%9C%96%E6%A8%99%EF%BC%88%E5%AF%A6%E6%B8%AC%E6%95%B8%E6%93%9A%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">B. 圖標（實測數據）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-%E7%8B%80%E6%85%8B%E6%AC%84-%E7%B3%BB%E7%B5%B1%E6%8E%A5%E5%8F%A3%EF%BC%88lv-pages-launcher-page-c%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">C. 狀態欄 &#x2F; 系統接口（lv_pages&#x2F;launcher_page.c）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#D-%E9%A0%81%E9%9D%A2%E6%A1%86%E6%9E%B6"><span class="toc-number">1.4.</span> <span class="toc-text">D. 頁面框架</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#E-launcher-%E5%8A%A0%E6%87%89%E7%94%A8"><span class="toc-number">1.5.</span> <span class="toc-text">E. launcher 加應用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85%E2%98%85%E2%98%85-transform%EF%BC%88%E6%97%8B%E8%BD%89-%E7%B8%AE%E6%94%BE%EF%BC%89%E5%8F%AF%E7%94%A8-%E2%80%94%E2%80%94-pivot-%E5%BF%85%E9%A0%88%E9%A1%AF%E5%BC%8F%E8%A8%AD-50-%EF%BC%882026-09-24-%E7%B3%BE%E6%AD%A3-bugfix-02%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">★★★ transform（旋轉&#x2F;縮放）可用 —— pivot 必須顯式設 50%（2026-09-24 糾正 bugfix_02）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&text=ref_LVGL_頁面框架"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&title=ref_LVGL_頁面框架"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&is_video=false&description=ref_LVGL_頁面框架"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_LVGL_頁面框架&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&title=ref_LVGL_頁面框架"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&title=ref_LVGL_頁面框架"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&title=ref_LVGL_頁面框架"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&title=ref_LVGL_頁面框架"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/24/ref-lvgl-page/&name=ref_LVGL_頁面框架&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

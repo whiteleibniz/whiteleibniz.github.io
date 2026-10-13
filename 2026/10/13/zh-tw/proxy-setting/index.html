@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="經常需要訪問國外網站的同學，由於GFW的限制導致很多網站無法訪問，本文通過境外虛擬主機，利用socket5轉發技術，搭建代理服務器，從而實現各種網站的自由訪問。 準備工作 國外虛擬主機：我用的老薛主機優惠碼(laoxue25la)一年40元需要開通ssh權限。 putty：本文利用ssh的端口轉發實現socket5代理。 plink：putty包下面的一個工具。 Firefox瀏覽器：設置瀏覽器的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用虛擬主機搭建代理服務器">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="經常需要訪問國外網站的同學，由於GFW的限制導致很多網站無法訪問，本文通過境外虛擬主機，利用socket5轉發技術，搭建代理服務器，從而實現各種網站的自由訪問。 準備工作 國外虛擬主機：我用的老薛主機優惠碼(laoxue25la)一年40元需要開通ssh權限。 putty：本文利用ssh的端口轉發實現socket5代理。 plink：putty包下面的一個工具。 Firefox瀏覽器：設置瀏覽器的">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://whiteleibniz.github.io/plink.png">
+<meta property="og:image" content="https://whiteleibniz.github.io/proxy.png">
+<meta property="og:image" content="https://whiteleibniz.github.io/browser.png">
+<meta property="og:image" content="https://whiteleibniz.github.io/webstorm.png">
+<meta property="article:published_time" content="2026-10-13T07:10:42.352Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.971Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="代理">
+<meta property="article:tag" content="Webstorm">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://whiteleibniz.github.io/plink.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>利用虛擬主機搭建代理服務器</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2026/10/13/zh-tw/hello-world/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&text=利用虛擬主機搭建代理服務器"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&title=利用虛擬主機搭建代理服務器"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&is_video=false&description=利用虛擬主機搭建代理服務器"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=利用虛擬主機搭建代理服務器&body=Check out this article: https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&title=利用虛擬主機搭建代理服務器"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&title=利用虛擬主機搭建代理服務器"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&title=利用虛擬主機搭建代理服務器"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&title=利用虛擬主機搭建代理服務器"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&name=利用虛擬主機搭建代理服務器&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BA%96%E5%82%99%E5%B7%A5%E4%BD%9C"><span class="toc-number">1.</span> <span class="toc-text">準備工作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE"><span class="toc-number">2.</span> <span class="toc-text">配置</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%82%BAplink-exe%E6%96%B0%E5%BB%BA%E4%B8%80%E5%80%8B%E4%B8%80%E5%80%8B%E5%BF%AB%E6%8D%B7%E6%96%B9%E5%BC%8F%EF%BC%8C%E7%84%B6%E5%BE%8C%E5%8A%A0%E5%85%A5%E4%BB%A5%E4%B8%8B%E5%8F%83%E6%95%B8%EF%BC%9A"><span class="toc-number">2.0.0.1.</span> <span class="toc-text">為plink.exe新建一個一個快捷方式，然後加入以下參數：</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#%E5%95%9F%E5%8B%95%E6%88%90%E5%8A%9F%E9%A1%AF%E7%A4%BA%EF%BC%9A"><span class="toc-number">2.0.0.1.1.</span> <span class="toc-text">啟動成功顯示：</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#1-%E7%80%8F%E8%A6%BD%E5%99%A8%E9%85%8D%E7%BD%AE%EF%BC%9A"><span class="toc-number">2.0.0.1.2.</span> <span class="toc-text">1. 瀏覽器配置：</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#2-webstorm%E9%85%8D%E7%BD%AE%EF%BC%9A"><span class="toc-number">2.0.0.1.3.</span> <span class="toc-text">2. webstorm配置：</span></a></li></ol></li></ol></li></ol></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        利用虛擬主機搭建代理服務器
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-13T07:10:42.352Z" itemprop="datePublished">2026-10-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Webstorm/" rel="tag">Webstorm</a>, <a class="tag-link-link" href="/tags/%E4%BB%A3%E7%90%86/" rel="tag">代理</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>經常需要訪問國外網站的同學，由於<em>GFW</em>的限制導致很多網站無法訪問，本文通過境外虛擬主機，利用socket5轉發技術，搭建代理服務器，從而實現各種網站的自由訪問。</p>
+<h2 id="準備工作"><a href="#準備工作" class="headerlink" title="準備工作"></a>準備工作</h2><ul>
+<li>國外虛擬主機：我用的<a href="https://my.laoxuehost.net/aff.php?aff=5278">老薛主機</a>優惠碼(laoxue25la)一年40元需要開通ssh權限。</li>
+<li>putty：本文利用ssh的端口轉發實現socket5代理。</li>
+<li>plink：putty包下面的一個工具。</li>
+<li>Firefox瀏覽器：設置瀏覽器的代理服務器用於瀏覽被牆網站。</li>
+<li>webstorm：配置webstorm用於下載插件。</li>
+</ul>
+<h2 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h2><h5 id="為plink-exe新建一個一個快捷方式，然後加入以下參數："><a href="#為plink-exe新建一個一個快捷方式，然後加入以下參數：" class="headerlink" title="為plink.exe新建一個一個快捷方式，然後加入以下參數："></a>為plink.exe新建一個一個快捷方式，然後加入以下參數：</h5><p><img src="/plink.png" alt="plink"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">plink.exe -v -C -N -D 127.0.0.1:7000 -l root -pw password -P 22 xxx.xxx.xxx.xxx</span><br></pre></td></tr></table></figure>
+
+<p>plink.exe -顯示詳細信息<br>-啟用數據壓縮<br>-不顯示shell<br>-端口動態轉發 代理IP:端口<br>-l 遠程主機用戶名<br>-pw 自動輸入用戶密碼<br>-P 遠程主機端口 遠程主機IP</p>
+<h6 id="啟動成功顯示："><a href="#啟動成功顯示：" class="headerlink" title="啟動成功顯示："></a>啟動成功顯示：</h6><p><img src="/proxy.png" alt="proxy"></p>
+<h6 id="1-瀏覽器配置："><a href="#1-瀏覽器配置：" class="headerlink" title="1. 瀏覽器配置："></a>1. 瀏覽器配置：</h6><p><img src="/browser.png" alt="browse"></p>
+<h6 id="2-webstorm配置："><a href="#2-webstorm配置：" class="headerlink" title="2. webstorm配置："></a>2. webstorm配置：</h6><p><img src="/webstorm.png" alt="webstorm"></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BA%96%E5%82%99%E5%B7%A5%E4%BD%9C"><span class="toc-number">1.</span> <span class="toc-text">準備工作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE"><span class="toc-number">2.</span> <span class="toc-text">配置</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%82%BAplink-exe%E6%96%B0%E5%BB%BA%E4%B8%80%E5%80%8B%E4%B8%80%E5%80%8B%E5%BF%AB%E6%8D%B7%E6%96%B9%E5%BC%8F%EF%BC%8C%E7%84%B6%E5%BE%8C%E5%8A%A0%E5%85%A5%E4%BB%A5%E4%B8%8B%E5%8F%83%E6%95%B8%EF%BC%9A"><span class="toc-number">2.0.0.1.</span> <span class="toc-text">為plink.exe新建一個一個快捷方式，然後加入以下參數：</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#%E5%95%9F%E5%8B%95%E6%88%90%E5%8A%9F%E9%A1%AF%E7%A4%BA%EF%BC%9A"><span class="toc-number">2.0.0.1.1.</span> <span class="toc-text">啟動成功顯示：</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#1-%E7%80%8F%E8%A6%BD%E5%99%A8%E9%85%8D%E7%BD%AE%EF%BC%9A"><span class="toc-number">2.0.0.1.2.</span> <span class="toc-text">1. 瀏覽器配置：</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#2-webstorm%E9%85%8D%E7%BD%AE%EF%BC%9A"><span class="toc-number">2.0.0.1.3.</span> <span class="toc-text">2. webstorm配置：</span></a></li></ol></li></ol></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&text=利用虛擬主機搭建代理服務器"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&title=利用虛擬主機搭建代理服務器"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&is_video=false&description=利用虛擬主機搭建代理服務器"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=利用虛擬主機搭建代理服務器&body=Check out this article: https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&title=利用虛擬主機搭建代理服務器"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&title=利用虛擬主機搭建代理服務器"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&title=利用虛擬主機搭建代理服務器"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&title=利用虛擬主機搭建代理服務器"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/13/zh-tw/proxy-setting/&name=利用虛擬主機搭建代理服務器&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

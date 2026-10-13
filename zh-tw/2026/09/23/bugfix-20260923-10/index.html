@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_10 — GBA 退出直接卡死（回滾 SIGUSR1「畫面交還」握手方案）   項目 內容    發現時間 2026-09-23   修復時間 2026-09-23   模塊 extern&#x2F;miniretro&#x2F;miniretro.c、lv_pages&#x2F;gba_game_page.c   涉及版本 回滾 bugfix_20260923_09 的全部改動   現象等級">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA退出直接卡死_回滾握手方案">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_10 — GBA 退出直接卡死（回滾 SIGUSR1「畫面交還」握手方案）   項目 內容    發現時間 2026-09-23   修復時間 2026-09-23   模塊 extern&#x2F;miniretro&#x2F;miniretro.c、lv_pages&#x2F;gba_game_page.c   涉及版本 回滾 bugfix_20260923_09 的全部改動   現象等級">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:45.843Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA退出直接卡死_回滾握手方案</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/bugfix-20260923-09/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/bugfix-20260923-11/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&text=GBA退出直接卡死_回滾握手方案"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&title=GBA退出直接卡死_回滾握手方案"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&is_video=false&description=GBA退出直接卡死_回滾握手方案"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出直接卡死_回滾握手方案&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&title=GBA退出直接卡死_回滾握手方案"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&title=GBA退出直接卡死_回滾握手方案"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&title=GBA退出直接卡死_回滾握手方案"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&title=GBA退出直接卡死_回滾握手方案"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&name=GBA退出直接卡死_回滾握手方案&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-10-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E7%9B%B4%E6%8E%A5%E5%8D%A1%E6%AD%BB%EF%BC%88%E5%9B%9E%E6%BB%BE-SIGUSR1%E3%80%8C%E7%95%AB%E9%9D%A2%E4%BA%A4%E9%82%84%E3%80%8D%E6%8F%A1%E6%89%8B%E6%96%B9%E6%A1%88%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_10 — GBA 退出直接卡死（回滾 SIGUSR1「畫面交還」握手方案）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%95%8F%E9%A1%8C%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 問題現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-exit-0-%E7%9C%81%E4%B8%8D%E6%8E%89%E5%85%A7%E6%A0%B8%E7%9A%84%E6%99%82%E9%96%93%EF%BC%8C%E5%8F%AA%E6%9C%83%E8%AE%93%E9%80%B2%E7%A8%8B%E6%9B%B4%E4%B9%85%E4%B8%8D%E6%B6%88%E5%A4%B1"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 _exit(0) 省不掉內核的時間，只會讓進程更久不消失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%8A%8A%E2%80%9D%E7%AD%89%E6%94%B6%E5%B1%8D%E2%80%9D%E7%9A%84%E8%B6%85%E6%99%82%E5%BE%AA%E7%92%B0%E6%94%BE%E5%9C%A8%E4%BA%92%E6%96%A5%E9%8E%96%E5%85%A7-%E2%86%92-UI-%E6%81%A2%E5%BE%A9%E8%A2%AB%E6%8B%96%E6%BB%BF-5-%E7%A7%92"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 把”等收屍”的超時循環放在互斥鎖內 → UI 恢復被拖滿 5 秒</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E9%99%84%E5%B8%B6%E7%BC%BA%E9%99%B7%EF%BC%9A%E6%8F%A1%E6%89%8B%E9%96%80%E7%A6%81%E6%B1%99%E6%9F%93%E4%BA%86%E4%B8%BB%E9%80%B2%E7%A8%8B%E7%92%B0%E5%A2%83"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 附帶缺陷：握手門禁汙染了主進程環境</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%BE%A9%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修復方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#miniretro-%E5%81%B4%EF%BC%88%E5%AD%90%E9%80%B2%E7%A8%8B%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">miniretro 側（子進程）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A0%81%E9%9D%A2%E5%81%B4%EF%BC%88lv-pages-gba-game-page-c%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">頁面側（lv_pages&#x2F;gba_game_page.c）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%A9%97%E8%AD%89%E6%96%B9%E6%B3%95%E8%88%87%E7%B5%90%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 驗證方法與結果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E8%BF%B4%E6%AD%B8%E9%A2%A8%E9%9A%AA"><span class="toc-number">1.6.</span> <span class="toc-text">6. 迴歸風險</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相關文件</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA退出直接卡死_回滾握手方案
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-10-—-GBA-退出直接卡死（回滾-SIGUSR1「畫面交還」握手方案）"><a href="#bugfix-20260923-10-—-GBA-退出直接卡死（回滾-SIGUSR1「畫面交還」握手方案）" class="headerlink" title="bugfix_20260923_10 — GBA 退出直接卡死（回滾 SIGUSR1「畫面交還」握手方案）"></a>bugfix_20260923_10 — GBA 退出直接卡死（回滾 SIGUSR1「畫面交還」握手方案）</h1><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>發現時間</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>修復時間</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>模塊</td>
+<td><code>extern/miniretro/miniretro.c</code>、<code>lv_pages/gba_game_page.c</code></td>
+</tr>
+<tr>
+<td>涉及版本</td>
+<td>回滾 bugfix_20260923_09 的全部改動</td>
+</tr>
+<tr>
+<td>現象等級</td>
+<td>高（退出功能完全不可用，並波及原本正常的 FC 頁）</td>
+</tr>
+</tbody></table>
+<h2 id="1-問題現象"><a href="#1-問題現象" class="headerlink" title="1. 問題現象"></a>1. 問題現象</h2><p>用戶在實機上反饋兩條：</p>
+<ol>
+<li><strong>GBA 遊戲退出時直接卡死</strong>（此前是”偶爾卡一下”，仍可用）；</li>
+<li><strong>FC 遊戲也卡死了，而它原來沒問題</strong>。</li>
+</ol>
+<p>這是典型的<strong>迴歸</strong>，且第 2 條說明問題不在 GBA 頁面本身 —— FC 與 GBA 共用同一個<br><code>extern/miniretro/miniretro</code> 前端，因此元兇必然在 miniretro 側那次改動裡。</p>
+<h2 id="2-影響範圍"><a href="#2-影響範圍" class="headerlink" title="2. 影響範圍"></a>2. 影響範圍</h2><ul>
+<li>所有從 LVGL 頁面拉起 miniretro 的入口：FC 遊戲頁、GBA 遊戲頁；</li>
+<li>由於 <code>setenv</code> 是<strong>主進程級</strong>的，汙染會跨頁面殘留，直到 <code>lvgl_demo</code> 重啟為止 ——<br>即”從 GBA 出來之後，FC 也跟著壞”，與用戶描述完全一致。</li>
+</ul>
+<h2 id="3-根因分析"><a href="#3-根因分析" class="headerlink" title="3. 根因分析"></a>3. 根因分析</h2><p>bugfix_09 為”省掉內核回收 <code>/dev/input/eventX</code> 的那 ~340ms”引入了兩個機制，<br>兩條都錯：</p>
+<h3 id="3-1-exit-0-省不掉內核的時間，只會讓進程更久不消失"><a href="#3-1-exit-0-省不掉內核的時間，只會讓進程更久不消失" class="headerlink" title="3.1 _exit(0) 省不掉內核的時間，只會讓進程更久不消失"></a>3.1 <code>_exit(0)</code> 省不掉內核的時間，只會讓進程更久不消失</h3><p>原以為 <code>_exit(0)</code> 跳過用戶態 <code>close()</code> 就能立刻消失。實測相反：</p>
+<ul>
+<li><code>_exit(0)</code> 只是跳過用戶態逐個 <code>close()</code>，內核 <code>exit_files()</code> <strong>照樣</strong>要收掉<br>這些 fd，而且是在<strong>進程退出路徑上不可中斷地收</strong>；</li>
+<li>於是子進程在 <code>_exit</code> 之後比正常 <code>return</code> <strong>更久</strong>才消失。</li>
+</ul>
+<p>設備日誌是鐵證（同一進程，以收到 SIGTERM 為 0 點）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[miniretro][timing] fb_restore 完成          t=   33.8 ms</span><br><span class="line">[miniretro][timing] 收尾完成(快退出)         t=   39.9 ms</span><br><span class="line">[gba] 子進程 17830 未按時退出, SIGKILL 兜底        ← 5 秒後才出現這一行</span><br></pre></td></tr></table></figure>
+
+<p><code>39.9ms</code> 就走完了所有收尾，進程卻 5s 都沒被回收 —— 時間全耗在內核退出路徑裡。</p>
+<h3 id="3-2-把”等收屍”的超時循環放在互斥鎖內-→-UI-恢復被拖滿-5-秒"><a href="#3-2-把”等收屍”的超時循環放在互斥鎖內-→-UI-恢復被拖滿-5-秒" class="headerlink" title="3.2 把”等收屍”的超時循環放在互斥鎖內 → UI 恢復被拖滿 5 秒"></a>3.2 把”等收屍”的超時循環放在互斥鎖內 → UI 恢復被拖滿 5 秒</h3><p>GBA 頁 <code>gba_wait_thread</code> 的結構是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">階段① 等 SIGUSR1 / 子進程退出（≤500ms）</span><br><span class="line">pthread_mutex_lock(&amp;s_gba.lock);</span><br><span class="line">階段② 等收屍，最多 1000 × 5ms = 5s          ← 在鎖內</span><br><span class="line">pthread_mutex_unlock(&amp;s_gba.lock);</span><br><span class="line">hardware_keys_set_grab(true);</span><br><span class="line">app_runtime_set_lvgl_paused(false);        ← UI 恢復在鎖外，必須等階段② 結束</span><br></pre></td></tr></table></figure>
+
+<p>子進程遲遲不消失 → 階段② 跑滿 5s → <strong>UI 整整 5 秒後才恢復</strong> &#x3D; “退出直接卡死”。</p>
+<p>FC 頁則是 <code>waitpid(pid, NULL, 0)</code> <strong>無超時阻塞</strong>在同一個不消失的子進程上，<br>同樣卡死 —— 這就是”FC 原來沒問題，現在也卡”的原因。</p>
+<h3 id="3-3-附帶缺陷：握手門禁汙染了主進程環境"><a href="#3-3-附帶缺陷：握手門禁汙染了主進程環境" class="headerlink" title="3.3 附帶缺陷：握手門禁汙染了主進程環境"></a>3.3 附帶缺陷：握手門禁汙染了主進程環境</h3><p><code>gba_launch()</code> 在 <code>fork()</code> 之前調用 <code>setenv(&quot;MINIRETRO_UI_RELEASE_SIGNAL&quot;, &quot;1&quot;, 1)</code>。<br><code>setenv</code> 改的是<strong>當前進程</strong>（<code>lvgl_demo</code>）的環境塊，一旦設上就永久保留：</p>
+<ul>
+<li>之後 FC 頁 <code>fork()</code> 出的子進程也會繼承該變量，從而也去給父進程發 <code>SIGUSR1</code>；</li>
+<li><code>SIGUSR1</code> 默認動作是<strong>終止進程</strong> —— 門禁一旦失效（例如頁面側 handler 被改回去），<br>父進程會被自己拉起的子進程打死。</li>
+</ul>
+<p>結論：<strong>不要跟內核賽跑。</strong> 退出路徑的快慢由內核決定，用戶態唯一能做的是<br>“不等它自己走完”。</p>
+<h2 id="4-修復方案"><a href="#4-修復方案" class="headerlink" title="4. 修復方案"></a>4. 修復方案</h2><p><strong>完整回滾 bugfix_09，改用 FC 頁那套已長期實機驗證的退出策略。</strong></p>
+<h3 id="miniretro-側（子進程）"><a href="#miniretro-側（子進程）" class="headerlink" title="miniretro 側（子進程）"></a>miniretro 側（子進程）</h3><ul>
+<li>刪除 <code>notify_parent_ui_released()</code> 及其調用、環境變量門禁；</li>
+<li><code>_exit(0)</code> → 恢復為正常 <code>return 0</code>（原樣交給 glibc&#x2F;內核收尾）；</li>
+<li>保留 <code>on_quit_signal</code>（SIGTERM → <code>quit=1</code> 走優雅收尾）與 <code>fb_restore()</code><br>（翻回第 0 頁 + 清屏，防畫面殘留）—— 這兩項是 bugfix_07 的正確修復，不在回滾範圍；</li>
+<li>保留 <code>td()</code> 分階段計時日誌，後續定位同類問題仍需要它。</li>
+</ul>
+<h3 id="頁面側（lv-pages-gba-game-page-c）"><a href="#頁面側（lv-pages-gba-game-page-c）" class="headerlink" title="頁面側（lv_pages/gba_game_page.c）"></a>頁面側（<code>lv_pages/gba_game_page.c</code>）</h3><ul>
+<li><p>刪除 <code>s_gba_ui_released</code>、<code>gba_ui_release_handler</code>、<code>setenv</code>、<code>signal(SIGUSR1,…)</code>；</p>
+</li>
+<li><p><code>gba_exit_to_list()</code> 恢復為 FC 同款：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kill(pid, SIGTERM);            <span class="comment">/* 讓它優雅收尾: 翻頁+清屏, 實測 ~40ms */</span></span><br><span class="line">usleep(<span class="number">120</span> * <span class="number">1000</span>);            <span class="comment">/* 足夠它把 fb 交還 */</span></span><br><span class="line"><span class="keyword">if</span>(kill(pid, <span class="number">0</span>) == <span class="number">0</span>) kill(pid, SIGKILL);   <span class="comment">/* 不等它在內核裡慢慢收 fd */</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>gba_wait_thread()</code> 收屍改為 <strong>WNOHANG 輪詢、上限 3s、絕不死等</strong>；<br>超時才 <code>SIGKILL</code> 並交給 <code>gba_reap_bg()</code> 後臺線程收乾淨（不留殭屍）。<br>與 FC 的差別僅在於多了一道上限保險，正常路徑 200ms 內返回，不會觸發。</p>
+</li>
+</ul>
+<h2 id="5-驗證方法與結果"><a href="#5-驗證方法與結果" class="headerlink" title="5. 驗證方法與結果"></a>5. 驗證方法與結果</h2><p>設備端一次性測量（復刻頁面側新邏輯：SIGTERM → 120ms → SIGKILL → 輪詢收屍）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 /tmp/gba_exit_verify.py</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>指標</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>120ms 時子進程是否還活著</td>
+<td><code>True</code>（正常，正在內核中收尾）</td>
+</tr>
+<tr>
+<td>SIGKILL 發出時刻</td>
+<td>120.4 ms</td>
+</tr>
+<tr>
+<td><strong>從 SIGTERM 到收屍完成</strong></td>
+<td><strong>455.0 ms</strong>（原方案 &gt;5000 ms）</td>
+</tr>
+<tr>
+<td><code>fb_restore</code> 完成時刻</td>
+<td>33.8 ms（畫面在此之前已交還）</td>
+</tr>
+<tr>
+<td>退出碼</td>
+<td>0</td>
+</tr>
+<tr>
+<td>新增殭屍</td>
+<td>無</td>
+</tr>
+<tr>
+<td>恢復後進程</td>
+<td><code>lvgl_demo</code> ×1、<code>lvgl_watchdog</code> ×1（單實例）</td>
+</tr>
+</tbody></table>
+<p>編譯側：miniretro <code>gcc</code> 返回 0、0 error &#x2F; 0 warning；<code>lvgl_demo</code> <code>make -j2</code> 返回 0、0 error。<br>部署採用”編到 <code>*.tmp</code> 再 <code>mv -f</code> 原子替換”，避免用戶正在玩時 exec 到半覆蓋的二進制。</p>
+<h2 id="6-迴歸風險"><a href="#6-迴歸風險" class="headerlink" title="6. 迴歸風險"></a>6. 迴歸風險</h2><ul>
+<li><strong>退出仍有約 0.45s 的等待</strong>：其中 120ms 是我們主動等它復位畫面，後 ~335ms 是內核<br>收 fd 的固有開銷，且發生在”畫面已黑”之後，主觀為”屏幕黑一下”而非”僵住”。<br>這是與 FC 頁一致的表現，屬於可接受成本。</li>
+<li>若日後仍嫌慢，正確方向是**”畫面已交還就恢復 UI，收屍完全後臺化”**，<br>而不是縮短子進程的生命週期 —— 注意不要再用 <code>setenv</code> 之類的主進程級開關做門禁。</li>
+<li>頁面銷燬路徑（<code>onDestroy</code>）本來就先 <code>SIGKILL</code> 再 <code>waitpid</code>，未受影響。</li>
+<li>本次未改動渲染（雙緩衝&#x2F;pitch&#x2F;240×160）與音頻鏈路，顏色與音質不應有變化。</li>
+</ul>
+<h2 id="7-相關文件"><a href="#7-相關文件" class="headerlink" title="7. 相關文件"></a>7. 相關文件</h2><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>extern/miniretro/miniretro.c</code></td>
+<td>刪除 SIGUSR1 通知與環境變量門禁；<code>_exit(0)</code> 改回 <code>return 0</code></td>
+</tr>
+<tr>
+<td><code>lv_pages/gba_game_page.c</code></td>
+<td>退出策略回滾為 FC 同款（SIGTERM→120ms→SIGKILL）；收屍加 3s 上限 + 後臺兜底</td>
+</tr>
+<tr>
+<td><code>bugfix_20260923_09_GBA退出遊戲返回列表卡頓.md</code></td>
+<td>被本次回滾的方案（保留作為反面記錄）</td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-10-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E7%9B%B4%E6%8E%A5%E5%8D%A1%E6%AD%BB%EF%BC%88%E5%9B%9E%E6%BB%BE-SIGUSR1%E3%80%8C%E7%95%AB%E9%9D%A2%E4%BA%A4%E9%82%84%E3%80%8D%E6%8F%A1%E6%89%8B%E6%96%B9%E6%A1%88%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_10 — GBA 退出直接卡死（回滾 SIGUSR1「畫面交還」握手方案）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%95%8F%E9%A1%8C%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 問題現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-exit-0-%E7%9C%81%E4%B8%8D%E6%8E%89%E5%85%A7%E6%A0%B8%E7%9A%84%E6%99%82%E9%96%93%EF%BC%8C%E5%8F%AA%E6%9C%83%E8%AE%93%E9%80%B2%E7%A8%8B%E6%9B%B4%E4%B9%85%E4%B8%8D%E6%B6%88%E5%A4%B1"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 _exit(0) 省不掉內核的時間，只會讓進程更久不消失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%8A%8A%E2%80%9D%E7%AD%89%E6%94%B6%E5%B1%8D%E2%80%9D%E7%9A%84%E8%B6%85%E6%99%82%E5%BE%AA%E7%92%B0%E6%94%BE%E5%9C%A8%E4%BA%92%E6%96%A5%E9%8E%96%E5%85%A7-%E2%86%92-UI-%E6%81%A2%E5%BE%A9%E8%A2%AB%E6%8B%96%E6%BB%BF-5-%E7%A7%92"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 把”等收屍”的超時循環放在互斥鎖內 → UI 恢復被拖滿 5 秒</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E9%99%84%E5%B8%B6%E7%BC%BA%E9%99%B7%EF%BC%9A%E6%8F%A1%E6%89%8B%E9%96%80%E7%A6%81%E6%B1%99%E6%9F%93%E4%BA%86%E4%B8%BB%E9%80%B2%E7%A8%8B%E7%92%B0%E5%A2%83"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 附帶缺陷：握手門禁汙染了主進程環境</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%BE%A9%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修復方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#miniretro-%E5%81%B4%EF%BC%88%E5%AD%90%E9%80%B2%E7%A8%8B%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">miniretro 側（子進程）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A0%81%E9%9D%A2%E5%81%B4%EF%BC%88lv-pages-gba-game-page-c%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">頁面側（lv_pages&#x2F;gba_game_page.c）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%A9%97%E8%AD%89%E6%96%B9%E6%B3%95%E8%88%87%E7%B5%90%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 驗證方法與結果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E8%BF%B4%E6%AD%B8%E9%A2%A8%E9%9A%AA"><span class="toc-number">1.6.</span> <span class="toc-text">6. 迴歸風險</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相關文件</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&text=GBA退出直接卡死_回滾握手方案"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&title=GBA退出直接卡死_回滾握手方案"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&is_video=false&description=GBA退出直接卡死_回滾握手方案"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出直接卡死_回滾握手方案&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&title=GBA退出直接卡死_回滾握手方案"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&title=GBA退出直接卡死_回滾握手方案"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&title=GBA退出直接卡死_回滾握手方案"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&title=GBA退出直接卡死_回滾握手方案"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-10/&name=GBA退出直接卡死_回滾握手方案&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="展訊 SC9832A Mali-400 GPU 打通 —— 工作過程總結 記錄從”Mali 用不了”到”GLES2 硬件渲染跑通 + 獨立 GPU 跑分程序可用”的完整分析路徑、關鍵決策、失敗路線與最終方案。時間線：09-23 只讀勘察（結論”廢了”）→ 09-29 重大糾錯（其實能用）→ 09-30 bionic 路線打通 PSP 硬件渲染並落地 gpu_bench 跑分。   1. 任務背景與">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mali400_工作過程總結">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="展訊 SC9832A Mali-400 GPU 打通 —— 工作過程總結 記錄從”Mali 用不了”到”GLES2 硬件渲染跑通 + 獨立 GPU 跑分程序可用”的完整分析路徑、關鍵決策、失敗路線與最終方案。時間線：09-23 只讀勘察（結論”廢了”）→ 09-29 重大糾錯（其實能用）→ 09-30 bionic 路線打通 PSP 硬件渲染並落地 gpu_bench 跑分。   1. 任務背景與">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-30T08:44:04.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.810Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="GPU">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Mali400_工作過程總結</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/30/mali-05-mali400-wiki-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/30/mali-03-mali400-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&text=Mali400_工作過程總結"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&title=Mali400_工作過程總結"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&is_video=false&description=Mali400_工作過程總結"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_工作過程總結&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&title=Mali400_工作過程總結"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&title=Mali400_工作過程總結"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&title=Mali400_工作過程總結"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&title=Mali400_工作過程總結"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&name=Mali400_工作過程總結&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%A8%8A-SC9832A-Mali-400-GPU-%E6%89%93%E9%80%9A-%E2%80%94%E2%80%94-%E5%B7%A5%E4%BD%9C%E9%81%8E%E7%A8%8B%E7%B8%BD%E7%B5%90"><span class="toc-number">1.</span> <span class="toc-text">展訊 SC9832A Mali-400 GPU 打通 —— 工作過程總結</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%BB%BB%E5%8B%99%E8%83%8C%E6%99%AF%E8%88%87%E5%88%9D%E5%A7%8B%E7%9B%AE%E6%A8%99"><span class="toc-number">1.1.</span> <span class="toc-text">1. 任務背景與初始目標</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%88%86%E6%9E%90%E6%A1%86%E6%9E%B6%EF%BC%9A%E5%85%88%E6%8A%8A%E2%80%9DGPU-%E8%83%BD%E7%94%A8%E2%80%9D%E6%8B%86%E6%88%90%E4%B8%89%E5%B1%A4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 分析框架：先把”GPU 能用”拆成三層</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%94%BB%E5%A0%85%E9%81%8E%E7%A8%8B%EF%BC%88%E6%8C%89%E6%99%82%E9%96%93%E7%B7%9A%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 攻堅過程（按時間線）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%8E%E6%AE%B5-A%EF%BC%9A09-23-%E5%8F%AA%E8%AE%80%E5%8B%98%E5%AF%9F-%E2%80%94%E2%80%94-%E7%B5%90%E8%AB%96%E2%80%9DMali-%E7%94%A8%E4%B8%8D%E4%BA%86%E2%80%9D"><span class="toc-number">1.3.1.</span> <span class="toc-text">階段 A：09-23 只讀勘察 —— 結論”Mali 用不了”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%8E%E6%AE%B5-B%EF%BC%9A09-29-%E9%87%8D%E5%A4%A7%E7%B3%BE%E9%8C%AF-%E2%80%94%E2%80%94-%E5%85%B6%E5%AF%A6%E8%83%BD%E7%94%A8%EF%BC%88%E9%97%9C%E9%8D%B5%E8%BD%89%E6%8A%98%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">階段 B：09-29 重大糾錯 —— 其實能用（關鍵轉折）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%8E%E6%AE%B5-C%EF%BC%9A09-30-bionic-%E8%B7%AF%E7%B7%9A%E6%89%93%E9%80%9A-PSP-%E7%A1%AC%E4%BB%B6%E6%B8%B2%E6%9F%93"><span class="toc-number">1.3.3.</span> <span class="toc-text">階段 C：09-30 bionic 路線打通 PSP 硬件渲染</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%8E%E6%AE%B5-D%EF%BC%9A%E7%8D%A8%E7%AB%8B%E9%A9%97%E6%94%B6-%E6%B8%AC%E8%A9%A6-%E8%B7%91%E5%88%86%E7%A8%8B%E5%BA%8F%EF%BC%88%E4%B8%8D%E4%BE%9D%E8%B3%B4-PSP%EF%BC%89"><span class="toc-number">1.3.4.</span> <span class="toc-text">階段 D：獨立驗收 &#x2F; 測試 &#x2F; 跑分程序（不依賴 PSP）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%8E%E6%AE%B5-E%EF%BC%9A%E5%9B%9E%E8%AE%80%E4%B8%8D%E5%8F%AF%E9%9D%A0%E5%A4%A9%E5%9D%91%EF%BC%88%E9%A1%AF%E7%A4%BA%E8%87%B4%E5%91%BD%EF%BC%8C%E8%87%B3%E4%BB%8A%E6%9C%AA%E6%A0%B9%E6%B2%BB%EF%BC%89"><span class="toc-number">1.3.5.</span> <span class="toc-text">階段 E：回讀不可靠天坑（顯示致命，至今未根治）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%97%9C%E9%8D%B5%E6%B1%BA%E7%AD%96%E8%88%87%E6%95%99%E8%A8%93"><span class="toc-number">1.4.</span> <span class="toc-text">4. 關鍵決策與教訓</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Mali400_工作過程總結
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-30T08:44:04.000Z" itemprop="datePublished">2026-09-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/GPU/" rel="tag">GPU</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="展訊-SC9832A-Mali-400-GPU-打通-——-工作過程總結"><a href="#展訊-SC9832A-Mali-400-GPU-打通-——-工作過程總結" class="headerlink" title="展訊 SC9832A Mali-400 GPU 打通 —— 工作過程總結"></a>展訊 SC9832A Mali-400 GPU 打通 —— 工作過程總結</h1><blockquote>
+<p>記錄從”Mali 用不了”到”GLES2 硬件渲染跑通 + 獨立 GPU 跑分程序可用”的完整分析路徑、關鍵決策、失敗路線與最終方案。<br>時間線：09-23 只讀勘察（結論”廢了”）→ 09-29 重大糾錯（其實能用）→ 09-30 bionic 路線打通 PSP 硬件渲染並落地 gpu_bench 跑分。</p>
+</blockquote>
+<hr>
+<h2 id="1-任務背景與初始目標"><a href="#1-任務背景與初始目標" class="headerlink" title="1. 任務背景與初始目標"></a>1. 任務背景與初始目標</h2><p>設備是”保留安卓 6.0 內核（3.10.65）+ switchroot 到 Alpine Linux”的展訊 SC9832A 平板，720x1280 fb，2 核 1.3GHz，916MB 內存。用戶的目標：</p>
+<blockquote>
+<ol>
+<li>Mali-400 到底能不能用？能不能用到顯示 &#x2F; 視頻 &#x2F; UI 上？</li>
+<li>仿魯大師&#x2F;3DMark 做一個多場景 2D&#x2F;3D GPU 跑分程序，屏幕上顯示幀率與評分，並在桌面放圖標入口。</li>
+</ol>
+</blockquote>
+<h2 id="2-分析框架：先把”GPU-能用”拆成三層"><a href="#2-分析框架：先把”GPU-能用”拆成三層" class="headerlink" title="2. 分析框架：先把”GPU 能用”拆成三層"></a>2. 分析框架：先把”GPU 能用”拆成三層</h2><p>動手前先建立心智模型——Mali-400 能用，需要三層全部打通：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">① 內核驅動層   mali.ko 是否 insmod、/dev/mali0 是否出現？</span><br><span class="line">② 用戶態層     有沒有可用的 EGL/GLES 庫？musl 還是 bionic？</span><br><span class="line">③ 應用層       程序怎麼調用？回讀怎麼取像素？顯示怎麼上屏？</span><br></pre></td></tr></table></figure>
+
+<p>每一層都有明確的”驗通標準”，不通就往下一層排查。</p>
+<h2 id="3-攻堅過程（按時間線）"><a href="#3-攻堅過程（按時間線）" class="headerlink" title="3. 攻堅過程（按時間線）"></a>3. 攻堅過程（按時間線）</h2><h3 id="階段-A：09-23-只讀勘察-——-結論”Mali-用不了”"><a href="#階段-A：09-23-只讀勘察-——-結論”Mali-用不了”" class="headerlink" title="階段 A：09-23 只讀勘察 —— 結論”Mali 用不了”"></a>階段 A：09-23 只讀勘察 —— 結論”Mali 用不了”</h3><ul>
+<li>查 <code>/dev/dri</code>、<code>/sys/class/drm</code> 都不存在；mesa 有 <code>libEGL.so</code> 但無 <code>lima_dri.so</code>；<code>mali.ko</code> 未加載。</li>
+<li>唯一 Mali DDK <code>libGLES_mali.so</code> 是 bionic 二進制，musl 加載不了 → 下結論”用不起來，GPU 不治卡頓”。</li>
+<li><strong>教訓</strong>：只查了 <code>/dev/dri</code>（mesa&#x2F;DRM 路子）就下結論，漏了 Mali 專有驅動路徑 <code>/dev/mali0</code>。</li>
+</ul>
+<h3 id="階段-B：09-29-重大糾錯-——-其實能用（關鍵轉折）"><a href="#階段-B：09-29-重大糾錯-——-其實能用（關鍵轉折）" class="headerlink" title="階段 B：09-29 重大糾錯 —— 其實能用（關鍵轉折）"></a>階段 B：09-29 重大糾錯 —— 其實能用（關鍵轉折）</h3><ul>
+<li>發現 Mali 專有驅動走 <code>/dev/mali0</code>，<code>mali.ko</code> 模塊就在本機（<code>/lib/modules/mali.ko</code>，4.6MB，vermagic 匹配）。</li>
+<li><code>insmod /lib/modules/mali.ko</code> → <code>/dev/mali0</code> 出現。</li>
+<li>搭 bionic 運行環境：<code>/system/bin/linker</code> + <code>/system/lib</code> + <code>egl/libGLES_mali.so</code> 軟鏈。</li>
+<li>★ 用 <strong>musl gcc 編出 bionic 程序</strong>成功：<code>-nostdlib -Wl,--entry=main -Wl,--dynamic-linker=/system/bin/linker -Wl,-rpath=/system/lib -lGLESv2 -lEGL</code>。</li>
+<li>實測：<code>GL_RENDERER=Mali-400 MP</code>，GLES2 跑通，480x272 清屏+quad 300 次 <strong>0.15ms&#x2F;次 &#x3D; 864 Mpixel&#x2F;s</strong>；CPU 軟渲同樣活 <strong>9.7ms → 慢 65 倍</strong>。</li>
+<li><strong>結論翻轉</strong>：PSP 卡頓真因是我們在用 CPU 幹 GPU 的活（SoftGPU），不是 CPU 不行。</li>
+</ul>
+<h3 id="階段-C：09-30-bionic-路線打通-PSP-硬件渲染"><a href="#階段-C：09-30-bionic-路線打通-PSP-硬件渲染" class="headerlink" title="階段 C：09-30 bionic 路線打通 PSP 硬件渲染"></a>階段 C：09-30 bionic 路線打通 PSP 硬件渲染</h3><ul>
+<li>前端 <code>miniretro_psp_hw</code>（musl gcc 編的 bionic 程序）：EGL pbuffer + ES2 → <code>SET_HW_RENDER</code> → <code>glReadPixels</code> → R&#x2F;B 交換 → <code>scale_rotate90</code> → FBIOPAN。</li>
+<li>core &#x3D; <code>ppsspp_libretro_hw.so</code>（bionic 重編，自帶 shim）。</li>
+<li>實測遊戲加載、Mali GLES2 出畫面，<strong>20~36fps</strong>（軟渲上限 10fps）；乾淨環境 34<del>38fps（core 總 ~28ms：GL回讀</del>11.7 &#x2F; 縮放寫屏<del>9.1 &#x2F; core 本身</del>7）。</li>
+<li>★ 前端必須在 <code>av_info</code> 後調 <code>context_reset()</code>，否則 <code>draw_=NULL</code> 段錯誤。</li>
+<li>★ 判活&#x2F;殺進程一律按 <code>/proc/&lt;pid&gt;/cmdline</code>：PPSSPP 把主線程名改成 <code>&#123;Main&#125;</code>，<code>ps -o pid,comm|awk</code> 必漏。</li>
+<li>遺留：商業 ISO 開場動畫處凍結&#x2F;隨機段錯誤（已 ptrace 定位 PPSSPP 內部 IO 死鎖，未修）。</li>
+</ul>
+<h3 id="階段-D：獨立驗收-測試-跑分程序（不依賴-PSP）"><a href="#階段-D：獨立驗收-測試-跑分程序（不依賴-PSP）" class="headerlink" title="階段 D：獨立驗收 &#x2F; 測試 &#x2F; 跑分程序（不依賴 PSP）"></a>階段 D：獨立驗收 &#x2F; 測試 &#x2F; 跑分程序（不依賴 PSP）</h3><ul>
+<li><code>mali_check.c → /root/mali_check</code>：7 項驗收（mali0&#x2F;EGL&#x2F;RENDERER&#x2F;漸變quad回讀&#x2F;填充率&#x2F;回讀速度&#x2F;CPU對照）+ 第8項掃 PSP maps。</li>
+<li><code>gpu_test.c → /usr/local/bin/gpu_test</code>：全屏圖形測試（三角形+網格，顯示 <code>GPU:Mali-400 MP</code> &#x2F; <code>FPS</code> &#x2F; <code>READ</code> &#x2F; <code>SCALE</code>），實測穩定 <strong>32.8fps</strong>。</li>
+<li><code>gpu_bench.c → /usr/local/bin/gpu_bench</code>：仿 3DMark 五場景跑分（2D SPRITE &#x2F; 2D OVERDRAW &#x2F; 3D PARTICLES &#x2F; 3D TERRAIN &#x2F; 3D SHADER），按純 GPU 渲染時間計分，幾何平均出總分，實測 <strong>6636~9052（GOOD 級）</strong>。</li>
+<li>桌面”GPU測試”圖標 → <code>/usr/local/bin/gpu_test</code> 軟鏈到 <code>gpu_bench</code>，點擊走 <code>patch_launcher_gputest.py</code> 讓出 fb 範式。</li>
+</ul>
+<h3 id="階段-E：回讀不可靠天坑（顯示致命，至今未根治）"><a href="#階段-E：回讀不可靠天坑（顯示致命，至今未根治）" class="headerlink" title="階段 E：回讀不可靠天坑（顯示致命，至今未根治）"></a>階段 E：回讀不可靠天坑（顯示致命，至今未根治）</h3><ul>
+<li>現象：<code>glReadPixels</code> 在 pbuffer 上 clear&#x2F;普通 2D 四邊形回讀<strong>全黑或陳舊紅</strong>；僅帶深度大網格（TERRAIN）偶發正確。</li>
+<li>已驗證四種辦法<strong>均無效</strong>：① FBO 離屏渲染再回讀 ② 去掉 glFinish 直接讀 ③ eglSwapBuffers 強制解析 ④ 全局開 GL_DEPTH_TEST。</li>
+<li>根因 &#x3D; <strong>Mali TBDR 惰性解析 + pbuffer 回讀路徑缺陷</strong>（PSP 前端靠 PPSSPP 核心內部 flush 才正常出圖；<code>_gldump.c</code> 最小測試任何 clear&#x2F;draw 全黑且不別名 fb）。</li>
+<li>後果：屏幕 3D&#x2F;2D 場景發黑，只有 CPU 直寫 fb 的 HUD（幀率&#x2F;分數&#x2F;標題）可見；<strong>評分與幀率不受影響</strong>（計時只量 render+glFinish，不含回讀）。</li>
+</ul>
+<h2 id="4-關鍵決策與教訓"><a href="#4-關鍵決策與教訓" class="headerlink" title="4. 關鍵決策與教訓"></a>4. 關鍵決策與教訓</h2><table>
+<thead>
+<tr>
+<th>決策點</th>
+<th>選擇</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Mali 能不能用</td>
+<td>先 insmod 看 &#x2F;dev&#x2F;mali0</td>
+<td>別隻查 &#x2F;dev&#x2F;dri，專有驅動有獨立路徑</td>
+</tr>
+<tr>
+<td>用戶態 GL 棧</td>
+<td>搭 bionic 環境 + musl gcc 編 bionic 程序</td>
+<td>本機唯一 DDK 是 bionic，mesa 無 lima</td>
+</tr>
+<tr>
+<td>架構</td>
+<td>musl 主程序 fork+exec bionic 子進程</td>
+<td>musl 與 bionic 不能共存同一進程</td>
+</tr>
+<tr>
+<td>屏幕出圖</td>
+<td>暫未根治回讀</td>
+<td>直渲 fb 的 window surface 探針在 linker 階段崩潰待排</td>
+</tr>
+<tr>
+<td>評分</td>
+<td>只量 render+glFinish</td>
+<td>繞開不可靠回讀對分數的汙染</td>
+</tr>
+</tbody></table>
+<p><strong>經驗教訓</strong>：</p>
+<ol>
+<li>查不到 <code>/dev/dri</code> 不等於 GPU 廢了——先看專有驅動路徑（<code>/dev/mali0</code>）。</li>
+<li>musl 與 bionic 不能共存於同一進程，但可以兩個進程各用各的（fork+exec 架構）。</li>
+<li>回讀（<code>glReadPixels</code>）在這套 Mali-400 + pbuffer 上是顯示殺手，不是加速；要出圖優先直渲 fb。</li>
+<li>判據落到最末端：Mali 是否真在幹活，看 <code>GL_RENDERER</code> &#x2F; maps 裡 <code>libGLES_mali.so</code> &#x2F; <code>MaliWorker</code> 線程，而非 insmod 成功。</li>
+<li>bionic 獨立程序交叉編譯鏈路已跑通，關鍵腳本&#x2F;符號補全集中在 <code>bionic_shim.cpp</code> 與 <code>_build_hw.sh</code>，新病人先複用。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%A8%8A-SC9832A-Mali-400-GPU-%E6%89%93%E9%80%9A-%E2%80%94%E2%80%94-%E5%B7%A5%E4%BD%9C%E9%81%8E%E7%A8%8B%E7%B8%BD%E7%B5%90"><span class="toc-number">1.</span> <span class="toc-text">展訊 SC9832A Mali-400 GPU 打通 —— 工作過程總結</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%BB%BB%E5%8B%99%E8%83%8C%E6%99%AF%E8%88%87%E5%88%9D%E5%A7%8B%E7%9B%AE%E6%A8%99"><span class="toc-number">1.1.</span> <span class="toc-text">1. 任務背景與初始目標</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%88%86%E6%9E%90%E6%A1%86%E6%9E%B6%EF%BC%9A%E5%85%88%E6%8A%8A%E2%80%9DGPU-%E8%83%BD%E7%94%A8%E2%80%9D%E6%8B%86%E6%88%90%E4%B8%89%E5%B1%A4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 分析框架：先把”GPU 能用”拆成三層</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%94%BB%E5%A0%85%E9%81%8E%E7%A8%8B%EF%BC%88%E6%8C%89%E6%99%82%E9%96%93%E7%B7%9A%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 攻堅過程（按時間線）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%8E%E6%AE%B5-A%EF%BC%9A09-23-%E5%8F%AA%E8%AE%80%E5%8B%98%E5%AF%9F-%E2%80%94%E2%80%94-%E7%B5%90%E8%AB%96%E2%80%9DMali-%E7%94%A8%E4%B8%8D%E4%BA%86%E2%80%9D"><span class="toc-number">1.3.1.</span> <span class="toc-text">階段 A：09-23 只讀勘察 —— 結論”Mali 用不了”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%8E%E6%AE%B5-B%EF%BC%9A09-29-%E9%87%8D%E5%A4%A7%E7%B3%BE%E9%8C%AF-%E2%80%94%E2%80%94-%E5%85%B6%E5%AF%A6%E8%83%BD%E7%94%A8%EF%BC%88%E9%97%9C%E9%8D%B5%E8%BD%89%E6%8A%98%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">階段 B：09-29 重大糾錯 —— 其實能用（關鍵轉折）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%8E%E6%AE%B5-C%EF%BC%9A09-30-bionic-%E8%B7%AF%E7%B7%9A%E6%89%93%E9%80%9A-PSP-%E7%A1%AC%E4%BB%B6%E6%B8%B2%E6%9F%93"><span class="toc-number">1.3.3.</span> <span class="toc-text">階段 C：09-30 bionic 路線打通 PSP 硬件渲染</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%8E%E6%AE%B5-D%EF%BC%9A%E7%8D%A8%E7%AB%8B%E9%A9%97%E6%94%B6-%E6%B8%AC%E8%A9%A6-%E8%B7%91%E5%88%86%E7%A8%8B%E5%BA%8F%EF%BC%88%E4%B8%8D%E4%BE%9D%E8%B3%B4-PSP%EF%BC%89"><span class="toc-number">1.3.4.</span> <span class="toc-text">階段 D：獨立驗收 &#x2F; 測試 &#x2F; 跑分程序（不依賴 PSP）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%8E%E6%AE%B5-E%EF%BC%9A%E5%9B%9E%E8%AE%80%E4%B8%8D%E5%8F%AF%E9%9D%A0%E5%A4%A9%E5%9D%91%EF%BC%88%E9%A1%AF%E7%A4%BA%E8%87%B4%E5%91%BD%EF%BC%8C%E8%87%B3%E4%BB%8A%E6%9C%AA%E6%A0%B9%E6%B2%BB%EF%BC%89"><span class="toc-number">1.3.5.</span> <span class="toc-text">階段 E：回讀不可靠天坑（顯示致命，至今未根治）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%97%9C%E9%8D%B5%E6%B1%BA%E7%AD%96%E8%88%87%E6%95%99%E8%A8%93"><span class="toc-number">1.4.</span> <span class="toc-text">4. 關鍵決策與教訓</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&text=Mali400_工作過程總結"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&title=Mali400_工作過程總結"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&is_video=false&description=Mali400_工作過程總結"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_工作過程總結&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&title=Mali400_工作過程總結"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&title=Mali400_工作過程總結"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&title=Mali400_工作過程總結"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&title=Mali400_工作過程總結"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-01-mali400-md/&name=Mali400_工作過程總結&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

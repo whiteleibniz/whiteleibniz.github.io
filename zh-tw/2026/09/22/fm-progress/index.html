@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="FM 收音機 —— 進度快照（2026-09-22） 範圍：展訊 SC9832A &#x2F; Alpine Linux &#x2F; armv7l &#x2F; 720×1280 豎屏 &#x2F; LVGL 9.6.0本文只講具體實現到什麼程度：哪些能跑、哪些已驗收、哪些被實測否掉、還剩什麼。   一、一句話結論FM 應用層已經做完並跑通：daemon + 收音機頁面 + 桌面入口 + 開機自">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM收音機_進度快照_20260922">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="FM 收音機 —— 進度快照（2026-09-22） 範圍：展訊 SC9832A &#x2F; Alpine Linux &#x2F; armv7l &#x2F; 720×1280 豎屏 &#x2F; LVGL 9.6.0本文只講具體實現到什麼程度：哪些能跑、哪些已驗收、哪些被實測否掉、還剩什麼。   一、一句話結論FM 應用層已經做完並跑通：daemon + 收音機頁面 + 桌面入口 + 開機自">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-22T15:28:06.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.651Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM收音機_進度快照_20260922</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/22/fm-progress/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/22/aiwf-readme/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&text=FM收音機_進度快照_20260922"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&title=FM收音機_進度快照_20260922"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&is_video=false&description=FM收音機_進度快照_20260922"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音機_進度快照_20260922&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&title=FM收音機_進度快照_20260922"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&title=FM收音機_進度快照_20260922"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&title=FM收音機_進度快照_20260922"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&title=FM收音機_進度快照_20260922"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&name=FM收音機_進度快照_20260922&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#FM-%E6%94%B6%E9%9F%B3%E6%A9%9F-%E2%80%94%E2%80%94-%E9%80%B2%E5%BA%A6%E5%BF%AB%E7%85%A7%EF%BC%882026-09-22%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">FM 收音機 —— 進度快照（2026-09-22）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B5%90%E8%AB%96"><span class="toc-number">1.1.</span> <span class="toc-text">一、一句話結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%B7%B2%E5%AE%8C%E6%88%90%E4%B8%A6%E9%A9%97%E6%94%B6%EF%BC%88%E5%85%A8%E9%83%A8%E7%82%BA%E8%A8%AD%E5%82%99%E5%AF%A6%E6%B8%AC%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">二、已完成並驗收（全部為設備實測）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-FM-daemon-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E5%BA%A6-100-%EF%BC%88%E6%9C%AC%E6%A9%9F%E5%8F%AF%E7%94%A8%E7%9A%84%E5%91%BD%E4%BB%A4%EF%BC%89"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 FM daemon —— 完成度 100%（本機可用的命令）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-LVGL-%E6%94%B6%E9%9F%B3%E6%A9%9F%E9%A0%81%E9%9D%A2-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E5%BA%A6-100-%EF%BC%888-%E5%88%86%E5%8D%80%E5%85%A8%E9%83%A8%E6%AD%A3%E7%A2%BA%E6%B8%B2%E6%9F%93%EF%BC%89"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 LVGL 收音機頁面 —— 完成度 100%（8 分區全部正確渲染）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E9%A0%81%E9%9D%A2%E9%80%B2%E5%85%A5-%E8%BF%94%E5%9B%9E-%E2%80%94%E2%80%94-%E6%9C%AC%E6%AC%A1%E5%B7%B2%E9%96%89%E7%92%B0%E9%A9%97%E6%94%B6"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 頁面進入 &#x2F; 返回 —— 本次已閉環驗收</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-%E6%A1%8C%E9%9D%A2%E5%85%A5%E5%8F%A3-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E5%BA%A6-100"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4 桌面入口 —— 完成度 100%</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-%E9%96%8B%E6%A9%9F%E8%87%AA%E5%95%9F-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E5%BA%A6-100-%EF%BC%8C%E5%B7%B2%E5%AF%A6%E6%B8%AC%E9%A9%97%E9%81%8E"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5 開機自啟 —— 完成度 100%，已實測驗過</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%9C%AC%E6%AC%A1%E4%BF%AE%E6%AD%A3%E7%9A%84%E8%88%8A%E7%B5%90%E8%AB%96%EF%BC%88%E9%87%8D%E8%A6%81%EF%BC%8C%E5%88%A5%E5%86%8D%E6%8C%89%E8%88%8A%E7%9A%84%E5%81%9A%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、本次修正的舊結論（重要，別再按舊的做）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E2%80%9C%E9%9F%B3%E9%A0%BB%E9%A1%9E-ioctl-%E5%8F%AF%E4%BB%A5%E9%85%8D%E9%80%9A%E9%9F%B3%E9%A0%BB%E9%80%9A%E8%B7%AF%E2%80%9D-%E2%86%92-%E5%85%A8%E6%98%AF%E7%A9%BA%E6%AE%BC"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 “音頻類 ioctl 可以配通音頻通路” → 全是空殼</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E2%80%9C%E6%8C%89%E5%BB%A0%E5%95%86-tiny-hw-xml-%E9%96%8B-Speaker-%E5%B0%B1%E8%83%BD%E5%87%BA%E8%81%B2%E2%80%9D-%E2%86%92-%E5%85%A7%E6%A0%B8%E8%A3%A1%E4%B8%8D%E5%AD%98%E5%9C%A8%E8%A9%B2%E8%B7%AF%E7%94%B1"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 “按廠商 tiny_hw.xml 開 Speaker 就能出聲” → 內核裡不存在該路由</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E2%80%9Cdaemon-%E7%A9%A9%E5%AE%9A%E2%80%9D-%E2%86%92-%E6%9B%BE%E5%9B%A0-SIGPIPE-%E9%9D%9C%E9%BB%98%E9%80%80%E5%87%BA%EF%BC%8C%E5%B7%B2%E4%BF%AE"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 “daemon 穩定” → 曾因 SIGPIPE 靜默退出，已修</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E2%80%9CSEEK-SCAN-%E5%8F%AF%E7%94%A8%EF%BC%8C%E8%83%BD%E6%90%9C%E8%87%BA%E2%80%9D-%E2%86%92-SEEK-%E5%8F%83%E6%95%B8%E8%A2%AB%E6%88%AA%E6%96%B7%E3%80%81SCAN-%E6%98%AF%E7%A9%BA%E6%AE%BC%EF%BC%88%E6%9C%AC%E8%BC%AA%E6%96%B0%E5%A2%9E%EF%BC%89"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4 “SEEK&#x2F;SCAN 可用，能搜臺” → SEEK 參數被截斷、SCAN 是空殼（本輪新增）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-%E2%80%9C%E4%BF%A1%E8%99%9F%E5%BC%B7%E5%BA%A6%E5%8F%AF%E4%BB%A5%E8%AE%80%E5%88%B0%E2%80%9D-%E2%86%92-%E6%8B%BF%E4%B8%8D%E5%88%B0%E5%8F%AF%E4%BF%A1%E5%A0%B4%E5%BC%B7%EF%BC%88%E6%9C%AC%E8%BC%AA%E6%96%B0%E5%A2%9E%EF%BC%89"><span class="toc-number">1.3.5.</span> <span class="toc-text">3.5 “信號強度可以讀到” → 拿不到可信場強（本輪新增）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%98%BB%E5%A1%9E%E9%A0%85%E8%88%87%E4%B8%8D%E5%8F%AF%E8%A1%8C%E9%A0%85%EF%BC%88%E7%94%A8%E6%88%B6%E6%85%8B%E5%B7%B2%E7%84%A1%E8%A7%A3%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">四、阻塞項與不可行項（用戶態已無解）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-FM-%E5%87%BA%E8%81%B2-%E2%80%94%E2%80%94-%E2%9D%8C-%E7%94%A8%E6%88%B6%E6%85%8B%E7%84%A1%E8%A7%A3%EF%BC%88%E7%B5%90%E8%AB%96%E5%B7%B2%E5%AE%9A%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 FM 出聲 —— ❌ 用戶態無解（結論已定）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E4%BF%A1%E8%99%9F%E5%BC%B7%E5%BA%A6%E8%A1%A8-%E2%80%94%E2%80%94-%E2%9D%8C-%E7%A1%AC%E4%BB%B6%E4%B8%8D%E6%8F%90%E4%BE%9B%E5%8F%AF%E7%94%A8%E7%9A%84%E6%9F%A5%E8%A9%A2"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 信號強度表 —— ❌ 硬件不提供可用的查詢</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E6%90%9C%E8%87%BA%EF%BC%88SEEK%EF%BC%89%E2%80%94%E2%80%94-%E2%9D%8C-%E5%8F%83%E6%95%B8%E8%A2%AB%E9%A9%85%E5%8B%95%E6%88%AA%E6%96%B7%EF%BC%8C%E4%B8%8D%E8%83%BD%E5%81%9A%E2%80%9D%E4%B8%8B%E4%B8%80%E5%80%8B%E9%9B%BB%E8%87%BA%E2%80%9D"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 搜臺（SEEK）—— ❌ 參數被驅動截斷，不能做”下一個電臺”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%9C%AA%E5%AE%8C%E6%88%90-%E5%BE%85%E8%BE%A6%EF%BC%88%E2%98%85-2026-09-22-%E6%B7%B1%E5%A4%9C%E7%BA%8C%E5%81%9A%E5%BE%8C%E7%9A%84%E6%9C%80%E6%96%B0%E7%8B%80%E6%85%8B%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">五、未完成 &#x2F; 待辦（★ 2026-09-22 深夜續做後的最新狀態）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E6%9C%AC%E8%BC%AA%E5%B7%B2%E5%AE%8C%E6%88%90-%E2%9C%85"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 本輪已完成 ✅</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E4%BB%8D%E6%9C%AA%E5%AE%8C%E6%88%90-%E5%BE%85%E7%94%A8%E6%88%B6%E6%B1%BA%E5%AE%9A-%E2%8F%B3"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 仍未完成 &#x2F; 待用戶決定 ⏳</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E5%BE%85%E5%85%A5%E5%BA%AB%E6%96%87%E4%BB%B6%E6%B8%85%E5%96%AE%EF%BC%88%E7%AD%89%E7%94%A8%E6%88%B6%E5%90%8C%E6%84%8F%E5%BE%8C%E5%86%8D-commit%EF%BC%89"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 待入庫文件清單（等用戶同意後再 commit）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%A9%97%E6%94%B6%E5%91%BD%E4%BB%A4%E9%80%9F%E6%9F%A5"><span class="toc-number">1.6.</span> <span class="toc-text">六、驗收命令速查</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5%E5%BB%BA%E8%AD%B0%EF%BC%88%E5%B7%B2%E6%8C%89%E6%9C%AC%E8%BC%AA%E7%B5%90%E6%9E%9C%E6%9B%B4%E6%96%B0%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">七、下一步建議（已按本輪結果更新）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM收音機_進度快照_20260922
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-22T15:28:06.000Z" itemprop="datePublished">2026-09-22</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="FM-收音機-——-進度快照（2026-09-22）"><a href="#FM-收音機-——-進度快照（2026-09-22）" class="headerlink" title="FM 收音機 —— 進度快照（2026-09-22）"></a>FM 收音機 —— 進度快照（2026-09-22）</h1><blockquote>
+<p>範圍：展訊 SC9832A &#x2F; Alpine Linux &#x2F; armv7l &#x2F; 720×1280 豎屏 &#x2F; LVGL 9.6.0<br>本文只講<strong>具體實現到什麼程度</strong>：哪些能跑、哪些已驗收、哪些被實測否掉、還剩什麼。</p>
+</blockquote>
+<hr>
+<h2 id="一、一句話結論"><a href="#一、一句話結論" class="headerlink" title="一、一句話結論"></a>一、一句話結論</h2><p><strong>FM 應用層已經做完並跑通：daemon + 收音機頁面 + 桌面入口 + 開機自啟，全鏈路可復現、可截圖驗收。</strong><br><strong>唯一無法在用戶態解決的是「出聲」</strong> —— FM 音頻在硬件上只流向 FM 芯片自己的模擬輸出，<br>既不進整機 codec，也不進主機 capture，因此<strong>既不能外放、也不能數字化後餵給藍牙</strong>。</p>
+<hr>
+<h2 id="二、已完成並驗收（全部為設備實測）"><a href="#二、已完成並驗收（全部為設備實測）" class="headerlink" title="二、已完成並驗收（全部為設備實測）"></a>二、已完成並驗收（全部為設備實測）</h2><h3 id="2-1-FM-daemon-——-完成度-100-（本機可用的命令）"><a href="#2-1-FM-daemon-——-完成度-100-（本機可用的命令）" class="headerlink" title="2.1 FM daemon —— 完成度 100%（本機可用的命令）"></a>2.1 FM daemon —— 完成度 100%（本機可用的命令）</h3><p>設備端 <code>/usr/local/bin/fm_user_daemon</code>（19784 B），開機自啟，單實例，常駐。</p>
+<table>
+<thead>
+<tr>
+<th>能力</th>
+<th>實現方式</th>
+<th>實測結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>打開 FM 通道</td>
+<td>連 abstract unix socket <code>@wcnd</code> → 發 <code>wcn FM-OPEN</code> → <strong>連接長期保持</strong></td>
+<td><code>wcn FM-OPEN -&gt; WCNBTWIFI-CMD OK</code></td>
+</tr>
+<tr>
+<td><code>/dev/fm</code> 句柄</td>
+<td><strong>常開不關</strong>（close 會觸發 <code>fm_release</code> → 發 <code>at+fm=12</code> 阻塞 ~4 s）</td>
+<td>一直持有</td>
+</tr>
+<tr>
+<td>通道自愈</td>
+<td>5 s 週期看門狗，通道掉了自動重開</td>
+<td>已實現</td>
+</tr>
+<tr>
+<td>控制協議</td>
+<td>unix socket <code>/tmp/fm_ctl.sock</code>，文本單行命令</td>
+<td>見下表</td>
+</tr>
+<tr>
+<td>命令超時保護</td>
+<td><code>SO_SNDTIMEO/SO_RCVTIMEO</code>，回寫用 <code>MSG_NOSIGNAL</code> + <code>SIGPIPE</code> 忽略</td>
+<td>已修（見 §3.3）</td>
+</tr>
+</tbody></table>
+<p><strong>協議與實測回執</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">state          -&gt; OK off freq=97400 vol=5 mute=0 chipid=0x2341 rds=1</span><br><span class="line">chipid         -&gt; OK chipid 0x2341</span><br><span class="line">rds            -&gt; OK rds 1</span><br><span class="line">on / off       -&gt; OK on / OK off</span><br><span class="line">tune 97400     -&gt; OK tune 97400</span><br><span class="line">vol 12         -&gt; OK vol 12</span><br><span class="line">mute 0         -&gt; OK mute 0</span><br><span class="line">ana 1          -&gt; OK ana 1</span><br><span class="line">rssi           -&gt; OK rssi 123 rc=-1        ← 見 §4.2，此值不可用</span><br></pre></td></tr></table></figure>
+
+<p><code>chipid=0x2341</code>、<code>rds=1</code> 是由芯片真實讀回的值，證明整條 SDIO 通道是活的。</p>
+<h3 id="2-2-LVGL-收音機頁面-——-完成度-100-（8-分區全部正確渲染）"><a href="#2-2-LVGL-收音機頁面-——-完成度-100-（8-分區全部正確渲染）" class="headerlink" title="2.2 LVGL 收音機頁面 —— 完成度 100%（8 分區全部正確渲染）"></a>2.2 LVGL 收音機頁面 —— 完成度 100%（8 分區全部正確渲染）</h3><p>設備端 <code>lv_pages/radio_page.c</code>（34287 B）。<strong>已用截圖逐區人工校對通過</strong>。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">┌─ A 標題欄   返回 | 收音機 | 開/關 | 狀態文字（收聽中 / 已關閉）</span><br><span class="line">├─ B 信息條   FM 87.5-108.0 MHz  100 kHz  RDS 可用  芯片 2341</span><br><span class="line">├─ C 當前頻點 97.4 MHz（montserrat_48）+ 臺名行（無臺名/RDS 未解析）</span><br><span class="line">├─ D 刻度尺   88 92 96 100 104 108 六個標籤 + 5 個收藏紅方塊 + 當前頻點指針</span><br><span class="line">├─ E 信號     條形圖 + 「原始 N」 + 「正在收聽 當前 97.4 MHz」</span><br><span class="line">├─ F 控制區   -0.1 | ◀◀ | 靜音 | ▶▶ | +0.1</span><br><span class="line">├─ G 收藏列表 收藏頻道 (5/16) + 收藏當前 + 每項「刪除」</span><br><span class="line">└─ H 音量     音量 12/15 滑塊 + 音頻通路狀態 + 切換音頻通路</span><br></pre></td></tr></table></figure>
+
+<p><strong>關鍵工程點（都踩過坑並已修）</strong>：</p>
+<ol>
+<li><strong>UI 線程絕不做 socket I&#x2F;O</strong> —— 獨立 IO 線程 <code>rp_io_worker()</code> 跑阻塞命令，<br>LVGL 定時器 <code>rp_poll_cb()</code>（700 ms）只做加鎖 memcpy + 刷新控件。<br>理由：<code>rssi</code> 單次要 4 s，直接在 UI 線程調用會卡死界面。</li>
+<li><strong>刻度尺寬度不能問 LVGL</strong> —— <code>lv_obj_get_width()</code> 在 <code>onCreate</code> 階段返回緩存 <code>coords</code>（&#x3D; 0），<br>被兜底成 10 後所有刻度擠在最左邊。改為自緩存寬度 <code>rp_ruler_width()</code> + 兜底值。</li>
+<li><strong>刻度指針不能掛在會被 clean 的父對象下</strong> —— 原來掛在 <code>marks</code> 下，<br><code>rebuild()</code> 裡的 <code>lv_obj_clean(marks)</code> 會連指針一起刪掉。改掛 <code>card</code>。</li>
+<li><strong>刻度兩端內縮</strong> —— 滿寬映射會把 <code>108</code> 標籤和 <code>87.5</code> 紅方塊擠出可視區。</li>
+<li><strong>生命週期</strong>：<code>onPause</code> <strong>只停 UI 輪詢，絕不停 FM</strong>（回桌面要繼續放音）；<br><code>onDestroy</code> 只清自有句柄，<strong>不刪 root</strong>（由頁面管理器統一刪）。</li>
+</ol>
+<h3 id="2-3-頁面進入-返回-——-本次已閉環驗收"><a href="#2-3-頁面進入-返回-——-本次已閉環驗收" class="headerlink" title="2.3 頁面進入 &#x2F; 返回 —— 本次已閉環驗收"></a>2.3 頁面進入 &#x2F; 返回 —— 本次已閉環驗收</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">桌面（焦點在「收音機」）── ENTER ──▶ 收音機頁 ✅</span><br><span class="line">收音機頁 ── 返回鍵(ESC) ──▶ 桌面，焦點框自動回到「收音機」✅</span><br><span class="line">（期間 daemon 狀態不變，FM 未被打斷）✅</span><br></pre></td></tr></table></figure>
+
+<p>截圖：<code>shots/re_0.png</code>（桌面，焦點框在收音機）、<code>shots/re_1.png</code>（收音機頁）、<br><code>shots/re_on.png</code>（FM 上電後的收音機頁）、<code>shots/re_after_back.png</code>（返回後的桌面）。</p>
+<blockquote>
+<p>⚠️ <strong>之前”進不去頁面”是我自己的操作失誤</strong>，不是程序缺陷：<br>應用表裡 <code>LAUNCHER_APP_RADIO</code> 插在<strong>索引 8</strong>（設置&#x2F;網絡&#x2F;藍牙&#x2F;收音機&#x2F;圖庫），<br>而<strong>啟動時的初始焦點就是索引 8 &#x3D; 收音機</strong>。我先前按 <code>下→右→右→右→確認</code> 反而把焦點移走了。<br><strong>正確操作：桌面直接按「確認」即進收音機頁。</strong></p>
+</blockquote>
+<h3 id="2-4-桌面入口-——-完成度-100"><a href="#2-4-桌面入口-——-完成度-100" class="headerlink" title="2.4 桌面入口 —— 完成度 100%"></a>2.4 桌面入口 —— 完成度 100%</h3><ul>
+<li><code>s_apps[]</code> 新增 <code>&#123; LAUNCHER_APP_RADIO, &quot;收音機&quot;, LV_SYMBOL_VOLUME_MAX, 0xe6614f &#125;</code>（第 2 行第 4 格，藍牙之後）。</li>
+<li>圖標用 <strong><code>LV_SYMBOL_VOLUME_MAX</code>（喇叭）</strong>。<br>實測本機 <code>lv_font_cn_16</code> 的 60 個 FontAwesome 圖標裡<strong>沒有任何”電臺&#x2F;天線&#x2F;電波”字形</strong><br>（<code>F519/F2CE/F7C0/F8CE/F09E/F130</code> 全渲染成 tofu 方框），故退用喇叭。</li>
+<li><code>launcher_open_app()</code> 增加 <code>case LAUNCHER_APP_RADIO:</code> → <code>lv_start_activity(&amp;g_radio_page, ...)</code>。</li>
+</ul>
+<h3 id="2-5-開機自啟-——-完成度-100-，已實測驗過"><a href="#2-5-開機自啟-——-完成度-100-，已實測驗過" class="headerlink" title="2.5 開機自啟 —— 完成度 100%，已實測驗過"></a>2.5 開機自啟 —— 完成度 100%，已實測驗過</h3><p><code>/etc/local.d/zz_fm.start</code>（1172 B）：等 <code>bt_user_daemon</code> 最多 180 s（代表 WCN 鏈已就緒）→<br>殺舊實例 → 清 socket → <code>setsid</code> 啟動 → 6 s 後回報實例數&#x2F;socket&#x2F;日誌。<br>設備冷啟動後實測：<code>fm_user_daemon</code> 自動起來，<code>chipid=0x2341 rds=1</code>。</p>
+<hr>
+<h2 id="三、本次修正的舊結論（重要，別再按舊的做）"><a href="#三、本次修正的舊結論（重要，別再按舊的做）" class="headerlink" title="三、本次修正的舊結論（重要，別再按舊的做）"></a>三、本次修正的舊結論（重要，別再按舊的做）</h2><h3 id="3-1-“音頻類-ioctl-可以配通音頻通路”-→-全是空殼"><a href="#3-1-“音頻類-ioctl-可以配通音頻通路”-→-全是空殼" class="headerlink" title="3.1 “音頻類 ioctl 可以配通音頻通路” → 全是空殼"></a>3.1 <del>“音頻類 ioctl 可以配通音頻通路”</del> → <strong>全是空殼</strong></h3><p><code>OVER_BT_ENABLE 0x1D</code> &#x2F; <code>ANA_SWITCH 0x1E</code> &#x2F; <code>I2S_SETTING 0x21</code> &#x2F; <code>GET_I2S_INFO 0x29</code> &#x2F; <code>GET_AUDIO_INFO 0x30</code><br>在 <code>marlin_fm.ko</code> 裡<strong>只 printk 就返回</strong>，不產生任何 SDIO 流量。</p>
+<p><strong>判據（本機最硬的證據）</strong>：清空 <code>dmesg</code> 後調用它們，驅動只打印命令名，<br><strong>完全不出現 <code>fm_write_buf ... at+fm=xx</code> 的 SDIO 收發</strong>；<br>而 <code>POWER_UP / TUNE / GETRSSI</code> 會打出 <code>at+fm=1,9740</code> &#x2F; <code>at+fm=13</code> 的完整收發對。</p>
+<blockquote>
+<p><strong>通用經驗：判斷一個 ioctl 是不是空殼，就看它有沒有產生真實的下層流量，而不是看 rc。</strong></p>
+</blockquote>
+<h3 id="3-2-“按廠商-tiny-hw-xml-開-Speaker-就能出聲”-→-內核裡不存在該路由"><a href="#3-2-“按廠商-tiny-hw-xml-開-Speaker-就能出聲”-→-內核裡不存在該路由" class="headerlink" title="3.2 “按廠商 tiny_hw.xml 開 Speaker 就能出聲” → 內核裡不存在該路由"></a>3.2 <del>“按廠商 tiny_hw.xml 開 Speaker 就能出聲”</del> → <strong>內核裡不存在該路由</strong></h3><p>DAPM 圖（137 個 widget）實測拓撲不完整：</p>
+<ul>
+<li><code>DACL Switch</code> 的 out 只有 <code>EAR Mixer</code>；<code>DACR Switch</code> <strong>無 out</strong>；</li>
+<li><strong><code>HPL/HPR/SPKL/SPKR Mixer</code> 零輸入（完全孤立）</strong> → 走 speaker 物理上不可能；</li>
+<li><strong>整機唯一可達的輸出終點是 <code>EAR</code>（聽筒）</strong>。</li>
+</ul>
+<p>即便按真實路徑把 <code>Earpiece Function</code> 等 kcontrol 打開（實測 DAC→EAR 的 in 計數 0→2，<strong>鏈路是通的</strong>），<br><strong>整機 codec 依然全 Off、<code>bias_level=Off</code></strong> —— 通了，但沒上電。</p>
+<h3 id="3-3-“daemon-穩定”-→-曾因-SIGPIPE-靜默退出，已修"><a href="#3-3-“daemon-穩定”-→-曾因-SIGPIPE-靜默退出，已修" class="headerlink" title="3.3 “daemon 穩定” → 曾因 SIGPIPE 靜默退出，已修"></a>3.3 <del>“daemon 穩定”</del> → <strong>曾因 SIGPIPE 靜默退出，已修</strong></h3><p>客戶端（收音機頁）先斷開時，daemon 裡裸 <code>write()</code> 觸發 SIGPIPE，<br>默認動作是<strong>終止進程</strong> → daemon 無聲無息死掉。已改為 <code>MSG_NOSIGNAL</code> + <code>signal(SIGPIPE, SIG_IGN)</code>。</p>
+<h3 id="3-4-“SEEK-SCAN-可用，能搜臺”-→-SEEK-參數被截斷、SCAN-是空殼（本輪新增）"><a href="#3-4-“SEEK-SCAN-可用，能搜臺”-→-SEEK-參數被截斷、SCAN-是空殼（本輪新增）" class="headerlink" title="3.4 “SEEK&#x2F;SCAN 可用，能搜臺” → SEEK 參數被截斷、SCAN 是空殼（本輪新增）"></a>3.4 <del>“<code>SEEK</code>&#x2F;<code>SCAN</code> 可用，能搜臺”</del> → <strong>SEEK 參數被截斷、SCAN 是空殼</strong>（本輪新增）</h3><ul>
+<li><code>SEEK (0x03)</code> 真發 SDIO，但驅動把 u16 的起點頻率<strong>只取低字節</strong>拼進 AT 幀<br>（974 → <code>at+fm=4,0,206</code>）→ 帶內頻點傳不進去；實測只有 <strong>92.5 &#x2F; 103.1 兩個固定回值</strong>，<br>且與當前頻點<strong>無關</strong> → 不能做”下一個電臺”。</li>
+<li><code>SCAN(0x08)</code> &#x2F; <code>SCAN_NEW(0x3c)</code>：返回 0 但<strong>零 SDIO 流量</strong>。</li>
+<li><code>write(/dev/fm, &quot;at+fm=...&quot;)</code> 想繞開驅動 bug → 恆 **<code>EINVAL(22)</code>**，無 SDIO 流量。</li>
+</ul>
+<blockquote>
+<p>詳細數據見 <code>radio_docs/FM收音_SEEK與場強_實測結論.md</code>。</p>
+</blockquote>
+<h3 id="3-5-“信號強度可以讀到”-→-拿不到可信場強（本輪新增）"><a href="#3-5-“信號強度可以讀到”-→-拿不到可信場強（本輪新增）" class="headerlink" title="3.5 “信號強度可以讀到” → 拿不到可信場強（本輪新增）"></a>3.5 <del>“信號強度可以讀到”</del> → <strong>拿不到可信場強</strong>（本輪新增）</h3><p><code>GETRSSI(0x07)</code> 是唯一真發 SDIO 的信號類命令，但<strong>恆 <code>ETIMEDOUT</code> 耗時 4.2 s</strong>，<br>回值在 10 個頻點上幾乎不變（123~125）；其餘（<code>SCAN_GETRSSI/CQI_GET/GETMONOSTERO/…</code>）全是空殼；<br><code>TUNE</code> 應答第 2 字段（164&#x2F;139）也不是穩定指標且<strong>驅動不回寫給用戶態</strong>。<br>→ 收音機頁已<strong>移除假信號柱</strong>，改為「本機不提供場強查詢」。</p>
+<hr>
+<h2 id="四、阻塞項與不可行項（用戶態已無解）"><a href="#四、阻塞項與不可行項（用戶態已無解）" class="headerlink" title="四、阻塞項與不可行項（用戶態已無解）"></a>四、阻塞項與不可行項（用戶態已無解）</h2><h3 id="4-1-FM-出聲-——-❌-用戶態無解（結論已定）"><a href="#4-1-FM-出聲-——-❌-用戶態無解（結論已定）" class="headerlink" title="4.1 FM 出聲 —— ❌ 用戶態無解（結論已定）"></a>4.1 FM 出聲 —— ❌ 用戶態無解（結論已定）</h3><p>FM 音頻的三條可能出口<strong>全部被實測排除</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>出口</th>
+<th>實測結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>① FM 芯片模擬輸出 → 整機 codec → 喇叭&#x2F;耳機</td>
+<td>DAPM 路由表缺 HPL&#x2F;SPKL，唯一可達終點 EAR；且整機 codec <code>bias_level</code> 恆 <code>Off</code>、<code>Analog/Digital Power</code> 全 Off</td>
+</tr>
+<tr>
+<td>② <code>OVER_BT_ENABLE</code> &#x2F; <code>ANA_SWITCH</code> &#x2F; <code>I2S_SETTING</code> 切通路</td>
+<td><strong>空殼 ioctl</strong>，無 SDIO 流量（§3.1）</td>
+</tr>
+<tr>
+<td>③ 主機 capture 錄音 + 數字化後餵給藍牙 A2DP</td>
+<td>8 個 capture 設備<strong>全部 <code>readi -5 EIO</code><strong>（card0 的 4 個連 <code>set_params</code> 都 -524 ENODEV）；<code>read(/dev/fm)</code> 只返回 688 B RDS 塊，</strong>沒有 PCM</strong></td>
+</tr>
+</tbody></table>
+<p><strong>根因</strong>：FM 音頻在硬件上只流向 FM 芯片自己的模擬輸出 → speaker&#x2F;耳機，<br><strong>沒有 FM 音頻通道進 AGDSP</strong>。因此既不能出聲、也不能數字化接管。</p>
+<p><strong>額外確認</strong>：FM 上電 + 打開 <code>Dfm</code>(hw:1,4) 後再錄 capture（最後一種組合）依然 EIO、DAPM 依然全 Off。</p>
+<p><strong>走到這一步需要</strong>（三選一，均超出用戶態）：</p>
+<ul>
+<li>(a) 動內核：補 sprd-codec 的 DAPM route &#x2F; 修 stream 觸發事件，讓整機 codec 上電；</li>
+<li>(b) 拿到 BT 固件的「FM 直通」入口（HCI 廠商命令）；</li>
+<li>(c) 索取新版 <code>bt_user_daemon</code> 源碼（當前設備上的版本<strong>不是</strong>本地 <code>ref_src/</code> 裡那份舊版）。</li>
+</ul>
+<h3 id="4-2-信號強度表-——-❌-硬件不提供可用的查詢"><a href="#4-2-信號強度表-——-❌-硬件不提供可用的查詢" class="headerlink" title="4.2 信號強度表 —— ❌ 硬件不提供可用的查詢"></a>4.2 信號強度表 —— ❌ 硬件不提供可用的查詢</h3><p>本次掃了 <strong>10 個頻點</strong> + 用探針 dump 了 ioctl 回寫結構體，結論：</p>
+<ul>
+<li><code>GETRSSI (0x07)</code>：<strong>唯一</strong>真的會去問芯片的信號類命令。芯片對 <code>at+fm=13</code> 回一個小整數（123~125），<br>驅動把它寫進 arg 緩衝區的<strong>第 1 個字節</strong>；<br><strong>但 ioctl 每次都固定耗時 4.2 s 後返回 <code>-1 / ETIMEDOUT(110)</code><strong>，<br>且該值</strong>在 10 個頻點上幾乎不變</strong> → <strong>不能當信號表用</strong>。</li>
+<li><code>SCAN_GETRSSI 0x24</code>、<code>CQI_GET 0x27</code>、<code>GETMONOSTERO 0x0D</code>、<code>GETGOODBCNT 0x0F</code>、<br><code>GETBADBNT 0x10</code>、<code>GETBLERRATIO 0x11</code>、<code>IS_DESE_CHAN 0x2A</code>：<strong>全部是空殼</strong>（只 printk，無 SDIO 流量）。</li>
+<li><code>TUNE</code> 的芯片應答 <code>0,&lt;X&gt;,0,9740</code> 裡第 2 字段看似與頻點相關（97.4→164、87.5→139），<br>但<strong>同一頻點連調兩次得到 164 與 139</strong> → 不是穩定的場強指標，且驅動<strong>不回寫該應答</strong>給用戶態。</li>
+<li><code>RDS</code>：數據通路是活的（能讀回 688 B 塊），但實測 <code>blk2=blk4=180</code> 恆定、<code>The PS is</code>（空）<br>→ <strong>當前環境下收不到有效 RDS 臺名</strong>。</li>
+</ul>
+<blockquote>
+<p>所以 UI 上那行「原始 N（查詢超時）」現在是<strong>如實反映硬件狀態</strong>，<br>但作為”信號表”是無意義的。已在 §5 完成改造（改為固定文案 + 移除輪詢）。</p>
+</blockquote>
+<h3 id="4-3-搜臺（SEEK）——-❌-參數被驅動截斷，不能做”下一個電臺”"><a href="#4-3-搜臺（SEEK）——-❌-參數被驅動截斷，不能做”下一個電臺”" class="headerlink" title="4.3 搜臺（SEEK）—— ❌ 參數被驅動截斷，不能做”下一個電臺”"></a>4.3 搜臺（SEEK）—— ❌ 參數被驅動截斷，不能做”下一個電臺”</h3><p><code>SEEK (0x03)</code> <strong>確實真發 SDIO</strong>（<code>at+fm=4,&lt;p2&gt;,&lt;p3&gt;</code>，每次約 1.43 s，能拿到<br><code>fm seek event have come freq=...</code>），但<strong>參數是壞的</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>我們傳的起點 freq</th>
+<th>驅動實際發出</th>
+<th>芯片回幀</th>
+<th>驅動回寫的”找到頻點”</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>974 (97.4MHz)</td>
+<td><code>at+fm=4,0,206</code></td>
+<td><code>3,139,0,9250</code></td>
+<td><strong>925 &#x3D; 92.5MHz</strong></td>
+</tr>
+<tr>
+<td>875 &#x2F; 1080 &#x2F; 900 &#x2F; 1000</td>
+<td><code>,0,107</code> &#x2F; <code>,0,56</code> &#x2F; <code>,0,132</code> &#x2F; <code>,0,232</code></td>
+<td><code>3,139,0,9250</code></td>
+<td><strong>925</strong></td>
+</tr>
+<tr>
+<td><strong>0</strong></td>
+<td><code>at+fm=4,0,0</code></td>
+<td><code>3,139,0,10310</code></td>
+<td><strong>1031 &#x3D; 103.1MHz</strong></td>
+</tr>
+</tbody></table>
+<ul>
+<li>驅動把 u16 的 freq <strong>只取低字節</strong>拼進 AT 幀 → 帶內頻點（875~1080）<strong>永遠傳不進去</strong>；</li>
+<li>AT 幀第 2 個參數<strong>恆為 0</strong>（把 <code>zero/band/one/pad</code> 改成 1&#x2F;2 都不變）；</li>
+<li>結果與<strong>當前頻點無關</strong>：先 TUNE 到 87.5 &#x2F; 97.4 &#x2F; 100.0 &#x2F; 103.1，再 <code>SEEK(0)</code>，四次都回 103.1。</li>
+</ul>
+<p>→ <strong>SEEK 退化成”92.5 或 103.1 二選一”，不是搜臺。UI 不應提供”搜臺”按鈕。</strong></p>
+<p>補充排除的兩條路：</p>
+<ul>
+<li><code>SCAN(0x08)</code> &#x2F; <code>SCAN_NEW(0x3c)</code>：返回 0 但<strong>零 SDIO 流量</strong>（空殼）；<code>STOP_SCAN(0x09)</code> 恆 <code>EINVAL(22)</code>。</li>
+<li><code>write(/dev/fm, &quot;at+fm=4,0,9740&quot;)</code> 想直接寫 AT 文本繞開驅動 bug → 恆定 **<code>-1 / EINVAL(22)</code>**，<br>dmesg 無任何 <code>fm_write_buf</code> → <strong>驅動不接收用戶態 AT 文本，此路不通</strong>。</li>
+</ul>
+<blockquote>
+<p>取證腳本：<code>ssh_tools/fm_seek_probe.c</code> &#x2F; <code>fm_seek_probe2.c</code> &#x2F; <code>fm_at_probe.c</code>（含 <code>_run.py</code>）。<br>完整數據見 <code>AI工作流/05_收音機/docs/FM收音_SEEK與場強_實測結論.md</code>。</p>
+</blockquote>
+<hr>
+<h2 id="五、未完成-待辦（★-2026-09-22-深夜續做後的最新狀態）"><a href="#五、未完成-待辦（★-2026-09-22-深夜續做後的最新狀態）" class="headerlink" title="五、未完成 &#x2F; 待辦（★ 2026-09-22 深夜續做後的最新狀態）"></a>五、未完成 &#x2F; 待辦（★ 2026-09-22 深夜續做後的最新狀態）</h2><h3 id="5-1-本輪已完成-✅"><a href="#5-1-本輪已完成-✅" class="headerlink" title="5.1 本輪已完成 ✅"></a>5.1 本輪已完成 ✅</h3><table>
+<thead>
+<tr>
+<th>#</th>
+<th>事項</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>5</td>
+<td><code>/tmp/btud_dbg.log</code> 加輪轉</td>
+<td>✅ <strong>129.9 MB → 65 KB</strong>，根分區 77% → 75%；裝了 busybox <code>crond</code>（整點跑 <code>/root/log_rotate.sh</code>）+ 開機自啟 <code>/etc/local.d/zz_crond.start</code>；實測日誌繼續正常增長、非稀疏文件</td>
+</tr>
+<tr>
+<td>1</td>
+<td>UI 場強區改誠實文案</td>
+<td>✅ 刪除 5 根假信號柱，改為「場強　本機不提供場強查詢」；截圖 <code>shots/dep_1E.png</code> 已驗收</td>
+</tr>
+<tr>
+<td>2</td>
+<td>去掉 <code>rssi</code> 無謂輪詢</td>
+<td>✅ 移除 <code>want_rssi</code> 邏輯（原來每次調臺後白等 4.2 s）；<code>rssi</code> 命令在 daemon 側保留供實驗</td>
+</tr>
+<tr>
+<td>—</td>
+<td>底部”音頻通路”文案</td>
+<td>✅ 改為「音頻輸出: 本機暫不可用（無可用通路）」，並<strong>移除</strong>了無效果的「切換音頻通路」按鈕（ANA_SWITCH 是空殼，留著只誤導）</td>
+</tr>
+<tr>
+<td>4</td>
+<td>整機音量控制</td>
+<td>✅ 優雅降級：首次探測 <code>tinymix</code> 不存在即置”不可用”，<strong>告警只出現一次</strong>（原來是每次拖滑塊 fork 一個必然返回 127 的 shell）；實測日誌 <code>grep -c &#39;Volume System&#39;</code> &#x3D; <strong>1</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>launcher_page.c</code> 過期註釋</td>
+<td>✅ 已改正（下標 8 現在是<strong>收音機</strong>，不是任務管理；保持行為不變）</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>radio_docs/</code> 文檔</td>
+<td>✅ 新增 <code>FM收音_SEEK與場強_實測結論.md</code>；在 <code>FM收音ioctl命令表_逆向還原.md</code> 頂部加了 <strong>§0.1 重要更正</strong>（推翻”SCAN&#x2F;SCAN_GETRSSI 可畫頻譜””SEEK 可搜臺””可寫 AT 文本”三條舊結論）</td>
+</tr>
+</tbody></table>
+<p><strong>本輪驗收截圖</strong></p>
+<table>
+<thead>
+<tr>
+<th>截圖</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>shots/fin_0.png</code></td>
+<td>桌面：12 個應用圖標齊全，「收音機」喇叭圖標正常，<strong>焦點框（粉色描邊）就落在「收音機」上</strong> → 直觀印證 <code>s_apps[]</code> 下標 8 &#x3D; 收音機</td>
+</tr>
+<tr>
+<td><code>shots/dep_1E.png</code> &#x2F; <code>shots/fin_1.png</code></td>
+<td>收音機頁 8 分區全部正確；「場強 本機不提供場強查詢」「音頻輸出: 本機暫不可用（無可用通路）」，無假信號柱、無 ANA 按鈕</td>
+</tr>
+</tbody></table>
+<p><strong>進程終態（設備實測）</strong><br><code>lvgl_demo 15468</code> + <code>lvgl_watchdog 15681</code>；<code>fm_user_daemon 2491</code> + <code>fm_watchdog 20199</code>；<br><code>bt_user_daemon 1222</code>、<code>wcnd 1155</code>、<code>crond 20905</code>（整點輪轉）</p>
+<h3 id="5-2-仍未完成-待用戶決定-⏳"><a href="#5-2-仍未完成-待用戶決定-⏳" class="headerlink" title="5.2 仍未完成 &#x2F; 待用戶決定 ⏳"></a>5.2 仍未完成 &#x2F; 待用戶決定 ⏳</h3><table>
+<thead>
+<tr>
+<th>#</th>
+<th>事項</th>
+<th>優先級</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td><strong>FM 出聲</strong></td>
+<td>阻塞（需拍板）</td>
+<td>用戶態已無解，三條路任選：(a) 動內核補 sprd-codec 的 DAPM route &#x2F; 修 stream 觸發；(b) 拿 BT 固件的「FM 直通」入口（HCI 廠商命令）；(c) 接受”FM 僅 UI&#x2F;控制可演示，無聲音”</td>
+</tr>
+<tr>
+<td>B</td>
+<td>索取新版 <code>bt_user_daemon</code> 源碼</td>
+<td>中</td>
+<td>若走 (b) 需要它</td>
+</tr>
+<tr>
+<td>C</td>
+<td>源碼入庫</td>
+<td>中</td>
+<td>按 AGENTS.md：先給文件清單 + 中文提交說明並<strong>獲用戶同意</strong>，<strong>禁止自動提交</strong>。清單見下</td>
+</tr>
+<tr>
+<td>D</td>
+<td>RDS 臺名</td>
+<td>低</td>
+<td><code>read(/dev/fm)</code> 能讀 688B 塊，但實測 <code>The PS is</code> 為空 → 當前環境收不到有效臺名</td>
+</tr>
+<tr>
+<td>E</td>
+<td>整機其它 <code>tinymix</code> 依賴</td>
+<td>低</td>
+<td>已優雅降級；真要修需先有 codec 播放音量控件（card1 的 120 個 kcontrol 裡<strong>沒有任何播放音量控件</strong>）</td>
+</tr>
+</tbody></table>
+<h3 id="5-3-待入庫文件清單（等用戶同意後再-commit）"><a href="#5-3-待入庫文件清單（等用戶同意後再-commit）" class="headerlink" title="5.3 待入庫文件清單（等用戶同意後再 commit）"></a>5.3 待入庫文件清單（等用戶同意後再 commit）</h3><p><strong>設備端倉庫 <code>/home/lvgl_demo/lvgl_demo</code>（git 已跟蹤）</strong></p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>改動</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>lv_pages/radio_page.c</code></td>
+<td>頁面本體（本會話：場強區誠實化、去掉假信號柱與 rssi 輪詢、底部音頻輸出文案、移除 ANA 按鈕）</td>
+</tr>
+<tr>
+<td><code>lv_pages/radio_page.h</code></td>
+<td>新增</td>
+</tr>
+<tr>
+<td><code>lv_pages/launcher_page.c</code></td>
+<td>收音機入口三處 + 過期註釋改正</td>
+</tr>
+<tr>
+<td><code>lv_status_bar/volume_control.c</code></td>
+<td>tinymix 缺失時優雅降級（告警只出一次）</td>
+</tr>
+<tr>
+<td><code>AI工作流/05_收音機/docs/FM收音_SEEK與場強_實測結論.md</code></td>
+<td>新增</td>
+</tr>
+<tr>
+<td><code>AI工作流/05_收音機/docs/FM收音ioctl命令表_逆向還原.md</code></td>
+<td>加 §0.1 重要更正 + 腳本表補充</td>
+</tr>
+</tbody></table>
+<p><strong>設備端倉庫外的運行期產物（是否入庫請定）</strong><br><code>/usr/local/bin/fm_user_daemon</code>、<code>/etc/local.d/zz_fm.start</code>、<code>/root/fm_watchdog.sh</code>、<br><code>/root/log_rotate.sh</code>、<code>/etc/local.d/zz_crond.start</code>、<code>/etc/crontabs/root</code></p>
+<p><strong>本地工程腳本 <code>ssh_tools/</code>（是否隨倉庫一起提交請定）</strong><br><code>fm_user_daemon.c</code>、<code>radio_deploy.py</code>、<code>build_deploy.py</code>、<code>pull_file.py</code>、<code>log_rotate_install.py</code>、<br><code>fm_seek_probe.c</code>&#x2F;<code>fm_seek_probe2.c</code>&#x2F;<code>fm_at_probe.c</code>（含 <code>_run.py</code>）、<code>fm_tune_probe.c</code>（含 <code>_run.py</code>）、<br><code>fm_live_check.py</code>、<code>fm_rssi_sweep.py</code>、<code>fm_rssi_trace.py</code>、<code>fm_sigcmd_trace.py</code>、<code>fm_any.c</code>、<code>pcm_rec.c</code>、<code>dapm_graph2.py</code></p>
+<hr>
+<h2 id="六、驗收命令速查"><a href="#六、驗收命令速查" class="headerlink" title="六、驗收命令速查"></a>六、驗收命令速查</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 設備: &lt;設備IP&gt;   (root / &lt;密碼&gt;，真實憑據只在運行參數裡給，勿寫入公開文檔)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># FM 狀態</span></span><br><span class="line">python3 /root/fm_cli.py state</span><br><span class="line"></span><br><span class="line"><span class="comment"># 上電 / 調臺 / 音量 / 靜音</span></span><br><span class="line">python3 /root/fm_cli.py on</span><br><span class="line">python3 /root/fm_cli.py <span class="string">&#x27;tune 97400&#x27;</span></span><br><span class="line">python3 /root/fm_cli.py <span class="string">&#x27;vol 12&#x27;</span></span><br><span class="line">python3 /root/fm_cli.py <span class="string">&#x27;mute 0&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 看驅動真實收發（判斷命令是不是空殼）</span></span><br><span class="line">dmesg | grep -E <span class="string">&#x27;FM_DRV|fm_sdio&#x27;</span> | <span class="built_in">tail</span> -40</span><br></pre></td></tr></table></figure>
+
+<p><strong>Windows 側工具腳本</strong>（<code>ssh_tools/</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>腳本</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>radio_enter_test.py [鍵序列]</code></td>
+<td>停 watchdog → 乾淨重啟應用 → 截圖 → 按鍵 → 截圖，並把應用日誌 tail 出來</td>
+</tr>
+<tr>
+<td><code>fm_live_check.py</code></td>
+<td>daemon 命令鏈 → 收音機頁截圖 → 返回鍵 → 桌面截圖</td>
+</tr>
+<tr>
+<td><code>fm_rssi_sweep.py</code></td>
+<td>多頻點 RSSI 掃描</td>
+</tr>
+<tr>
+<td><code>fm_rssi_trace.py</code></td>
+<td>抓單次 tune+RSSI 的完整 FM 驅動日誌</td>
+</tr>
+<tr>
+<td><code>fm_tune_probe.c</code> &#x2F; <code>fm_tune_probe_run.py</code></td>
+<td>直接 dump ioctl 回寫的 32 字節結構體（判斷驅動寫了什麼）</td>
+</tr>
+<tr>
+<td><code>fm_sigcmd_trace.py</code></td>
+<td>乾淨 dmesg 下測試信號類命令，看是否有 SDIO 流量</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="七、下一步建議（已按本輪結果更新）"><a href="#七、下一步建議（已按本輪結果更新）" class="headerlink" title="七、下一步建議（已按本輪結果更新）"></a>七、下一步建議（已按本輪結果更新）</h2><ol>
+<li><del>先把磁盤救回來</del> ✅ <strong>已完成</strong>（129.9 MB → 65 KB，並裝了整點輪轉）。</li>
+<li><del>信號區改成誠實文案</del> ✅ <strong>已完成</strong>。</li>
+<li><del>補 <code>seek</code>&#x2F;<code>scan</code>&#x2F;<code>stopscan</code></del> ❌ <strong>已證偽，不做</strong>：<code>SEEK</code> 參數被驅動截斷、<code>SCAN</code> 是空殼，<br>做了就是”假搜臺”。<strong>不要把不可靠的能力做成按鈕</strong>。</li>
+<li><strong>出聲需要用戶拍板</strong>（唯一真阻塞）：動內核補 DAPM 路由、去要新版藍牙協議棧源碼、<br>還是接受”僅 UI&#x2F;控制可演示”。</li>
+<li>源碼入庫走審批（AGENTS.md：先給清單 + 中文提交說明，<strong>禁止自動提交</strong>）——<br>清單見 §5.3。</li>
+<li>可選小優化：把 <code>/root/log_rotate.sh</code> 的閾值（現 20 MB）與要監控的日誌列表做成可配，<br>方便以後加新 daemon 的日誌。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#FM-%E6%94%B6%E9%9F%B3%E6%A9%9F-%E2%80%94%E2%80%94-%E9%80%B2%E5%BA%A6%E5%BF%AB%E7%85%A7%EF%BC%882026-09-22%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">FM 收音機 —— 進度快照（2026-09-22）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B5%90%E8%AB%96"><span class="toc-number">1.1.</span> <span class="toc-text">一、一句話結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%B7%B2%E5%AE%8C%E6%88%90%E4%B8%A6%E9%A9%97%E6%94%B6%EF%BC%88%E5%85%A8%E9%83%A8%E7%82%BA%E8%A8%AD%E5%82%99%E5%AF%A6%E6%B8%AC%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">二、已完成並驗收（全部為設備實測）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-FM-daemon-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E5%BA%A6-100-%EF%BC%88%E6%9C%AC%E6%A9%9F%E5%8F%AF%E7%94%A8%E7%9A%84%E5%91%BD%E4%BB%A4%EF%BC%89"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 FM daemon —— 完成度 100%（本機可用的命令）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-LVGL-%E6%94%B6%E9%9F%B3%E6%A9%9F%E9%A0%81%E9%9D%A2-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E5%BA%A6-100-%EF%BC%888-%E5%88%86%E5%8D%80%E5%85%A8%E9%83%A8%E6%AD%A3%E7%A2%BA%E6%B8%B2%E6%9F%93%EF%BC%89"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 LVGL 收音機頁面 —— 完成度 100%（8 分區全部正確渲染）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E9%A0%81%E9%9D%A2%E9%80%B2%E5%85%A5-%E8%BF%94%E5%9B%9E-%E2%80%94%E2%80%94-%E6%9C%AC%E6%AC%A1%E5%B7%B2%E9%96%89%E7%92%B0%E9%A9%97%E6%94%B6"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 頁面進入 &#x2F; 返回 —— 本次已閉環驗收</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-%E6%A1%8C%E9%9D%A2%E5%85%A5%E5%8F%A3-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E5%BA%A6-100"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4 桌面入口 —— 完成度 100%</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-%E9%96%8B%E6%A9%9F%E8%87%AA%E5%95%9F-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E5%BA%A6-100-%EF%BC%8C%E5%B7%B2%E5%AF%A6%E6%B8%AC%E9%A9%97%E9%81%8E"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5 開機自啟 —— 完成度 100%，已實測驗過</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%9C%AC%E6%AC%A1%E4%BF%AE%E6%AD%A3%E7%9A%84%E8%88%8A%E7%B5%90%E8%AB%96%EF%BC%88%E9%87%8D%E8%A6%81%EF%BC%8C%E5%88%A5%E5%86%8D%E6%8C%89%E8%88%8A%E7%9A%84%E5%81%9A%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、本次修正的舊結論（重要，別再按舊的做）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E2%80%9C%E9%9F%B3%E9%A0%BB%E9%A1%9E-ioctl-%E5%8F%AF%E4%BB%A5%E9%85%8D%E9%80%9A%E9%9F%B3%E9%A0%BB%E9%80%9A%E8%B7%AF%E2%80%9D-%E2%86%92-%E5%85%A8%E6%98%AF%E7%A9%BA%E6%AE%BC"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 “音頻類 ioctl 可以配通音頻通路” → 全是空殼</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E2%80%9C%E6%8C%89%E5%BB%A0%E5%95%86-tiny-hw-xml-%E9%96%8B-Speaker-%E5%B0%B1%E8%83%BD%E5%87%BA%E8%81%B2%E2%80%9D-%E2%86%92-%E5%85%A7%E6%A0%B8%E8%A3%A1%E4%B8%8D%E5%AD%98%E5%9C%A8%E8%A9%B2%E8%B7%AF%E7%94%B1"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 “按廠商 tiny_hw.xml 開 Speaker 就能出聲” → 內核裡不存在該路由</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E2%80%9Cdaemon-%E7%A9%A9%E5%AE%9A%E2%80%9D-%E2%86%92-%E6%9B%BE%E5%9B%A0-SIGPIPE-%E9%9D%9C%E9%BB%98%E9%80%80%E5%87%BA%EF%BC%8C%E5%B7%B2%E4%BF%AE"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 “daemon 穩定” → 曾因 SIGPIPE 靜默退出，已修</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E2%80%9CSEEK-SCAN-%E5%8F%AF%E7%94%A8%EF%BC%8C%E8%83%BD%E6%90%9C%E8%87%BA%E2%80%9D-%E2%86%92-SEEK-%E5%8F%83%E6%95%B8%E8%A2%AB%E6%88%AA%E6%96%B7%E3%80%81SCAN-%E6%98%AF%E7%A9%BA%E6%AE%BC%EF%BC%88%E6%9C%AC%E8%BC%AA%E6%96%B0%E5%A2%9E%EF%BC%89"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4 “SEEK&#x2F;SCAN 可用，能搜臺” → SEEK 參數被截斷、SCAN 是空殼（本輪新增）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-%E2%80%9C%E4%BF%A1%E8%99%9F%E5%BC%B7%E5%BA%A6%E5%8F%AF%E4%BB%A5%E8%AE%80%E5%88%B0%E2%80%9D-%E2%86%92-%E6%8B%BF%E4%B8%8D%E5%88%B0%E5%8F%AF%E4%BF%A1%E5%A0%B4%E5%BC%B7%EF%BC%88%E6%9C%AC%E8%BC%AA%E6%96%B0%E5%A2%9E%EF%BC%89"><span class="toc-number">1.3.5.</span> <span class="toc-text">3.5 “信號強度可以讀到” → 拿不到可信場強（本輪新增）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%98%BB%E5%A1%9E%E9%A0%85%E8%88%87%E4%B8%8D%E5%8F%AF%E8%A1%8C%E9%A0%85%EF%BC%88%E7%94%A8%E6%88%B6%E6%85%8B%E5%B7%B2%E7%84%A1%E8%A7%A3%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">四、阻塞項與不可行項（用戶態已無解）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-FM-%E5%87%BA%E8%81%B2-%E2%80%94%E2%80%94-%E2%9D%8C-%E7%94%A8%E6%88%B6%E6%85%8B%E7%84%A1%E8%A7%A3%EF%BC%88%E7%B5%90%E8%AB%96%E5%B7%B2%E5%AE%9A%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 FM 出聲 —— ❌ 用戶態無解（結論已定）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E4%BF%A1%E8%99%9F%E5%BC%B7%E5%BA%A6%E8%A1%A8-%E2%80%94%E2%80%94-%E2%9D%8C-%E7%A1%AC%E4%BB%B6%E4%B8%8D%E6%8F%90%E4%BE%9B%E5%8F%AF%E7%94%A8%E7%9A%84%E6%9F%A5%E8%A9%A2"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 信號強度表 —— ❌ 硬件不提供可用的查詢</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E6%90%9C%E8%87%BA%EF%BC%88SEEK%EF%BC%89%E2%80%94%E2%80%94-%E2%9D%8C-%E5%8F%83%E6%95%B8%E8%A2%AB%E9%A9%85%E5%8B%95%E6%88%AA%E6%96%B7%EF%BC%8C%E4%B8%8D%E8%83%BD%E5%81%9A%E2%80%9D%E4%B8%8B%E4%B8%80%E5%80%8B%E9%9B%BB%E8%87%BA%E2%80%9D"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 搜臺（SEEK）—— ❌ 參數被驅動截斷，不能做”下一個電臺”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%9C%AA%E5%AE%8C%E6%88%90-%E5%BE%85%E8%BE%A6%EF%BC%88%E2%98%85-2026-09-22-%E6%B7%B1%E5%A4%9C%E7%BA%8C%E5%81%9A%E5%BE%8C%E7%9A%84%E6%9C%80%E6%96%B0%E7%8B%80%E6%85%8B%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">五、未完成 &#x2F; 待辦（★ 2026-09-22 深夜續做後的最新狀態）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E6%9C%AC%E8%BC%AA%E5%B7%B2%E5%AE%8C%E6%88%90-%E2%9C%85"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 本輪已完成 ✅</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E4%BB%8D%E6%9C%AA%E5%AE%8C%E6%88%90-%E5%BE%85%E7%94%A8%E6%88%B6%E6%B1%BA%E5%AE%9A-%E2%8F%B3"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 仍未完成 &#x2F; 待用戶決定 ⏳</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E5%BE%85%E5%85%A5%E5%BA%AB%E6%96%87%E4%BB%B6%E6%B8%85%E5%96%AE%EF%BC%88%E7%AD%89%E7%94%A8%E6%88%B6%E5%90%8C%E6%84%8F%E5%BE%8C%E5%86%8D-commit%EF%BC%89"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 待入庫文件清單（等用戶同意後再 commit）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%A9%97%E6%94%B6%E5%91%BD%E4%BB%A4%E9%80%9F%E6%9F%A5"><span class="toc-number">1.6.</span> <span class="toc-text">六、驗收命令速查</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5%E5%BB%BA%E8%AD%B0%EF%BC%88%E5%B7%B2%E6%8C%89%E6%9C%AC%E8%BC%AA%E7%B5%90%E6%9E%9C%E6%9B%B4%E6%96%B0%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">七、下一步建議（已按本輪結果更新）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&text=FM收音機_進度快照_20260922"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&title=FM收音機_進度快照_20260922"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&is_video=false&description=FM收音機_進度快照_20260922"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音機_進度快照_20260922&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&title=FM收音機_進度快照_20260922"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&title=FM收音機_進度快照_20260922"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&title=FM收音機_進度快照_20260922"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&title=FM收音機_進度快照_20260922"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/fm-progress/&name=FM收音機_進度快照_20260922&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

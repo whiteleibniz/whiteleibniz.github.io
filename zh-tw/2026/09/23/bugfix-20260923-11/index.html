@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_11 — GBA 退出卡黑屏，且 FC 被牽連（前端徹底分離）   項目 內容    發現時間 2026-09-23   修復時間 2026-09-23   模塊 extern&#x2F;miniretro&#x2F;*（新增分離產物）、lv_pages&#x2F;gba_game_page.c   涉及版本 承接 bugfix_20260923_10 之後的現場   現象等級 高（GBA 退出">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA退出卡黑屏與FC被汙染_前端分離">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_11 — GBA 退出卡黑屏，且 FC 被牽連（前端徹底分離）   項目 內容    發現時間 2026-09-23   修復時間 2026-09-23   模塊 extern&#x2F;miniretro&#x2F;*（新增分離產物）、lv_pages&#x2F;gba_game_page.c   涉及版本 承接 bugfix_20260923_10 之後的現場   現象等級 高（GBA 退出">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:45.859Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA退出卡黑屏與FC被汙染_前端分離</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/bugfix-20260923-10/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/bugfix-20260923-12/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&text=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&title=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&is_video=false&description=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出卡黑屏與FC被汙染_前端分離&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&title=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&title=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&title=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&title=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&name=GBA退出卡黑屏與FC被汙染_前端分離&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-11-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E5%8D%A1%E9%BB%91%E5%B1%8F%EF%BC%8C%E4%B8%94-FC-%E8%A2%AB%E7%89%BD%E9%80%A3%EF%BC%88%E5%89%8D%E7%AB%AF%E5%BE%B9%E5%BA%95%E5%88%86%E9%9B%A2%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_11 — GBA 退出卡黑屏，且 FC 被牽連（前端徹底分離）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%95%8F%E9%A1%8C%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 問題現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E2%98%85-%E7%AD%89%E5%BE%85%E5%BE%AA%E7%92%B0%E8%A8%AD%E4%BA%86%E2%80%9D%E8%B7%91%E6%BB%BF-N-%E7%A7%92%E5%B0%B1%E7%AE%97%E9%80%80%E5%87%BA%E2%80%9D%E7%9A%84%E4%B8%8A%E9%99%90%EF%BC%88%E5%8D%A1%E9%BB%91%E5%B1%8F%E7%9A%84%E7%9B%B4%E6%8E%A5%E5%8E%9F%E5%9B%A0%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 ★ 等待循環設了”跑滿 N 秒就算退出”的上限（卡黑屏的直接原因）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-UI-%E6%81%A2%E5%BE%A9%E8%A2%AB%E7%B6%81%E5%9C%A8%E2%80%9D%E5%AD%90%E9%80%B2%E7%A8%8B%E6%B6%88%E5%A4%B1%E2%80%9D%E4%B8%8A%EF%BC%88%E6%8A%8A%E9%BB%91%E5%B1%8F%E6%8B%89%E9%95%B7%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 UI 恢復被綁在”子進程消失”上（把黑屏拉長）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E7%B4%B0%E7%AF%80%E5%95%8F%E9%A1%8C"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 細節問題</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E7%B5%90%E6%A7%8B%E6%80%A7%E6%A0%B9%E5%9B%A0%EF%BC%9A%E5%85%B1%E7%94%A8%E5%89%8D%E7%AB%AF"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4 結構性根因：共用前端</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%BE%A9%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修復方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E2%98%85-%E5%89%8D%E7%AB%AF%E5%BE%B9%E5%BA%95%E5%88%86%E9%9B%A2%EF%BC%88%E7%94%A8%E6%88%B6%E6%96%B9%E6%A1%88%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 ★ 前端徹底分離（用戶方案）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E9%80%80%E5%87%BA%E9%82%8F%E8%BC%AF%E5%9B%9B%E9%A0%85%E4%BF%AE%E5%BE%A9%EF%BC%88%E5%8F%AA%E8%90%BD%E5%9C%A8-GBA-%E9%A0%81%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 退出邏輯四項修復（只落在 GBA 頁）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%A9%97%E8%AD%89%E6%96%B9%E6%B3%95%E8%88%87%E7%B5%90%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 驗證方法與結果</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E5%88%86%E9%9B%A2%E7%B5%90%E6%9E%9C%E6%A0%A1%E9%A9%97%EF%BC%88%E8%A8%AD%E5%82%99%E7%AB%AF%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 分離結果校驗（設備端）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E5%85%A9%E5%80%8B%E5%89%8D%E7%AB%AF%E5%90%84%E8%87%AA%E5%AF%A6%E8%B7%91%EF%BC%88ssh-tools-split-verify-py%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 兩個前端各自實跑（ssh_tools&#x2F;split_verify.py）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E9%83%A8%E7%BD%B2%E8%85%B3%E6%9C%AC%E7%9A%84%E4%B8%80%E8%99%95%E4%BF%AE%E6%AD%A3"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 部署腳本的一處修正</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E8%BF%B4%E6%AD%B8%E9%A2%A8%E9%9A%AA"><span class="toc-number">1.6.</span> <span class="toc-text">6. 迴歸風險</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相關文件</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA退出卡黑屏與FC被汙染_前端分離
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-11-—-GBA-退出卡黑屏，且-FC-被牽連（前端徹底分離）"><a href="#bugfix-20260923-11-—-GBA-退出卡黑屏，且-FC-被牽連（前端徹底分離）" class="headerlink" title="bugfix_20260923_11 — GBA 退出卡黑屏，且 FC 被牽連（前端徹底分離）"></a>bugfix_20260923_11 — GBA 退出卡黑屏，且 FC 被牽連（前端徹底分離）</h1><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>發現時間</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>修復時間</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>模塊</td>
+<td><code>extern/miniretro/*</code>（新增分離產物）、<code>lv_pages/gba_game_page.c</code></td>
+</tr>
+<tr>
+<td>涉及版本</td>
+<td>承接 bugfix_20260923_10 之後的現場</td>
+</tr>
+<tr>
+<td>現象等級</td>
+<td>高（GBA 退出不可用，且把原本正常的 FC 一起帶壞）</td>
+</tr>
+</tbody></table>
+<h2 id="1-問題現象"><a href="#1-問題現象" class="headerlink" title="1. 問題現象"></a>1. 問題現象</h2><p>用戶連續兩輪反饋：</p>
+<ol>
+<li>「退出邏輯還是有問題 <strong>還是卡黑屏</strong>」；</li>
+<li>「<strong>把 GBA 的和 FC 的 miniretro 分開吧</strong>，FC 原來版本都是好用的，被 GBA 修改的汙染了，<br>導致 FC 的 miniretro 也不好用了，導致 FC 不能玩，退出莫名其妙。」</li>
+</ol>
+<p>第 2 條是關鍵判斷：<strong>兩個遊戲頁共用一個前端二進制，改 GBA 必然波及 FC</strong>。用戶的訴求<br>（物理隔離）比”繼續在共用件上打補丁”更正確。</p>
+<h2 id="2-影響範圍"><a href="#2-影響範圍" class="headerlink" title="2. 影響範圍"></a>2. 影響範圍</h2><ul>
+<li>GBA 遊戲頁：退出後黑屏、退出鍵失效；</li>
+<li>FC 遊戲頁：被同一份 <code>miniretro</code> 的改動連帶影響，退出異常；</li>
+<li>根因層面：任何”多個頁面共用一個可執行前端”的設計，都是這類跨模塊汙染的溫床。</li>
+</ul>
+<h2 id="3-根因分析"><a href="#3-根因分析" class="headerlink" title="3. 根因分析"></a>3. 根因分析</h2><h3 id="3-1-★-等待循環設了”跑滿-N-秒就算退出”的上限（卡黑屏的直接原因）"><a href="#3-1-★-等待循環設了”跑滿-N-秒就算退出”的上限（卡黑屏的直接原因）" class="headerlink" title="3.1 ★ 等待循環設了”跑滿 N 秒就算退出”的上限（卡黑屏的直接原因）"></a>3.1 ★ 等待循環設了”跑滿 N 秒就算退出”的上限（卡黑屏的直接原因）</h3><p><code>gba_wait_thread</code> 原來寫成”等夠一定時長就往下走”：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">600</span>; i++) &#123;           <span class="comment">/* 600 × 5ms = 3s（更早是 500ms + 5s 兩段） */</span></span><br><span class="line">    ...等信號 / 等子進程退出...</span><br><span class="line">    usleep(<span class="number">5</span> * <span class="number">1000</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/* 循環結束後【無條件】恢復 UI */</span></span><br><span class="line">hardware_keys_set_grab(<span class="literal">true</span>);</span><br><span class="line">hardware_keys_set_interceptor(<span class="literal">NULL</span>, <span class="literal">NULL</span>);   <span class="comment">/* ← 摘掉按鍵攔截器 */</span></span><br><span class="line">app_runtime_set_lvgl_paused(<span class="literal">false</span>);          <span class="comment">/* ← LVGL 搶回 fb0 */</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>遊戲正常跑滿 3 秒</strong>，就滿足”循環結束”這個條件，於是：</p>
+<ol>
+<li><code>hardware_keys_set_interceptor(NULL, NULL)</code> 把按鍵攔截器摘掉 → <strong>買單鍵不再被攔截 → 退不出遊戲</strong>；</li>
+<li><code>app_runtime_set_lvgl_paused(false)</code> 讓 LVGL 恢復繪製 → <strong>父進程搶回 fb0，與還在跑的遊戲互相覆蓋</strong>；</li>
+<li>兩者疊加 &#x3D; 用戶看到的「<strong>卡黑屏</strong>」，且<strong>只能重啟</strong>。</li>
+</ol>
+<p><strong>這正是”FC 沒問題、GBA 有問題”的分水嶺</strong>：FC 頁用的是<strong>阻塞式</strong><br><code>while(waitpid(pid, &amp;status, 0) &lt; 0) &#123;...&#125;</code>（無上限），所以從來不誤判。<br>GBA 頁當初為了”快點恢復 UI”引入了上限，反而製造了 bug。</p>
+<h3 id="3-2-UI-恢復被綁在”子進程消失”上（把黑屏拉長）"><a href="#3-2-UI-恢復被綁在”子進程消失”上（把黑屏拉長）" class="headerlink" title="3.2 UI 恢復被綁在”子進程消失”上（把黑屏拉長）"></a>3.2 UI 恢復被綁在”子進程消失”上（把黑屏拉長）</h3><p>本機內核回收 <code>/dev/input/eventX</code> 要幾百毫秒，實測<strong>從發信號到收屍完成 ~455ms</strong>，<br>而畫面在 ~40ms 就已交還。等收屍才恢復 UI，就白等了 400ms —— 這段時間屏幕全黑。</p>
+<h3 id="3-3-細節問題"><a href="#3-3-細節問題" class="headerlink" title="3.3 細節問題"></a>3.3 細節問題</h3><ul>
+<li><code>gba_timer_cb</code> 只 <code>lv_obj_invalidate(lv_screen_active())</code> 一次，可能與 LVGL 恢復的<br>時序錯開而被吞掉（標誌已消費、畫面卻沒畫回來）；</li>
+<li><code>fb_restore()</code> 調 <code>FBIOPAN_DISPLAY</code> 後<strong>不檢查結果</strong>：若 <code>yoffset</code> 沒真的歸零，<br>LVGL 會畫在第 0 頁而屏幕仍顯示第 1 頁 → <strong>永久黑屏且完全靜默</strong>，無法定位。</li>
+</ul>
+<h3 id="3-4-結構性根因：共用前端"><a href="#3-4-結構性根因：共用前端" class="headerlink" title="3.4 結構性根因：共用前端"></a>3.4 結構性根因：共用前端</h3><p>FC 與 GBA 共用 <code>extern/miniretro/miniretro</code>。為 GBA 加的 <strong>雙緩衝頁翻轉、pitch 尋址、<br>240×160 放行、音頻重採樣、退出信號處理</strong> 全都落在這一份共用產物上。FC 因此被反覆牽連 ——<br>這是”改 A 壞 B”的必然結果，不是某一次改動沒寫好。</p>
+<h2 id="4-修復方案"><a href="#4-修復方案" class="headerlink" title="4. 修復方案"></a>4. 修復方案</h2><h3 id="4-1-★-前端徹底分離（用戶方案）"><a href="#4-1-★-前端徹底分離（用戶方案）" class="headerlink" title="4.1 ★ 前端徹底分離（用戶方案）"></a>4.1 ★ 前端徹底分離（用戶方案）</h3><table>
+<thead>
+<tr>
+<th>產物</th>
+<th>歸屬</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>extern/miniretro/miniretro</code></td>
+<td><strong>FC 專用</strong></td>
+<td><code>git checkout</code> 恢復成倉庫裡的原始版本，<strong>此後永不重編、不被 GBA 改動觸碰</strong></td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro_gba</code></td>
+<td><strong>GBA 專用</strong></td>
+<td>含雙緩衝&#x2F;pitch&#x2F;240×160&#x2F;音頻修正&#x2F;退出修復</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro_gba.c</code></td>
+<td>GBA 源碼</td>
+<td></td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro.c</code></td>
+<td>FC 源碼</td>
+<td>已隨二進制一併還原成原始版本</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/build.sh</code></td>
+<td>—</td>
+<td>**只編 <code>miniretro_gba</code>**，並在腳本頭寫明”不要再把產物寫成 miniretro”</td>
+</tr>
+</tbody></table>
+<p>頁面側 <code>gba_find_bin()</code> 的首選路徑改為 <code>miniretro_gba</code>，並保留 <code>miniretro</code> 作為兜底：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">char</span> *c[] = &#123;</span><br><span class="line">    GBA_EXTERN_DIR <span class="string">&quot;/miniretro_gba&quot;</span>,     <span class="comment">/* ★ GBA 專用, 與 FC 隔離 */</span></span><br><span class="line">    <span class="string">&quot;/usr/local/bin/miniretro_gba&quot;</span>,</span><br><span class="line">    GBA_EXTERN_DIR <span class="string">&quot;/miniretro&quot;</span>,          <span class="comment">/* 兜底: 尚未分離時仍可用 */</span></span><br><span class="line">    <span class="string">&quot;/usr/local/bin/miniretro&quot;</span>,</span><br><span class="line">    <span class="literal">NULL</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-退出邏輯四項修復（只落在-GBA-頁）"><a href="#4-2-退出邏輯四項修復（只落在-GBA-頁）" class="headerlink" title="4.2 退出邏輯四項修復（只落在 GBA 頁）"></a>4.2 退出邏輯四項修復（只落在 GBA 頁）</h3><ol>
+<li><p><strong>等待循環去掉時長上限</strong>，只認兩個真實終止條件：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span>(;;) &#123;</span><br><span class="line">    <span class="keyword">if</span>(s_gba.exiting) <span class="keyword">break</span>;                        <span class="comment">/* 頁面發起退出: 畫面已交還 */</span></span><br><span class="line">    <span class="type">pid_t</span> r = waitpid(pid, &amp;status, WNOHANG);</span><br><span class="line">    <span class="keyword">if</span>(r == pid || (r &lt; <span class="number">0</span> &amp;&amp; errno == ECHILD)) &#123; reaped = <span class="literal">true</span>; <span class="keyword">break</span>; &#125;   <span class="comment">/* 自然退出 */</span></span><br><span class="line">    usleep(<span class="number">5</span> * <span class="number">1000</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>新增 <code>exiting</code> 標誌：畫面一交還就恢復 UI，不等收屍</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* gba_exit_to_list: */</span></span><br><span class="line">kill(pid, SIGTERM);</span><br><span class="line">usleep(<span class="number">120</span> * <span class="number">1000</span>);                     <span class="comment">/* 等它翻回第 0 頁 + 清屏(實測 ~40ms 完成) */</span></span><br><span class="line"><span class="keyword">if</span>(kill(pid, <span class="number">0</span>) == <span class="number">0</span>) kill(pid, SIGKILL);   <span class="comment">/* 不等內核慢慢收 fd */</span></span><br><span class="line">s_gba.exiting = <span class="literal">true</span>;                   <span class="comment">/* 立刻放行 UI; 收屍丟後臺 */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* gba_wait_thread: 未收屍則交後臺, 不阻塞畫面 */</span></span><br><span class="line"><span class="keyword">if</span>(!reaped) &#123; pthread_create(..., gba_reap_bg, ...); &#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>恢復時連刷 3 幀</strong>，不依賴單次 invalidate：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">lv_obj_invalidate(lv_screen_active());</span><br><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) lv_refr_now(<span class="literal">NULL</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong><code>fb_restore()</code> 校驗翻頁結果</strong>：只在 <code>yoffset != 0</code> 時才 pan，pan 後回讀確認，<br>不歸零就打警告日誌（把”永久黑屏且無任何線索”變成可定位）。</p>
+</li>
+</ol>
+<p>同時給等待線程加了”仍是我這一局的 pid”判斷，避免上一局的線程醒來把新一局的狀態清掉。</p>
+<h2 id="5-驗證方法與結果"><a href="#5-驗證方法與結果" class="headerlink" title="5. 驗證方法與結果"></a>5. 驗證方法與結果</h2><h3 id="5-1-分離結果校驗（設備端）"><a href="#5-1-分離結果校驗（設備端）" class="headerlink" title="5.1 分離結果校驗（設備端）"></a>5.1 分離結果校驗（設備端）</h3><table>
+<thead>
+<tr>
+<th>項</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>miniretro</code> 工作區 md5</td>
+<td><code>a95d9171d8d8b82a52c12ac84e68aaa2</code></td>
+</tr>
+<tr>
+<td><code>git show HEAD:...miniretro</code> md5</td>
+<td><code>a95d9171d8d8b82a52c12ac84e68aaa2</code>（<strong>完全一致 &#x3D; 已還原</strong>）</td>
+</tr>
+<tr>
+<td>HEAD 版含 <code>RELEASE_SIGNAL</code> &#x2F; <code>on_quit_signal</code></td>
+<td>0 &#x2F; 0（確認是純 FC 版，不含 GBA 改動）</td>
+</tr>
+<tr>
+<td><code>miniretro_gba</code> md5</td>
+<td><code>2b958d4f8fcec85b6f2668985848887b</code>（與上者不同 &#x3D; 真正分離）</td>
+</tr>
+<tr>
+<td>體積</td>
+<td><code>miniretro</code> 25648 B ／ <code>miniretro_gba</code> 35404 B</td>
+</tr>
+<tr>
+<td>編譯</td>
+<td><code>make -j2</code> RC&#x3D;0，0 error</td>
+</tr>
+</tbody></table>
+<h3 id="5-2-兩個前端各自實跑（ssh-tools-split-verify-py）"><a href="#5-2-兩個前端各自實跑（ssh-tools-split-verify-py）" class="headerlink" title="5.2 兩個前端各自實跑（ssh_tools/split_verify.py）"></a>5.2 兩個前端各自實跑（<code>ssh_tools/split_verify.py</code>）</h3><table>
+<thead>
+<tr>
+<th></th>
+<th>前端</th>
+<th>核心</th>
+<th>畫面（非黑像素比）</th>
+<th>退出碼</th>
+<th>收屍耗時</th>
+<th>退出後 yoffset</th>
+<th>殭屍</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>FC</td>
+<td><code>miniretro</code>（原版）</td>
+<td>fceumm</td>
+<td>0.600 ✓</td>
+<td>-15（被 SIGTERM 直接殺，原版行為）</td>
+<td>549 ms</td>
+<td>0 ✓</td>
+<td>無</td>
+</tr>
+<tr>
+<td>GBA</td>
+<td><code>miniretro_gba</code></td>
+<td>mGBA</td>
+<td>0.380 ✓</td>
+<td>0（優雅退出）</td>
+<td>575 ms</td>
+<td>0 ✓</td>
+<td>無</td>
+</tr>
+</tbody></table>
+<ul>
+<li>FC 退出碼 -15 符合”原版無信號處理”的預期；其頁面側在 120ms 後探測到進程已消失，<br>直接恢復 UI —— 這正是用戶記憶中”FC 原來好用”的表現。</li>
+<li>GBA 側 <code>exiting</code> 標誌使 UI 在 ~125ms 即可恢復，收屍移到後臺；<code>yoffset</code> 歸零確認無黑屏隱患。</li>
+<li>恢復後 <code>lvgl_demo</code> ×1 + <code>lvgl_watchdog</code> ×1，單實例，無殘留。</li>
+</ul>
+<h3 id="5-3-部署腳本的一處修正"><a href="#5-3-部署腳本的一處修正" class="headerlink" title="5.3 部署腳本的一處修正"></a>5.3 部署腳本的一處修正</h3><p><code>gba_redeploy.py</code> 用 <code>ps -o pid,args | grep &#39;&lt;名&gt;&#39;</code> 取 PID 來 kill，<br>而<strong>該命令自身的命令行含這個字符串</strong> → 匹配到承載命令的 <code>sh -c</code> → <strong>殺掉自己的 SSH 連接</strong><br>（本次實測 <code>ConnectionResetError</code>）。已統一改為 <code>ps -o pid,comm</code>（承載 shell 的 <code>comm</code> 是 <code>sh</code>，<br>不會誤傷），見 <code>split_miniretro_gba.py</code> &#x2F; <code>split_verify.py</code>。</p>
+<h2 id="6-迴歸風險"><a href="#6-迴歸風險" class="headerlink" title="6. 迴歸風險"></a>6. 迴歸風險</h2><ul>
+<li><strong><code>miniretro</code> 已還原為原版</strong>：FC 側要的任何未來改動都必須<strong>獨立</strong>做，且不能再走<br>“重編 miniretro” 這條路（<code>build.sh</code> 已只產 <code>miniretro_gba</code>）。若確需改 FC，<br>應先 <code>git checkout</code> 一份到別的名字（如 <code>miniretro_fc</code>）再改，保持三者互不干擾。</li>
+<li>**GBA 側不再有”時長上限”**：等待線程在遊戲運行期間會一直循環（每 5ms 一次，開銷可忽略）。<br>這是刻意選擇 —— 寧可多轉幾次，也不能誤判成”已退出”。</li>
+<li><code>gba_reap_bg</code> &#x2F; <code>onDestroy</code> 兩條收屍路徑都可能對同一 pid <code>waitpid</code>，雙方均已處理 <code>ECHILD</code>。</li>
+<li>本次未改渲染與音頻鏈路，顏色、音質、幀率不應有變化。</li>
+</ul>
+<h2 id="7-相關文件"><a href="#7-相關文件" class="headerlink" title="7. 相關文件"></a>7. 相關文件</h2><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>extern/miniretro/miniretro</code></td>
+<td>FC 專用前端，還原為 git 原版（25648 B）</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro.c</code></td>
+<td>同上，源碼還原</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro_gba</code></td>
+<td>GBA 專用前端（35404 B）</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro_gba.c</code></td>
+<td>GBA 源碼（含退出修復）</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/build.sh</code></td>
+<td>改為只編 <code>miniretro_gba</code>，原子替換</td>
+</tr>
+<tr>
+<td><code>lv_pages/gba_game_page.c</code></td>
+<td><code>gba_find_bin</code> 優先 <code>miniretro_gba</code>；等待循環去上限；新增 <code>exiting</code>；連刷 3 幀</td>
+</tr>
+<tr>
+<td><code>ssh_tools/split_miniretro_gba.py</code></td>
+<td>本次分離部署腳本（可複用）</td>
+</tr>
+<tr>
+<td><code>ssh_tools/split_verify.py</code></td>
+<td>分離後雙前端驗證</td>
+</tr>
+<tr>
+<td><code>bugfix_20260923_10</code></td>
+<td>上一輪迴滾記錄（其”UI 恢復等收屍”的做法由本次修正）</td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-11-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E5%8D%A1%E9%BB%91%E5%B1%8F%EF%BC%8C%E4%B8%94-FC-%E8%A2%AB%E7%89%BD%E9%80%A3%EF%BC%88%E5%89%8D%E7%AB%AF%E5%BE%B9%E5%BA%95%E5%88%86%E9%9B%A2%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_11 — GBA 退出卡黑屏，且 FC 被牽連（前端徹底分離）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%95%8F%E9%A1%8C%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1. 問題現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">2. 影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%A0%B9%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">3. 根因分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E2%98%85-%E7%AD%89%E5%BE%85%E5%BE%AA%E7%92%B0%E8%A8%AD%E4%BA%86%E2%80%9D%E8%B7%91%E6%BB%BF-N-%E7%A7%92%E5%B0%B1%E7%AE%97%E9%80%80%E5%87%BA%E2%80%9D%E7%9A%84%E4%B8%8A%E9%99%90%EF%BC%88%E5%8D%A1%E9%BB%91%E5%B1%8F%E7%9A%84%E7%9B%B4%E6%8E%A5%E5%8E%9F%E5%9B%A0%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 ★ 等待循環設了”跑滿 N 秒就算退出”的上限（卡黑屏的直接原因）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-UI-%E6%81%A2%E5%BE%A9%E8%A2%AB%E7%B6%81%E5%9C%A8%E2%80%9D%E5%AD%90%E9%80%B2%E7%A8%8B%E6%B6%88%E5%A4%B1%E2%80%9D%E4%B8%8A%EF%BC%88%E6%8A%8A%E9%BB%91%E5%B1%8F%E6%8B%89%E9%95%B7%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 UI 恢復被綁在”子進程消失”上（把黑屏拉長）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E7%B4%B0%E7%AF%80%E5%95%8F%E9%A1%8C"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 細節問題</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E7%B5%90%E6%A7%8B%E6%80%A7%E6%A0%B9%E5%9B%A0%EF%BC%9A%E5%85%B1%E7%94%A8%E5%89%8D%E7%AB%AF"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4 結構性根因：共用前端</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%BF%AE%E5%BE%A9%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. 修復方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E2%98%85-%E5%89%8D%E7%AB%AF%E5%BE%B9%E5%BA%95%E5%88%86%E9%9B%A2%EF%BC%88%E7%94%A8%E6%88%B6%E6%96%B9%E6%A1%88%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 ★ 前端徹底分離（用戶方案）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E9%80%80%E5%87%BA%E9%82%8F%E8%BC%AF%E5%9B%9B%E9%A0%85%E4%BF%AE%E5%BE%A9%EF%BC%88%E5%8F%AA%E8%90%BD%E5%9C%A8-GBA-%E9%A0%81%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 退出邏輯四項修復（只落在 GBA 頁）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%A9%97%E8%AD%89%E6%96%B9%E6%B3%95%E8%88%87%E7%B5%90%E6%9E%9C"><span class="toc-number">1.5.</span> <span class="toc-text">5. 驗證方法與結果</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E5%88%86%E9%9B%A2%E7%B5%90%E6%9E%9C%E6%A0%A1%E9%A9%97%EF%BC%88%E8%A8%AD%E5%82%99%E7%AB%AF%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 分離結果校驗（設備端）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E5%85%A9%E5%80%8B%E5%89%8D%E7%AB%AF%E5%90%84%E8%87%AA%E5%AF%A6%E8%B7%91%EF%BC%88ssh-tools-split-verify-py%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 兩個前端各自實跑（ssh_tools&#x2F;split_verify.py）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E9%83%A8%E7%BD%B2%E8%85%B3%E6%9C%AC%E7%9A%84%E4%B8%80%E8%99%95%E4%BF%AE%E6%AD%A3"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 部署腳本的一處修正</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E8%BF%B4%E6%AD%B8%E9%A2%A8%E9%9A%AA"><span class="toc-number">1.6.</span> <span class="toc-text">6. 迴歸風險</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">7. 相關文件</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&text=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&title=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&is_video=false&description=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出卡黑屏與FC被汙染_前端分離&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&title=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&title=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&title=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&title=GBA退出卡黑屏與FC被汙染_前端分離"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-11/&name=GBA退出卡黑屏與FC被汙染_前端分離&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

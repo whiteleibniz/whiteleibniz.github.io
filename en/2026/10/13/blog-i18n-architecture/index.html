@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Trilingual Blog Architecture (Simplified Chinese &#x2F; English &#x2F; Traditional Chinese): Design and Implementation Log1. Requirements and ConstraintsThe blog (Hexo 7 + the cactus-white theme, host">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Trilingual Blog Architecture (Simplified Chinese &#x2F; English &#x2F; Traditional Chinese): Design and Implementation Log">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Trilingual Blog Architecture (Simplified Chinese &#x2F; English &#x2F; Traditional Chinese): Design and Implementation Log1. Requirements and ConstraintsThe blog (Hexo 7 + the cactus-white theme, host">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-13T04:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:37:59.349Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Hexo">
+<meta property="article:tag" content="多语言">
+<meta property="article:tag" content="i18n">
+<meta property="article:tag" content="博客">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/13/blog-i18n-architecture/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/10/13/blog-i18n-architecture/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&text=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&title=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&is_video=false&description=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log&body=Check out this article: https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&title=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&title=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&title=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&title=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&name=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Trilingual-Blog-Architecture-Simplified-Chinese-English-Traditional-Chinese-Design-and-Implementation-Log"><span class="toc-number">1.</span> <span class="toc-text">Trilingual Blog Architecture (Simplified Chinese &#x2F; English &#x2F; Traditional Chinese): Design and Implementation Log</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Requirements-and-Constraints"><span class="toc-number">1.1.</span> <span class="toc-text">1. Requirements and Constraints</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Overall-Architecture"><span class="toc-number">1.2.</span> <span class="toc-text">2. Overall Architecture</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-URL-Scheme-Language-Prefix-Isomorphic-Paths"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 URL Scheme: Language Prefix + Isomorphic Paths</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Directory-Structure"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 Directory Structure</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-Route-Layer-scripts-i18n-gen-js"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 Route Layer: scripts&#x2F;i18n_gen.js</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-Frontend-Layer-i18n-js"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4 Frontend Layer: i18n.js</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Content-Production-Where-255-Posts-Come-From"><span class="toc-number">1.3.</span> <span class="toc-text">3. Content Production: Where 255 Posts Come From</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Traditional-Chinese-Automated-OpenCC-Conversion"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 Traditional Chinese: Automated OpenCC Conversion</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-English-Batched-Parallel-Translation"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 English: Batched Parallel Translation</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Pitfalls-Hit-Ordered-by-Severity"><span class="toc-number">1.4.</span> <span class="toc-text">4. Pitfalls Hit (Ordered by Severity)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification-Results"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification Results</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Follow-ups"><span class="toc-number">1.6.</span> <span class="toc-text">6. Follow-ups</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-13T04:30:00.000Z" itemprop="datePublished">2026-10-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Hexo/" rel="tag">Hexo</a>, <a class="tag-link-link" href="/tags/i18n/" rel="tag">i18n</a>, <a class="tag-link-link" href="/tags/%E5%8D%9A%E5%AE%A2/" rel="tag">博客</a>, <a class="tag-link-link" href="/tags/%E5%A4%9A%E8%AF%AD%E8%A8%80/" rel="tag">多语言</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Trilingual-Blog-Architecture-Simplified-Chinese-English-Traditional-Chinese-Design-and-Implementation-Log"><a href="#Trilingual-Blog-Architecture-Simplified-Chinese-English-Traditional-Chinese-Design-and-Implementation-Log" class="headerlink" title="Trilingual Blog Architecture (Simplified Chinese &#x2F; English &#x2F; Traditional Chinese): Design and Implementation Log"></a>Trilingual Blog Architecture (Simplified Chinese &#x2F; English &#x2F; Traditional Chinese): Design and Implementation Log</h1><h2 id="1-Requirements-and-Constraints"><a href="#1-Requirements-and-Constraints" class="headerlink" title="1. Requirements and Constraints"></a>1. Requirements and Constraints</h2><p>The blog (Hexo 7 + the cactus-white theme, hosted on GitHub Pages) previously had a single Simplified Chinese version with 85 articles. The goals of this project were:</p>
+<ol>
+<li>Add English and Traditional Chinese versions for all 85 articles;</li>
+<li>Give each of the three languages its own home page, archive, category pages, and tag pages;</li>
+<li>Let readers switch languages from any page, landing on <strong>the same article</strong> in the target language;</li>
+<li>Make the interface text (navigation, pagination, search, category dropdown) follow the language.</li>
+</ol>
+<p>Constraints: the category taxonomy uses Chinese multi-level categories (an earlier explicit user requirement), so the categories must <strong>not</strong> be split into Chinese&#x2F;English sets; the theme is a third-party modification, so its structure must not be reworked heavily.</p>
+<h2 id="2-Overall-Architecture"><a href="#2-Overall-Architecture" class="headerlink" title="2. Overall Architecture"></a>2. Overall Architecture</h2><h3 id="2-1-URL-Scheme-Language-Prefix-Isomorphic-Paths"><a href="#2-1-URL-Scheme-Language-Prefix-Isomorphic-Paths" class="headerlink" title="2.1 URL Scheme: Language Prefix + Isomorphic Paths"></a>2.1 URL Scheme: Language Prefix + Isomorphic Paths</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Simplified Chinese (default)  /2026/10/12/foo/</span><br><span class="line">English                       /en/2026/10/12/foo/</span><br><span class="line">Traditional Chinese           /zh-tw/2026/10/12/foo/</span><br></pre></td></tr></table></figure>
+
+<p>A translation differs from its original <strong>only by the language prefix</strong>. This is the foundation of the whole design: the frontend language switcher becomes a pure string prefix transform, with no lookup table needed (the only exception is the About page, whose Chinese and English slugs differ; a four-entry table handles it).</p>
+<p>Posts are distinguished by front-matter: <code>lang: zh-CN | en | zh-TW</code>. A translation’s URL is set explicitly through front-matter <code>permalink</code> (e.g. <code>permalink: en/2026/10/12/foo/</code>), leaving the original URL untouched, so <strong>all old links remain valid</strong>.</p>
+<h3 id="2-2-Directory-Structure"><a href="#2-2-Directory-Structure" class="headerlink" title="2.2 Directory Structure"></a>2.2 Directory Structure</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">blog/</span><br><span class="line">├── source/</span><br><span class="line">│   ├── _posts/               # Simplified Chinese originals (85 posts)</span><br><span class="line">│   ├── _posts/en/            # English translations (85 posts, same filenames)</span><br><span class="line">│   ├── _posts/zh-tw/         # Traditional Chinese translations (85 posts, OpenCC)</span><br><span class="line">│   ├── 关于/index.md         # Simplified Chinese About page</span><br><span class="line">│   ├── en/about/index.md     # English About page</span><br><span class="line">│   ├── en/Search/ ...        # English search page</span><br><span class="line">│   └── zh-tw/...             # Traditional Chinese About/search pages</span><br><span class="line">├── scripts/i18n_gen.js       # Multi-language route generator (overrides core generators)</span><br><span class="line">└── themes/cactus-white/</span><br><span class="line">    ├── layout/_partial/header.ejs      # Navigation + language switcher + category dropdown</span><br><span class="line">    ├── source/js/i18n.js               # Frontend i18n layer</span><br><span class="line">    └── source/js/search.js             # Search (filtered by language)</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3-Route-Layer-scripts-i18n-gen-js"><a href="#2-3-Route-Layer-scripts-i18n-gen-js" class="headerlink" title="2.3 Route Layer: scripts&#x2F;i18n_gen.js"></a>2.3 Route Layer: scripts&#x2F;i18n_gen.js</h3><p>Hexo loads the <code>scripts/</code> directory <strong>after</strong> npm plugins (<code>load_plugins.js</code>: <code>loadModules</code> first, then <code>loadScripts</code>), and <code>generator.register(name, fn)</code> overwrites same-named entries directly. A local script therefore overrides the four core generators <code>index/archive/category/tag</code>, filtering posts by language and generating one route set per language (including pagination):</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="variable constant_">LANGS</span> = [</span><br><span class="line">  &#123; <span class="attr">code</span>: <span class="string">&#x27;zh-CN&#x27;</span>, <span class="attr">base</span>: <span class="string">&#x27;&#x27;</span> &#125;,        <span class="comment">// root site</span></span><br><span class="line">  &#123; <span class="attr">code</span>: <span class="string">&#x27;en&#x27;</span>, <span class="attr">base</span>: <span class="string">&#x27;en/&#x27;</span> &#125;,</span><br><span class="line">  &#123; <span class="attr">code</span>: <span class="string">&#x27;zh-TW&#x27;</span>, <span class="attr">base</span>: <span class="string">&#x27;zh-tw/&#x27;</span> &#125;</span><br><span class="line">];</span><br><span class="line"><span class="comment">// each generator: filter posts by lang -&gt; pagination(base, posts, &#123;...&#125;)</span></span><br></pre></td></tr></table></figure>
+
+<p>Each route’s data carries an injected <code>lang</code>, so templates can read the current language (this is what the category dropdown uses to filter its counts).</p>
+<h3 id="2-4-Frontend-Layer-i18n-js"><a href="#2-4-Frontend-Layer-i18n-js" class="headerlink" title="2.4 Frontend Layer: i18n.js"></a>2.4 Frontend Layer: i18n.js</h3><p>The server only renders content in the current language; all cross-language glue happens in the frontend, in one ~200-line IIFE:</p>
+<ol>
+<li><strong>Language switcher</strong>: <code>简体 / 繁體 / EN</code> on the right of the navigation bar; the three links are computed from the current URL by prefix transform, with the current language highlighted;</li>
+<li><strong>Internal link localization</strong>: navigation, category dropdown, and in-content links (archive&#x2F;category&#x2F;tag&#x2F;about&#x2F;search&#x2F;post cross-links) all get the current language prefix; asset paths such as <code>/images/</code> and <code>/lib/</code> are excluded;</li>
+<li><strong>Interface text</strong>: templates mark translatable elements with <code>data-i18n</code> attributes, and JS replaces them from a dictionary (navigation, the pagination “Page X of Y”, search hints, the no-results message);</li>
+<li><strong>Category dropdown</strong>: <code>data-cat</code> attributes plus a dictionary translate category names (the English site shows “Troubleshooting Notes” etc.), and hrefs get the language prefix;</li>
+<li><strong>Language-filtered search</strong>: <code>window.I18N.lang</code> is exposed to search.js so only the current language’s posts are indexed and shown.</li>
+</ol>
+<h2 id="3-Content-Production-Where-255-Posts-Come-From"><a href="#3-Content-Production-Where-255-Posts-Come-From" class="headerlink" title="3. Content Production: Where 255 Posts Come From"></a>3. Content Production: Where 255 Posts Come From</h2><h3 id="3-1-Traditional-Chinese-Automated-OpenCC-Conversion"><a href="#3-1-Traditional-Chinese-Automated-OpenCC-Conversion" class="headerlink" title="3.1 Traditional Chinese: Automated OpenCC Conversion"></a>3.1 Traditional Chinese: Automated OpenCC Conversion</h3><p><code>make_tw.py</code> converts each post with OpenCC (<code>s2tw</code> configuration): <strong>only title&#x2F;description&#x2F;body are converted</strong>; <code>categories</code> and <code>tag</code> stay in Simplified Chinese (a unified taxonomy, so that 排障手记 and 排障手記 do not split into two categories); <code>lang: zh-CN</code> becomes <code>zh-TW</code>; a <code>permalink: zh-tw/YYYY/MM/DD/slug/</code> is appended based on the original date path.</p>
+<h3 id="3-2-English-Batched-Parallel-Translation"><a href="#3-2-English-Batched-Parallel-Translation" class="headerlink" title="3.2 English: Batched Parallel Translation"></a>3.2 English: Batched Parallel Translation</h3><p>The 85 posts total 832KB. They were split into 8 size-balanced batches and translated by 8 parallel subagents, with the conventions hard-wired into the prompt: front-matter translates only <code>title</code> and changes <code>lang</code> to <code>en</code>; categories and tags stay in Chinese; code blocks, paths, URLs, logs, and hex addresses are preserved verbatim; the copyright block switches to the English format; no facts may be added or removed.</p>
+<h2 id="4-Pitfalls-Hit-Ordered-by-Severity"><a href="#4-Pitfalls-Hit-Ordered-by-Severity" class="headerlink" title="4. Pitfalls Hit (Ordered by Severity)"></a>4. Pitfalls Hit (Ordered by Severity)</h2><ol>
+<li><strong>How to write a <code>scripts/</code> plugin</strong>: <code>loadPlugin</code> injects <code>hexo</code> as an argument of the wrapper function’s scope, so a plugin must register <strong>directly at top level using <code>hexo</code></strong>; writing <code>module.exports = function(hexo)&#123;&#125;</code> (the npm-plugin habit) fails to load silently, with no error at all.</li>
+<li><strong>Colons in YAML titles</strong>: a <code>: </code> inside an English title (e.g. “Mali-400 Working Principles: TBDR…”) must be quoted, otherwise js-yaml throws <code>bad indentation</code>, the whole post fails to process, and the article silently disappears (the build log shows only one ERROR line, very easy to miss).</li>
+<li><strong>Double slashes in the search index</strong>: front-matter permalinks get normalized by Hexo to carry a leading slash (<code>/en/...</code>), while hexo-generator-search’s template concatenates <code>config.root(&#39;/&#39;)</code> once more, producing <code>//en/...</code> — a protocol-relative URL that browsers resolve to <code>https://en/...</code>, breaking every search result link. The fix wraps the original <code>xml</code> generator and corrects the rendered output; note that <code>register</code> wraps functions in <code>bluebird.method</code>, so <strong>the original generator returns a Promise and the wrapper must await it</strong>.</li>
+<li><strong>Category counts mixing all three languages</strong>: the navigation dropdown’s <code>cat.posts.length</code> counts all three languages. The fix uses the <code>page.lang</code> injected into route data to filter counts per language on the template side.</li>
+<li><strong><code>hexo clean</code> occasionally hangs</strong>: twice the clean process failed to exit and held the output pipe, stalling the whole task; the stalled clean also raced with the subsequent generate over the <code>public/</code> directory. Countermeasure: clean with <code>rm -rf public db.json</code> instead of <code>hexo clean</code>.</li>
+<li><strong>Post pages had no language switcher</strong>: post pages use the <code>post/actions_*</code> partials instead of <code>header</code>, so the switcher had to be added to both navigation sets on post pages (desktop top bar and mobile bottom menu).</li>
+<li>Translation files should match the source line-ending style (CRLF); mixing is not fatal but adds diff noise.</li>
+</ol>
+<h2 id="5-Verification-Results"><a href="#5-Verification-Results" class="headerlink" title="5. Verification Results"></a>5. Verification Results</h2><ul>
+<li>The build produces 690 files with 0 errors; search.xml holds 255 entries (85 per language), with no abnormal <code>//</code> URLs;</li>
+<li>The home&#x2F;archive&#x2F;category&#x2F;tag pages of all three languages contain only their own language’s posts;</li>
+<li>The language switcher appears on every page type (home&#x2F;archive&#x2F;category&#x2F;tag&#x2F;post&#x2F;about&#x2F;search);</li>
+<li>After JS prefixes navigation links and in-content links, they point to the corresponding language pages;</li>
+<li>All original URLs are unchanged, so old links remain valid.</li>
+</ul>
+<h2 id="6-Follow-ups"><a href="#6-Follow-ups" class="headerlink" title="6. Follow-ups"></a>6. Follow-ups</h2><ul>
+<li>Interface text is swapped by a <strong>frontend dictionary at runtime</strong>; viewing the page source still shows Simplified Chinese. SSR-grade localization would require duplicating the layout templates per language — high cost, not worth it for now.</li>
+<li>Category names on the English site come from dictionary translation (URLs remain percent-encoded Chinese), which is acceptable.</li>
+<li>When adding new articles: keep the original as-is, put the English draft in <code>source/_posts/en/</code> (with <code>lang: en</code> + <code>permalink: en/&lt;date&gt;/&lt;filename&gt;/</code>), and run <code>make_tw.py</code> for the Traditional Chinese draft.</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Trilingual-Blog-Architecture-Simplified-Chinese-English-Traditional-Chinese-Design-and-Implementation-Log"><span class="toc-number">1.</span> <span class="toc-text">Trilingual Blog Architecture (Simplified Chinese &#x2F; English &#x2F; Traditional Chinese): Design and Implementation Log</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Requirements-and-Constraints"><span class="toc-number">1.1.</span> <span class="toc-text">1. Requirements and Constraints</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Overall-Architecture"><span class="toc-number">1.2.</span> <span class="toc-text">2. Overall Architecture</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-URL-Scheme-Language-Prefix-Isomorphic-Paths"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 URL Scheme: Language Prefix + Isomorphic Paths</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Directory-Structure"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 Directory Structure</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-Route-Layer-scripts-i18n-gen-js"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 Route Layer: scripts&#x2F;i18n_gen.js</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-Frontend-Layer-i18n-js"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4 Frontend Layer: i18n.js</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Content-Production-Where-255-Posts-Come-From"><span class="toc-number">1.3.</span> <span class="toc-text">3. Content Production: Where 255 Posts Come From</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Traditional-Chinese-Automated-OpenCC-Conversion"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 Traditional Chinese: Automated OpenCC Conversion</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-English-Batched-Parallel-Translation"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 English: Batched Parallel Translation</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Pitfalls-Hit-Ordered-by-Severity"><span class="toc-number">1.4.</span> <span class="toc-text">4. Pitfalls Hit (Ordered by Severity)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification-Results"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification Results</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Follow-ups"><span class="toc-number">1.6.</span> <span class="toc-text">6. Follow-ups</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&text=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&title=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&is_video=false&description=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log&body=Check out this article: https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&title=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&title=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&title=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&title=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/10/13/blog-i18n-architecture/&name=Trilingual Blog Architecture (Simplified Chinese / English / Traditional Chinese): Design and Implementation Log&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

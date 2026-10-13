@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Spreadtrum SC9832A Mali-400 — New Application Integration Manual Scope: making a new App use the Mali-400 GPU.Prerequisites: the Alpine&#x2F;musl root system + mali.ko loaded + the &#x2F;system skeleton re">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mali400_New Application Integration Manual">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Spreadtrum SC9832A Mali-400 — New Application Integration Manual Scope: making a new App use the Mali-400 GPU.Prerequisites: the Alpine&#x2F;musl root system + mali.ko loaded + the &#x2F;system skeleton re">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-30T09:52:17.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.974Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="GPU">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Mali400_New Application Integration Manual</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/30/mali-04-mali400-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/30/mali-04-mali400-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&text=Mali400_New Application Integration Manual"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&title=Mali400_New Application Integration Manual"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&is_video=false&description=Mali400_New Application Integration Manual"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_New Application Integration Manual&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&title=Mali400_New Application Integration Manual"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&title=Mali400_New Application Integration Manual"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&title=Mali400_New Application Integration Manual"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&title=Mali400_New Application Integration Manual"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&name=Mali400_New Application Integration Manual&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-Mali-400-%E2%80%94-New-Application-Integration-Manual"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A Mali-400 — New Application Integration Manual</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-One-Sentence-Process"><span class="toc-number">1.1.</span> <span class="toc-text">0. One-Sentence Process</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Pre-checks-First-Check-Whether-the-GPU-Is-Ready"><span class="toc-number">1.2.</span> <span class="toc-text">1. Pre-checks (First Check Whether the GPU Is Ready)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Only-Correct-Compilation-Method-musl-gcc-%E2%86%92-bionic"><span class="toc-number">1.3.</span> <span class="toc-text">2. The Only Correct Compilation Method (musl gcc → bionic)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Code-Skeleton-EGL-GLES2"><span class="toc-number">1.4.</span> <span class="toc-text">3. Code Skeleton (EGL + GLES2)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Three-Output-Modes-Choose-According-to-Your-Needs"><span class="toc-number">1.5.</span> <span class="toc-text">4. Three Output Modes (Choose According to Your Needs)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Desktop-Icon-Integration-Making-the-App-Clickable"><span class="toc-number">1.6.</span> <span class="toc-text">5. Desktop Icon Integration (Making the App Clickable)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Pits-You-Must-Avoid-the-Blood-Sweat-and-Tears-List"><span class="toc-number">1.7.</span> <span class="toc-text">6. Pits You Must Avoid (the Blood, Sweat, and Tears List)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Reference-File-List-Objects-to-Copy"><span class="toc-number">1.8.</span> <span class="toc-text">7. Reference File List (Objects to Copy)</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Mali400_New Application Integration Manual
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-30T09:52:17.000Z" itemprop="datePublished">2026-09-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/GPU/" rel="tag">GPU</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Spreadtrum-SC9832A-Mali-400-—-New-Application-Integration-Manual"><a href="#Spreadtrum-SC9832A-Mali-400-—-New-Application-Integration-Manual" class="headerlink" title="Spreadtrum SC9832A Mali-400 — New Application Integration Manual"></a>Spreadtrum SC9832A Mali-400 — New Application Integration Manual</h1><blockquote>
+<p>Scope: making a <strong>new App</strong> use the Mali-400 GPU.<br>Prerequisites: the Alpine&#x2F;musl root system + <code>mali.ko</code> loaded + the <code>/system</code> skeleton ready (prepared automatically by <code>/etc/local.d/01_mali.start</code>).<br>Verification time: 2026-09-30; a live run of <code>/root/mali_check</code> is all green.</p>
+</blockquote>
+<hr>
+<h2 id="0-One-Sentence-Process"><a href="#0-One-Sentence-Process" class="headerlink" title="0. One-Sentence Process"></a>0. One-Sentence Process</h2><p><strong>A new App using the GPU &#x3D; compile it into a bionic program → get a context from an EGL pbuffer → draw with GLES2 → output images&#x2F;readback as needed → (optionally) add a desktop icon.</strong></p>
+<p>The only awkward point to get used to: you must use <strong>musl gcc to compile an ELF that runs on the bionic dynamic linker</strong> (see §2 for details), because the EGL&#x2F;GLES libraries are Android’s.</p>
+<hr>
+<h2 id="1-Pre-checks-First-Check-Whether-the-GPU-Is-Ready"><a href="#1-Pre-checks-First-Check-Whether-the-GPU-Is-Ready" class="headerlink" title="1. Pre-checks (First Check Whether the GPU Is Ready)"></a>1. Pre-checks (First Check Whether the GPU Is Ready)</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">lsmod | grep mali                 <span class="comment"># 应有 mali 模块</span></span><br><span class="line"><span class="built_in">ls</span> -l /dev/mali0                  <span class="comment"># 设备节点要存在</span></span><br><span class="line"><span class="built_in">ls</span> -l /system/lib/libEGL.so /system/lib/libGLESv2.so /system/bin/linker</span><br><span class="line"><span class="built_in">timeout</span> -s TERM -k 2 10 /root/mali_check     <span class="comment"># ★ 一键验收工具，全绿才算就绪</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>What you must see (measured on this machine)</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/dev/mali0 : 可打开 ✔  |  mali 内核模块 : 已加载 ✔</span><br><span class="line">EGL_VENDOR : Android  | EGL_VERSION : 1.4 Android META-EGL</span><br><span class="line">1280x720 pbuffer + ES2 context : 就绪 ✔</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>If <code>mali.ko</code> is missing: <code>insmod /lib/modules/mali.ko</code>; if the <code>/system</code> skeleton is missing: <code>01_mali.start</code> sets it up automatically (it also creates <code>/dev/mali0</code> etc.).<br><code>WARNING: linker: unused DT entry / unsupported flags</code> is a <strong>harmless</strong> warning and can be ignored.</p>
+</blockquote>
+<hr>
+<h2 id="2-The-Only-Correct-Compilation-Method-musl-gcc-→-bionic"><a href="#2-The-Only-Correct-Compilation-Method-musl-gcc-→-bionic" class="headerlink" title="2. The Only Correct Compilation Method (musl gcc → bionic)"></a>2. The Only Correct Compilation Method (musl gcc → bionic)</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">gcc -O1 -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -I/usr/include \</span><br><span class="line">    -nostdlib -Wl,--entry=main -Wl,--dynamic-linker=/system/bin/linker -Wl,-rpath=/system/lib \</span><br><span class="line">    &lt;app&gt;.c /root/bionic_shim.o -L/system/lib \</span><br><span class="line">    -lEGL -lGLESv2 -lc -lm -ldl -lgcc -o &lt;app&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Must be followed</strong>:</p>
+<ul>
+<li><code>-Wl,--entry=main</code>: <strong>omitting it causes a crash</strong> (without crt, ld’s default entry point is the first byte of <code>.text</code>).</li>
+<li><code>-nostdlib</code> + <code>--dynamic-linker=/system/bin/linker</code> + <code>-rpath=/system/lib</code>: the complete bridging trio; none can be omitted.</li>
+<li>Link <code>/root/bionic_shim.o</code> (already present, 10592 B) to patch the musl↔bionic ABI differences.</li>
+</ul>
+<p><strong>Self-check After Compiling (Must Be Empty)</strong>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nm -D &lt;app&gt; | grep -E <span class="string">&#x27; (mmap|munmap|lseek|fseeko|ftello|ftruncate|open|close)$&#x27;</span>   <span class="comment"># 应无输出</span></span><br></pre></td></tr></table></figure>
+
+<p>Any output means the exe exported the shim symbols → dependent libraries will bind the musl-ABI <code>mmap</code>, causing an <strong>infinite loop</strong>.</p>
+<hr>
+<h2 id="3-Code-Skeleton-EGL-GLES2"><a href="#3-Code-Skeleton-EGL-GLES2" class="headerlink" title="3. Code Skeleton (EGL + GLES2)"></a>3. Code Skeleton (EGL + GLES2)</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;EGL/egl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;GLES2/gl2.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">EGLDisplay dpy; EGLSurface surf; EGLContext ctx;</span><br><span class="line"></span><br><span class="line">EGLint cfg_attr[] = &#123;</span><br><span class="line">    EGL_SURFACE_TYPE,    EGL_PBUFFER_BIT,        <span class="comment">/* ★ 必须 pbuffer */</span></span><br><span class="line">    EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,     <span class="comment">/* ★ ES2 */</span></span><br><span class="line">    EGL_RED_SIZE, <span class="number">8</span>, EGL_GREEN_SIZE, <span class="number">8</span>, EGL_BLUE_SIZE, <span class="number">8</span>, EGL_ALPHA_SIZE, <span class="number">8</span>,</span><br><span class="line">    EGL_DEPTH_SIZE, <span class="number">16</span>,                          <span class="comment">/* 3D 场景才需要 */</span></span><br><span class="line">    EGL_NONE</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">dpy  = eglGetDisplay(EGL_DEFAULT_DISPLAY);</span><br><span class="line">eglInitialize(dpy, &amp;major, &amp;minor);              <span class="comment">/* 实测 EGL 1.4 */</span></span><br><span class="line">eglChooseConfig(dpy, cfg_attr, &amp;cfg, <span class="number">1</span>, &amp;n);</span><br><span class="line">eglCreatePbufferSurface(dpy, cfg, (EGLint[])&#123;EGL_WIDTH, RW, EGL_HEIGHT, RH, EGL_NONE&#125;);</span><br><span class="line">eglCreateContext(dpy, cfg, EGL_NO_CONTEXT, (EGLint[])&#123;EGL_CONTEXT_CLIENT_VERSION, <span class="number">2</span>, EGL_NONE&#125;);</span><br><span class="line">eglMakeCurrent(dpy, surf, surf, ctx);</span><br><span class="line">glViewport(<span class="number">0</span>, <span class="number">0</span>, RW, RH);</span><br><span class="line"></span><br><span class="line"><span class="comment">/* ... 建 shader、上传顶点、每帧 draw ... */</span></span><br><span class="line"></span><br><span class="line">glFinish();            <span class="comment">/* 计时用；本帧 GPU 真正画完 */</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Key points</strong></p>
+<ul>
+<li>The pixel format measured on this machine: <strong>RGBA 8888</strong> (<code>R8 G8 B8 A8</code>); with depth, the cfg reports <code>depth=24 stencil=8 samples=0</code>.</li>
+<li><strong>Keep the internal resolution as small as possible</strong>: <code>glReadPixels</code> is only <strong>~55MB&#x2F;s</strong>, and the cost is proportional to the pixel count (720p is about 68ms, 480x272 about 9.3ms). An internal 360x640 scaled up to 720x1280 with <code>scale_to_fb</code> is recommended — this is the <strong>most effective</strong> lever for raising the frame rate.</li>
+<li>Full-screen quad: <code>glDrawArrays(GL_TRIANGLE_STRIP,0,4)</code> <strong>draws nothing</strong> on this machine; you must use <code>glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_SHORT,idx)</code>.</li>
+</ul>
+<hr>
+<h2 id="4-Three-Output-Modes-Choose-According-to-Your-Needs"><a href="#4-Three-Output-Modes-Choose-According-to-Your-Needs" class="headerlink" title="4. Three Output Modes (Choose According to Your Needs)"></a>4. Three Output Modes (Choose According to Your Needs)</h2><table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Approach</th>
+<th>Applicable to</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>A offscreen &#x2F; benchmark &#x2F; filter</strong></td>
+<td>pbuffer rendering → <code>glFinish()</code> timing → (optional) <code>glReadPixels</code> to save to disk</td>
+<td>evaluation, GPU computation, no real-time output needed</td>
+<td><strong>the score is unaffected by readback</strong> (the timing counts only render+finish)</td>
+</tr>
+<tr>
+<td><strong>B full-screen exclusive output to the screen</strong></td>
+<td>rendering → readback → <code>scale</code>&#x2F;<code>rotate90</code> → write frames via <code>mmap(/dev/fb0)</code> → <code>FBIOPAN</code> page flipping; <strong>unconditionally return to page 0 on exit</strong></td>
+<td>emulators&#x2F;players&#x2F;full-screen Apps</td>
+<td>⚠️ see the “readback pit” below</td>
+</tr>
+<tr>
+<td><strong>C software fallback</strong></td>
+<td>Mesa software rendering (without Mali)</td>
+<td>fallback&#x2F;debugging comparison</td>
+<td>not GPU; performance is 1~2 orders of magnitude worse</td>
+</tr>
+</tbody></table>
+<p><strong>⚠️ The readback pit (the most fatal one on this machine)</strong>: <code>glReadPixels</code> on a pbuffer is <strong>unreliable</strong> — readback of a pure clear or an ordinary 2D quad becomes <strong>all black&#x2F;stale red</strong>, and only large meshes with depth (TERRAIN) are occasionally correct. <strong>Four approaches have been verified as all ineffective</strong>: switching to FBO offscreen rendering &#x2F; removing <code>glFinish</code> &#x2F; adding <code>eglSwapBuffers</code> &#x2F; enabling depth globally. The root cause is Mali’s <strong>TBDR lazy resolution</strong> + a pbuffer readback path defect.</p>
+<p><strong>Countermeasures</strong>:</p>
+<ul>
+<li>To output images → <strong>copy the implementation that has already produced images</strong>: the display section of <code>_tmp/miniretro_psp_hw.c</code> (pbuffer → readback → <code>scale_rotate90</code> → <code>FBIOPAN</code>, measured at <strong>34~38fps with images</strong>). It relies on the PPSSPP core’s internal flush to trigger resolution, and is currently the <strong>only route that has truly produced images</strong> on this machine.</li>
+<li>HUD &#x2F; text &#x2F; frame rate: <strong>writing directly to the fb with the CPU is always visible</strong> and unaffected by readback → using the GPU for the scene area and the CPU for text overlay is the <strong>most stable combination</strong> at present.</li>
+<li>If a fundamental solution is desired in the future: see Options ①&#x2F;② in “Mali400_Feasibility Analysis of Dropping Android” (switch to the Linux DDK or Mesa Lima + add DRM).</li>
+</ul>
+<hr>
+<h2 id="5-Desktop-Icon-Integration-Making-the-App-Clickable"><a href="#5-Desktop-Icon-Integration-Making-the-App-Clickable" class="headerlink" title="5. Desktop Icon Integration (Making the App Clickable)"></a>5. Desktop Icon Integration (Making the App Clickable)</h2><p><strong>Key fact</strong>: the external <code>app.ini</code> mechanism <strong>only scans; it has no click branch</strong>; to make it clickable, the launcher’s built-in array must be modified.</p>
+<ol>
+<li>Edit the built-in <strong><code>s_apps[]</code></strong> in <code>/home/lvgl_demo/lvgl_demo/lv_pages/launcher_page.c</code> on the device and add a new entry (icon&#x2F;name&#x2F;command).</li>
+<li>To launch a full-screen external program, copy the pattern of <code>psp_game_page.c</code>: <strong>pause LVGL → release the input grab → interceptor → wait child thread → unconditionally <code>FBIOPAN</code> back to page 0 on exit</strong> (idempotent; otherwise the desktop cannot come back).</li>
+<li>Re-run <code>make</code> to deploy lvgl_demo.</li>
+<li><strong>A labor-saving shortcut</strong>: the existing <code>GPUTEST_BIN</code> entry is already hardcoded to <code>/usr/local/bin/gpu_test</code>; <strong>symlink</strong> it to your App to reuse the existing icon entry (this is how gpu_bench was hooked up this time):<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ln</span> -sf /usr/local/bin/&lt;app&gt; /usr/local/bin/gpu_test</span><br></pre></td></tr></table></figure></li>
+<li>⚠️ <strong>Stop the watchdog before debugging</strong> (it starts lvgl_demo every 5s); otherwise your changes will be overwritten immediately.</li>
+</ol>
+<hr>
+<h2 id="6-Pits-You-Must-Avoid-the-Blood-Sweat-and-Tears-List"><a href="#6-Pits-You-Must-Avoid-the-Blood-Sweat-and-Tears-List" class="headerlink" title="6. Pits You Must Avoid (the Blood, Sweat, and Tears List)"></a>6. Pits You Must Avoid (the Blood, Sweat, and Tears List)</h2><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Pit</th>
+<th>Symptom</th>
+<th>Avoidance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>missing <code>-Wl,--entry=main</code></td>
+<td>crashes as soon as it runs</td>
+<td>it must be in the build command</td>
+</tr>
+<tr>
+<td>2</td>
+<td>the exe exports the shim symbols</td>
+<td><code>mmap</code> is bound to the musl ABI → <strong>infinite loop</strong></td>
+<td>compile the shim with <code>-fvisibility=hidden</code> (<code>#pragma</code> cannot be used)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>__dlsym_time64</code> self-reference</td>
+<td>musl redirects <code>dlsym</code> back to it → a <code>b .</code> infinite loop</td>
+<td>bypass it with <code>__asm__(&quot;dlsym&quot;)</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>using <code>thread_local</code></td>
+<td>bionic does not recognize the TLS reloc</td>
+<td>remove it; cores already modified with <code>_patchtls.py</code> need to be re-patched</td>
+</tr>
+<tr>
+<td>5</td>
+<td>doing heavy work in a global constructor</td>
+<td>crash during construction; <strong>zeroing the constructor &#x3D; suicide</strong> (RELATIVE turns 0 into an ELF header → calling the magic number raises SIGILL)</td>
+<td>point the constructor at a harmless function; short-circuit at the source level when necessary (e.g., ArmCPUDetect)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>using <code>printf</code> for diagnostic output</td>
+<td>the buffer is lost on abort, so <strong>the scene cannot be seen</strong></td>
+<td>use <code>write(1,...)</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>using <code>ps -o pid,comm</code> to judge liveness</td>
+<td>PPSSPP renames the main thread to <code>&#123;Main&#125;</code> → <strong>guaranteed to be missed</strong> (once accumulated 7 zombie instances that filled the CPU)</td>
+<td>always look at <code>/proc/&lt;pid&gt;/cmdline</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>not applying patches after relinking</td>
+<td>core crashes &#x2F; TLS errors</td>
+<td>ppsspp-like cores need patches re-applied after relinking: <code>.py</code>(libpng&#x2F;z) + TLS + ctor patch (addresses drift with linking; re-check with <code>nm</code>)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>the libretro frontend omits the <code>context_reset()</code> call</td>
+<td><code>draw_=NULL</code> → segmentation fault in the DrawEngineGLES ctor</td>
+<td>it must be called after <code>av_info</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-Reference-File-List-Objects-to-Copy"><a href="#7-Reference-File-List-Objects-to-Copy" class="headerlink" title="7. Reference File List (Objects to Copy)"></a>7. Reference File List (Objects to Copy)</h2><table>
+<thead>
+<tr>
+<th>Purpose</th>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GPU readiness self-check</td>
+<td><code>/root/mali_check</code> (source <code>ssh_tools/mali_check.c</code>)</td>
+<td>one-click acceptance; run it first</td>
+</tr>
+<tr>
+<td>complete benchmark&#x2F;multi-scene&#x2F;HUD skeleton</td>
+<td><code>/root/gpu_bench.c</code> (<code>ssh_tools/gpu_bench.c</code>)</td>
+<td>5 scenes + real-time fps + a results page + <code>fb_restore()</code>; the most suitable App template</td>
+</tr>
+<tr>
+<td><strong>the only full-screen pipeline that truly produced images</strong></td>
+<td><code>_tmp/miniretro_psp_hw.c</code></td>
+<td>readback→<code>scale_rotate90</code>→<code>FBIOPAN</code>, measured at 34~38fps</td>
+</tr>
+<tr>
+<td>bionic bridge</td>
+<td><code>/root/bionic_shim.o</code> (source <code>bionic_shim.cpp</code>)</td>
+<td>must be linked during compilation</td>
+</tr>
+<tr>
+<td>deployment&#x2F;build script</td>
+<td><code>ssh_tools/deploy_bench2.py</code></td>
+<td>upload→compile→atomic replacement→symlink; modify it as needed</td>
+</tr>
+<tr>
+<td>icon entry</td>
+<td><code>ssh_tools/patch_launcher_gputest.py</code></td>
+<td>the <code>GPUTEST_BIN</code> entry + the fork&#x2F;exec&#x2F;wait&#x2F;return pattern</td>
+</tr>
+<tr>
+<td>troubleshooting</td>
+<td><code>ssh_tools/mali400_docs/Mali400_故障排查手册.md</code></td>
+<td>layered quick reference</td>
+</tr>
+<tr>
+<td>dropping Android</td>
+<td><code>ssh_tools/mali400_docs/Mali400_摆脱安卓可行性分析.md</code></td>
+<td>the root cause of and the way out of the readback pit</td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-Mali-400-%E2%80%94-New-Application-Integration-Manual"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A Mali-400 — New Application Integration Manual</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-One-Sentence-Process"><span class="toc-number">1.1.</span> <span class="toc-text">0. One-Sentence Process</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Pre-checks-First-Check-Whether-the-GPU-Is-Ready"><span class="toc-number">1.2.</span> <span class="toc-text">1. Pre-checks (First Check Whether the GPU Is Ready)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Only-Correct-Compilation-Method-musl-gcc-%E2%86%92-bionic"><span class="toc-number">1.3.</span> <span class="toc-text">2. The Only Correct Compilation Method (musl gcc → bionic)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Code-Skeleton-EGL-GLES2"><span class="toc-number">1.4.</span> <span class="toc-text">3. Code Skeleton (EGL + GLES2)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Three-Output-Modes-Choose-According-to-Your-Needs"><span class="toc-number">1.5.</span> <span class="toc-text">4. Three Output Modes (Choose According to Your Needs)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Desktop-Icon-Integration-Making-the-App-Clickable"><span class="toc-number">1.6.</span> <span class="toc-text">5. Desktop Icon Integration (Making the App Clickable)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Pits-You-Must-Avoid-the-Blood-Sweat-and-Tears-List"><span class="toc-number">1.7.</span> <span class="toc-text">6. Pits You Must Avoid (the Blood, Sweat, and Tears List)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Reference-File-List-Objects-to-Copy"><span class="toc-number">1.8.</span> <span class="toc-text">7. Reference File List (Objects to Copy)</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&text=Mali400_New Application Integration Manual"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&title=Mali400_New Application Integration Manual"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&is_video=false&description=Mali400_New Application Integration Manual"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_New Application Integration Manual&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&title=Mali400_New Application Integration Manual"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&title=Mali400_New Application Integration Manual"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&title=Mali400_New Application Integration Manual"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&title=Mali400_New Application Integration Manual"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/30/mali-04-mali400-md/&name=Mali400_New Application Integration Manual&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Spreadtrum SC9832A FM radio startup flow — Android vs Alpine (this device) comparison Audience: anyone who needs to understand “why we do it this way on Alpine”Core value: Android natively has a whole">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM radio startup flow: Android vs Alpine comparison">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Spreadtrum SC9832A FM radio startup flow — Android vs Alpine (this device) comparison Audience: anyone who needs to understand “why we do it this way on Alpine”Core value: Android natively has a whole">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.955Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM radio startup flow: Android vs Alpine comparison</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/23/fm-06-fm-ioctl-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&text=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&title=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&is_video=false&description=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM radio startup flow: Android vs Alpine comparison&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&title=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&title=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&title=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&title=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&name=FM radio startup flow: Android vs Alpine comparison&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-FM-radio-startup-flow-%E2%80%94-Android-vs-Alpine-this-device-comparison"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A FM radio startup flow — Android vs Alpine (this device) comparison</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Chip-physical-architecture-shared-by-both-systems"><span class="toc-number">1.1.</span> <span class="toc-text">1. Chip physical architecture (shared by both systems)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Android-6-0-native-FM-startup-flow"><span class="toc-number">1.2.</span> <span class="toc-text">2. Android 6.0 native FM startup flow</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-Startup-chain"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 Startup chain</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Android-key-points"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 Android key points</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Alpine-this-device-FM-solution"><span class="toc-number">1.3.</span> <span class="toc-text">3. The Alpine (this device) FM solution</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Goal-replace-a-whole-framework-with-minimal-code"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 Goal: replace a whole framework with minimal code</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Proposed-startup-chain"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Proposed startup chain</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-Correspondences-on-the-Alpine-side"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 Correspondences on the Alpine side</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Stage-by-stage-comparison-table"><span class="toc-number">1.4.</span> <span class="toc-text">4. Stage-by-stage comparison table</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Key-principles-why-this-works"><span class="toc-number">1.5.</span> <span class="toc-text">5. Key principles (why this works)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-One-line-summary"><span class="toc-number">1.6.</span> <span class="toc-text">6. One-line summary</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM radio startup flow: Android vs Alpine comparison
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Spreadtrum-SC9832A-FM-radio-startup-flow-—-Android-vs-Alpine-this-device-comparison"><a href="#Spreadtrum-SC9832A-FM-radio-startup-flow-—-Android-vs-Alpine-this-device-comparison" class="headerlink" title="Spreadtrum SC9832A FM radio startup flow — Android vs Alpine (this device) comparison"></a>Spreadtrum SC9832A FM radio startup flow — Android vs Alpine (this device) comparison</h1><blockquote>
+<p><strong>Audience</strong>: anyone who needs to understand “why we do it this way on Alpine”<br><strong>Core value</strong>: Android natively has a whole framework, and on Alpine we replace it with as little code as possible — this article aligns every stage of the two sides, so you know clearly <strong>which segment we replaced and what the basis for the replacement is</strong></p>
+</blockquote>
+<hr>
+<h2 id="1-Chip-physical-architecture-shared-by-both-systems"><a href="#1-Chip-physical-architecture-shared-by-both-systems" class="headerlink" title="1. Chip physical architecture (shared by both systems)"></a>1. Chip physical architecture (shared by both systems)</h2><p>Whether Android or Alpine, <strong>the bottom three layers are exactly the same</strong>, which is the prerequisite for being able to compare them:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">┌─ Hardware layer   Marlin2 combo chip, SDIO vendor 0x0000 / device 0x2331</span><br><span class="line">│            WiFi + BT + FM three-in-one, sharing the SDIO bus</span><br><span class="line">├─ Firmware layer   download burns the combo firmware (including the FM part) once</span><br><span class="line">├─ Driver layer   marlin_fm.ko → registers the misc device /dev/fm (minor 23)</span><br><span class="line">│</span><br><span class="line">│  ← the two systems diverge below this point →</span><br></pre></td></tr></table></figure>
+
+<p><strong>Measured values</strong> (<code>spd-box</code>, this device):</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SDIO modalias</td>
+<td><code>sdio:c00v0000d2331</code></td>
+</tr>
+<tr>
+<td>FM driver</td>
+<td><code>marlin_fm</code> (<code>Used by sprdwl</code>)</td>
+</tr>
+<tr>
+<td>FM device nodes</td>
+<td><code>/dev/fm</code> (misc 23), <code>/dev/log_radio</code> (misc 35)</td>
+</tr>
+<tr>
+<td>FM PCM</td>
+<td><code>01-04: Dfm sprd-codec-fm-4</code> (playback)</td>
+</tr>
+<tr>
+<td>Kernel</td>
+<td>Linux 3.10.65</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>The driver states: <code>SDIO radio driver for marlin2 FM Radio Receivers, share SDIO with BT/WIFI</code><br>— this statement holds under both systems and is the starting point for analyzing shared-resource issues.</p>
+</blockquote>
+<hr>
+<h2 id="2-Android-6-0-native-FM-startup-flow"><a href="#2-Android-6-0-native-FM-startup-flow" class="headerlink" title="2. Android 6.0 native FM startup flow"></a>2. Android 6.0 native FM startup flow</h2><h3 id="2-1-Startup-chain"><a href="#2-1-Startup-chain" class="headerlink" title="2.1 Startup chain"></a>2.1 Startup chain</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Boot</span><br><span class="line"> └─ init / ueventd</span><br><span class="line">     ├─ insmod sprdwl.ko → along with marlin_fm.ko</span><br><span class="line">     ├─ download (shared with WiFi, burns the combo firmware)</span><br><span class="line">     ├─ wcnd (unified power-up management for WiFi/Bluetooth/FM)</span><br><span class="line">     └─ SystemServer</span><br><span class="line">         └─ BroadcastRadioService</span><br><span class="line">             └─ loads the FM HAL</span><br><span class="line">                 ├─ libradio.so / libradioservice.so (HAL interface)</span><br><span class="line">                 ├─ libFMHalSource.so (audio source, starts a thread to read from PCM)</span><br><span class="line">                 ├─ libfmjni.so (JNI bridge)</span><br><span class="line">                 └─ libengfm.so (engineering mode, exports only fm_runcommand)</span><br><span class="line">                     └─ opens /dev/fm, sends commands</span><br><span class="line">         └─ FM App (radio_interactor_service.apk etc.)</span><br><span class="line">             └─ AudioFlinger ← FMHalSource → TinyALSA → PCM</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2-Android-key-points"><a href="#2-2-Android-key-points" class="headerlink" title="2.2 Android key points"></a>2.2 Android key points</h3><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>What Android does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Permissions&#x2F;access control</strong></td>
+<td>SELinux + device node permissions; <code>/dev/fm</code> only allows access by the radio group</td>
+</tr>
+<tr>
+<td><strong>Audio routing</strong></td>
+<td><code>FMHalSource</code> holds the <code>pcmHandle</code>; <code>FMHalThread::threadLoop()</code> reads PCM → <code>RingBuffer</code> → AudioFlinger mixing</td>
+</tr>
+<tr>
+<td><strong>State management</strong></td>
+<td><code>BroadcastRadioService</code> manages radios uniformly and provides the <code>RadioManager</code> API to apps</td>
+</tr>
+<tr>
+<td><strong>RDS handling</strong></td>
+<td>parsed inside the HAL (<code>rds_parser</code> lives on the driver or HAL side) and reported to apps via <code>RadioMetadata</code></td>
+</tr>
+<tr>
+<td><strong>Multi-app contention</strong></td>
+<td>the service layer arbitrates uniformly; apps use it as API clients</td>
+</tr>
+<tr>
+<td><strong>Middleware thickness</strong></td>
+<td>very thick: App → RadioManager → BroadcastRadioService → JNI → HAL → &#x2F;dev&#x2F;fm</td>
+</tr>
+</tbody></table>
+<p><strong>Evidence sources</strong> (readable directly from the Android partition on this device):</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ls</span> /mnt/android_sys/lib/&#123;libFMHalSource,libengfm,libfmjni,libradio,libradioservice&#125;.so</span><br><span class="line"><span class="built_in">ls</span> /mnt/android_sys/priv-app/radio_interactor_service/radio_interactor_service.apk</span><br><span class="line">nm -D /mnt/android_sys/lib/libengfm.so                 <span class="comment"># only fm_runcommand</span></span><br><span class="line">nm -D /mnt/android_sys/lib/libFMHalSource.so | grep -i <span class="string">&#x27;pcm\|thread\|RingBuffer&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="3-The-Alpine-this-device-FM-solution"><a href="#3-The-Alpine-this-device-FM-solution" class="headerlink" title="3. The Alpine (this device) FM solution"></a>3. The Alpine (this device) FM solution</h2><h3 id="3-1-Goal-replace-a-whole-framework-with-minimal-code"><a href="#3-1-Goal-replace-a-whole-framework-with-minimal-code" class="headerlink" title="3.1 Goal: replace a whole framework with minimal code"></a>3.1 Goal: replace a whole framework with minimal code</h3><p>On Alpine we have <strong>no</strong> binder &#x2F; SystemServer &#x2F; AudioFlinger &#x2F; SELinux radio policy.<br>So what must be replaced is layers ④ and ⑤; <strong>layers ①–③ are kept as they are</strong>.</p>
+<h3 id="3-2-Proposed-startup-chain"><a href="#3-2-Proposed-startup-chain" class="headerlink" title="3.2 Proposed startup chain"></a>3.2 Proposed startup chain</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Boot</span><br><span class="line"> └─ openrc</span><br><span class="line">     ├─ sprdwl.ko → marlin_fm.ko (inherits the existing WiFi chain)</span><br><span class="line">     ├─ logdw</span><br><span class="line">     ├─ download (burns the combo firmware, including FM)        ← reuses the existing</span><br><span class="line">     ├─ wcnd (power-up)                            ← reuses the existing</span><br><span class="line">     ├─ bt_once(BT-OPEN) → bt_wake.sh           ← reuses the existing</span><br><span class="line">     ├─ bt_user_daemon  /tmp/bt_ctl.sock        ← reuses the existing</span><br><span class="line">     ├─ fm_radio_daemon /tmp/fm_ctl.sock        ← 【新增】replaces the whole Android middleware</span><br><span class="line">     └─ lvgl_demo → radio page g_radio_page        ← 【新增】replaces the Android FM App</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-Correspondences-on-the-Alpine-side"><a href="#3-3-Correspondences-on-the-Alpine-side" class="headerlink" title="3.3 Correspondences on the Alpine side"></a>3.3 Correspondences on the Alpine side</h3><table>
+<thead>
+<tr>
+<th>Android component</th>
+<th>Alpine replacement</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>insmod + node permissions</td>
+<td>inherits the existing WiFi chain; no extra action needed</td>
+<td><code>/dev/fm</code> is already available</td>
+</tr>
+<tr>
+<td>BroadcastRadioService</td>
+<td><strong>None</strong></td>
+<td>replaces service-layer arbitration with single-instance mutual exclusion in the daemon</td>
+</tr>
+<tr>
+<td>FM HAL (<code>libFMHalSource.so</code>)</td>
+<td><strong>the audio thread inside <code>fm_radio_daemon</code></strong></td>
+<td>isomorphic logic: read PCM → buffer → output</td>
+</tr>
+<tr>
+<td>JNI &#x2F; <code>libfmjni.so</code></td>
+<td><strong>None</strong></td>
+<td>a unix socket text protocol is used between the UI and the daemon</td>
+</tr>
+<tr>
+<td><code>libengfm.so</code>(<code>fm_runcommand</code>)</td>
+<td><strong>implement the command encapsulation yourself</strong></td>
+<td>the hint is to adopt the AT command style</td>
+</tr>
+<tr>
+<td>RadioManager API</td>
+<td><strong>socket text commands</strong></td>
+<td>few commands, easy to debug, consistent with the Bluetooth daemon</td>
+</tr>
+<tr>
+<td>AudioFlinger mixing&#x2F;focus</td>
+<td><strong>write the audio focus arbitration yourself</strong></td>
+<td>must be done, otherwise FM&#x2F;A2DP&#x2F;local playback will cross-talk</td>
+</tr>
+<tr>
+<td>FM App (APK)</td>
+<td><strong>LVGL <code>radio_page</code></strong></td>
+<td>720×1280 portrait screen, 31px line-height grid</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-Stage-by-stage-comparison-table"><a href="#4-Stage-by-stage-comparison-table" class="headerlink" title="4. Stage-by-stage comparison table"></a>4. Stage-by-stage comparison table</h2><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Android</th>
+<th>Alpine (this device)</th>
+<th>Key differences</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Firmware download</strong></td>
+<td>download in init</td>
+<td>download via openrc</td>
+<td>basically the same; Alpine relies on the WiFi auto-start chain</td>
+</tr>
+<tr>
+<td><strong>Power-up management</strong></td>
+<td>wcnd manages uniformly</td>
+<td>wcnd likewise</td>
+<td>the same</td>
+</tr>
+<tr>
+<td><strong>Driver loading</strong></td>
+<td>insmod sprdwl → marlin_fm</td>
+<td>the same (auto-loaded)</td>
+<td>note that <code>marlin_fm</code> is depended on by <code>sprdwl</code></td>
+</tr>
+<tr>
+<td><strong>Device node</strong></td>
+<td><code>/dev/fm</code> (restricted access)</td>
+<td><code>/dev/fm</code> (misc 23)</td>
+<td>under Alpine root connects directly, with no SELinux constraints</td>
+</tr>
+<tr>
+<td><strong>Command interface</strong></td>
+<td>HAL wraps ioctl&#x2F;AT</td>
+<td>the daemon sends directly</td>
+<td><strong>the command numbers have been reverse-engineered</strong> (<code>0xC004F500 | nr</code>, 47 of them)</td>
+</tr>
+<tr>
+<td><strong>Audio source</strong></td>
+<td><code>FMHalSource</code> + <code>FMHalThread</code> + RingBuffer</td>
+<td>the daemon builds its own read thread</td>
+<td>isomorphic architecture, simplified implementation</td>
+</tr>
+<tr>
+<td><strong>Audio mixing</strong></td>
+<td>AudioFlinger</td>
+<td><strong>a focus arbitration must be built</strong></td>
+<td>Android is backed by the framework; Alpine must write it itself</td>
+</tr>
+<tr>
+<td><strong>RDS reporting</strong></td>
+<td><code>RadioMetadata</code> → App</td>
+<td>socket text fields</td>
+<td>the RDS parsing capability already exists in the driver; take it directly</td>
+</tr>
+<tr>
+<td><strong>UI</strong></td>
+<td>APK + full FM app</td>
+<td>LVGL radio page</td>
+<td>limited by MCU-class resources, designed lean for 720×1280</td>
+</tr>
+<tr>
+<td><strong>Multi-app contention</strong></td>
+<td>service-layer arbitration</td>
+<td><strong>single-daemon exclusive access + upper-layer arbitration</strong></td>
+<td>simple but sufficient</td>
+</tr>
+<tr>
+<td><strong>Command-line tools</strong></td>
+<td><code>amixer</code>&#x2F;<code>tinymix</code>&#x2F;<code>tinyplay</code> (bundled with Android)</td>
+<td><strong>none of them</strong></td>
+<td>you can only write C against libasound.so.2</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-Key-principles-why-this-works"><a href="#5-Key-principles-why-this-works" class="headerlink" title="5. Key principles (why this works)"></a>5. Key principles (why this works)</h2><ol>
+<li><p><strong>The combo chip sharing SDIO is the key constraint</strong>:<br>the firmware is burned once and power-up is managed uniformly, so <strong>it is impossible to burn firmware for FM alone or power it up alone</strong>.<br>This is also the root cause of “if WiFi does not work, FM certainly does not work”.</p>
+</li>
+<li><p><strong>The driver has already done all the complex RF&#x2F;demodulation&#x2F;RDS work</strong>:<br>user space does not need to implement any FM protocol; it only needs to operate according to the command set.<br>Therefore, on the Alpine side it is feasible to replace Android’s “whole HAL + service + JNI stack” with “a thin daemon”.</p>
+</li>
+<li><p><strong>Audio is the only framework capability that must be added yourself</strong>:<br>Android has AudioFlinger for mixing and focus management; on the Alpine side nothing handles this,<br><strong>three-way arbitration among FM &#x2F; A2DP &#x2F; local playback must be explicitly implemented</strong>, otherwise users will certainly encounter cross-talk.</p>
+</li>
+<li><p><strong>The socket text protocol is a deliberate choice</strong>:<br>it stays consistent with the existing Bluetooth daemon (<code>/tmp/bt_ctl.sock</code>, <code>state</code>&#x2F;<code>on</code>&#x2F;<code>off</code>),<br>and the team already has the mental model and the pitfall experience (especially “you must set a socket timeout, or the UI freezes”).</p>
+</li>
+</ol>
+<hr>
+<h2 id="6-One-line-summary"><a href="#6-One-line-summary" class="headerlink" title="6. One-line summary"></a>6. One-line summary</h2><blockquote>
+<p>Android holds FM up with <strong>a whole framework</strong> (Service + HAL + JNI + AudioFlinger);<br>on Alpine we keep the same <strong>bottom three layers</strong> (hardware&#x2F;firmware&#x2F;driver),<br>use a single <strong><code>fm_radio_daemon</code></strong> to replace the middleware, use an <strong>LVGL radio page</strong> to replace the app,<br>and <strong>add ourselves the piece that Android’s framework backs up — audio focus arbitration</strong>.<br>The only former uncertainty, the <strong>ioctl command numbers</strong>, has been removed (see “FM收音ioctl命令表_逆向还原”), and the whole chain can now run end to end.</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-FM-radio-startup-flow-%E2%80%94-Android-vs-Alpine-this-device-comparison"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A FM radio startup flow — Android vs Alpine (this device) comparison</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Chip-physical-architecture-shared-by-both-systems"><span class="toc-number">1.1.</span> <span class="toc-text">1. Chip physical architecture (shared by both systems)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Android-6-0-native-FM-startup-flow"><span class="toc-number">1.2.</span> <span class="toc-text">2. Android 6.0 native FM startup flow</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-Startup-chain"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 Startup chain</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Android-key-points"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 Android key points</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Alpine-this-device-FM-solution"><span class="toc-number">1.3.</span> <span class="toc-text">3. The Alpine (this device) FM solution</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Goal-replace-a-whole-framework-with-minimal-code"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 Goal: replace a whole framework with minimal code</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Proposed-startup-chain"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Proposed startup chain</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-Correspondences-on-the-Alpine-side"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 Correspondences on the Alpine side</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Stage-by-stage-comparison-table"><span class="toc-number">1.4.</span> <span class="toc-text">4. Stage-by-stage comparison table</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Key-principles-why-this-works"><span class="toc-number">1.5.</span> <span class="toc-text">5. Key principles (why this works)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-One-line-summary"><span class="toc-number">1.6.</span> <span class="toc-text">6. One-line summary</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&text=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&title=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&is_video=false&description=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM radio startup flow: Android vs Alpine comparison&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&title=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&title=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&title=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&title=FM radio startup flow: Android vs Alpine comparison"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-07-fm-vsalpine-md/&name=FM radio startup flow: Android vs Alpine comparison&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

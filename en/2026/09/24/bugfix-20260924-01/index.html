@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260924_01 — Video playback stuttering (first build a CPU budget table, then change one parameter + re-encode the source) Date: 2026-09-24　Device: Spreadtrum SC9832A (Alpine &#x2F; kernel 3.10">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Video playback stuttering: CPU budget table localization and replacing scale with rotate">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260924_01 — Video playback stuttering (first build a CPU budget table, then change one parameter + re-encode the source) Date: 2026-09-24　Device: Spreadtrum SC9832A (Alpine &#x2F; kernel 3.10">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-24T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.948Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="视频播放">
+<meta property="article:tag" content="bugfix">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Video playback stuttering: CPU budget table localization and replacing scale with rotate</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/24/bugfix-20260924-03/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/24/bugfix-20260924-02/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&text=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&title=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&is_video=false&description=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Video playback stuttering: CPU budget table localization and replacing scale with rotate&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&title=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&title=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&title=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&title=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&name=Video playback stuttering: CPU budget table localization and replacing scale with rotate&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260924-01-%E2%80%94-Video-playback-stuttering-first-build-a-CPU-budget-table-then-change-one-parameter-re-encode-the-source"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260924_01 — Video playback stuttering (first build a CPU budget table, then change one parameter + re-encode the source)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom-and-requirement"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom and requirement</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Localization-build-a-CPU-budget-table"><span class="toc-number">1.2.</span> <span class="toc-text">2. Localization: build a CPU budget table</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Root-cause-three-points"><span class="toc-number">1.3.</span> <span class="toc-text">3. Root cause (three points)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Fix"><span class="toc-number">1.4.</span> <span class="toc-text">4. Fix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-App-side-post-processing-changed-from-%E2%80%9Cscale%E2%80%9D-to-%E2%80%9Crotate%E2%80%9D"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 App side: post-processing changed from “scale” to “rotate”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Source-side-re-encode-to-30fps-Constrained-Baseline"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 Source side: re-encode to 30fps Constrained Baseline</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Lessons-anti-pattern-record-already-merged-into-the-skill"><span class="toc-number">1.6.</span> <span class="toc-text">6. Lessons: anti-pattern record (already merged into the skill)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Leftovers"><span class="toc-number">1.7.</span> <span class="toc-text">7. Leftovers</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Video playback stuttering: CPU budget table localization and replacing scale with rotate
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-24T04:00:00.000Z" itemprop="datePublished">2026-09-24</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E8%A7%86%E9%A2%91%E6%92%AD%E6%94%BE/" rel="tag">视频播放</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260924-01-—-Video-playback-stuttering-first-build-a-CPU-budget-table-then-change-one-parameter-re-encode-the-source"><a href="#bugfix-20260924-01-—-Video-playback-stuttering-first-build-a-CPU-budget-table-then-change-one-parameter-re-encode-the-source" class="headerlink" title="bugfix_20260924_01 — Video playback stuttering (first build a CPU budget table, then change one parameter + re-encode the source)"></a>bugfix_20260924_01 — Video playback stuttering (first build a CPU budget table, then change one parameter + re-encode the source)</h1><blockquote>
+<p>Date: 2026-09-24　Device: Spreadtrum SC9832A (Alpine &#x2F; kernel 3.10.65 &#x2F; 720x1280 portrait fb)<br>Related commit: 2341fad<br>Result: <strong>decoding was never the bottleneck</strong>; after changing one playback parameter + re-encoding the source, the real-time ratio went from <strong>0.75× → 1.08×</strong><br>Nature: a performance issue, not a functional failure</p>
+</blockquote>
+<hr>
+<h2 id="1-Symptom-and-requirement"><a href="#1-Symptom-and-requirement" class="headerlink" title="1. Symptom and requirement"></a>1. Symptom and requirement</h2><p>User feedback: “the video picture and the game picture stutter”, together with a request to add a VSP&#x2F;GSP hardware acceleration switch in the settings, hoping that with it enabled both video and games would go through hardware.</p>
+<p><strong>This round did not rush to write code, but first asked “which step is actually stuttering”.</strong> Because the answer decides whether the next step is “video hardware decoding” (schedule measured in weeks, depends on reverse-engineering private ioctls) or “hardware scaling” (schedule measured in days) — picking the wrong direction means several wasted weeks.</p>
+<h2 id="2-Localization-build-a-CPU-budget-table"><a href="#2-Localization-build-a-CPU-budget-table" class="headerlink" title="2. Localization: build a CPU budget table"></a>2. Localization: build a CPU budget table</h2><p>Method: run the same data with the same player, <strong>two runs differing in only one switch</strong>, and use the time difference to measure the cost of a given stage.</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /home/lvgl_demo/lvgl_demo/sdcard/video</span><br><span class="line">MP=/home/lvgl_demo/lvgl_demo/libs/mplayer/mplayer</span><br><span class="line"><span class="variable">$MP</span> -benchmark -vo null -nosound -endpos 15 原子弹.mp4             <span class="comment"># 纯解码</span></span><br><span class="line"><span class="variable">$MP</span> -benchmark -vo null -nosound -endpos 15 -vf scale=720:1280 …   <span class="comment"># 解码+缩放</span></span><br><span class="line"><span class="variable">$MP</span> -benchmark -vo null -nosound -endpos 15 -vf rotate=1 …         <span class="comment"># 解码+旋转</span></span><br></pre></td></tr></table></figure>
+
+<p>The whole run uses <code>-vo null</code> (no framebuffer writes), so it <strong>will not disturb the person currently using this device</strong>.</p>
+<p>Source: H.264 1280x720 <strong>60fps</strong> 2821 kbps (a landscape source on a portrait device)</p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Decode VC</th>
+<th>Post-process VO</th>
+<th>Total</th>
+<th>Relative to real time</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pure decode</td>
+<td>10.23s</td>
+<td>0.003s</td>
+<td>10.42s</td>
+<td><strong>1.47×</strong></td>
+</tr>
+<tr>
+<td><code>-vf scale=720:1280</code> (the form used at the time)</td>
+<td>10.32s</td>
+<td><strong>21.47s</strong></td>
+<td>31.98s</td>
+<td>0.47×</td>
+</tr>
+<tr>
+<td><code>-vf rotate=1</code></td>
+<td>10.19s</td>
+<td>9.63s</td>
+<td>20.02s</td>
+<td>0.75×</td>
+</tr>
+<tr>
+<td><code>scale</code> + <code>-sws 0</code></td>
+<td>10.20s</td>
+<td>11.25s</td>
+<td>21.64s</td>
+<td>0.69×</td>
+</tr>
+<tr>
+<td><code>scale</code> + <code>skiploopfilter</code> + <code>-sws 0</code></td>
+<td>9.18s</td>
+<td>11.25s</td>
+<td>20.62s</td>
+<td>0.73×</td>
+</tr>
+</tbody></table>
+<h2 id="3-Root-cause-three-points"><a href="#3-Root-cause-three-points" class="headerlink" title="3. Root cause (three points)"></a>3. Root cause (three points)</h2><ol>
+<li><strong>Decoding was never the bottleneck</strong>: in any run, VC stays steadily at 1.47× real time.<br>⇒ The initially most favored “VSP video hardware decoding” has <strong>limited benefit</strong> for this problem (zeroing out VC only raises 0.75× to 1.56×, which is not cheaper than the next two points).</li>
+<li><strong>Scaling was the most expensive step at the time</strong> (21.5s, accounting for 2&#x2F;3). But more fundamentally — <strong>this step should not exist in the first place</strong>: the source is 1280x720, which is <strong>landscape</strong>, while the screen is 720x1280, which is <strong>portrait</strong>; <strong>after a 90° rotation the dimensions match exactly</strong>. Rotation is a pure pixel rearrangement, half the cost of interpolated scaling.</li>
+<li><strong>The source’s 60fps exceeds this machine’s total CPU budget</strong>: 2×Cortex-A7, measured steady 768MHz. Even with software optimization maxed out (fastest scaling + skipping the loop filter) it is only 0.73×, short of real time.</li>
+</ol>
+<h2 id="4-Fix"><a href="#4-Fix" class="headerlink" title="4. Fix"></a>4. Fix</h2><h3 id="4-1-App-side-post-processing-changed-from-“scale”-to-“rotate”"><a href="#4-1-App-side-post-processing-changed-from-“scale”-to-“rotate”" class="headerlink" title="4.1 App side: post-processing changed from “scale” to “rotate”"></a>4.1 App side: post-processing changed from “scale” to “rotate”</h3><p><code>lv_pages/video_player_page.c</code>, two <code>execlp</code> sites (the Bluetooth audio &#x2F; muted branches) + one explanatory comment:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-  <span class="string">&quot;-vf&quot;</span>, <span class="string">&quot;scale=720:-2,expand=720:1280&quot;</span>,</span><br><span class="line">+  <span class="string">&quot;-vf&quot;</span>, <span class="string">&quot;rotate=1,expand=720:1280&quot;</span>,</span><br></pre></td></tr></table></figure>
+
+<p><code>expand=720:1280</code> is kept for compatibility with sources like <strong>960x720</strong> — after rotation it becomes 720x960, and black bars are needed for centering only when the height is insufficient; 1280x720 after rotation fills the screen exactly, and expand incurs no extra cost.</p>
+<p><strong>Side benefit</strong>: the picture changed from “a small image in the middle of the screen (about 720x405)” to <strong>full screen</strong>.</p>
+<h3 id="4-2-Source-side-re-encode-to-30fps-Constrained-Baseline"><a href="#4-2-Source-side-re-encode-to-30fps-Constrained-Baseline" class="headerlink" title="4.2 Source side: re-encode to 30fps Constrained Baseline"></a>4.2 Source side: re-encode to 30fps Constrained Baseline</h3><p>The device has no ffmpeg&#x2F;mencoder and no external network, so it was converted locally with <code>imageio-ffmpeg</code> and transferred back:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ffmpeg -y -i in.mp4 -vf fps=30 -c:v libx264 -profile:v baseline -level 3.0 \</span><br><span class="line">       -preset slow -crf 25 -pix_fmt yuv420p -movflags +faststart -c:a copy out.mp4</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Original</th>
+<th>New</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原子弹.mp4</td>
+<td>3691 KB &#x2F; High &#x2F; 60fps</td>
+<td>591 KB &#x2F; Constrained Baseline &#x2F; 30fps</td>
+</tr>
+<tr>
+<td>海公牛.mp4</td>
+<td>942 KB</td>
+<td>249 KB</td>
+</tr>
+<tr>
+<td>疼疼疼.mp4</td>
+<td>3509 KB</td>
+<td>1129 KB</td>
+</tr>
+</tbody></table>
+<p>Baseline has no B-frames and no CABAC, making software decoding easier than High profile. The original files are backed up in <code>sdcard/video/_orig60fps/</code>.</p>
+<h2 id="5-Verification"><a href="#5-Verification" class="headerlink" title="5. Verification"></a>5. Verification</h2><p>Retest with the same method after the change:</p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>VC</th>
+<th>VO</th>
+<th>Total</th>
+<th>Relative to real time</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>New source + <code>rotate=1</code></td>
+<td>4.305s</td>
+<td>4.841s</td>
+<td>9.237s</td>
+<td><strong>1.08×</strong></td>
+</tr>
+<tr>
+<td>New source + App’s actual parameters <code>rotate=1,expand=720:1280</code></td>
+<td>4.278s</td>
+<td>4.803s</td>
+<td>9.170s</td>
+<td><strong>1.09×</strong></td>
+</tr>
+</tbody></table>
+<p><strong>0.75× → 1.08×, crossing the real-time line.</strong> Build <code>MAKE_RC=0 / ERR=0</code>, lvgl_demo running as a single instance.</p>
+<p>Rollback point: device <code>lv_pages/video_player_page.c.bak_rotate</code>; original files <code>video/_orig60fps/</code>.</p>
+<h2 id="6-Lessons-anti-pattern-record-already-merged-into-the-skill"><a href="#6-Lessons-anti-pattern-record-already-merged-into-the-skill" class="headerlink" title="6. Lessons: anti-pattern record (already merged into the skill)"></a>6. Lessons: anti-pattern record (already merged into the skill)</h2><ul>
+<li><strong>Anti-pattern: promising a piece of hardware before making a budget table.</strong> This round almost went straight to “VSP hardware decoding” (schedule of weeks, depends on reverse-engineering private ioctls), while measurements showed decoding was never the bottleneck.</li>
+<li><strong>Anti-pattern: only thinking about making a step faster, without asking whether the step should exist.</strong> The first version’s conclusion was “scaling is too expensive, find a way to make it faster” (<code>-sws 0</code>); if we had first asked “can we avoid scaling”, the answer would be <strong>rotation</strong> — directly halving the cost, and the picture looks better too.</li>
+<li><strong>Anti-pattern: drawing conclusions from a single <code>nproc</code>.</strong> This device has the <code>[sprd_hotplug]</code> kernel thread doing dynamic core tuning, and <code>nproc</code> varies with load between 1~4. I once thought I had knocked cores offline by writing <code>online</code> myself, and only ruled it out after checking <code>dmesg</code> and seeing the system’s own <code>plugin</code>&#x2F;<code>unplug</code> logs.</li>
+</ul>
+<h2 id="7-Leftovers"><a href="#7-Leftovers" class="headerlink" title="7. Leftovers"></a>7. Leftovers</h2><ul>
+<li><strong>The cost of writing the framebuffer is still unmeasured</strong>: this round’s budget table is entirely based on <code>-vo null</code> and does not include actually writing to the screen (720×1280×4B ≈ 3.7MB per frame). A <code>-vo fbdev</code> run of 15 seconds on the screen is needed to complete the picture. <strong>The margin at 1.08× is not generous; the actual experience is subject to on-site playback.</strong></li>
+<li>The stuttering in games (GBA&#x2F;FC) comes from <strong>CPU emulation + scaling to screen</strong>, unrelated to this round. Treating it requires GSP hardware scaling — that is the correct answer to the user’s original “hardware acceleration switch”.</li>
+<li>The VSP&#x2F;GSP availability has been fully surveyed (see MEMORY.md §10 for details): the VSP driver is complete, the user-space entry points are <code>/dev/sprd_vsp</code> + <code>/dev/sprd_vpp</code>, and <code>libomx_avcdec_hw_sprd.so</code> &#x2F; <code>hwcomposer.sc8830.so</code> can be referenced for disassembly; but <strong>there are no vsp&#x2F;gsp header files anywhere</strong>, so struct layouts can only be guessed.</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260924-01-%E2%80%94-Video-playback-stuttering-first-build-a-CPU-budget-table-then-change-one-parameter-re-encode-the-source"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260924_01 — Video playback stuttering (first build a CPU budget table, then change one parameter + re-encode the source)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom-and-requirement"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom and requirement</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Localization-build-a-CPU-budget-table"><span class="toc-number">1.2.</span> <span class="toc-text">2. Localization: build a CPU budget table</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Root-cause-three-points"><span class="toc-number">1.3.</span> <span class="toc-text">3. Root cause (three points)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Fix"><span class="toc-number">1.4.</span> <span class="toc-text">4. Fix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-App-side-post-processing-changed-from-%E2%80%9Cscale%E2%80%9D-to-%E2%80%9Crotate%E2%80%9D"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 App side: post-processing changed from “scale” to “rotate”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Source-side-re-encode-to-30fps-Constrained-Baseline"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 Source side: re-encode to 30fps Constrained Baseline</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Lessons-anti-pattern-record-already-merged-into-the-skill"><span class="toc-number">1.6.</span> <span class="toc-text">6. Lessons: anti-pattern record (already merged into the skill)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Leftovers"><span class="toc-number">1.7.</span> <span class="toc-text">7. Leftovers</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&text=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&title=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&is_video=false&description=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Video playback stuttering: CPU budget table localization and replacing scale with rotate&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&title=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&title=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&title=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&title=Video playback stuttering: CPU budget table localization and replacing scale with rotate"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/24/bugfix-20260924-01/&name=Video playback stuttering: CPU budget table localization and replacing scale with rotate&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

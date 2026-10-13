@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260922_03 — FM daemon 無故消失，收音機頁永遠顯示”芯片 0000” 關聯提交：221fa7d  現象fm_user_daemon 運行一段時間後無聲無息地消失（ps 裡找不到，socket 文件&#x2F;tmp&#x2F;fm_ctl.sock 還在但 connect() 返回 Connection refused）。收音機頁因此永遠顯示 芯片 0000、RDS 不可用、已關">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM_daemon因SIGPIPE靜默退出">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260922_03 — FM daemon 無故消失，收音機頁永遠顯示”芯片 0000” 關聯提交：221fa7d  現象fm_user_daemon 運行一段時間後無聲無息地消失（ps 裡找不到，socket 文件&#x2F;tmp&#x2F;fm_ctl.sock 還在但 connect() 返回 Connection refused）。收音機頁因此永遠顯示 芯片 0000、RDS 不可用、已關">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-22T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:45.569Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="收音机">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM_daemon因SIGPIPE靜默退出</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/22/bugfix-20260922-02/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/22/bugfix-20260922-04/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&text=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&title=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&is_video=false&description=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM_daemon因SIGPIPE靜默退出&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&title=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&title=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&title=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&title=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&name=FM_daemon因SIGPIPE靜默退出&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260922-03-%E2%80%94-FM-daemon-%E7%84%A1%E6%95%85%E6%B6%88%E5%A4%B1%EF%BC%8C%E6%94%B6%E9%9F%B3%E6%A9%9F%E9%A0%81%E6%B0%B8%E9%81%A0%E9%A1%AF%E7%A4%BA%E2%80%9D%E8%8A%AF%E7%89%87-0000%E2%80%9D"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260922_03 — FM daemon 無故消失，收音機頁永遠顯示”芯片 0000”</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E9%81%8E%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位過程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E6%B1%BA%E8%BE%A6%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解決辦法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A9%97%E8%AD%89"><span class="toc-number">1.6.</span> <span class="toc-text">驗證</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B6%93%E9%A9%97%E6%95%99%E8%A8%93"><span class="toc-number">1.7.</span> <span class="toc-text">經驗教訓</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM_daemon因SIGPIPE靜默退出
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-22T04:00:00.000Z" itemprop="datePublished">2026-09-22</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260922-03-—-FM-daemon-無故消失，收音機頁永遠顯示”芯片-0000”"><a href="#bugfix-20260922-03-—-FM-daemon-無故消失，收音機頁永遠顯示”芯片-0000”" class="headerlink" title="bugfix_20260922_03 — FM daemon 無故消失，收音機頁永遠顯示”芯片 0000”"></a>bugfix_20260922_03 — FM daemon 無故消失，收音機頁永遠顯示”芯片 0000”</h1><blockquote>
+<p><strong>關聯提交</strong>：221fa7d</p>
+</blockquote>
+<h2 id="現象"><a href="#現象" class="headerlink" title="現象"></a>現象</h2><p><code>fm_user_daemon</code> 運行一段時間後<strong>無聲無息地消失</strong>（<code>ps</code> 裡找不到，socket 文件<br><code>/tmp/fm_ctl.sock</code> 還在但 <code>connect()</code> 返回 <code>Connection refused</code>）。<br>收音機頁因此永遠顯示 <code>芯片 0000</code>、<code>RDS 不可用</code>、<code>已關閉</code>，所有按鈕點了沒反應。<br>日誌的最後幾行只有正常的 <code>cmd=&#39;state&#39;</code> &#x2F; <code>cmd=&#39;rssi&#39;</code>，<strong>完全沒有崩潰信息</strong>。</p>
+<h2 id="影響範圍"><a href="#影響範圍" class="headerlink" title="影響範圍"></a>影響範圍</h2><ul>
+<li>隻影響 FM 收音機功能（頁面 ↔ daemon 鏈路全斷）。</li>
+<li>不影響 lvgl_demo 主體：<code>lvgl_demo</code> 有自己的 <code>/root/lvgl_watchdog.sh</code> 保活，一直正常。</li>
+<li>影響所有依賴 <code>/dev/fm</code> 常開 fd 的功能：daemon 一死，<code>/dev/fm</code> 被 close 觸發<br><code>fm_release</code>（發 <code>at+fm=12</code> 並阻塞約 4s），FM 狀態丟失。</li>
+</ul>
+<h2 id="根因"><a href="#根因" class="headerlink" title="根因"></a>根因</h2><p><strong>對端已關閉的 socket 上做普通 <code>write()</code> 會觸發 <code>SIGPIPE</code>，其默認動作是終止進程。</strong></p>
+<p>daemon 的回寫函數原本是：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">reply</span><span class="params">(<span class="type">int</span> cfd, <span class="type">const</span> <span class="type">char</span> *fmt, ...)</span></span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (write(cfd, buf, (<span class="type">size_t</span>)n) &lt; <span class="number">0</span>)     <span class="comment">/* ← 沒有 MSG_NOSIGNAL */</span></span><br><span class="line">        logf_(<span class="string">&quot;[fm] 回寫失敗: %s&quot;</span>, strerror(errno));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>且 <code>main()</code> 裡<strong>沒有</strong> <code>signal(SIGPIPE, SIG_IGN)</code>。</p>
+<p>而客戶端（lvgl_demo 收音機頁）在”回覆寫出之前”斷開是<strong>常態</strong>：</p>
+<ul>
+<li>頁面 <code>onDestroy</code>&#x2F;應用被 <code>killall</code> 時連接被關；</li>
+<li>頁面的 IO 工作線程對 <code>rssi</code> 命令設 6s 超時，但內核 <code>GETRSSI</code> 要 ~4s；<br>頁面還會在超時後重連 → 舊連接被丟棄。</li>
+</ul>
+<p>一旦發生，daemon 被 SIGPIPE 打死，<strong>沒有任何日誌</strong>（信號默認動作，不產生用戶態輸出）。</p>
+<h2 id="定位過程"><a href="#定位過程" class="headerlink" title="定位過程"></a>定位過程</h2><ol>
+<li>先確認進程真的沒了、socket 是陳舊的（<code>pidof</code> 空、<code>Connection refused</code>）。</li>
+<li>看 daemon 源碼的退出路徑：<code>main()</code> 裡 setup 之後的 <code>for(;;) accept(...)</code> 是死循環，<br>**沒有任何主動 <code>exit()</code>**；各命令分支也沒有。→ 排除”邏輯自己退出”。</li>
+<li>於是只剩”被信號殺死 &#x2F; 段錯誤”。grep 信號與寫操作：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">grep -n &quot;write(|send(|MSG_NOSIGNAL|SIGPIPE|signal(&quot; fm_user_daemon.c</span><br><span class="line">→ 112: write(fd, m,...)         （wcnd socket）</span><br><span class="line">→ 252: write(cfd, buf, n)       （客戶端 socket，無 MSG_NOSIGNAL）</span><br><span class="line">沒有任何 signal(...)</span><br></pre></td></tr></table></figure></li>
+<li>時間線吻合：每次”daemon 消失”都發生在<strong>我重啟 lvgl_demo 應用</strong>之後。</li>
+<li><strong>做對照實驗</strong>證明機制（<code>ssh_tools/sigpipe_ctrl.c</code>）：fork 兩個子進程，各自<br><code>socketpair()</code> 後關掉對端，A 組用裸 <code>write()</code>、B 組用 <code>send(..., MSG_NOSIGNAL)</code>：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">B(MSG_NOSIGNAL)   : 活著, n=-1 errno=Broken pipe  &lt;- 期望如此</span><br><span class="line">對照實驗結束：A 組若沒有輸出即表示它已被 SIGPIPE 終止。</span><br></pre></td></tr></table></figure>
+<strong>A 組完全沒有輸出 → 確實被 SIGPIPE 終止。</strong> 機制在本機得到證實。</li>
+</ol>
+<h2 id="解決辦法"><a href="#解決辦法" class="headerlink" title="解決辦法"></a>解決辦法</h2><p>兩處修改（<code>ssh_tools/fm_user_daemon.c</code>）：</p>
+<ol>
+<li>統一 socket 寫函數，永不產生 SIGPIPE：<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">sock_send_raw</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">char</span> *buf, <span class="type">size_t</span> n)</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> MSG_NOSIGNAL</span></span><br><span class="line">    <span class="keyword">return</span> (<span class="type">int</span>)send(fd, buf, n, MSG_NOSIGNAL);</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line">    <span class="keyword">return</span> (<span class="type">int</span>)write(fd, buf, n);</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>reply()</code> 改用它；</li>
+<li><code>wcnd_fm_open()</code> 裡向 <code>@wcnd</code> 寫 <code>&quot;wcn FM-OPEN&quot;</code> 也改用它（同樣是對端可能已斷的 socket）。</li>
+</ul>
+</li>
+<li><code>main()</code> 開頭加兜底：<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">signal(SIGPIPE, SIG_IGN);</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>另加<strong>保活看門狗</strong> <code>/root/fm_watchdog.sh</code>（每 5 秒 <code>pidof fm_user_daemon</code>，不在就拉起，<br>模式與既有 <code>/root/lvgl_watchdog.sh</code> 一致），防禦 OOM&#x2F;SIGKILL 等其它死法。</p>
+<h2 id="驗證"><a href="#驗證" class="headerlink" title="驗證"></a>驗證</h2><ul>
+<li><strong>迴歸測試</strong>（設備端 <code>python3 /root/fm_sigpipe_test.py</code>）：6 輪”連上 → 發 <code>rssi</code><br>（內核要 ~4s 才回）→ 0.15s 後立刻 <code>close()</code>“，正是原本必死的最壞時序。<br>結果：<strong>6 輪全部存活，daemon pid 始終 6408 不變 → PASSED</strong>。</li>
+<li><strong>對照實驗</strong>（上節 <code>sigpipe_ctrl</code>）：A 組靜默死亡 &#x2F; B 組存活 → 反證修復必要且有效。</li>
+<li>重啟應用後重進收音機頁，頁面恢復顯示 <code>RDS 可用 · 芯片 2341 · 收聽中</code>。</li>
+<li>設備自行重啟後，<code>/etc/local.d/zz_fm.start</code> 自動把 daemon 拉起（日誌<br><code>[fm] wcn FM-OPEN -&gt; WCNBTWIFI-CMD OK</code>、<code>chipid=0x2341 rds=1</code>、<code>就緒，監聽 /tmp/fm_ctl.sock</code>）。</li>
+</ul>
+<h2 id="經驗教訓"><a href="#經驗教訓" class="headerlink" title="經驗教訓"></a>經驗教訓</h2><ol>
+<li><strong>寫 socket 一律用 <code>send(..., MSG_NOSIGNAL)</code>，並在長駐進程開頭 <code>signal(SIGPIPE, SIG_IGN)</code>。</strong><br>SIGPIPE 是”靜默殺手”：不產生任何日誌，現象是”進程莫名消失”，<br>極易被誤判為 OOM 或”自己退出了”。</li>
+<li><strong>“沒有 exit() 但進程沒了” → 優先懷疑信號。</strong> 排查順序：<br>代碼退出路徑 → 信號（SIGPIPE&#x2F;SIGSEGV）→ 外部 SIGKILL&#x2F;OOM。</li>
+<li>**長駐 ipc daemon 必須考慮”客戶端隨時可能在回覆前斷開”**，<br>這在 UI 進程會被重啟的嵌入式場景裡是高頻事件，不是邊緣情況。</li>
+<li>機制類結論要有<strong>對照實驗</strong>：光”改完好了”不算證明，要能展示”改之前必壞、改之後必好”。</li>
+<li>每個長駐進程都應配保活看門狗；本項目已有 <code>lvgl_watchdog.sh</code> 的先例可照抄。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260922-03-%E2%80%94-FM-daemon-%E7%84%A1%E6%95%85%E6%B6%88%E5%A4%B1%EF%BC%8C%E6%94%B6%E9%9F%B3%E6%A9%9F%E9%A0%81%E6%B0%B8%E9%81%A0%E9%A1%AF%E7%A4%BA%E2%80%9D%E8%8A%AF%E7%89%87-0000%E2%80%9D"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260922_03 — FM daemon 無故消失，收音機頁永遠顯示”芯片 0000”</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E9%81%8E%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位過程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E6%B1%BA%E8%BE%A6%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解決辦法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A9%97%E8%AD%89"><span class="toc-number">1.6.</span> <span class="toc-text">驗證</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B6%93%E9%A9%97%E6%95%99%E8%A8%93"><span class="toc-number">1.7.</span> <span class="toc-text">經驗教訓</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&text=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&title=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&is_video=false&description=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM_daemon因SIGPIPE靜默退出&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&title=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&title=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&title=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&title=FM_daemon因SIGPIPE靜默退出"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/22/bugfix-20260922-03/&name=FM_daemon因SIGPIPE靜默退出&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

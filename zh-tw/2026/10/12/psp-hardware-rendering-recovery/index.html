@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="背景手頭有一臺展訊 SC9832A（2×Cortex-A7 @1.3GHz，Mali-400 MP1，720×1280 豎屏）的 Linux 設備，跑著自制 LVGL 桌面 + libretro 模擬器前端。PSP 模擬走 ppsspp_libretro core + 自研 miniretro 前端，此前一直走軟件渲染，只有 20fps。歷史上（更早的固件版本）曾實測過硬渲 34-38fps，因此">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PSP 硬渲恢復覆盤：從 20fps 到 33fps">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="背景手頭有一臺展訊 SC9832A（2×Cortex-A7 @1.3GHz，Mali-400 MP1，720×1280 豎屏）的 Linux 設備，跑著自制 LVGL 桌面 + libretro 模擬器前端。PSP 模擬走 ppsspp_libretro core + 自研 miniretro 前端，此前一直走軟件渲染，只有 20fps。歷史上（更早的固件版本）曾實測過硬渲 34-38fps，因此">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-12T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.983Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="PPSSPP">
+<meta property="article:tag" content="ARM">
+<meta property="article:tag" content="bionic">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>PSP 硬渲恢復覆盤：從 20fps 到 33fps</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/10/12/psp-hardware-rendering-recovery/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/12/proxy-setting/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&text=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&title=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&is_video=false&description=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=PSP 硬渲恢復覆盤：從 20fps 到 33fps&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&title=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&title=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&title=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&title=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&name=PSP 硬渲恢復覆盤：從 20fps 到 33fps&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1%E8%88%87%E6%8E%92%E6%9F%A5%E8%B7%AF%E5%BE%91"><span class="toc-number">2.</span> <span class="toc-text">現象與排查路徑</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E5%B1%A4%EF%BC%9Areloc-type-17%EF%BC%8C%E6%96%B0-core-%E7%84%A1%E6%B3%95%E5%8A%A0%E8%BC%89"><span class="toc-number">2.1.</span> <span class="toc-text">第一層：reloc type 17，新 core 無法加載</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E5%B1%A4%EF%BC%9AFBO-%E8%AE%80%E5%9B%9E%E9%BB%91%E6%B4%9E"><span class="toc-number">2.2.</span> <span class="toc-text">第二層：FBO 讀回黑洞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E5%B1%A4%EF%BC%9AuseEmuThread-%E8%88%87-GL-%E4%B8%8A%E4%B8%8B%E6%96%87"><span class="toc-number">2.3.</span> <span class="toc-text">第三層：useEmuThread 與 GL 上下文</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%A1%8D%E5%A4%96%E7%9A%84%E5%9D%91"><span class="toc-number">3.</span> <span class="toc-text">額外的坑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%B5%90%E6%9E%9C"><span class="toc-number">4.</span> <span class="toc-text">結果</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E8%AB%96%E7%B8%BD%E7%B5%90"><span class="toc-number">5.</span> <span class="toc-text">方法論總結</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        PSP 硬渲恢復覆盤：從 20fps 到 33fps
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-12T10:00:00.000Z" itemprop="datePublished">2026-10-12</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/ARM/" rel="tag">ARM</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>, <a class="tag-link-link" href="/tags/PPSSPP/" rel="tag">PPSSPP</a>, <a class="tag-link-link" href="/tags/bionic/" rel="tag">bionic</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>手頭有一臺展訊 SC9832A（2×Cortex-A7 @1.3GHz，Mali-400 MP1，720×1280 豎屏）的 Linux 設備，跑著自制 LVGL 桌面 + libretro 模擬器前端。PSP 模擬走 ppsspp_libretro core + 自研 miniretro 前端，此前一直走軟件渲染，只有 20fps。歷史上（更早的固件版本）曾實測過硬渲 34-38fps，因此目標明確：把硬渲修回來。</p>
+<h1 id="現象與排查路徑"><a href="#現象與排查路徑" class="headerlink" title="現象與排查路徑"></a>現象與排查路徑</h1><p>整個排查經歷了三層根因，一層比一層深。記錄如下，希望後來的朋友少走彎路。</p>
+<h2 id="第一層：reloc-type-17，新-core-無法加載"><a href="#第一層：reloc-type-17，新-core-無法加載" class="headerlink" title="第一層：reloc type 17，新 core 無法加載"></a>第一層：reloc type 17，新 core 無法加載</h2><p>我嘗試用設備上新升級的工具鏈（gcc14 + binutils 2.43）重編 core，結果 dlopen 直接報 <code>unknown reloc type 17</code>。經過對最終 .so 的重定位表逐一排查，確認 17 號是 <code>R_ARM_TLS_DTPMOD32</code>——TLS 動態重定位。</p>
+<p>根因不是新編譯的 .o 引入了 TLS，而是：同一批 .o，老 binutils 鏈接時會做 TLS GD（global-dynamic）→ LE（local-exec）的靜態收斂，最終產物裡動態 TLS 重定位為 0；新 binutils 2.43 不再做這個收斂，於是 4 個 DTPMOD32 留在了動態重定位表裡，而設備上的老 Android bionic linker 根本不支持動態 TLS。</p>
+<p>我做了三步嘗試：</p>
+<ol>
+<li>把 4 處 <code>std::call_once</code> 改成原子標誌交換，把 sol2 頭文件裡的 <code>thread_local</code> 去掉；</li>
+<li>提供 non-TLS 版的 <code>__cxa_get_globals</code> shim，防止 libstdc++.a 的 eh_globals.o（TLS 版實現）被鏈接器拉入——注意 shim 必須放在 libstdc++.a <strong>之前</strong>參與鏈接，放後面會 multiple definition；</li>
+<li>試過 <code>-ftls-model=local-exec</code> 重編，被鏈接器以 <code>R_ARM_TLS_LE32 not permitted in shared object</code> 拒絕（shared lib 裡不能用 local-exec）。</li>
+</ol>
+<p>以上做完，TLS 動態重定位確實清零了，但新 core 依然在 dlopen 時崩。用二分法關掉 init_array 裡的構造函數，定位到崩在 libstdc++ 的 <code>std::ios_base::Init</code> 全局構造；而老 core 裡同一個構造函數卻能正常跑。新工具鏈的構造函數鏈與老 bionic linker 之間還有更深的不兼容，我決定不再深挖——<strong>老 core 本來就完好，回退</strong>。</p>
+<h2 id="第二層：FBO-讀回黑洞"><a href="#第二層：FBO-讀回黑洞" class="headerlink" title="第二層：FBO 讀回黑洞"></a>第二層：FBO 讀回黑洞</h2><p>換回老 core 後 GL 後端能激活，但屏幕全黑，抓屏非黑像素佔比 0.08%。這裡我走了最長的彎路：之前我把前端改成了「自建 FBO → PPSSPP 渲染到 FBO → glReadPixels 讀回 → 軟件縮放旋轉 → 寫 framebuffer」的路徑，並且加過 POT 紋理、緩存掃除、rmmod&#x2F;insmod 等各種排除實驗。</p>
+<p>最終用一個專門寫的 EGL 探針程序做出判決：<strong>這顆 Mali DDK 上，從 FBO 做 glReadPixels 讀回的內容恆為 0（連 glClear 都不行），但從默認幀緩衝（pbuffer）在真實 draw 之後讀回是正常的</strong>。也就是說，0af7630 時代能跑通的老前端，<code>hw_get_current_framebuffer()</code> 返回的本來就是 0、讀的本來就是默認面——是我自己後來改壞了。</p>
+<p>修復：把前端恢復成歷史驗證過的路徑——FB0 直讀、EGL_SURFACE_TYPE 只留 PBUFFER_BIT、刪掉自建 FBO 全套代碼。立即出畫面。</p>
+<h2 id="第三層：useEmuThread-與-GL-上下文"><a href="#第三層：useEmuThread-與-GL-上下文" class="headerlink" title="第三層：useEmuThread 與 GL 上下文"></a>第三層：useEmuThread 與 GL 上下文</h2><p>PPSSPP 的 libretro glue 有個邏輯：GL 後端激活時（<code>GetGPUCore() == GPUCORE_GLES</code>）會啟用 EmuThread，把所有 GL 調用搬到 core 自己的線程上跑。而 EGL 上下文 current 在前端線程，於是 GL 全部無效。core 源碼裡 <code>useEmuThread = false;</code> 一行修復。這個問題在老 core 上不存在（當年的構建已等價處理），但如果你要重編 core，這裡是必踩的坑。</p>
+<h1 id="額外的坑"><a href="#額外的坑" class="headerlink" title="額外的坑"></a>額外的坑</h1><ul>
+<li><strong>fb mmap 斷連</strong>：fb 驅動被多次 FBIOPAN&#x2F;FBIOPUT 實驗折騰後，新進程 mmap &#x2F;dev&#x2F;fb0 的寫入到不了真實顯存（pread 讀回全 0，連 memset 都無效），重啟才恢復。診斷方法：用 python 的 <code>os.pwrite/os.pread</code> 走文件路徑驗證讀寫一致性，再對比進程自己 mmap 區域的內容。</li>
+<li><strong>重啟後靜默退軟渲</strong>：設備重啟後必須 <code>mount</code> Android 分區（保證 &#x2F;system&#x2F;lib 的 EGL 庫鏈路存在）+ <code>insmod mali.ko</code>，否則 EGL 初始化失敗，前端靜默退回軟渲——表面症狀只是 fps 從 33 變 20。</li>
+<li><strong>bionic sigset_t 只有 16 字節</strong>：在裸 bionic 探針裡裝信號處理器時，如果按 glibc 的 128 字節排布 sigaction 結構體，會靜默失敗。</li>
+<li><strong>bison linker 拒收 local-exec</strong>：shared library 裡 <code>-ftls-model=local-exec</code> 編出的 <code>R_ARM_TLS_LE32</code> 不被允許，TLS 修復只能走「源頭消滅 TLS」路線。</li>
+</ul>
+<h1 id="結果"><a href="#結果" class="headerlink" title="結果"></a>結果</h1><p>老 core + 恢復後的前端，實測 33fps（軟渲 20fps），性能提升 65%。遺留問題：個別遊戲（如某個旋轉立方體 demo）在硬渲下仍黑屏，懷疑其渲染目標用法踩了 FBO 黑洞，待查。</p>
+<h1 id="方法論總結"><a href="#方法論總結" class="headerlink" title="方法論總結"></a>方法論總結</h1><ol>
+<li>改前端 GL 邏輯之前，先寫一個獨立 EGL 探針，把「這顆 GPU 什麼通路是好的」實證清楚，再動主程序。</li>
+<li>dlopen 失敗先看動態重定位類型直方圖，新老產物的 ELF 元數據 diff 往往直接給出答案。</li>
+<li>「屏上黑」不等於「沒畫面」：先統計 framebuffer 各頁非零像素，再區分「沒渲染」「讀回失敗」「翻頁失敗」三種情況。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章，版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1%E8%88%87%E6%8E%92%E6%9F%A5%E8%B7%AF%E5%BE%91"><span class="toc-number">2.</span> <span class="toc-text">現象與排查路徑</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E5%B1%A4%EF%BC%9Areloc-type-17%EF%BC%8C%E6%96%B0-core-%E7%84%A1%E6%B3%95%E5%8A%A0%E8%BC%89"><span class="toc-number">2.1.</span> <span class="toc-text">第一層：reloc type 17，新 core 無法加載</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E5%B1%A4%EF%BC%9AFBO-%E8%AE%80%E5%9B%9E%E9%BB%91%E6%B4%9E"><span class="toc-number">2.2.</span> <span class="toc-text">第二層：FBO 讀回黑洞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E5%B1%A4%EF%BC%9AuseEmuThread-%E8%88%87-GL-%E4%B8%8A%E4%B8%8B%E6%96%87"><span class="toc-number">2.3.</span> <span class="toc-text">第三層：useEmuThread 與 GL 上下文</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%A1%8D%E5%A4%96%E7%9A%84%E5%9D%91"><span class="toc-number">3.</span> <span class="toc-text">額外的坑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%B5%90%E6%9E%9C"><span class="toc-number">4.</span> <span class="toc-text">結果</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E8%AB%96%E7%B8%BD%E7%B5%90"><span class="toc-number">5.</span> <span class="toc-text">方法論總結</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&text=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&title=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&is_video=false&description=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=PSP 硬渲恢復覆盤：從 20fps 到 33fps&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&title=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&title=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&title=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&title=PSP 硬渲恢復覆盤：從 20fps 到 33fps"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/psp-hardware-rendering-recovery/&name=PSP 硬渲恢復覆盤：從 20fps 到 33fps&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

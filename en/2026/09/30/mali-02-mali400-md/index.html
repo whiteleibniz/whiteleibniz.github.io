@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Spreadtrum SC9832A Mali-400 — Feasibility Analysis of Dropping Android Goal: assess whether it is possible to drive the Mali-400 GPU without depending on the Android (bionic) user space at all.Environ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mali400_Feasibility Analysis of Dropping Android">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Spreadtrum SC9832A Mali-400 — Feasibility Analysis of Dropping Android Goal: assess whether it is possible to drive the Mali-400 GPU without depending on the Android (bionic) user space at all.Environ">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-30T10:50:38.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.973Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="GPU">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Mali400_Feasibility Analysis of Dropping Android</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/30/mali-02-mali400-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/30/mali-02-mali400-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&text=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&title=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&is_video=false&description=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_Feasibility Analysis of Dropping Android&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&title=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&title=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&title=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&title=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&name=Mali400_Feasibility Analysis of Dropping Android&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-Mali-400-%E2%80%94-Feasibility-Analysis-of-Dropping-Android"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A Mali-400 — Feasibility Analysis of Dropping Android</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-One-Sentence-Conclusion"><span class="toc-number">1.1.</span> <span class="toc-text">0. One-Sentence Conclusion</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Current-Hard-Evidence-From-the-Probe"><span class="toc-number">1.2.</span> <span class="toc-text">1. Current Hard Evidence (From the Probe)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Three-Possible-End-States-for-%E2%80%9CDropping-Android%E2%80%9D"><span class="toc-number">1.3.</span> <span class="toc-text">2. Three Possible End States for “Dropping Android”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Layer-by-Layer-Feasibility-of-the-Two-Routes"><span class="toc-number">1.4.</span> <span class="toc-text">3. Layer-by-Layer Feasibility of the Two Routes</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Kernel-Side-a-Shared-Prerequisite-for-Both-Routes"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 Kernel Side (a Shared Prerequisite for Both Routes)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Option-%E2%91%A0-Details"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 Option ① Details</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-Option-%E2%91%A1-Details"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 Option ② Details</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Key-Insights-Easy-to-Trip-Pitfalls"><span class="toc-number">1.5.</span> <span class="toc-text">4. Key Insights (Easy-to-Trip Pitfalls)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Recommendation-and-Decision-Tree"><span class="toc-number">1.6.</span> <span class="toc-text">5. Recommendation and Decision Tree</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Next-Step-Minimal-Verification-Verification-Belongs-to-the-User"><span class="toc-number">1.7.</span> <span class="toc-text">6. Next-Step Minimal Verification (Verification Belongs to the User)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-A-What-Several-Modules-in-lib-modules-Do"><span class="toc-number">1.8.</span> <span class="toc-text">Appendix A: What Several Modules in &#x2F;lib&#x2F;modules Do</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-B-the-DRM-Name-Collision-Trap-%E2%80%94-Android%E2%80%99s-lib-drm-Is-Not-the-GPU%E2%80%99s-DRM"><span class="toc-number">1.9.</span> <span class="toc-text">Appendix B: the DRM Name Collision Trap — Android’s &#x2F;lib&#x2F;drm Is Not the GPU’s DRM</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Addendum-the-Similarly-Named-Files-Under-mnt-android-sys-vendor-lib-Are-Also-All-Digital-Rights"><span class="toc-number">1.9.1.</span> <span class="toc-text">Addendum: the Similarly Named Files Under &#x2F;mnt&#x2F;android_sys&#x2F;vendor&#x2F;lib Are Also All Digital Rights</span></a></li></ol></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Mali400_Feasibility Analysis of Dropping Android
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-30T10:50:38.000Z" itemprop="datePublished">2026-09-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/GPU/" rel="tag">GPU</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Spreadtrum-SC9832A-Mali-400-—-Feasibility-Analysis-of-Dropping-Android"><a href="#Spreadtrum-SC9832A-Mali-400-—-Feasibility-Analysis-of-Dropping-Android" class="headerlink" title="Spreadtrum SC9832A Mali-400 — Feasibility Analysis of Dropping Android"></a>Spreadtrum SC9832A Mali-400 — Feasibility Analysis of Dropping Android</h1><blockquote>
+<p>Goal: assess whether it is possible to drive the Mali-400 GPU <strong>without depending on the Android (bionic) user space at all</strong>.<br>Environment: Alpine&#x2F;musl (root OS, armv7l) + Spreadtrum SC9832A + kernel 3.10.65.<br>Data source: a read-only probe of the device on 2026-09-30 (uname &#x2F; lsmod &#x2F; readelf &#x2F; strings &#x2F; mount &#x2F; find).</p>
+</blockquote>
+<hr>
+<h2 id="0-One-Sentence-Conclusion"><a href="#0-One-Sentence-Conclusion" class="headerlink" title="0. One-Sentence Conclusion"></a>0. One-Sentence Conclusion</h2><p><strong>Technically feasible, but there are two routes with vastly different difficulty:</strong></p>
+<ul>
+<li><strong>Option ① (closed-source, less effort)</strong>: swap in a set of “Linux-native” Mali user-space libraries (the Linux variant of the same-version Utgard DDK) and remove the bionic dependency. <strong>The difficulty lies in obtaining the matching version of the closed-source DDK</strong>, not in the technology.</li>
+<li><strong>Option ② (fully open-source, thorough)</strong>: drive the Mali-400 with the <strong>Mesa 24.2.8 + Lima</strong> already installed on the device. <strong>Only the kernel DRM node (<code>/dev/dri</code>) is missing</strong>, requiring <code>lima</code> + a display DRM driver to be added on 3.10.65 — the largest engineering effort, but it removes Android 100% and eliminates the shim black magic.</li>
+</ul>
+<blockquote>
+<p>An often-overlooked fact: <strong><code>mali.ko</code> itself is an ARM closed-source kernel blob</strong>. So Option ① is only “non-Android user space”; the kernel still depends on a closed-source module. Only Option ② is fully open-source. Either way, everything is currently stuck on the <strong>kernel-side interface</strong> — the user-space libraries (the bionic set &#x2F; the mesa set) are, ironically, all in place.</p>
+</blockquote>
+<hr>
+<h2 id="1-Current-Hard-Evidence-From-the-Probe"><a href="#1-Current-Hard-Evidence-From-the-Probe" class="headerlink" title="1. Current Hard Evidence (From the Probe)"></a>1. Current Hard Evidence (From the Probe)</h2><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Finding</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Kernel</td>
+<td><code>3.10.65 #13 SMP PREEMPT ... armv7l</code></td>
+<td>an old vendor kernel</td>
+</tr>
+<tr>
+<td>GPU node</td>
+<td><code>/dev/mali0</code> exists; <strong><code>/dev/dri</code> does not exist</strong></td>
+<td>only the proprietary UDD interface; no DRM</td>
+</tr>
+<tr>
+<td>Kernel module</td>
+<td><code>mali.ko</code> (446KB, loaded); from <code>vendor/sprd/modules/libgpu/gpu/utgard/...</code> (<code>wzp_1.5_0703</code> BSP)</td>
+<td><strong>a Utgard proprietary blob with no DRM subsystem</strong></td>
+</tr>
+<tr>
+<td>DRM subsystem</td>
+<td><code>/sys/class/drm</code> does not exist; <code>cat /proc/filesystems</code> has no drm</td>
+<td>the running kernel was not built with DRM at all</td>
+</tr>
+<tr>
+<td>Current user space</td>
+<td><code>/system/lib/libEGL.so</code>→<code>/mnt/android_sys/lib/libEGL.so</code>; interpreter&#x3D;<code>/system/bin/linker</code>; NEEDED&#x3D;<code>libcutils/libutils/liblog/libc++.so/libc.so</code></td>
+<td><strong>the Android DDK</strong>, linked against bionic HAL libraries</td>
+</tr>
+<tr>
+<td>bionic source</td>
+<td><code>/mnt/android_sys</code> (<code>/dev/mmcblk0p17</code>, ext4, the original Android partition <strong>mounted ro</strong>); both <code>/system/bin/linker</code> and <code>/system/lib/libc.so</code> point to it</td>
+<td>the Android user space is entirely external; the root OS is musl</td>
+</tr>
+<tr>
+<td>Mesa status</td>
+<td><code>/usr/lib/libGL.so.</code><u><code>1.2.0</code></u>→<strong>Mesa 24.2.8</strong>; both <code>/usr/lib/xorg/modules/dri/lima_dri.so</code> and <code>panfrost_dri.so</code> exist</td>
+<td><strong>the Lima user space is ready</strong>; only the kernel DRM is missing</td>
+</tr>
+<tr>
+<td>Kernel build environment</td>
+<td><code>/lib/modules/3.10.65/build</code> does not exist; <code>/usr/src</code> does not exist; only <code>/usr/bin/gcc</code> (host) exists</td>
+<td><strong>kernel modules cannot be compiled in place</strong>; an external BSP source tree is needed</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-Three-Possible-End-States-for-“Dropping-Android”"><a href="#2-Three-Possible-End-States-for-“Dropping-Android”" class="headerlink" title="2. Three Possible End States for “Dropping Android”"></a>2. Three Possible End States for “Dropping Android”</h2><ul>
+<li><strong>Option ① ARM Mali Linux DDK (closed-source user space, non-Android)</strong>: replace the Android <code>libEGL/libGLESv2</code> with the <strong>Linux build of the same Utgard DDK</strong> (linked against musl&#x2F;glibc + <code>libump</code>, using fbdev&#x2F;DRM windows, and <strong>not</strong> depending on <code>libcutils/libutils/liblog</code>).</li>
+<li><strong>Option ② Mesa Lima (fully open-source)</strong>: drive the Mali-400 with the already-installed Mesa + <code>lima_dri.so</code>, producing images via standard EGL&#x2F;GL + DRM&#x2F;KMS.</li>
+<li><strong>Option ③ keep the current hybrid bridge</strong> (bionic libraries + <code>bionic_shim</code> + musl-gcc <code>-Wl,--entry=main</code>): the only thing that currently runs, and it <strong>does not count as dropping Android</strong>.</li>
+</ul>
+<hr>
+<h2 id="3-Layer-by-Layer-Feasibility-of-the-Two-Routes"><a href="#3-Layer-by-Layer-Feasibility-of-the-Two-Routes" class="headerlink" title="3. Layer-by-Layer Feasibility of the Two Routes"></a>3. Layer-by-Layer Feasibility of the Two Routes</h2><h3 id="3-1-Kernel-Side-a-Shared-Prerequisite-for-Both-Routes"><a href="#3-1-Kernel-Side-a-Shared-Prerequisite-for-Both-Routes" class="headerlink" title="3.1 Kernel Side (a Shared Prerequisite for Both Routes)"></a>3.1 Kernel Side (a Shared Prerequisite for Both Routes)</h3><p><code>mali.ko</code> is a kernel module, independent of libc, and Alpine can <code>insmod</code> it as usual. But it provides only <code>/dev/mali0</code> (UDD ioctl), and <strong>the Lima user space does not recognize this interface</strong> — Lima wants <code>drm_lima_*</code> ioctls (<code>/dev/dri</code>). Therefore:</p>
+<ul>
+<li>Option ① keeps <code>mali.ko</code> and changes only the user space → <strong>zero kernel-side changes</strong>.</li>
+<li>Option ② must <strong>replace</strong> <code>mali.ko</code> with the lima DRM driver → major kernel-side changes.</li>
+</ul>
+<h3 id="3-2-Option-①-Details"><a href="#3-2-Option-①-Details" class="headerlink" title="3.2 Option ① Details"></a>3.2 Option ① Details</h3><ul>
+<li>Action: obtain the <strong>Utgard Linux DDK</strong> (containing <code>libEGL.so</code>&#x2F;<code>libGLESv2.so</code>&#x2F;<code>libump.so</code>, glibc&#x2F;musl builds), place it in <code>/usr/lib</code>, and delete the <code>/system</code> symlinks and <code>bionic_shim</code>.</li>
+<li>Window system: the Linux DDK supports <strong>fbdev</strong> (it runs even without DRM), which matches this machine that has only <code>/dev/fb0</code>.</li>
+<li>Readback: the Linux DDK’s pbuffer&#x2F;fbdev readback semantics are normal, so <strong>the previous gpu_bench black-screen&#x2F;stale-red problem will most likely disappear</strong>.</li>
+<li><strong>Blocker (the only one)</strong>: the user-space DDK and the kernel <code>mali.ko</code> must be the <strong>same DDK version</strong> (e.g., r4p0↔r4p0). The module comes from the sprd <code>wzp_1.5_0703</code> BSP, so the <strong>corresponding version of the Linux user space</strong> must be extracted from that BSP. ARM stopped publicly distributing the classic Utgard DDK long ago (UMPL license, the final ~2014 r4p0 release), making public acquisition difficult; <strong>if that BSP was packaged with the linux variant, it is a direct hit; otherwise procurement is a hard blocker</strong>.</li>
+</ul>
+<h3 id="3-3-Option-②-Details"><a href="#3-3-Option-②-Details" class="headerlink" title="3.3 Option ② Details"></a>3.3 Option ② Details</h3><ul>
+<li>Action: add <code>drivers/gpu/drm/lima</code> + a display DRM driver to the kernel (the SPRD display controller, or a dumb DRM wrapper that reuses the existing fb), build it into 3.10.65 and load it to get <code>/dev/dri/card0</code>; the user space is already complete (Mesa 24.2.8 + lima).</li>
+<li>Payoff: 100% open-source, standard interfaces, normal <code>glReadPixels</code>, and a complete farewell to shim&#x2F;ctor&#x2F;TLS&#x2F;dlsym black magic; the PSP frontend and gpu_bench can both use standard EGL directly.</li>
+<li><strong>Blocker (the largest)</strong>: upstream lima requires a newer kernel, so <strong>backporting to 3.10.65 is heavy work</strong>; a matching display DRM driver is also needed (this machine’s display is currently bare fbdev with no DRM wrapper). <strong>There is no on-device kernel source&#x2F;build environment</strong>; the SC9832A 3.10.65 BSP source tree must be obtained first.</li>
+<li>Performance: Lima’s GLES2 is usable on the Mali-400, but usually slightly slower than the proprietary blob; it is sufficient for benchmarks&#x2F;demos, and PSP emulation may be slightly slower than with the proprietary frontend.</li>
+</ul>
+<hr>
+<h2 id="4-Key-Insights-Easy-to-Trip-Pitfalls"><a href="#4-Key-Insights-Easy-to-Trip-Pitfalls" class="headerlink" title="4. Key Insights (Easy-to-Trip Pitfalls)"></a>4. Key Insights (Easy-to-Trip Pitfalls)</h2><ol>
+<li><strong>Both routes are stuck on the “kernel-side interface”</strong>: Option ① is stuck on “the matching version of the closed-source user space”, and Option ② is stuck on “adding the open-source kernel DRM”. The user-space libraries (the bionic set &#x2F; the mesa set) are, ironically, all in place.</li>
+<li><strong>mali.ko is closed-source</strong> → Option ① is only “non-Android user space”; the kernel still depends on the ARM blob; only Option ② is fully open-source.</li>
+<li><strong>android_sys can be unmounted</strong>: <code>/mnt/android_sys</code> is the ro-mounted original Android partition, needed only by the current Mali stack; after dropping Android, simply do not mount it and delete the <code>/system</code> symlinks; the root OS (Alpine&#x2F;musl) is unaffected.</li>
+<li><strong>You cannot “use mesa but keep mali.ko”</strong>: Mesa Lima and the proprietary <code>mali.ko</code> use two incompatible kernel UAPIs that cannot be mixed.</li>
+<li><strong>You cannot “put a shim around the bionic libEGL to disguise it as Linux”</strong>: it depends on <code>libcutils/libutils/liblog</code> (Android HAL: property&#x2F;hw_get_module&#x2F;ashmem&#x2F;binder), and reimplementing these amounts to rewriting the Android HAL — exactly what we want to drop, and it is extremely fragile.</li>
+</ol>
+<hr>
+<h2 id="5-Recommendation-and-Decision-Tree"><a href="#5-Recommendation-and-Decision-Tree" class="headerlink" title="5. Recommendation and Decision Tree"></a>5. Recommendation and Decision Tree</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">能否从 SC9832A BSP(wzp_1.5_0703) 拿到 同版本 Utgard Linux DDK 用户态?</span><br><span class="line">├─ 能 ──► 方案①：换 .so、去 bionic、fbdev 出图。最省力，顺手解决回读黑屏。</span><br><span class="line">└─ 不能 ─► 想要&quot;真正彻底非安卓&quot;才值得上 方案②：</span><br><span class="line">           取得 3.10.65 BSP 源码 → 加 lima+显示 DRM 驱动 → 编内核 → /dev/dri → Mesa Lima。</span><br><span class="line">           （工程量大，但一劳永逸，且能摘掉所有 shim 黑魔法）</span><br></pre></td></tr></table></figure>
+
+<p><strong>Pragmatic recommendation</strong>: first confirm whether the BSP contains the Linux build of <code>libEGL/libGLESv2</code> (it is often placed in a different directory of the same vendor package as the Android build). If it does, go with Option ①, which has the best cost&#x2F;benefit ratio; if not, and you insist on “completely dropping Android”, then invest in Option ②.</p>
+<hr>
+<h2 id="6-Next-Step-Minimal-Verification-Verification-Belongs-to-the-User"><a href="#6-Next-Step-Minimal-Verification-Verification-Belongs-to-the-User" class="headerlink" title="6. Next-Step Minimal Verification (Verification Belongs to the User)"></a>6. Next-Step Minimal Verification (Verification Belongs to the User)</h2><ol>
+<li><strong>Check whether the BSP contains the Linux build of the Mali user space</strong>: look in <code>wzp_1.5_0703/idh.code/vendor/sprd/modules/libgpu/</code> and <code>out/.../system/lib/</code> for <strong>non-bionic</strong> builds of <code>libEGL.so</code>&#x2F;<code>libGLESv2.so</code> (use readelf to check whether the interpreter is <code>/system/bin/linker</code> and whether NEEDED contains <code>libcutils</code>).</li>
+<li><strong>Probe whether DRM can be added to 3.10.65</strong>: confirm whether the kernel source tree can be obtained; grep for whether <code>drivers/gpu/drm/lima</code> or an SPRD display DRM prototype already exists, and assess the backport effort.</li>
+<li><strong>Quick falsification</strong>: try running <code>EGL_PLATFORM=surfaceless</code> + Mesa in the current environment, and confirm that it fails precisely because <code>/dev/dri</code> is missing (verifying the “only DRM is missing” judgment).</li>
+</ol>
+<hr>
+<h2 id="Appendix-A-What-Several-Modules-in-lib-modules-Do"><a href="#Appendix-A-What-Several-Modules-in-lib-modules-Do" class="headerlink" title="Appendix A: What Several Modules in /lib/modules Do"></a>Appendix A: What Several Modules in <code>/lib/modules</code> Do</h2><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Evidence (strings&#x2F;modinfo)</th>
+<th>What it does</th>
+<th>Required at runtime</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>mali.ko</strong></td>
+<td><code>utgard/driver/mali</code> (sprd <code>wzp_1.5_0703</code> BSP)</td>
+<td>Mali-400 GPU kernel driver → <code>/dev/mali0</code></td>
+<td>✅ GPU</td>
+</tr>
+<tr>
+<td><strong>sprdwl.ko</strong></td>
+<td><code>description=SPRD sc2331 Wireless Network Adapter</code>, <code>author=jinglong.chen</code></td>
+<td>Spreadtrum <strong>Wi-Fi</strong> driver (Marlin combo chip)</td>
+<td>✅ Wi-Fi</td>
+</tr>
+<tr>
+<td><strong>marlin_fm.ko</strong></td>
+<td><code>fm_read_rds_data</code> &#x2F; <code>parse_at_fm_cmd</code> &#x2F; <code>fm_sdio_*</code></td>
+<td><strong>FM radio</strong> driver (SDIO&#x2F;AT)</td>
+<td>only when using FM</td>
+</tr>
+<tr>
+<td><strong>pskey_bt.txt</strong></td>
+<td><code>device_class</code>&#x2F;<code>default_ahb_clk</code>&#x2F;<code>feature_set</code>&#x2F;gain power table; “HEX modification, 0x prefix”</td>
+<td><strong>not a driver</strong>: the Bluetooth chip’s <strong>PSKEY persistent configuration</strong> (NVM)</td>
+<td>when using BT</td>
+</tr>
+<tr>
+<td><strong>autotst.ko</strong></td>
+<td><code>author=anli.wei</code>; contains the <code>sprdfb</code> string</td>
+<td>factory <strong>self-test</strong> module</td>
+<td>❌ debugging</td>
+</tr>
+<tr>
+<td><strong>gator.ko</strong></td>
+<td><code>gator_get_time</code> &#x2F; <code>ARM1136…ARMv7 Cortex-</code></td>
+<td><strong>ARM Streamline</strong> profiling module</td>
+<td>❌ profiling</td>
+</tr>
+<tr>
+<td><strong>mmc_test.ko</strong></td>
+<td><code>author=Pierre Ossman</code>, <code>kernel/drivers/mmc/card/mmc_test.c</code></td>
+<td>mainline <strong>MMC&#x2F;SD&#x2F;eMMC stress-test</strong> module</td>
+<td>❌ burn-in testing</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>marlin_fm &#x2F; sprdwl &#x2F; pskey_bt form one set: <strong>Marlin &#x3D; the Spreadtrum combo connectivity chip (Wi-Fi&#x2F;Bluetooth&#x2F;FM&#x2F;GPS combined)</strong>.</p>
+</blockquote>
+<hr>
+<h2 id="Appendix-B-the-DRM-Name-Collision-Trap-—-Android’s-lib-drm-Is-Not-the-GPU’s-DRM"><a href="#Appendix-B-the-DRM-Name-Collision-Trap-—-Android’s-lib-drm-Is-Not-the-GPU’s-DRM" class="headerlink" title="Appendix B: the DRM Name Collision Trap — Android’s /lib/drm Is Not the GPU’s DRM"></a>Appendix B: the DRM Name Collision Trap — Android’s <code>/lib/drm</code> Is Not the GPU’s DRM</h2><p><strong>Finding</strong>: <code>/mnt/android_sys/lib/drm/</code> contains only <strong><code>libdrmomaplugin.so</code></strong> (the OMA DRM plugin).</p>
+<p><strong>The two DRMs are entirely different things (the easiest way to be led astray during troubleshooting)</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Abbreviation</th>
+<th>Full name</th>
+<th>Domain</th>
+<th>Where it is on this machine</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>DRM</strong></td>
+<td><strong>Direct Rendering Manager</strong></td>
+<td><strong>the kernel GPU&#x2F;display subsystem</strong>, providing <code>/dev/dri</code>, <code>GEM/TTM</code> video memory, command submission, and <code>KMS</code> mode setting</td>
+<td>❌ not on this machine (no <code>/dev/dri</code>)</td>
+</tr>
+<tr>
+<td><strong>DRM</strong></td>
+<td><strong>Digital Rights Management</strong></td>
+<td><strong>digital rights protection</strong> (encrypted media, OMA&#x2F;Widevine)</td>
+<td>✅ present on the Android side: <code>lib/drm/libdrmomaplugin.so</code>, <code>libdrmframework.so</code>, <code>libdrmdecrypt.so</code>, <code>libdrmntp.so</code></td>
+</tr>
+</tbody></table>
+<p><strong>Android really does not use the kernel DRM (Direct Rendering Manager) — the evidence chain:</strong></p>
+<ol>
+<li>No <code>/dev/dri</code> and no <code>/sys/class/drm</code>; the kernel was not built with DRM at all;</li>
+<li>Graphics go through <strong>HAL substitutes</strong>: <code>gralloc.sc8830.so</code> (video memory allocation, <strong>replacing GEM</strong>) + <code>hwcomposer.sc8830.so</code> (display composition, <strong>replacing KMS</strong>);</li>
+<li>Mali exposes only <strong><code>/dev/mali0</code></strong> (the proprietary UDD ioctl), not <code>/dev/dri</code>;</li>
+<li>The Android side has <strong>no</strong> generic <code>libdrm.so</code> (the GPU version), only <code>libdrmframework*.so</code> (the rights version);</li>
+<li>The system is <strong>Android 6.0 (MRA58K)</strong>, an old-style vendor HAL model (far predating Treble, so using mainline DRM is even less likely).</li>
+<li>Counter-evidence: the GPU version of libdrm exists only on the Alpine&#x2F;mesa side (<code>/usr/lib/libdrm_intel.so.1</code>, an Intel target that likewise needs a DRM node to be useful).</li>
+</ol>
+<p><strong>Conclusion</strong>: finding <code>/lib/drm</code> does <strong>not</strong> mean Android uses the kernel DRM; it is purely an abbreviation collision. Precisely because Android bypasses DRM with gralloc+hwcomposer+<code>/dev/mali0</code>, the ready-made Mesa Lima has no <code>/dev/dri</code> to use, and Option ② must first add a DRM driver on 3.10.65. This is also one of the root causes of “dropping Android” being stuck on the kernel side.</p>
+<h3 id="Addendum-the-Similarly-Named-Files-Under-mnt-android-sys-vendor-lib-Are-Also-All-Digital-Rights"><a href="#Addendum-the-Similarly-Named-Files-Under-mnt-android-sys-vendor-lib-Are-Also-All-Digital-Rights" class="headerlink" title="Addendum: the Similarly Named Files Under /mnt/android_sys/vendor/lib Are Also All Digital Rights"></a>Addendum: the Similarly Named Files Under <code>/mnt/android_sys/vendor/lib</code> Are Also All Digital Rights</h3><p>Extracted symbols confirm this (all are Google <strong>Widevine</strong> &#x2F; <strong>MediaDrm</strong> content decryption, unrelated to the GPU):</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Extracted symbols</th>
+<th>True identity</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>libwvm.so</code></td>
+<td><code>android::DrmManagerClient::decrypt</code> &#x2F; <code>DecryptHandle</code></td>
+<td>the Android DRM framework client</td>
+</tr>
+<tr>
+<td><code>libwvdrm_L3.so</code></td>
+<td><code>WidevineMediaKit::Component::HandleStreamInfoSource</code></td>
+<td><strong>Widevine L3</strong> (software-level rights)</td>
+</tr>
+<tr>
+<td><code>libWVStreamControlAPI_L3.so</code></td>
+<td><code>WidevineMediaKit::MemoryChunk</code></td>
+<td>the Widevine stream-control API L3</td>
+</tr>
+<tr>
+<td><code>vendor/lib/drm/libdrmwvmplugin.so</code></td>
+<td><code>android::DrmConstraints</code></td>
+<td>an old Android DRM plugin (WVM)</td>
+</tr>
+<tr>
+<td><code>vendor/lib/mediadrm/libdrmclearkeyplugin.so</code></td>
+<td><code>clearkeydrm::AesCtrDecryptor</code>, <code>createDrmFactory</code></td>
+<td>the <strong>MediaDrm</strong> ClearKey plugin</td>
+</tr>
+<tr>
+<td><code>vendor/lib/mediadrm/libwvdrmengine.so</code></td>
+<td><code>wvdrm::getCDM</code></td>
+<td>the <strong>MediaDrm</strong> Widevine engine</td>
+</tr>
+<tr>
+<td><code>vendor/lib/libbt-vendor.so</code></td>
+<td><code>sprd_bt_power_ctrl</code>, <code>bt_vendor_cbacks</code></td>
+<td>the Spreadtrum <strong>Bluetooth</strong> vendor HAL</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Identification rule of thumb</strong>: on the Android side, anything with <code>drm</code> in its name (<code>libdrmframework / libdrmdecrypt / libdrmwvmplugin / mediadrm / libwvdrm*</code>) is <strong>always digital rights&#x2F;media decryption</strong>.<br><strong>Names that are truly GPU-related never contain drm</strong>: the user space is <code>libEGL.so</code> &#x2F; <code>libGLESv2.so</code> &#x2F; <code>libGLESv1_CM.so</code>, the HAL is <code>gralloc.sc8830.so</code> + <code>hwcomposer.sc8830.so</code>, and the kernel is <code>mali.ko</code>.</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-Mali-400-%E2%80%94-Feasibility-Analysis-of-Dropping-Android"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A Mali-400 — Feasibility Analysis of Dropping Android</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-One-Sentence-Conclusion"><span class="toc-number">1.1.</span> <span class="toc-text">0. One-Sentence Conclusion</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Current-Hard-Evidence-From-the-Probe"><span class="toc-number">1.2.</span> <span class="toc-text">1. Current Hard Evidence (From the Probe)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Three-Possible-End-States-for-%E2%80%9CDropping-Android%E2%80%9D"><span class="toc-number">1.3.</span> <span class="toc-text">2. Three Possible End States for “Dropping Android”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Layer-by-Layer-Feasibility-of-the-Two-Routes"><span class="toc-number">1.4.</span> <span class="toc-text">3. Layer-by-Layer Feasibility of the Two Routes</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Kernel-Side-a-Shared-Prerequisite-for-Both-Routes"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 Kernel Side (a Shared Prerequisite for Both Routes)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Option-%E2%91%A0-Details"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 Option ① Details</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-Option-%E2%91%A1-Details"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 Option ② Details</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Key-Insights-Easy-to-Trip-Pitfalls"><span class="toc-number">1.5.</span> <span class="toc-text">4. Key Insights (Easy-to-Trip Pitfalls)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Recommendation-and-Decision-Tree"><span class="toc-number">1.6.</span> <span class="toc-text">5. Recommendation and Decision Tree</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Next-Step-Minimal-Verification-Verification-Belongs-to-the-User"><span class="toc-number">1.7.</span> <span class="toc-text">6. Next-Step Minimal Verification (Verification Belongs to the User)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-A-What-Several-Modules-in-lib-modules-Do"><span class="toc-number">1.8.</span> <span class="toc-text">Appendix A: What Several Modules in &#x2F;lib&#x2F;modules Do</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-B-the-DRM-Name-Collision-Trap-%E2%80%94-Android%E2%80%99s-lib-drm-Is-Not-the-GPU%E2%80%99s-DRM"><span class="toc-number">1.9.</span> <span class="toc-text">Appendix B: the DRM Name Collision Trap — Android’s &#x2F;lib&#x2F;drm Is Not the GPU’s DRM</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Addendum-the-Similarly-Named-Files-Under-mnt-android-sys-vendor-lib-Are-Also-All-Digital-Rights"><span class="toc-number">1.9.1.</span> <span class="toc-text">Addendum: the Similarly Named Files Under &#x2F;mnt&#x2F;android_sys&#x2F;vendor&#x2F;lib Are Also All Digital Rights</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&text=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&title=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&is_video=false&description=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_Feasibility Analysis of Dropping Android&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&title=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&title=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&title=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&title=Mali400_Feasibility Analysis of Dropping Android"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/30/mali-02-mali400-md/&name=Mali400_Feasibility Analysis of Dropping Android&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

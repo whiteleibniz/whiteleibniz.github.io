@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Spreadtrum SC9832A Mali-400 GPU Troubleshooting Manual — spd-box Purpose: use this manual to locate root causes when Mali&#x2F;GPU programs fail to start, RENDERER is wrong, readback is black, or bion">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mali400_Troubleshooting Manual">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Spreadtrum SC9832A Mali-400 GPU Troubleshooting Manual — spd-box Purpose: use this manual to locate root causes when Mali&#x2F;GPU programs fail to start, RENDERER is wrong, readback is black, or bion">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-30T08:44:04.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.973Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="GPU">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Mali400_Troubleshooting Manual</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/30/mali-01-mali400-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/30/mali-05-mali400-wiki-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&text=Mali400_Troubleshooting Manual"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&title=Mali400_Troubleshooting Manual"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&is_video=false&description=Mali400_Troubleshooting Manual"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_Troubleshooting Manual&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&title=Mali400_Troubleshooting Manual"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&title=Mali400_Troubleshooting Manual"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&title=Mali400_Troubleshooting Manual"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&title=Mali400_Troubleshooting Manual"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&name=Mali400_Troubleshooting Manual&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-Mali-400-GPU-Troubleshooting-Manual-%E2%80%94-spd-box"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A Mali-400 GPU Troubleshooting Manual — spd-box</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-Troubleshooting-Discipline-Read-First-Violating-It-Wastes-Time"><span class="toc-number">1.1.</span> <span class="toc-text">0. Troubleshooting Discipline (Read First; Violating It Wastes Time)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Layered-Failure-Quick-Reference-Master-Table-One-Page-Location"><span class="toc-number">1.2.</span> <span class="toc-text">1. Layered Failure Quick-Reference Master Table (One-Page Location)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Kernel-Driver-Layer-%E2%91%A0-mali-ko-%E2%86%92-dev-mali0"><span class="toc-number">1.3.</span> <span class="toc-text">2. Kernel &#x2F; Driver Layer (① mali.ko → &#x2F;dev&#x2F;mali0)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-RENDERER-Is-Not-Mali-400-EGL-NOT-INITIALIZED"><span class="toc-number">1.3.1.</span> <span class="toc-text">2.1 RENDERER Is Not Mali-400 &#x2F; EGL_NOT_INITIALIZED</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-User-Space-bionic-Compilation-Layer-%E2%91%A2-musl-gcc-compiling-bionic"><span class="toc-number">1.4.</span> <span class="toc-text">3. User-Space bionic Compilation Layer (③ musl gcc compiling bionic)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-A-Program-Crashes-as-Soon-as-It-Runs-before-main"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 A Program Crashes as Soon as It Runs (before main)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-clock-gettime64-undefined"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 __clock_gettime64 undefined</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-An-Infinite-Loop-Inside-dlopen-Burning-CPU"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 An Infinite Loop Inside dlopen (Burning CPU)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-Other-Symbols-the-Shim-Must-Provide"><span class="toc-number">1.4.4.</span> <span class="toc-text">3.4 Other Symbols the Shim Must Provide</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Application-Layer-%E2%91%A3-gpu-bench-gpu-test-PSP-Frontend"><span class="toc-number">1.5.</span> <span class="toc-text">4. Application Layer (④ gpu_bench &#x2F; gpu_test &#x2F; PSP Frontend)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-The-Desktop-Icon-Launches-the-Old-Program"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 The Desktop Icon Launches the Old Program</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Abnormally-Low-Score-Frame-Rate-Displayed-but-Scenes-Are-Black"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 Abnormally Low Score &#x2F; Frame Rate Displayed but Scenes Are Black</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Readback-Display-Layer-%E2%91%A4-glReadPixels-TBDR-%E2%80%94-Known-to-Be-Unsolvable-Understand-This-First"><span class="toc-number">1.6.</span> <span class="toc-text">5. Readback &#x2F; Display Layer (⑤ glReadPixels &#x2F; TBDR) — Known to Be Unsolvable; Understand This First</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-On-Screen-3D-2D-Scenes-Go-Black-with-Only-the-HUD-Visible"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 On-Screen 3D&#x2F;2D Scenes Go Black, with Only the HUD Visible</span></a></li></ol></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Mali400_Troubleshooting Manual
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-30T08:44:04.000Z" itemprop="datePublished">2026-09-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/GPU/" rel="tag">GPU</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Spreadtrum-SC9832A-Mali-400-GPU-Troubleshooting-Manual-—-spd-box"><a href="#Spreadtrum-SC9832A-Mali-400-GPU-Troubleshooting-Manual-—-spd-box" class="headerlink" title="Spreadtrum SC9832A Mali-400 GPU Troubleshooting Manual — spd-box"></a>Spreadtrum SC9832A Mali-400 GPU Troubleshooting Manual — spd-box</h1><blockquote>
+<p><strong>Purpose</strong>: use this manual to locate root causes when Mali&#x2F;GPU programs fail to start, RENDERER is wrong, readback is black, or bionic programs crash. Every command line is taken from measurements on the actual device.<br><strong>How to use</strong>: first look at the §1 layered quick-reference master table to locate the layer → jump to the corresponding section → confirm with the “locating commands” → handle it according to “fix”.<br><strong>Companion documents</strong>: the principles Wiki (§3 concepts) and the working process summary (phase B&#x2F;E decisions) are the condensed versions; this article is the full version.</p>
+</blockquote>
+<hr>
+<h2 id="0-Troubleshooting-Discipline-Read-First-Violating-It-Wastes-Time"><a href="#0-Troubleshooting-Discipline-Read-First-Violating-It-Wastes-Time" class="headerlink" title="0. Troubleshooting Discipline (Read First; Violating It Wastes Time)"></a>0. Troubleshooting Discipline (Read First; Violating It Wastes Time)</h2><ol>
+<li><strong>Locate by layer; do not try randomly across layers</strong>: ① kernel (mali.ko→&#x2F;dev&#x2F;mali0) → ② bionic environment (linker&#x2F;lib&#x2F;symlinks) → ③ compilation (musl gcc compiling bionic) → ④ application (gpu_bench&#x2F;gpu_test&#x2F;PSP frontend) → ⑤ readback&#x2F;display (glReadPixels&#x2F;TBDR). Whichever layer fails, investigate only that layer and its upstream.</li>
+<li><strong>Look at the symptom before looking at processes</strong>: if RENDERER is wrong, run <code>/root/mali_check</code> first; for a crash, look at <code>dmesg | tail</code> first.</li>
+<li><strong>Always match processes by <code>/proc/&lt;pid&gt;/cmdline</code></strong>; the <code>ps -o pid,comm|awk</code> pattern is forbidden (PPSSPP’s main thread name is <code>&#123;Main&#125;</code>, so it is guaranteed to be missed).</li>
+<li><strong>bionic programs should output with <code>write(1,...)</code>, not <code>printf</code></strong> (on abort the buffer is lost and the scene cannot be seen).</li>
+</ol>
+<hr>
+<h2 id="1-Layered-Failure-Quick-Reference-Master-Table-One-Page-Location"><a href="#1-Layered-Failure-Quick-Reference-Master-Table-One-Page-Location" class="headerlink" title="1. Layered Failure Quick-Reference Master Table (One-Page Location)"></a>1. Layered Failure Quick-Reference Master Table (One-Page Location)</h2><table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Most likely root cause</th>
+<th>Locating command</th>
+<th>Section</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GL_RENDERER</code> is not Mali-400 MP &#x2F; EGL initialization 0x3001</td>
+<td>mali.ko is not insmod’ed or the egl symlink is missing</td>
+<td><code>ls -la /dev/mali0; ls -l /system/lib/egl/</code></td>
+<td>§2</td>
+</tr>
+<tr>
+<td><code>insmod mali.ko</code> fails</td>
+<td>vermagic mismatch &#x2F; module not present</td>
+<td><code>modinfo /lib/modules/mali.ko | head</code></td>
+<td>§2</td>
+</tr>
+<tr>
+<td>a bionic program crashes as soon as it runs (before main)</td>
+<td>missing <code>-Wl,--entry=main</code></td>
+<td><code>readelf -l &lt;bin&gt; | grep interpreter</code></td>
+<td>§3</td>
+</tr>
+<tr>
+<td>link error <code>__clock_gettime64 undefined</code></td>
+<td>musl 64-bit time_t redirection</td>
+<td><code>nm &lt;bin&gt; | grep clock_gettime</code></td>
+<td>§3</td>
+</tr>
+<tr>
+<td>an infinite loop burning CPU inside dlopen</td>
+<td>the exe’s export table contains mmap&#x2F;lseek etc.</td>
+<td><code>nm -D &lt;bin&gt; | grep -E &#39; mmap|lseek&#39;</code></td>
+<td>§3</td>
+</tr>
+<tr>
+<td>on-screen scenes go black, with only the HUD visible</td>
+<td>pbuffer glReadPixels is unreliable (TBDR)</td>
+<td>look at the center pixels in the gpu_bench dump log</td>
+<td>§5</td>
+</tr>
+<tr>
+<td>readback is all black&#x2F;stale red</td>
+<td>TBDR resolution was not triggered</td>
+<td>run the <code>_gldump.c</code> minimal test</td>
+<td>§5</td>
+</tr>
+<tr>
+<td>the desktop “GPU Test” icon launches the old program</td>
+<td>gpu_test is not symlinked to gpu_bench</td>
+<td><code>ls -l /usr/local/bin/gpu_test</code></td>
+<td>§4</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-Kernel-Driver-Layer-①-mali-ko-→-dev-mali0"><a href="#2-Kernel-Driver-Layer-①-mali-ko-→-dev-mali0" class="headerlink" title="2. Kernel &#x2F; Driver Layer (① mali.ko → &#x2F;dev&#x2F;mali0)"></a>2. Kernel &#x2F; Driver Layer (① mali.ko → &#x2F;dev&#x2F;mali0)</h2><h3 id="2-1-RENDERER-Is-Not-Mali-400-EGL-NOT-INITIALIZED"><a href="#2-1-RENDERER-Is-Not-Mali-400-EGL-NOT-INITIALIZED" class="headerlink" title="2.1 RENDERER Is Not Mali-400 &#x2F; EGL_NOT_INITIALIZED"></a>2.1 RENDERER Is Not Mali-400 &#x2F; EGL_NOT_INITIALIZED</h3><ul>
+<li><strong>Locating</strong>: <code>ls -la /dev/mali0</code>; <code>ls -l /system/lib/egl/</code> should have the <code>libGLES_mali.so</code> symlink; check items 1~2 with <code>/root/mali_check</code>.</li>
+<li><strong>Fix</strong>:<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">insmod /lib/modules/mali.ko            <span class="comment"># rc=0 才继续</span></span><br><span class="line"><span class="built_in">ls</span> -la /dev/mali0                      <span class="comment"># crw-rw---- 10, 22</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /system/bin /system/lib/egl</span><br><span class="line"><span class="built_in">cp</span> /tmp/aand/system/bin/linker /system/bin/linker</span><br><span class="line"><span class="keyword">for</span> f <span class="keyword">in</span> /tmp/aand/system/lib/*.so /mnt/android_sys/lib/*.so; <span class="keyword">do</span> <span class="built_in">ln</span> -sf <span class="string">&quot;<span class="variable">$f</span>&quot;</span> /system/lib/; <span class="keyword">done</span></span><br><span class="line"><span class="built_in">ln</span> -sf /mnt/android_sys/lib/egl/libGLES_mali.so /system/lib/egl/</span><br></pre></td></tr></table></figure></li>
+<li><strong>Note</strong>: do not run <code>/system/bin/linker xxx</code> manually — with argv[0] being the linker, it prints a helper hint and exits; let the kernel read INTERP and load the linker automatically (by executing the program directly).</li>
+</ul>
+<hr>
+<h2 id="3-User-Space-bionic-Compilation-Layer-③-musl-gcc-compiling-bionic"><a href="#3-User-Space-bionic-Compilation-Layer-③-musl-gcc-compiling-bionic" class="headerlink" title="3. User-Space bionic Compilation Layer (③ musl gcc compiling bionic)"></a>3. User-Space bionic Compilation Layer (③ musl gcc compiling bionic)</h2><h3 id="3-1-A-Program-Crashes-as-Soon-as-It-Runs-before-main"><a href="#3-1-A-Program-Crashes-as-Soon-as-It-Runs-before-main" class="headerlink" title="3.1 A Program Crashes as Soon as It Runs (before main)"></a>3.1 A Program Crashes as Soon as It Runs (before main)</h3><ul>
+<li><strong>Root cause</strong>: with <code>-nostdlib</code>, ld’s default entry point is the first byte of .text.</li>
+<li><strong>Fix</strong>: add <code>-Wl,--entry=main</code> to the compilation.</li>
+</ul>
+<h3 id="3-2-clock-gettime64-undefined"><a href="#3-2-clock-gettime64-undefined" class="headerlink" title="3.2 __clock_gettime64 undefined"></a>3.2 <code>__clock_gettime64</code> undefined</h3><ul>
+<li><strong>Root cause</strong>: musl’s 32-bit time_t is 64 bits while bionic’s is 32 bits, so clock_gettime is renamed.</li>
+<li><strong>Fix</strong>: implement it yourself with <code>&#123;long tv_sec; long tv_usec;&#125;</code> + <code>syscall(78, &amp;t, 0)</code> (see <code>bionic_shim.cpp</code>).</li>
+</ul>
+<h3 id="3-3-An-Infinite-Loop-Inside-dlopen-Burning-CPU"><a href="#3-3-An-Infinite-Loop-Inside-dlopen-Burning-CPU" class="headerlink" title="3.3 An Infinite Loop Inside dlopen (Burning CPU)"></a>3.3 An Infinite Loop Inside dlopen (Burning CPU)</h3><ul>
+<li><strong>Root cause</strong>: the exe’s <code>--version-script</code> exports <code>mmap/lseek/ftruncate/fseeko/ftello</code>, hijacking bionic’s internal calls of the same names → argument misalignment and an infinite loop.</li>
+<li><strong>Fix</strong>: put these symbols only in the shim linked by the core itself; <strong>the exe’s export table must never contain them</strong> (self-check with <code>nm -D &lt;bin&gt;</code>).</li>
+</ul>
+<h3 id="3-4-Other-Symbols-the-Shim-Must-Provide"><a href="#3-4-Other-Symbols-the-Shim-Must-Provide" class="headerlink" title="3.4 Other Symbols the Shim Must Provide"></a>3.4 Other Symbols the Shim Must Provide</h3><p><code>__dso_handle</code> &#x2F; <code>__errno_location</code> &#x2F; <code>__tls_get_addr</code> &#x2F; <code>__nanosleep_time64</code> &#x2F; <code>getentropy</code> &#x2F; <code>secure_getenv</code> (verified in the device’s <code>bionic_shim.cpp</code>).</p>
+<hr>
+<h2 id="4-Application-Layer-④-gpu-bench-gpu-test-PSP-Frontend"><a href="#4-Application-Layer-④-gpu-bench-gpu-test-PSP-Frontend" class="headerlink" title="4. Application Layer (④ gpu_bench &#x2F; gpu_test &#x2F; PSP Frontend)"></a>4. Application Layer (④ gpu_bench &#x2F; gpu_test &#x2F; PSP Frontend)</h2><h3 id="4-1-The-Desktop-Icon-Launches-the-Old-Program"><a href="#4-1-The-Desktop-Icon-Launches-the-Old-Program" class="headerlink" title="4.1 The Desktop Icon Launches the Old Program"></a>4.1 The Desktop Icon Launches the Old Program</h3><ul>
+<li><strong>Locating</strong>: <code>ls -l /usr/local/bin/gpu_test</code> (it should be symlinked to gpu_bench).</li>
+<li><strong>Fix</strong>: <code>ln -sf /usr/local/bin/gpu_bench /usr/local/bin/gpu_test</code>.</li>
+</ul>
+<h3 id="4-2-Abnormally-Low-Score-Frame-Rate-Displayed-but-Scenes-Are-Black"><a href="#4-2-Abnormally-Low-Score-Frame-Rate-Displayed-but-Scenes-Are-Black" class="headerlink" title="4.2 Abnormally Low Score &#x2F; Frame Rate Displayed but Scenes Are Black"></a>4.2 Abnormally Low Score &#x2F; Frame Rate Displayed but Scenes Are Black</h3><ul>
+<li>See §5 (a readback problem that does not affect score timing).</li>
+</ul>
+<hr>
+<h2 id="5-Readback-Display-Layer-⑤-glReadPixels-TBDR-—-Known-to-Be-Unsolvable-Understand-This-First"><a href="#5-Readback-Display-Layer-⑤-glReadPixels-TBDR-—-Known-to-Be-Unsolvable-Understand-This-First" class="headerlink" title="5. Readback &#x2F; Display Layer (⑤ glReadPixels &#x2F; TBDR) — Known to Be Unsolvable; Understand This First"></a>5. Readback &#x2F; Display Layer (⑤ glReadPixels &#x2F; TBDR) — Known to Be Unsolvable; Understand This First</h2><h3 id="5-1-On-Screen-3D-2D-Scenes-Go-Black-with-Only-the-HUD-Visible"><a href="#5-1-On-Screen-3D-2D-Scenes-Go-Black-with-Only-the-HUD-Visible" class="headerlink" title="5.1 On-Screen 3D&#x2F;2D Scenes Go Black, with Only the HUD Visible"></a>5.1 On-Screen 3D&#x2F;2D Scenes Go Black, with Only the HUD Visible</h3><ul>
+<li><strong>Root cause</strong>: Mali TBDR lazy resolution + a pbuffer readback path defect, so <code>glReadPixels</code> cannot get the current frame (clear&#x2F;2D quads are all black or stale red; only large meshes with depth are occasionally correct).</li>
+<li><strong>Four approaches tried, all ineffective</strong>: FBO offscreen rendering followed by readback &#x2F; removing glFinish and reading directly &#x2F; eglSwapBuffers &#x2F; enabling depth globally.</li>
+<li><strong>Countermeasure (current)</strong>: the score and frame rate are based on <code>render+glFinish</code> timing, unaffected by readback, so benchmarking remains usable; the on-screen image awaits a fundamental fix via an “EGL window surface that renders directly to the fb” (the <code>_winsurf</code> probe crashes at the bionic linker stage and remains to be resolved).</li>
+<li>On exit, <code>fb_restore()</code> unconditionally flips back to page 0, so the desktop can be restored.</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-Mali-400-GPU-Troubleshooting-Manual-%E2%80%94-spd-box"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A Mali-400 GPU Troubleshooting Manual — spd-box</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-Troubleshooting-Discipline-Read-First-Violating-It-Wastes-Time"><span class="toc-number">1.1.</span> <span class="toc-text">0. Troubleshooting Discipline (Read First; Violating It Wastes Time)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Layered-Failure-Quick-Reference-Master-Table-One-Page-Location"><span class="toc-number">1.2.</span> <span class="toc-text">1. Layered Failure Quick-Reference Master Table (One-Page Location)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Kernel-Driver-Layer-%E2%91%A0-mali-ko-%E2%86%92-dev-mali0"><span class="toc-number">1.3.</span> <span class="toc-text">2. Kernel &#x2F; Driver Layer (① mali.ko → &#x2F;dev&#x2F;mali0)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-RENDERER-Is-Not-Mali-400-EGL-NOT-INITIALIZED"><span class="toc-number">1.3.1.</span> <span class="toc-text">2.1 RENDERER Is Not Mali-400 &#x2F; EGL_NOT_INITIALIZED</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-User-Space-bionic-Compilation-Layer-%E2%91%A2-musl-gcc-compiling-bionic"><span class="toc-number">1.4.</span> <span class="toc-text">3. User-Space bionic Compilation Layer (③ musl gcc compiling bionic)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-A-Program-Crashes-as-Soon-as-It-Runs-before-main"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 A Program Crashes as Soon as It Runs (before main)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-clock-gettime64-undefined"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 __clock_gettime64 undefined</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-An-Infinite-Loop-Inside-dlopen-Burning-CPU"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 An Infinite Loop Inside dlopen (Burning CPU)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-Other-Symbols-the-Shim-Must-Provide"><span class="toc-number">1.4.4.</span> <span class="toc-text">3.4 Other Symbols the Shim Must Provide</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Application-Layer-%E2%91%A3-gpu-bench-gpu-test-PSP-Frontend"><span class="toc-number">1.5.</span> <span class="toc-text">4. Application Layer (④ gpu_bench &#x2F; gpu_test &#x2F; PSP Frontend)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-The-Desktop-Icon-Launches-the-Old-Program"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 The Desktop Icon Launches the Old Program</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Abnormally-Low-Score-Frame-Rate-Displayed-but-Scenes-Are-Black"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 Abnormally Low Score &#x2F; Frame Rate Displayed but Scenes Are Black</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Readback-Display-Layer-%E2%91%A4-glReadPixels-TBDR-%E2%80%94-Known-to-Be-Unsolvable-Understand-This-First"><span class="toc-number">1.6.</span> <span class="toc-text">5. Readback &#x2F; Display Layer (⑤ glReadPixels &#x2F; TBDR) — Known to Be Unsolvable; Understand This First</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-On-Screen-3D-2D-Scenes-Go-Black-with-Only-the-HUD-Visible"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 On-Screen 3D&#x2F;2D Scenes Go Black, with Only the HUD Visible</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&text=Mali400_Troubleshooting Manual"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&title=Mali400_Troubleshooting Manual"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&is_video=false&description=Mali400_Troubleshooting Manual"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400_Troubleshooting Manual&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&title=Mali400_Troubleshooting Manual"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&title=Mali400_Troubleshooting Manual"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&title=Mali400_Troubleshooting Manual"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&title=Mali400_Troubleshooting Manual"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/30/mali-03-mali400-md/&name=Mali400_Troubleshooting Manual&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

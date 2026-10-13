@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="HT0 Mali-400 原理與移植學習 Wiki 這份文檔不是操作手冊，而是原理課：講清楚這顆 Mali-400 為什麼能在這臺”安卓內核 + Alpine 用戶態”的機器上跑起來、安卓原來怎麼做、我們為什麼改成現在這樣、每一行關鍵代碼在幹什麼。讀完你應該能：面對一臺”安卓內核 + 別的用戶態”的 Mali 設備，自己分析出該怎麼把 GPU 點亮。   0. 一句話先建立直覺 Mali-400">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mali400原理與移植學習Wiki">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="HT0 Mali-400 原理與移植學習 Wiki 這份文檔不是操作手冊，而是原理課：講清楚這顆 Mali-400 為什麼能在這臺”安卓內核 + Alpine 用戶態”的機器上跑起來、安卓原來怎麼做、我們為什麼改成現在這樣、每一行關鍵代碼在幹什麼。讀完你應該能：面對一臺”安卓內核 + 別的用戶態”的 Mali 設備，自己分析出該怎麼把 GPU 點亮。   0. 一句話先建立直覺 Mali-400">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-30T08:44:04.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.905Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="GPU">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Mali400原理與移植學習Wiki</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/30/mali-03-mali400-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/29/ref-emulator-render/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&text=Mali400原理與移植學習Wiki"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&title=Mali400原理與移植學習Wiki"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&is_video=false&description=Mali400原理與移植學習Wiki"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400原理與移植學習Wiki&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&title=Mali400原理與移植學習Wiki"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&title=Mali400原理與移植學習Wiki"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&title=Mali400原理與移植學習Wiki"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&title=Mali400原理與移植學習Wiki"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&name=Mali400原理與移植學習Wiki&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-Mali-400-%E5%8E%9F%E7%90%86%E8%88%87%E7%A7%BB%E6%A4%8D%E5%AD%B8%E7%BF%92-Wiki"><span class="toc-number">1.</span> <span class="toc-text">HT0 Mali-400 原理與移植學習 Wiki</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E4%B8%80%E5%8F%A5%E8%A9%B1%E5%85%88%E5%BB%BA%E7%AB%8B%E7%9B%B4%E8%A6%BA"><span class="toc-number">1.1.</span> <span class="toc-text">0. 一句話先建立直覺</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%A1%AC%E4%BB%B6%E9%95%B7%E4%BB%80%E9%BA%BC%E6%A8%A3"><span class="toc-number">1.2.</span> <span class="toc-text">1. 硬件長什麼樣</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-GPU-%E8%83%BD%E7%94%A8%E7%9A%84%E4%B8%89%E5%B1%A4%E6%A8%A1%E5%9E%8B%EF%BC%88%E6%9C%80%E9%87%8D%E8%A6%81%E7%9A%84%E5%88%86%E6%9E%90%E6%A1%86%E6%9E%B6%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. GPU 能用的三層模型（最重要的分析框架）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%97%9C%E9%8D%B5%E6%A6%82%E5%BF%B5%E9%80%90%E5%80%8B%E8%AC%9B%E9%80%8F"><span class="toc-number">1.4.</span> <span class="toc-text">3. 關鍵概念逐個講透</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-bionic-vs-musl-%E2%80%94%E2%80%94-%E7%82%BA%E4%BB%80%E9%BA%BC%E9%9C%80%E8%A6%81-ABI-%E6%A9%8B"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 bionic vs musl —— 為什麼需要 ABI 橋</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-EGL-pbuffer-GLES2-context-%E2%80%94%E2%80%94-GPU-%E7%95%AB%E5%9C%A8%E5%93%AA"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 EGL pbuffer + GLES2 context —— GPU 畫在哪</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-glReadPixels-%E5%9B%9E%E8%AE%80%E8%88%87-TBDR-%E6%83%B0%E6%80%A7%E8%A7%A3%E6%9E%90%EF%BC%88%E6%9C%80%E5%9D%91%E7%9A%84%E4%B8%80%E9%BB%9E%EF%BC%89"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 glReadPixels 回讀與 TBDR 惰性解析（最坑的一點）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E5%AD%97%E7%AF%80%E5%BA%8F-R-B-%E4%BA%A4%E6%8F%9B"><span class="toc-number">1.4.4.</span> <span class="toc-text">3.4 字節序 R&#x2F;B 交換</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#glReadPixels-%E5%9B%9E%E8%AE%80%E7%9A%84%E6%98%AF-fb-%E7%9C%9F%E5%AF%A6%E5%AD%97%E7%AF%80%E5%BA%8F%EF%BC%8C%E8%88%87%E9%A9%85%E5%8B%95%E5%85%A7%E9%83%A8%E5%8F%AF%E8%83%BD%E7%9B%B8%E5%8F%8D%E2%80%94%E2%80%94%E4%BE%9D-PSP-%E5%89%8D%E7%AB%AF%E5%AF%A6%E6%B8%AC%EF%BC%9Ag-swap-rb-0%EF%BC%88%E4%B8%8D%E4%BA%A4%E6%8F%9B-R-B%EF%BC%89%E3%80%82%E5%9B%9E%E8%AE%80%E5%BE%8C%E7%9B%B4%E6%8E%A5%E6%8C%89-R-G-B-X-%E5%AF%AB-fb-%E5%8D%B3%E5%8F%AF%E3%80%82"><span class="toc-number">1.5.</span> <span class="toc-text">glReadPixels 回讀的是 fb 真實字節序，與驅動內部可能相反——依 PSP 前端實測：g_swap_rb &#x3D; 0（不交換 R&#x2F;B）。回讀後直接按 [R,G,B,X] 寫 fb 即可。</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Mali400原理與移植學習Wiki
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-30T08:44:04.000Z" itemprop="datePublished">2026-09-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/GPU/" rel="tag">GPU</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="HT0-Mali-400-原理與移植學習-Wiki"><a href="#HT0-Mali-400-原理與移植學習-Wiki" class="headerlink" title="HT0 Mali-400 原理與移植學習 Wiki"></a>HT0 Mali-400 原理與移植學習 Wiki</h1><blockquote>
+<p>這份文檔不是操作手冊，而是<strong>原理課</strong>：講清楚這顆 Mali-400 為什麼能在這臺”安卓內核 + Alpine 用戶態”的機器上跑起來、安卓原來怎麼做、我們為什麼改成現在這樣、每一行關鍵代碼在幹什麼。<br>讀完你應該能：面對一臺”安卓內核 + 別的用戶態”的 Mali 設備，自己分析出該怎麼把 GPU 點亮。</p>
+</blockquote>
+<hr>
+<h2 id="0-一句話先建立直覺"><a href="#0-一句話先建立直覺" class="headerlink" title="0. 一句話先建立直覺"></a>0. 一句話先建立直覺</h2><blockquote>
+<p>Mali-400 不是顯示控制器，而是一顆<strong>需要內核驅動 + 用戶態 GL 棧 + 正確 ABI 橋</strong>才能點亮的 3D 渲染 GPU。<br>安卓用一整套 bionic 服務（SurfaceFlinger + hwcomposer + libGLES_mali）替你把這套棧搭好了；<br>我們把這套棧<strong>用最小的交叉編譯橋</strong>重寫了一遍，跑在 Alpine 的 musl 用戶態上。</p>
+</blockquote>
+<hr>
+<h2 id="1-硬件長什麼樣"><a href="#1-硬件長什麼樣" class="headerlink" title="1. 硬件長什麼樣"></a>1. 硬件長什麼樣</h2><p>這顆芯片平臺是展訊 SC9832A，GPU 是 <strong>Mali-400 MP</strong>（ARM 的 Utgard 架構，OpenGL ES 2.0，TBDR 瓦片渲染）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">┌──────────────────────────────┐</span><br><span class="line">│       展訊 SC9832A AP        │</span><br><span class="line">│  ┌──────────┐   ┌───────────┐ │</span><br><span class="line">│  │ sprdfb    │   │ Mali-400  │ │</span><br><span class="line">│  │ (dispc)  │   │ (GPU)     │ │</span><br><span class="line">│  │ /dev/fb0 │   │ /dev/mali0│ │</span><br><span class="line">│  └────┬─────┘   └────┬──────┘ │</span><br><span class="line">└───────┼──────────────┼────────┘</span><br><span class="line">    掃描輸出        渲染目標(buffer)</span><br><span class="line">    顯示器          GPU 畫進內存再由 dispc 顯示</span><br></pre></td></tr></table></figure>
+
+<p>兩條”輸出”路徑，分工完全不同：</p>
+<table>
+<thead>
+<tr>
+<th>部件</th>
+<th>幹什麼</th>
+<th>用戶態看到</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>sprdfb &#x2F; dispc</td>
+<td>把內存裡的像素掃到屏幕</td>
+<td><code>/dev/fb0</code>（最終輸出口）</td>
+</tr>
+<tr>
+<td>Mali-400</td>
+<td>把 3D&#x2F;2D 圖形算進內存 buffer</td>
+<td><code>/dev/mali0</code> + EGL&#x2F;GLES</td>
+</tr>
+<tr>
+<td>VSP</td>
+<td>視頻硬解（H.264 等）</td>
+<td><code>/dev/sprd_vsp</code></td>
+</tr>
+<tr>
+<td>GSP</td>
+<td>2D 加速（縮放&#x2F;YUV→RGB）</td>
+<td><code>/dev/sprd_gsp</code> + ION</td>
+</tr>
+</tbody></table>
+<p><strong>關鍵認知</strong>：GPU <strong>不能接管顯示</strong>——它只把圖畫進 buffer，再由 dispc 顯示。安卓靠 SurfaceFlinger 的 overlay 圖層完成這最後一步，本機沒有這套東西，所以我們的程序要自己”GPU 畫 → 回讀 → 寫 fb”。</p>
+<hr>
+<h2 id="2-GPU-能用的三層模型（最重要的分析框架）"><a href="#2-GPU-能用的三層模型（最重要的分析框架）" class="headerlink" title="2. GPU 能用的三層模型（最重要的分析框架）"></a>2. GPU 能用的三層模型（最重要的分析框架）</h2><p>任何 Mali 能用，都要三層全通。**每一層都有明確的”驗通標準”**，不通就停在那層查，別跨層瞎試。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">① 內核驅動層   mali.ko 加載了嗎？/dev/mali0 出現嗎？</span><br><span class="line">               驗通：insmod rc=0；ls /dev/mali0 有設備節點</span><br><span class="line">② 用戶態層     有可用的 EGL/GLES 庫嗎？ABI 對得上嗎？</span><br><span class="line">               驗通：eglInitialize 成功；GL_RENDERER=Mali-400 MP</span><br><span class="line">③ 應用層       程序怎麼調？像素怎麼取？怎麼上屏？</span><br><span class="line">               驗通：gpu_bench 出分；PSP 前端出畫面</span><br></pre></td></tr></table></figure>
+
+<p>我們這次幾乎每踩一個坑，都是”誤以為在上層，其實卡在下層”：</p>
+<ul>
+<li>RENDERER 不是 Mali → 不是程序錯，是 mali.ko 沒 insmod（第①層）；</li>
+<li>bionic 程序崩 before main → 不是邏輯錯，是缺 <code>-Wl,--entry=main</code>（第②層編譯）；</li>
+<li>屏幕發黑 → 不是畫錯，是 pbuffer 回讀在 TBDR 下拿不到幀（第③層顯示）。</li>
+</ul>
+<hr>
+<h2 id="3-關鍵概念逐個講透"><a href="#3-關鍵概念逐個講透" class="headerlink" title="3. 關鍵概念逐個講透"></a>3. 關鍵概念逐個講透</h2><h3 id="3-1-bionic-vs-musl-——-為什麼需要-ABI-橋"><a href="#3-1-bionic-vs-musl-——-為什麼需要-ABI-橋" class="headerlink" title="3.1 bionic vs musl —— 為什麼需要 ABI 橋"></a>3.1 bionic vs musl —— 為什麼需要 ABI 橋</h3><p>本機用戶態是 Alpine 的 <strong>musl libc</strong>；而 Mali 唯一的 DDK <code>libGLES_mali.so</code> 是安卓 <strong>bionic libc</strong> 二進制。兩者 ABI 不兼容（符號名、結構體佈局、time_t 寬度都不同），musl 直接 <code>dlopen</code> 會崩。</p>
+<p><strong>我們的橋</strong>：</p>
+<ul>
+<li>內核讀 ELF 的 INTERP 自動加載 <code>/system/bin/linker</code>（bionic 動態鏈接器），讓 bionic 程序自己跑；</li>
+<li>musl gcc 編譯但<strong>不鏈 musl libc</strong>，改用 <code>-nostdlib -Wl,--dynamic-linker=/system/bin/linker -Wl,-rpath=/system/lib -lGLESv2 -lEGL -lc</code> 去鏈 bionic 的 libc；</li>
+<li>少量 musl 特有符號（time64、errno、tls、getentropy 等）用 <code>bionic_shim.cpp</code> 補樁。</li>
+</ul>
+<h3 id="3-2-EGL-pbuffer-GLES2-context-——-GPU-畫在哪"><a href="#3-2-EGL-pbuffer-GLES2-context-——-GPU-畫在哪" class="headerlink" title="3.2 EGL pbuffer + GLES2 context —— GPU 畫在哪"></a>3.2 EGL pbuffer + GLES2 context —— GPU 畫在哪</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 創建離屏 pbuffer surface（不在屏幕上，畫進內存）</span></span><br><span class="line">EGLSurface surf = eglCreatePbufferSurface(dpy, cfg, <span class="literal">NULL</span>);  <span class="comment">// cfg 含 EGL_DEPTH_SIZE,16</span></span><br><span class="line">eglMakeCurrent(dpy, surf, surf, ctx);</span><br><span class="line"><span class="comment">// 之後所有 gl* 都渲染到這個 pbuffer 的默認 framebuffer</span></span><br></pre></td></tr></table></figure>
+
+<p>PSP 前端與 gpu_bench 都用這套：GPU 把圖渲染進 pbuffer，再 <code>glReadPixels</code> 取回 CPU，最後縮放旋轉寫 <code>/dev/fb0</code>。</p>
+<h3 id="3-3-glReadPixels-回讀與-TBDR-惰性解析（最坑的一點）"><a href="#3-3-glReadPixels-回讀與-TBDR-惰性解析（最坑的一點）" class="headerlink" title="3.3 glReadPixels 回讀與 TBDR 惰性解析（最坑的一點）"></a>3.3 glReadPixels 回讀與 TBDR 惰性解析（最坑的一點）</h3><p>Mali-400 是 <strong>TBDR（Tile-Based Deferred Renderer）</strong>：它把屏幕切成瓦片，延遲到 <code>glFinish</code>&#x2F;swap 才真正把瓦片解析（resolve）進內存。</p>
+<ul>
+<li>在 pbuffer 上，<strong>回讀時機不對就拿不到這一幀</strong>——表現為 clear&#x2F;普通四邊形回讀全黑或陳舊紅，只有帶深度的大網格（驅動被迫提前解析）偶發正確。</li>
+<li>已驗證 FBO &#x2F; 去 glFinish &#x2F; eglSwapBuffers &#x2F; 開深度 四種辦法均無效，根因在驅動層 TBDR + pbuffer 回讀路徑，應用層繞不開。</li>
+<li>對策：評分計時只量 <code>render+glFinish</code>（不含回讀），不受汙染；要真出畫面得改”直渲 fb 的 window surface”（不走回讀）。</li>
+</ul>
+<h3 id="3-4-字節序-R-B-交換"><a href="#3-4-字節序-R-B-交換" class="headerlink" title="3.4 字節序 R&#x2F;B 交換"></a>3.4 字節序 R&#x2F;B 交換</h3><h2 id="glReadPixels-回讀的是-fb-真實字節序，與驅動內部可能相反——依-PSP-前端實測：g-swap-rb-0（不交換-R-B）。回讀後直接按-R-G-B-X-寫-fb-即可。"><a href="#glReadPixels-回讀的是-fb-真實字節序，與驅動內部可能相反——依-PSP-前端實測：g-swap-rb-0（不交換-R-B）。回讀後直接按-R-G-B-X-寫-fb-即可。" class="headerlink" title="glReadPixels 回讀的是 fb 真實字節序，與驅動內部可能相反——依 PSP 前端實測：g_swap_rb = 0（不交換 R&#x2F;B）。回讀後直接按 [R,G,B,X] 寫 fb 即可。"></a><code>glReadPixels</code> 回讀的是 <strong>fb 真實字節序</strong>，與驅動內部可能相反——依 PSP 前端實測：<code>g_swap_rb = 0</code>（<strong>不交換</strong> R&#x2F;B）。回讀後直接按 <code>[R,G,B,X]</code> 寫 fb 即可。</h2><blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-Mali-400-%E5%8E%9F%E7%90%86%E8%88%87%E7%A7%BB%E6%A4%8D%E5%AD%B8%E7%BF%92-Wiki"><span class="toc-number">1.</span> <span class="toc-text">HT0 Mali-400 原理與移植學習 Wiki</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E4%B8%80%E5%8F%A5%E8%A9%B1%E5%85%88%E5%BB%BA%E7%AB%8B%E7%9B%B4%E8%A6%BA"><span class="toc-number">1.1.</span> <span class="toc-text">0. 一句話先建立直覺</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%A1%AC%E4%BB%B6%E9%95%B7%E4%BB%80%E9%BA%BC%E6%A8%A3"><span class="toc-number">1.2.</span> <span class="toc-text">1. 硬件長什麼樣</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-GPU-%E8%83%BD%E7%94%A8%E7%9A%84%E4%B8%89%E5%B1%A4%E6%A8%A1%E5%9E%8B%EF%BC%88%E6%9C%80%E9%87%8D%E8%A6%81%E7%9A%84%E5%88%86%E6%9E%90%E6%A1%86%E6%9E%B6%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">2. GPU 能用的三層模型（最重要的分析框架）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%97%9C%E9%8D%B5%E6%A6%82%E5%BF%B5%E9%80%90%E5%80%8B%E8%AC%9B%E9%80%8F"><span class="toc-number">1.4.</span> <span class="toc-text">3. 關鍵概念逐個講透</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-bionic-vs-musl-%E2%80%94%E2%80%94-%E7%82%BA%E4%BB%80%E9%BA%BC%E9%9C%80%E8%A6%81-ABI-%E6%A9%8B"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 bionic vs musl —— 為什麼需要 ABI 橋</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-EGL-pbuffer-GLES2-context-%E2%80%94%E2%80%94-GPU-%E7%95%AB%E5%9C%A8%E5%93%AA"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 EGL pbuffer + GLES2 context —— GPU 畫在哪</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-glReadPixels-%E5%9B%9E%E8%AE%80%E8%88%87-TBDR-%E6%83%B0%E6%80%A7%E8%A7%A3%E6%9E%90%EF%BC%88%E6%9C%80%E5%9D%91%E7%9A%84%E4%B8%80%E9%BB%9E%EF%BC%89"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 glReadPixels 回讀與 TBDR 惰性解析（最坑的一點）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E5%AD%97%E7%AF%80%E5%BA%8F-R-B-%E4%BA%A4%E6%8F%9B"><span class="toc-number">1.4.4.</span> <span class="toc-text">3.4 字節序 R&#x2F;B 交換</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#glReadPixels-%E5%9B%9E%E8%AE%80%E7%9A%84%E6%98%AF-fb-%E7%9C%9F%E5%AF%A6%E5%AD%97%E7%AF%80%E5%BA%8F%EF%BC%8C%E8%88%87%E9%A9%85%E5%8B%95%E5%85%A7%E9%83%A8%E5%8F%AF%E8%83%BD%E7%9B%B8%E5%8F%8D%E2%80%94%E2%80%94%E4%BE%9D-PSP-%E5%89%8D%E7%AB%AF%E5%AF%A6%E6%B8%AC%EF%BC%9Ag-swap-rb-0%EF%BC%88%E4%B8%8D%E4%BA%A4%E6%8F%9B-R-B%EF%BC%89%E3%80%82%E5%9B%9E%E8%AE%80%E5%BE%8C%E7%9B%B4%E6%8E%A5%E6%8C%89-R-G-B-X-%E5%AF%AB-fb-%E5%8D%B3%E5%8F%AF%E3%80%82"><span class="toc-number">1.5.</span> <span class="toc-text">glReadPixels 回讀的是 fb 真實字節序，與驅動內部可能相反——依 PSP 前端實測：g_swap_rb &#x3D; 0（不交換 R&#x2F;B）。回讀後直接按 [R,G,B,X] 寫 fb 即可。</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&text=Mali400原理與移植學習Wiki"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&title=Mali400原理與移植學習Wiki"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&is_video=false&description=Mali400原理與移植學習Wiki"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali400原理與移植學習Wiki&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&title=Mali400原理與移植學習Wiki"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&title=Mali400原理與移植學習Wiki"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&title=Mali400原理與移植學習Wiki"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&title=Mali400原理與移植學習Wiki"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/30/mali-05-mali400-wiki-md/&name=Mali400原理與移植學習Wiki&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_12 — GBA exit logic changed to be line-by-line identical with FC (removing GBA-specific branches)   Item Content    Discovery time 2026-09-23   Fix time 2026-09-23   Module lv_pages&#x2F;gb">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA Exit Logic Aligned with FC">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_12 — GBA exit logic changed to be line-by-line identical with FC (removing GBA-specific branches)   Item Content    Discovery time 2026-09-23   Fix time 2026-09-23   Module lv_pages&#x2F;gb">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.944Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA Exit Logic Aligned with FC</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/23/bugfix-20260923-11/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/23/bugfix-20260923-13/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&text=GBA Exit Logic Aligned with FC"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&title=GBA Exit Logic Aligned with FC"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&is_video=false&description=GBA Exit Logic Aligned with FC"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA Exit Logic Aligned with FC&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&title=GBA Exit Logic Aligned with FC"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&title=GBA Exit Logic Aligned with FC"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&title=GBA Exit Logic Aligned with FC"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&title=GBA Exit Logic Aligned with FC"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&name=GBA Exit Logic Aligned with FC&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-12-%E2%80%94-GBA-exit-logic-changed-to-be-line-by-line-identical-with-FC-removing-GBA-specific-branches"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_12 — GBA exit logic changed to be line-by-line identical with FC (removing GBA-specific branches)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Problem-symptoms"><span class="toc-number">1.1.</span> <span class="toc-text">1. Problem symptoms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Scope-of-impact"><span class="toc-number">1.2.</span> <span class="toc-text">2. Scope of impact</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Root-cause-analysis"><span class="toc-number">1.3.</span> <span class="toc-text">3. Root cause analysis</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-The-four-differences-before-the-fix-GBA%E2%80%99s-extra-complexity-relative-to-FC"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 The four differences before the fix (GBA’s extra complexity relative to FC)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Why-these-four-differences-are-risks"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Why these four differences are risks</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-The-trade-off-of-the-cost-explicitly-accepted"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 The trade-off of the cost (explicitly accepted)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Fix"><span class="toc-number">1.4.</span> <span class="toc-text">4. Fix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-gba-wait-thread-changed-to-a-blocking-waitpid"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 gba_wait_thread() changed to a blocking waitpid</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-gba-exit-to-list-removes-early-release"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 gba_exit_to_list() removes early release</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Delete-the-gba-reap-bg-background-reaping-thread"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 Delete the gba_reap_bg() background reaping thread</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-Remove-the-exiting-field-from-the-state-struct"><span class="toc-number">1.4.4.</span> <span class="toc-text">4.4 Remove the exiting field from the state struct</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-gba-timer-cb-picture-recovery-returns-to-a-single-invalidate"><span class="toc-number">1.4.5.</span> <span class="toc-text">4.5 gba_timer_cb() picture recovery returns to a single invalidate</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-6-Rewrite-the-file-header-comment"><span class="toc-number">1.4.6.</span> <span class="toc-text">4.6 Rewrite the file header comment</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification-method-and-results"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification method and results</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Code-consistency-check-local"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 Code consistency check (local)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Build-and-deployment-device-side"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 Build and deployment (device side)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-Real-machine-functional-verification-handed-to-the-user"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 Real-machine functional verification (handed to the user)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Regression-risks"><span class="toc-number">1.6.</span> <span class="toc-text">6. Regression risks</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Related-files"><span class="toc-number">1.7.</span> <span class="toc-text">7. Related files</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#gba-redeploy-py-originally-used-ps-o-pid-args-grep-lvgl-demo-to-get-the-PID-and-then-kill-9-That-command-runs-via-sh-c-and-the-command-line-of-the-carrying-shell-itself-contains-the-string-lvgl-demo-%E2%86%92it-is-matched-by-grep-%E2%86%92-kills-itself-%E2%86%92-the-SSH-connection-is-reset-the-previous-deployment-round-was-disconnected-here-It-is-now-changed-to-ps-o-pid-comm-awk-2-lvgl-demo-print-1-comm-is-the-process-name-without-arguments-so-the-carrying-shell%E2%80%99s-comm-is-sh-and-does-not-self-match-The-miniretro-series-switches-to-2-miniretro-prefix-matching"><span class="toc-number">1.8.</span> <span class="toc-text">gba_redeploy.py originally used ps -o pid,args | grep &#39;lvgl_demo&#39; to get the PID and then kill -9.That command runs via sh -c, and the command line of the carrying shell itself contains the string lvgl_demo →it is matched by grep → kills itself → the SSH connection is reset (the previous deployment round was disconnected here).It is now changed to ps -o pid,comm | awk &#39;$2&#x3D;&#x3D;&quot;lvgl_demo&quot;{print $1}&#39;: comm is the process name (without arguments),so the carrying shell’s comm is sh and does not self-match. The miniretro series switches to $2 ~ &#x2F;^miniretro&#x2F; prefix matching.</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA Exit Logic Aligned with FC
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-12-—-GBA-exit-logic-changed-to-be-line-by-line-identical-with-FC-removing-GBA-specific-branches"><a href="#bugfix-20260923-12-—-GBA-exit-logic-changed-to-be-line-by-line-identical-with-FC-removing-GBA-specific-branches" class="headerlink" title="bugfix_20260923_12 — GBA exit logic changed to be line-by-line identical with FC (removing GBA-specific branches)"></a>bugfix_20260923_12 — GBA exit logic changed to be line-by-line identical with FC (removing GBA-specific branches)</h1><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Discovery time</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>Fix time</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>Module</td>
+<td><code>lv_pages/gba_game_page.c</code></td>
+</tr>
+<tr>
+<td>Versions involved</td>
+<td>Taking over the site after bugfix_20260923_11 (front ends already separated)</td>
+</tr>
+<tr>
+<td>Severity level</td>
+<td>Medium (no new fault; a convergent fix that “eliminates structural divergence”)</td>
+</tr>
+<tr>
+<td>Trigger</td>
+<td>The user explicitly requested: “change the GBA one to FC’s exit logic”</td>
+</tr>
+</tbody></table>
+<h2 id="1-Problem-symptoms"><a href="#1-Problem-symptoms" class="headerlink" title="1. Problem symptoms"></a>1. Problem symptoms</h2><p>After the front-end separation (bugfix_20260923_11), although GBA and FC each use a separate binary, <strong>the exit logic is still not the same set</strong>:<br>the GBA page retains an “early release” path that the FC page does not have (the <code>exiting</code> flag + a background reaping thread + refreshing 3 frames in a row).</p>
+<p>This path is where problems repeatedly occurred across the three rounds of failures 09→10→11. The user judged from this that “the logic on the two sides is mixed together, making exits inexplicable”, and asked to change GBA’s exit logic directly to the FC one.</p>
+<p>The user’s judgment is correct: <strong>the FC set is the only exit path that has been long-term verified on the real machine; none of the “improved versions” currently has a credible verification basis.</strong></p>
+<h2 id="2-Scope-of-impact"><a href="#2-Scope-of-impact" class="headerlink" title="2. Scope of impact"></a>2. Scope of impact</h2><ul>
+<li><code>lv_pages/gba_game_page.c</code>: the exit path (<code>gba_wait_thread</code> &#x2F; <code>gba_exit_to_list</code> &#x2F; <code>gba_timer_cb</code> &#x2F; state struct).</li>
+<li><code>miniretro_gba</code> (the front-end binary) is not touched, and the FC page is not touched (the FC page stays as-is, not a single line changed).</li>
+<li>At the structural level: eliminating “artificial differences between isomorphic components” — the differences themselves are where subsequent faults hide.</li>
+</ul>
+<h2 id="3-Root-cause-analysis"><a href="#3-Root-cause-analysis" class="headerlink" title="3. Root cause analysis"></a>3. Root cause analysis</h2><h3 id="3-1-The-four-differences-before-the-fix-GBA’s-extra-complexity-relative-to-FC"><a href="#3-1-The-four-differences-before-the-fix-GBA’s-extra-complexity-relative-to-FC" class="headerlink" title="3.1 The four differences before the fix (GBA’s extra complexity relative to FC)"></a>3.1 The four differences before the fix (GBA’s extra complexity relative to FC)</h3><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Difference</th>
+<th>FC page</th>
+<th>GBA page (before fix)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Waiting criterion</td>
+<td>Blocking <code>waitpid</code>, recognizing only “the child process really disappeared”</td>
+<td>5ms polling, recognizing the <code>exiting</code> flag <strong>or</strong> the child process disappearing</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Exit function side effects</td>
+<td>Only <code>SIGTERM → 120ms → SIGKILL</code></td>
+<td>Additionally sets <code>s_gba.exiting = true</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Reaping fallback</td>
+<td>None (blocking necessarily gets the corpse)</td>
+<td><code>gba_reap_bg()</code> independent background thread</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Picture recovery</td>
+<td><code>lv_obj_invalidate()</code> ×1</td>
+<td><code>invalidate()</code> + <code>for(3) lv_refr_now()</code></td>
+</tr>
+</tbody></table>
+<h3 id="3-2-Why-these-four-differences-are-risks"><a href="#3-2-Why-these-four-differences-are-risks" class="headerlink" title="3.2 Why these four differences are risks"></a>3.2 Why these four differences are risks</h3><ul>
+<li><strong>Difference 1 is the same lesion behind the three rounds of hangs&#x2F;black-screen hangs in 09&#x2F;10&#x2F;11.</strong> As long as non-hard events such as “flags” or “time caps” appear in the waiting criterion, there is a possibility of “judging a still-running game as already exited”, with the consequences fixed as two: ① <code>hardware_keys_set_interceptor(NULL)</code> removes the key interceptor → the exit key stops working and the game can never be exited again; ② <code>app_runtime_set_lvgl_paused(false)</code> lets LVGL grab back fb0 → overwriting the still-running game. The difference between the two historical versions is only “the trigger condition for the misjudgment” (time cap &#x2F; flag being read); the essence is the same source.</li>
+<li><strong>Differences 3 and 4 are patches for the timing problem of difference 1</strong>. Early release means “the flag is consumed but the child process is still touching fb0”, so refreshing 3 frames in a row to grab the picture and opening a separate thread to reap become unavoidable. After changing back to the hard-event criterion, these two patches <strong>no longer have any reason to exist</strong>, and keeping them is an extra failure surface instead.</li>
+<li><strong>Structural reason</strong>: the FC page’s logic has been long-term verified on the real machine; the GBA page carries a “found only here” path. The same design intent is written differently in two places, making it easy for any future change to modify only one side — this is exactly a re-run of the kind of problem in document 11 where “the shared binary gets broken”, just shifted from “a shared artifact” to “shared semantics, separate implementations”.</li>
+</ul>
+<h3 id="3-3-The-trade-off-of-the-cost-explicitly-accepted"><a href="#3-3-The-trade-off-of-the-cost-explicitly-accepted" class="headerlink" title="3.3 The trade-off of the cost (explicitly accepted)"></a>3.3 The trade-off of the cost (explicitly accepted)</h3><p>The only cost of the FC set is: <strong>recovering the UI requires waiting for the kernel to reclaim the <code>evdev</code> fd, measured at about 455ms from signal to reaping complete</strong> (of which the child process’s internal cleanup is ~34ms and the rest is the kernel’s inherent overhead). Rounds 09 and 10 are exactly the failures that occurred while trying to “save those few hundred milliseconds”.</p>
+<p>This change explicitly chooses to <strong>bear that ~400ms</strong> in exchange for “GBA and FC behaving line-by-line identically”. Reasons:</p>
+<ul>
+<li>A 455ms flash of black screen feels to the user like “a pause on exit”, which is acceptable;</li>
+<li>Compared with “occasional freezes, the exit key failing, and only a restart recovering”, this cost is far smaller;</li>
+<li>The verifiability brought by consistency &gt; the performance gain of a few hundred milliseconds.</li>
+</ul>
+<h2 id="4-Fix"><a href="#4-Fix" class="headerlink" title="4. Fix"></a>4. Fix</h2><p><strong>Principle: the GBA page’s exit path copies the FC page exactly, with no dedicated branches.</strong></p>
+<h3 id="4-1-gba-wait-thread-changed-to-a-blocking-waitpid"><a href="#4-1-gba-wait-thread-changed-to-a-blocking-waitpid" class="headerlink" title="4.1 gba_wait_thread() changed to a blocking waitpid"></a>4.1 <code>gba_wait_thread()</code> changed to a blocking <code>waitpid</code></h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> *<span class="title function_">gba_wait_thread</span><span class="params">(<span class="type">void</span> *arg)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">pid_t</span> pid = (<span class="type">pid_t</span>)(<span class="type">intptr_t</span>)arg;</span><br><span class="line">    <span class="type">int</span> status = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span>(waitpid(pid, &amp;status, <span class="number">0</span>) &lt; <span class="number">0</span>) &#123;      <span class="comment">/* 无上限，与 fc_wait_thread 相同 */</span></span><br><span class="line">        <span class="keyword">if</span>(errno == EINTR) <span class="keyword">continue</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    pthread_mutex_lock(&amp;s_gba.lock);</span><br><span class="line">    <span class="keyword">if</span>(s_gba.child_pid == pid) &#123;</span><br><span class="line">        s_gba.child_pid = <span class="number">-1</span>;</span><br><span class="line">        s_gba.running   = <span class="literal">false</span>;</span><br><span class="line">        s_gba.finished  = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    pthread_mutex_unlock(&amp;s_gba.lock);</span><br><span class="line"></span><br><span class="line">    hardware_keys_set_grab(<span class="literal">true</span>);</span><br><span class="line">    hardware_keys_set_interceptor(<span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line">    app_runtime_set_lvgl_paused(<span class="literal">false</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Safety basis: the upstream <code>gba_exit_to_list()</code> guarantees that a <code>SIGKILL</code> is necessarily added 120ms after <code>SIGTERM</code>,<br>and <code>SIGKILL</code> is uncatchable ⇒ the child process necessarily ends ⇒ the blocking <code>waitpid</code> necessarily returns, so there is no indefinite waiting.</p>
+<h3 id="4-2-gba-exit-to-list-removes-early-release"><a href="#4-2-gba-exit-to-list-removes-early-release" class="headerlink" title="4.2 gba_exit_to_list() removes early release"></a>4.2 <code>gba_exit_to_list()</code> removes early release</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kill(pid, SIGTERM);</span><br><span class="line">usleep(<span class="number">120</span> * <span class="number">1000</span>);</span><br><span class="line"><span class="keyword">if</span>(kill(pid, <span class="number">0</span>) == <span class="number">0</span>) kill(pid, SIGKILL);</span><br><span class="line"><span class="comment">/* 到此为止：不再置 exiting 标志，画面恢复交给收尸后触发的 finished + 主线程定时器 */</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-3-Delete-the-gba-reap-bg-background-reaping-thread"><a href="#4-3-Delete-the-gba-reap-bg-background-reaping-thread" class="headerlink" title="4.3 Delete the gba_reap_bg() background reaping thread"></a>4.3 Delete the <code>gba_reap_bg()</code> background reaping thread</h3><p>A blocking <code>waitpid</code> necessarily gets the corpse, so the fallback thread has no reason to exist. Deleting it also eliminates the race space where “two pieces of code both assign <code>child_pid</code>“.</p>
+<h3 id="4-4-Remove-the-exiting-field-from-the-state-struct"><a href="#4-4-Remove-the-exiting-field-from-the-state-struct" class="headerlink" title="4.4 Remove the exiting field from the state struct"></a>4.4 Remove the <code>exiting</code> field from the state struct</h3><p>The <code>exiting</code> in <code>gba_state_t</code> and its reset in <code>gba_launch()</code> are both deleted, returning the field layout to alignment with <code>fc_state_t</code>.</p>
+<h3 id="4-5-gba-timer-cb-picture-recovery-returns-to-a-single-invalidate"><a href="#4-5-gba-timer-cb-picture-recovery-returns-to-a-single-invalidate" class="headerlink" title="4.5 gba_timer_cb() picture recovery returns to a single invalidate"></a>4.5 <code>gba_timer_cb()</code> picture recovery returns to a single <code>invalidate</code></h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lv_obj_invalidate(lv_screen_active());       <span class="comment">/* 与 fc_timer_cb 相同，不再连刷 3 帧 */</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-6-Rewrite-the-file-header-comment"><a href="#4-6-Rewrite-the-file-header-comment" class="headerlink" title="4.6 Rewrite the file header comment"></a>4.6 Rewrite the file header comment</h3><p>Change the narrative of “we are faster than FC” to “<strong>deliberately identical with FC, and explain why speed is no longer pursued</strong>“,<br>while leaving the two failed schemes (the SIGUSR1 handshake &#x2F; time cap) in the comments as counter-examples, preventing successors from walking the same path again.</p>
+<h2 id="5-Verification-method-and-results"><a href="#5-Verification-method-and-results" class="headerlink" title="5. Verification method and results"></a>5. Verification method and results</h2><h3 id="5-1-Code-consistency-check-local"><a href="#5-1-Code-consistency-check-local" class="headerlink" title="5.1 Code consistency check (local)"></a>5.1 Code consistency check (local)</h3><ul>
+<li><code>grep -n &quot;exiting\|reaped\|reap_bg\|lv_refr_now\|SIGUSR1\|RELEASE_SIGNAL&quot;</code> →<br>only comment content is matched, with <strong>no code residue whatsoever</strong>;</li>
+<li><code>gba_wait_thread()</code> compared line by line with <code>fc_wait_thread()</code> → structure, criterion, recovery order, and sequential comments are all identical,<br>differing only in the <code>s_gba</code> &#x2F; <code>s_fc</code> prefixes and indentation.</li>
+</ul>
+<h3 id="5-2-Build-and-deployment-device-side"><a href="#5-2-Build-and-deployment-device-side" class="headerlink" title="5.2 Build and deployment (device side)"></a>5.2 Build and deployment (device side)</h3><p><code>ssh_tools/gba_redeploy.py</code> (without <code>--mini</code>, only deploying the page + compiling + restarting):</p>
+<table>
+<thead>
+<tr>
+<th>Check item</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>make -j2</code></td>
+<td><code>MAKE_RC=0</code>, <code>error:</code> count &#x3D; 0</td>
+</tr>
+<tr>
+<td>Binary replacement</td>
+<td><code>ATOMIC_OK</code> (compiled to <code>.tmp</code> then <code>mv -f</code>, atomic)</td>
+</tr>
+<tr>
+<td>Games running before deployment</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Processes after restart</td>
+<td><code>lvgl_demo</code> ×1 + <code>lvgl_watchdog</code> ×1, single instance, no zombies</td>
+</tr>
+</tbody></table>
+<h3 id="5-3-Real-machine-functional-verification-handed-to-the-user"><a href="#5-3-Real-machine-functional-verification-handed-to-the-user" class="headerlink" title="5.3 Real-machine functional verification (handed to the user)"></a>5.3 Real-machine functional verification (handed to the user)</h3><ol>
+<li>Desktop → GBA Games → select ROM → confirm, entering the game;</li>
+<li>Press the <strong>买单</strong> (pay-the-bill) key to exit → expect about half a second of black-screen flash before returning to the game list, with <strong>the exit key effective throughout</strong>;</li>
+<li>Enter the game and <strong>stay for more than 5 seconds</strong> before exiting (key point: verify there is no longer “misjudgment after running for N seconds”) → the behavior should be the same as step 2;</li>
+<li>Enter once more and play normally for a while → exit, confirming there is no residual black screen and the list remains operable;</li>
+<li>Compare with FC games: enter → exit; the behavior should match GBA’s (both are “a half-second black-screen flash”).</li>
+</ol>
+<h2 id="6-Regression-risks"><a href="#6-Regression-risks" class="headerlink" title="6. Regression risks"></a>6. Regression risks</h2><table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Assessment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Exit is about 400ms slower than the previous version</td>
+<td><strong>Explicitly accepted</strong>; this is the inevitable cost of aligning with FC, and it is the only verified timing</td>
+</tr>
+<tr>
+<td>Whether a single <code>invalidate</code> is enough</td>
+<td>The FC page likewise only calls <code>invalidate</code> once and has long been normal; the recovery timing is now identical to FC’s, so it is judged sufficient. If “residual game picture after exit” occurs on the real machine, it means GBA’s fb cleanup differs from FC’s, and the investigation should start from <code>fb_restore()</code> in <code>miniretro_gba</code>, <strong>not by adding more refreshes</strong></td>
+</tr>
+<tr>
+<td>Whether a blocking <code>waitpid</code> waits indefinitely</td>
+<td>No: <code>SIGKILL</code> is uncatchable and the upstream necessarily sends it</td>
+</tr>
+<tr>
+<td>The extreme branch of <code>pthread_create</code> failing</td>
+<td>In that branch (inside <code>gba_launch</code>), it is <code>waitpid(pid, NULL, 0)</code> and <strong>no kill first</strong>, which in theory blocks until the game ends on its own. <strong>The FC page has exactly the same pattern</strong>; to maintain line-by-line identity it was not changed this time; it is an extremely low-probability path, and if it needs fixing, both sides should be fixed simultaneously</td>
+</tr>
+<tr>
+<td>FC page</td>
+<td>Not a single line changed this time</td>
+</tr>
+</tbody></table>
+<h2 id="7-Related-files"><a href="#7-Related-files" class="headerlink" title="7. Related files"></a>7. Related files</h2><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>lv_pages/gba_game_page.c</code></td>
+<td>All of this change is concentrated here (exit path + struct + file header comment)</td>
+</tr>
+<tr>
+<td><code>lv_pages/fc_game_page.c</code></td>
+<td>The reference baseline, unchanged</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro_gba</code></td>
+<td>GBA-only front-end, unchanged</td>
+</tr>
+<tr>
+<td><code>ssh_tools/gba_redeploy.py</code></td>
+<td>Deployment script; the way of getting the PID was corrected in passing this time (see below)</td>
+</tr>
+<tr>
+<td><code>bugfix_20260923_11</code></td>
+<td>Previous link: front-end separation and the root cause of the black-screen hang</td>
+</tr>
+</tbody></table>
+<p><strong>Appendix: one correction to the deployment script</strong></p>
+<h2 id="gba-redeploy-py-originally-used-ps-o-pid-args-grep-lvgl-demo-to-get-the-PID-and-then-kill-9-That-command-runs-via-sh-c-and-the-command-line-of-the-carrying-shell-itself-contains-the-string-lvgl-demo-→it-is-matched-by-grep-→-kills-itself-→-the-SSH-connection-is-reset-the-previous-deployment-round-was-disconnected-here-It-is-now-changed-to-ps-o-pid-comm-awk-2-lvgl-demo-print-1-comm-is-the-process-name-without-arguments-so-the-carrying-shell’s-comm-is-sh-and-does-not-self-match-The-miniretro-series-switches-to-2-miniretro-prefix-matching"><a href="#gba-redeploy-py-originally-used-ps-o-pid-args-grep-lvgl-demo-to-get-the-PID-and-then-kill-9-That-command-runs-via-sh-c-and-the-command-line-of-the-carrying-shell-itself-contains-the-string-lvgl-demo-→it-is-matched-by-grep-→-kills-itself-→-the-SSH-connection-is-reset-the-previous-deployment-round-was-disconnected-here-It-is-now-changed-to-ps-o-pid-comm-awk-2-lvgl-demo-print-1-comm-is-the-process-name-without-arguments-so-the-carrying-shell’s-comm-is-sh-and-does-not-self-match-The-miniretro-series-switches-to-2-miniretro-prefix-matching" class="headerlink" title="gba_redeploy.py originally used ps -o pid,args | grep &#39;lvgl_demo&#39; to get the PID and then kill -9.That command runs via sh -c, and the command line of the carrying shell itself contains the string lvgl_demo →it is matched by grep → kills itself → the SSH connection is reset (the previous deployment round was disconnected here).It is now changed to ps -o pid,comm | awk &#39;$2==&quot;lvgl_demo&quot;{print $1}&#39;: comm is the process name (without arguments),so the carrying shell’s comm is sh and does not self-match. The miniretro series switches to $2 ~ /^miniretro/ prefix matching."></a><code>gba_redeploy.py</code> originally used <code>ps -o pid,args | grep &#39;lvgl_demo&#39;</code> to get the PID and then <code>kill -9</code>.<br>That command runs via <code>sh -c</code>, and <strong>the command line of the carrying shell itself contains the string <code>lvgl_demo</code></strong> →<br>it is matched by grep → kills itself → the SSH connection is reset (the previous deployment round was disconnected here).<br>It is now changed to <code>ps -o pid,comm | awk &#39;$2==&quot;lvgl_demo&quot;&#123;print $1&#125;&#39;</code>: <code>comm</code> is the process name (without arguments),<br>so the carrying shell’s <code>comm</code> is <code>sh</code> and does not self-match. The <code>miniretro</code> series switches to <code>$2 ~ /^miniretro/</code> prefix matching.</h2><blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-12-%E2%80%94-GBA-exit-logic-changed-to-be-line-by-line-identical-with-FC-removing-GBA-specific-branches"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_12 — GBA exit logic changed to be line-by-line identical with FC (removing GBA-specific branches)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Problem-symptoms"><span class="toc-number">1.1.</span> <span class="toc-text">1. Problem symptoms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Scope-of-impact"><span class="toc-number">1.2.</span> <span class="toc-text">2. Scope of impact</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Root-cause-analysis"><span class="toc-number">1.3.</span> <span class="toc-text">3. Root cause analysis</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-The-four-differences-before-the-fix-GBA%E2%80%99s-extra-complexity-relative-to-FC"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 The four differences before the fix (GBA’s extra complexity relative to FC)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Why-these-four-differences-are-risks"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Why these four differences are risks</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-The-trade-off-of-the-cost-explicitly-accepted"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 The trade-off of the cost (explicitly accepted)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Fix"><span class="toc-number">1.4.</span> <span class="toc-text">4. Fix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-gba-wait-thread-changed-to-a-blocking-waitpid"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 gba_wait_thread() changed to a blocking waitpid</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-gba-exit-to-list-removes-early-release"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 gba_exit_to_list() removes early release</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Delete-the-gba-reap-bg-background-reaping-thread"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 Delete the gba_reap_bg() background reaping thread</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-Remove-the-exiting-field-from-the-state-struct"><span class="toc-number">1.4.4.</span> <span class="toc-text">4.4 Remove the exiting field from the state struct</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-gba-timer-cb-picture-recovery-returns-to-a-single-invalidate"><span class="toc-number">1.4.5.</span> <span class="toc-text">4.5 gba_timer_cb() picture recovery returns to a single invalidate</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-6-Rewrite-the-file-header-comment"><span class="toc-number">1.4.6.</span> <span class="toc-text">4.6 Rewrite the file header comment</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification-method-and-results"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification method and results</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Code-consistency-check-local"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 Code consistency check (local)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Build-and-deployment-device-side"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 Build and deployment (device side)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-Real-machine-functional-verification-handed-to-the-user"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 Real-machine functional verification (handed to the user)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Regression-risks"><span class="toc-number">1.6.</span> <span class="toc-text">6. Regression risks</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Related-files"><span class="toc-number">1.7.</span> <span class="toc-text">7. Related files</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#gba-redeploy-py-originally-used-ps-o-pid-args-grep-lvgl-demo-to-get-the-PID-and-then-kill-9-That-command-runs-via-sh-c-and-the-command-line-of-the-carrying-shell-itself-contains-the-string-lvgl-demo-%E2%86%92it-is-matched-by-grep-%E2%86%92-kills-itself-%E2%86%92-the-SSH-connection-is-reset-the-previous-deployment-round-was-disconnected-here-It-is-now-changed-to-ps-o-pid-comm-awk-2-lvgl-demo-print-1-comm-is-the-process-name-without-arguments-so-the-carrying-shell%E2%80%99s-comm-is-sh-and-does-not-self-match-The-miniretro-series-switches-to-2-miniretro-prefix-matching"><span class="toc-number">1.8.</span> <span class="toc-text">gba_redeploy.py originally used ps -o pid,args | grep &#39;lvgl_demo&#39; to get the PID and then kill -9.That command runs via sh -c, and the command line of the carrying shell itself contains the string lvgl_demo →it is matched by grep → kills itself → the SSH connection is reset (the previous deployment round was disconnected here).It is now changed to ps -o pid,comm | awk &#39;$2&#x3D;&#x3D;&quot;lvgl_demo&quot;{print $1}&#39;: comm is the process name (without arguments),so the carrying shell’s comm is sh and does not self-match. The miniretro series switches to $2 ~ &#x2F;^miniretro&#x2F; prefix matching.</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&text=GBA Exit Logic Aligned with FC"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&title=GBA Exit Logic Aligned with FC"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&is_video=false&description=GBA Exit Logic Aligned with FC"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA Exit Logic Aligned with FC&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&title=GBA Exit Logic Aligned with FC"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&title=GBA Exit Logic Aligned with FC"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&title=GBA Exit Logic Aligned with FC"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&title=GBA Exit Logic Aligned with FC"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-12/&name=GBA Exit Logic Aligned with FC&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

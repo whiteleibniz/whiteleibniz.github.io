@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Spreadtrum SC9832A FM radio bring-up — work process summary Audience: anyone who needs to understand “how this solution was arrived at” (including AI that takes over later)Stage note: this article rec">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM radio bring-up: work process summary">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Spreadtrum SC9832A FM radio bring-up — work process summary Audience: anyone who needs to understand “how this solution was arrived at” (including AI that takes over later)Stage note: this article rec">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.957Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM radio bring-up: work process summary</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/23/fm-10-fm-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&text=FM radio bring-up: work process summary"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&title=FM radio bring-up: work process summary"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&is_video=false&description=FM radio bring-up: work process summary"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM radio bring-up: work process summary&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&title=FM radio bring-up: work process summary"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&title=FM radio bring-up: work process summary"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&title=FM radio bring-up: work process summary"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&title=FM radio bring-up: work process summary"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&name=FM radio bring-up: work process summary&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-FM-radio-bring-up-%E2%80%94-work-process-summary"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A FM radio bring-up — work process summary</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Task-background-and-initial-goals"><span class="toc-number">1.1.</span> <span class="toc-text">1. Task background and initial goals</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Analysis-framework-first-split-%E2%80%9Ccan-FM-be-done%E2%80%9D-into-five-layers"><span class="toc-number">1.2.</span> <span class="toc-text">2. Analysis framework: first split “can FM be done” into five layers</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-assault-process-by-timeline"><span class="toc-number">1.3.</span> <span class="toc-text">3. The assault process (by timeline)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-A-confirming-the-hardware-exists-%E2%80%94-only-one-SDIO-device"><span class="toc-number">1.3.1.</span> <span class="toc-text">Phase A: confirming the hardware exists — only one SDIO device</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-B-a-surprise-discovery-%E2%80%94-the-FM-driver-was-loaded-long-ago"><span class="toc-number">1.3.2.</span> <span class="toc-text">Phase B: a surprise discovery — the FM driver was loaded long ago</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-C-fully-mapping-the-driver%E2%80%99s-capabilities-%E2%80%94-inferring-with-strings-nm"><span class="toc-number">1.3.3.</span> <span class="toc-text">Phase C: fully mapping the driver’s capabilities — inferring with strings + nm</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-D-an-additional-clue-%E2%80%94-the-AT-command-style"><span class="toc-number">1.3.4.</span> <span class="toc-text">Phase D: an additional clue — the AT command style</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-E-audio-routing-%E2%80%94-finding-the-FM-dedicated-PCM-and-also-finding-there-are-no-command-line-tools"><span class="toc-number">1.3.5.</span> <span class="toc-text">Phase E: audio routing — finding the FM-dedicated PCM, and also finding there are no command-line tools</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-F-confirming-%E2%80%9Cthere-is-no-ready-made-user-space%E2%80%9D-to-avoid-reinventing-the-wheel"><span class="toc-number">1.3.6.</span> <span class="toc-text">Phase F: confirming “there is no ready-made user space” (to avoid reinventing the wheel)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-G-UI-integration-points-%E2%80%94-following-the-Bluetooth-pattern"><span class="toc-number">1.3.7.</span> <span class="toc-text">Phase G: UI integration points — following the Bluetooth pattern</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-H-font-constraints-%E2%80%94-an-easy-place-to-crash"><span class="toc-number">1.3.8.</span> <span class="toc-text">Phase H: font constraints — an easy place to crash</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Review-of-key-decisions-why-done-this-way"><span class="toc-number">1.4.</span> <span class="toc-text">4. Review of key decisions (why done this way)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Final-outcomes-and-consolidation"><span class="toc-number">1.5.</span> <span class="toc-text">5. Final outcomes and consolidation</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Deliverables"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 Deliverables</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Consolidated-hard-facts-directly-reusable"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 Consolidated hard facts (directly reusable)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Lessons-learned-reusable-for-other-modules"><span class="toc-number">1.6.</span> <span class="toc-text">6. Lessons learned (reusable for other modules)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Current-status-and-next-steps"><span class="toc-number">1.7.</span> <span class="toc-text">7. Current status and next steps</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#With-the-command-numbers-in-hand-proceed-in-the-order-of-Step-3%E2%86%926-of-FM%E6%94%B6%E9%9F%B3%E8%8A%AF%E7%89%87%E6%89%93%E9%80%9A-%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C-md-all-other-stages-are-unobstructed"><span class="toc-number">1.8.</span> <span class="toc-text">With the command numbers in hand, proceed in the order of Step 3→6 of FM收音芯片打通_操作手册.md; all other stages are unobstructed.</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM radio bring-up: work process summary
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Spreadtrum-SC9832A-FM-radio-bring-up-—-work-process-summary"><a href="#Spreadtrum-SC9832A-FM-radio-bring-up-—-work-process-summary" class="headerlink" title="Spreadtrum SC9832A FM radio bring-up — work process summary"></a>Spreadtrum SC9832A FM radio bring-up — work process summary</h1><blockquote>
+<p><strong>Audience</strong>: anyone who needs to understand “how this solution was arrived at” (including AI that takes over later)<br><strong>Stage note</strong>: this article records the <strong>exploration and design stage of 2026-09-22</strong>; it has not yet entered the implementation and <strong>sound&#x2F;ear verification</strong> stage<br><strong>Core value</strong>: it records the basis for key judgments, which detours were taken, and <strong>what was deliberately not done</strong> — this has more reuse value than the “conclusions” themselves</p>
+</blockquote>
+<hr>
+<h2 id="1-Task-background-and-initial-goals"><a href="#1-Task-background-and-initial-goals" class="headerlink" title="1. Task background and initial goals"></a>1. Task background and initial goals</h2><p>WiFi and Bluetooth have both been brought up (on the same combo chip), and now we need to <strong>add an FM radio feature</strong> to the same LVGL demo,<br>with a “classic radio app layout” covering three blocks: <strong>entry and icon, page layout, and feature list</strong>,<br>and produce a full set of Chinese documents following the document types of <code>AI工作流/02_蓝牙打通/docs</code>, placed under <code>03_收音机/docs</code>.</p>
+<p>The initial understanding had only one input: <strong>“this device’s WiFi, Bluetooth, and FM are integrated on the same chip (SDIO enumeration 0x2331)”</strong>.</p>
+<hr>
+<h2 id="2-Analysis-framework-first-split-“can-FM-be-done”-into-five-layers"><a href="#2-Analysis-framework-first-split-“can-FM-be-done”-into-five-layers" class="headerlink" title="2. Analysis framework: first split “can FM be done” into five layers"></a>2. Analysis framework: first split “can FM be done” into five layers</h2><p>Instead of rushing to draw the interface, we first established a layered model for judging feasibility:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">① 硬件：芯片是真的吗？        SDIO 0x2331 能枚举吗？</span><br><span class="line">② 固件：FM 部分烧进去了吗？   要不要单独烧？</span><br><span class="line">③ 驱动：有驱动吗？设备节点在吗？</span><br><span class="line">④ daemon：有人管这个节点吗？  有没有现成工具？</span><br><span class="line">⑤ UI：界面怎么画？</span><br></pre></td></tr></table></figure>
+
+<p><strong>The value of this layering</strong>: it lets us judge before starting work whether “this is building a wheel from scratch or wiring out something that already exists” —<br>and the answer determines the nature of the whole project and the amount of work.</p>
+<hr>
+<h2 id="3-The-assault-process-by-timeline"><a href="#3-The-assault-process-by-timeline" class="headerlink" title="3. The assault process (by timeline)"></a>3. The assault process (by timeline)</h2><h3 id="Phase-A-confirming-the-hardware-exists-—-only-one-SDIO-device"><a href="#Phase-A-confirming-the-hardware-exists-—-only-one-SDIO-device" class="headerlink" title="Phase A: confirming the hardware exists — only one SDIO device"></a>Phase A: confirming the hardware exists — only one SDIO device</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/*/modalias   <span class="comment"># → sdio:c00v0000d2331</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/*/device     <span class="comment"># → 0x2331</span></span><br></pre></td></tr></table></figure>
+
+<p>There is only <strong>one</strong> SDIO device on the bus, confirming the “three-in-one, sharing SDIO” claim.</p>
+<h3 id="Phase-B-a-surprise-discovery-—-the-FM-driver-was-loaded-long-ago"><a href="#Phase-B-a-surprise-discovery-—-the-FM-driver-was-loaded-long-ago" class="headerlink" title="Phase B: a surprise discovery — the FM driver was loaded long ago"></a>Phase B: a surprise discovery — the FM driver was loaded long ago</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">lsmod | grep marlin_fm</span><br><span class="line"><span class="comment"># → marlin_fm  17554  1 sprdwl</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>This was the most important turning point of this round</strong>: FM was originally thought to be a brand-new feature never touched before,<br>but it turned out the driver not only exists but is <strong>depended on by the WiFi driver <code>sprdwl</code></strong> (meaning its loading is normal and automatic).</p>
+<p>Immediately after:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ls</span> -l /dev/fm            <span class="comment"># → crw-rw---- 10, 23</span></span><br><span class="line">grep -w fm /proc/misc    <span class="comment"># → 23 fm</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>The device node is already registered.</strong></p>
+<blockquote>
+<p>💡 <strong>By this point the conclusion had clearly changed</strong>: this job is not “bringing up the FM chip”, but “wiring out a feature that is already running”.</p>
+</blockquote>
+<h3 id="Phase-C-fully-mapping-the-driver’s-capabilities-—-inferring-with-strings-nm"><a href="#Phase-C-fully-mapping-the-driver’s-capabilities-—-inferring-with-strings-nm" class="headerlink" title="Phase C: fully mapping the driver’s capabilities — inferring with strings + nm"></a>Phase C: fully mapping the driver’s capabilities — inferring with strings + nm</h3><p>Because the device has <strong>no vendor source</strong> (<code>/tmp/linux-3.10.65</code> is a vanilla tree), only symbol-level forensics could be used:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">strings /lib/modules/marlin_fm.ko | grep -- <span class="string">&#x27;----&#x27;</span>     <span class="comment"># reconstruct the ioctl command name table</span></span><br><span class="line">nm /lib/modules/marlin_fm.ko | grep <span class="string">&#x27; T &#x27;</span>              <span class="comment"># reconstruct the function symbol table</span></span><br><span class="line">strings /lib/modules/marlin_fm.ko | grep description=  <span class="comment"># get the official description</span></span><br></pre></td></tr></table></figure>
+
+<p>Three commands obtained all the key facts:</p>
+<ol>
+<li><strong>40+ command names</strong> (TUNE&#x2F;SEEK&#x2F;SCAN&#x2F;GETRSSI&#x2F;MUTE&#x2F;SETVOL&#x2F;ANA_SWITCH&#x2F;I2S_SETTING&#x2F;OVER_BT_ENABLE&#x2F;RDS_*)</li>
+<li><strong>Complete RDS parsing functions</strong> (<code>rds_get_ps</code> station name, <code>rds_get_rt</code> text, <code>rds_get_pty</code>, <code>rds_get_af</code> alternative frequency, <code>rds_get_ct</code>, <code>rds_get_ews</code> emergency broadcast…)</li>
+<li><strong>Official description</strong>: <code>SDIO radio driver for marlin2 FM Radio Receivers, share SDIO with BT/WIFI</code></li>
+</ol>
+<p>The last line is <strong>decisive</strong>: it turned “shares SDIO with WiFi&#x2F;Bluetooth” from a speculation into the chip vendor’s official statement,<br>directly supporting the later series of designs such as “firmware depends on WiFi, power-up depends on the existing chain, and auto-start must queue”.</p>
+<h3 id="Phase-D-an-additional-clue-—-the-AT-command-style"><a href="#Phase-D-an-additional-clue-—-the-AT-command-style" class="headerlink" title="Phase D: an additional clue — the AT command style"></a>Phase D: an additional clue — the AT command style</h3><p><code>parse_at_fm_cmd</code> &#x2F; <code>parse_at_fm_num</code> were found in the driver; on the Android side, <code>libengfm.so</code> <strong>exports only one symbol, <code>fm_runcommand</code></strong>.</p>
+<p>The two echo each other, suggesting FM control may follow the <strong>AT command style</strong> (writing command strings to the node).<br>This clue later became the breakthrough: <strong>the same set of constants exists as literals in <code>libfmjni.so</code></strong>,<br>providing independent cross-validation of the command number encoding (see §2.4 of “FM收音ioctl命令表_逆向还原” for details).</p>
+<h3 id="Phase-E-audio-routing-—-finding-the-FM-dedicated-PCM-and-also-finding-there-are-no-command-line-tools"><a href="#Phase-E-audio-routing-—-finding-the-FM-dedicated-PCM-and-also-finding-there-are-no-command-line-tools" class="headerlink" title="Phase E: audio routing — finding the FM-dedicated PCM, and also finding there are no command-line tools"></a>Phase E: audio routing — finding the FM-dedicated PCM, and also finding there are no command-line tools</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /proc/asound/pcm | grep -i fm</span><br><span class="line"><span class="comment"># → 01-04: Dfm sprd-codec-fm-4 : : playback 1</span></span><br></pre></td></tr></table></figure>
+
+<p>Confirmed the existence of an FM-dedicated PCM device (card 1 device 4, playback only).</p>
+<p>But the same round discovered: <strong>no <code>amixer</code> &#x2F; <code>tinymix</code> &#x2F; <code>aplay</code></strong>, only <code>libasound.so.2</code>.<br>→ <strong>Conclusion: the audio path can only be operated by writing C code; it cannot be debugged from the command line. This significantly changed how the audio layer had to be worked on.</strong></p>
+<p>At the same time, the symbols of <code>libFMHalSource.so</code> on the Android side (<code>pcmHandle</code> + <code>FMHalThread::threadLoop</code> + <code>RingBuffer</code>)<br>revealed Android’s audio architecture: <strong>start a thread to read from PCM → ring buffer → output</strong>. Our own daemon must replicate the isomorphic logic.</p>
+<h3 id="Phase-F-confirming-“there-is-no-ready-made-user-space”-to-avoid-reinventing-the-wheel"><a href="#Phase-F-confirming-“there-is-no-ready-made-user-space”-to-avoid-reinventing-the-wheel" class="headerlink" title="Phase F: confirming “there is no ready-made user space” (to avoid reinventing the wheel)"></a>Phase F: confirming “there is no ready-made user space” (to avoid reinventing the wheel)</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ls</span> /usr/bin /usr/sbin /bin /sbin | grep -i <span class="string">&#x27;fm\|radio&#x27;</span>   <span class="comment"># no output</span></span><br><span class="line">find / -maxdepth 4 -name <span class="string">&#x27;*fm*&#x27;</span> -<span class="built_in">type</span> f                  <span class="comment"># only .ko files and Android libraries</span></span><br></pre></td></tr></table></figure>
+
+<p>→ <strong>We must write the daemon ourselves</strong>. At the same time, confirmed that Android’s FM libraries <strong>cannot be used directly</strong> (they depend on the Android runtime).</p>
+<h3 id="Phase-G-UI-integration-points-—-following-the-Bluetooth-pattern"><a href="#Phase-G-UI-integration-points-—-following-the-Bluetooth-pattern" class="headerlink" title="Phase G: UI integration points — following the Bluetooth pattern"></a>Phase G: UI integration points — following the Bluetooth pattern</h3><p>Read <code>launcher_page.c</code> &#x2F; <code>bluetooth_page.c</code> &#x2F; <code>lv_page_manager.h</code> and confirmed three things:</p>
+<ol>
+<li>The desktop grid <strong>order is determined by the <code>s_apps[]</code> array</strong> (not by enum values), so inserting after the Bluetooth item automatically places it right after Bluetooth;</li>
+<li>The page registration pattern is <code>lv_page_t g_xxx_page = &#123; .onCreate, .onPause, .onDestroy, ... &#125;</code>;</li>
+<li>The page manager explicitly stipulates: <strong>in <code>onDestroy</code> you must clear your own timers&#x2F;callbacks, but do not delete <code>page-&gt;root</code></strong>.<br>This directly determined the “background playback” design: neither <code>onPause</code> nor <code>onDestroy</code> <strong>may</strong> stop the station.</li>
+</ol>
+<h3 id="Phase-H-font-constraints-—-an-easy-place-to-crash"><a href="#Phase-H-font-constraints-—-an-easy-place-to-crash" class="headerlink" title="Phase H: font constraints — an easy place to crash"></a>Phase H: font constraints — an easy place to crash</h3><p>The real metrics of <code>lv_font_cn_16</code> were found: <strong><code>line_height = 31px，base_line = 9px</code></strong> (nominally 16px).<br>The project history already includes rework caused by “hardcoding the line height at 16px, which clipped Chinese text”.<br>→ <strong>All y coordinates in this round were recomputed on the 31px grid</strong>, and a red line was made explicit in the documentation (no “visual fine-tuning” back to a 16px grid).</p>
+<hr>
+<h2 id="4-Review-of-key-decisions-why-done-this-way"><a href="#4-Review-of-key-decisions-why-done-this-way" class="headerlink" title="4. Review of key decisions (why done this way)"></a>4. Review of key decisions (why done this way)</h2><table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Not rewriting the protocol stack, only a thin daemon</strong></td>
+<td>the RF&#x2F;demodulation&#x2F;RDS are all done in the chip and the driver; user space only needs to send commands</td>
+</tr>
+<tr>
+<td><strong>The daemon exposes a unix socket text protocol</strong></td>
+<td>it mirrors the already-verified <code>bt_user_daemon</code> exactly, with zero extra cognitive cost for the team; and the socket timeout pitfall has already been hit</td>
+</tr>
+<tr>
+<td><strong>Systematically mirror the Bluetooth daemon’s socket path naming</strong> (<code>/tmp/fm_ctl.sock</code>)</td>
+<td>consistency first</td>
+</tr>
+<tr>
+<td><strong>Channel arbitration listed as P0</strong></td>
+<td>all three share the audio output; without it, cross-talk is inevitable and users will certainly hit it</td>
+</tr>
+<tr>
+<td><strong>The UI uses RDS data</strong> (PS station name &#x2F; RT scrolling)</td>
+<td>the driver capability already exists and is this solution’s differentiator; not using it degrades the UI to “just numbers”</td>
+</tr>
+<tr>
+<td><strong>All coordinates on the 31px line-height grid</strong></td>
+<td>avoids this project’s existing Chinese-clipping rework</td>
+</tr>
+<tr>
+<td><strong>An extra interface specification document was added</strong></td>
+<td>the reference directory has no UI-class document, but the core of this round’s requirement is the UI, so a nonexistent template cannot be forced</td>
+</tr>
+<tr>
+<td><strong>Explicitly listing the “unknowns”</strong></td>
+<td>when key information is missing, writing “to be confirmed” has more engineering value than pretending to know; but <strong>anything you can work out yourself should not be listed as unknown</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-Final-outcomes-and-consolidation"><a href="#5-Final-outcomes-and-consolidation" class="headerlink" title="5. Final outcomes and consolidation"></a>5. Final outcomes and consolidation</h2><h3 id="5-1-Deliverables"><a href="#5-1-Deliverables" class="headerlink" title="5.1 Deliverables"></a>5.1 Deliverables</h3><p>7 documents under <code>AI工作流/03_收音机/docs/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Document</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>FM收音机_LVGL界面设计与交互规格.md</code></td>
+<td><strong>Core</strong>: entry icon &#x2F; page layout &#x2F; feature list (corresponding to requirements ①②③)</td>
+</tr>
+<tr>
+<td><code>FM收音打通_AI指导手册.md</code></td>
+<td>hard facts + execution flow + decision table, preventing repeated investigation</td>
+</tr>
+<tr>
+<td><code>FM收音芯片打通_操作手册.md</code></td>
+<td>step-by-step executable commands</td>
+</tr>
+<tr>
+<td><code>FM收音芯片打通_故障排查手册.md</code></td>
+<td>layered quick-reference table</td>
+</tr>
+<tr>
+<td><code>HT0FM收音原理与移植学习Wiki.md</code></td>
+<td>principles and migration methodology</td>
+</tr>
+<tr>
+<td><code>FM收音启动流程_安卓vsAlpine对比.md</code></td>
+<td>how Android does it vs how we do it</td>
+</tr>
+<tr>
+<td><code>FM收音拉起_部署交付文档.md</code></td>
+<td>artifact inventory and deployment steps</td>
+</tr>
+<tr>
+<td><code>FM收音打通_工作过程总结.md</code></td>
+<td>this article</td>
+</tr>
+</tbody></table>
+<h3 id="5-2-Consolidated-hard-facts-directly-reusable"><a href="#5-2-Consolidated-hard-facts-directly-reusable" class="headerlink" title="5.2 Consolidated hard facts (directly reusable)"></a>5.2 Consolidated hard facts (directly reusable)</h3><ul>
+<li>Marlin2 combo chip, <code>0x2331</code>, <strong>WiFi&#x2F;Bluetooth&#x2F;FM share SDIO</strong> (as evidenced by the vendor description);</li>
+<li><code>marlin_fm.ko</code> is loaded and depended on by <code>sprdwl</code>, and <code>/dev/fm</code> &#x3D; misc 23 is registered;</li>
+<li>complete ioctl command name inventory + complete RDS function inventory;</li>
+<li>FM-dedicated PCM: <code>01-04 Dfm sprd-codec-fm-4</code> (playback only);</li>
+<li>no ALSA command-line tools, only <code>libasound.so.2</code>;</li>
+<li>no ready-made FM user space, and the Android libraries cannot be reused directly;</li>
+<li><code>lv_font_cn_16</code> line height 31px; the page’s <code>onDestroy</code> must not delete root.</li>
+</ul>
+<hr>
+<h2 id="6-Lessons-learned-reusable-for-other-modules"><a href="#6-Lessons-learned-reusable-for-other-modules" class="headerlink" title="6. Lessons learned (reusable for other modules)"></a>6. Lessons learned (reusable for other modules)</h2><ol>
+<li><p><strong>Before starting work, first judge clearly whether “this is new construction or wiring out”.</strong><br>The single sentence “FM shares a chip with WiFi” actually hides the information that “FM may already be ready”; starting from scratch without investigation wastes a lot of work. This round, a single <code>lsmod</code> command reversed the nature of the whole project.</p>
+</li>
+<li><p><strong>No source does not mean no information.</strong><br>Two cuts with <code>strings</code> + <code>nm</code> on the <code>.ko</code> reconstruct the command name table and function table. Compared with hunting for driver source everywhere (we confirmed the kernel tree on the device is vanilla, a wasted search), this trick is much faster and more reliable.</p>
+</li>
+<li><p><strong>The vendor’s <code>description=</code> is the best evidence.</strong><br>The single line <code>share SDIO with BT/WIFI</code> settled the entire design of resource mutual exclusion and dependencies. When looking for evidence, prioritize this kind of “words written by the author”.</p>
+</li>
+<li><p><strong>Look for “ready-made tools” first, then decide whether to build.</strong><br>We confirmed there was no FM user-space tool on the whole disk before deciding to write a daemon — avoiding reinventing the wheel; at the same time, we confirmed the Android libraries could not be used directly, avoiding a detour.</p>
+</li>
+<li><p><strong>Unavailable tools must be discovered early.</strong><br>The absence of <code>amixer</code> was found during the planning stage; if it had only been discovered while debugging audio, the entire troubleshooting approach of “assuming the mixer can be driven from the command line” would have been void.</p>
+</li>
+<li><p><strong>List the unknowns explicitly — but distinguish “truly unknown” from “too lazy to check”.</strong><br>Six items were initially listed as “to be measured”, of which the <strong>ioctl command numbers</strong> later proved to be <strong>completely self-solvable</strong>:<br>the <code>.ko</code> is not stripped, and disassembly + measurement settles all of them.<br>Lesson: <strong>“ask the vendor for it” often just means the forensics path was not found</strong>; it should not be written into the blockers so early.<br>The remaining 5 items (headphone antenna, <code>OVER_BT_ENABLE</code> semantics, RSSI thresholds, etc.) are the ones that truly require on-device work.</p>
+</li>
+<li><p><strong>Respect existing patterns.</strong><br>UI navigation uses <code>lv_start_activity</code>, the daemon uses a socket text protocol, pages use <code>lv_page_t</code> — all copied from existing successful solutions. The less “innovation” in a new module, the smaller the error surface.</p>
+</li>
+</ol>
+<hr>
+<h2 id="7-Current-status-and-next-steps"><a href="#7-Current-status-and-next-steps" class="headerlink" title="7. Current status and next steps"></a>7. Current status and next steps</h2><p><strong>Completed</strong>: the hardware&#x2F;driver&#x2F;audio&#x2F;UI integration points are all mapped, and the design proposal and document family are produced.</p>
+<p><strong>The original number one hard blocker has been removed</strong>: <strong>the ioctl command numbers have all been reverse-engineered and confirmed by measurement</strong> (completed in an added phase).<br>The command names were known but the numbers were not. Recommended by priority:</p>
+<ol>
+<li><del>Ask the vendor for header files</del> → <strong>no longer needed</strong>: all 47 command numbers have been obtained by self-disassembling the <code>.ko</code> + measurement;</li>
+<li>reverse-engineer from the Android-side <code>libengfm.so</code> &#x2F; <code>libFMHalSource.so</code> (together with strace inside the chroot);</li>
+<li>controlled single-step probing (locate by the <code>----&lt;命令名&gt;----</code> prints in <code>dmesg</code>).</li>
+</ol>
+<h2 id="With-the-command-numbers-in-hand-proceed-in-the-order-of-Step-3→6-of-FM收音芯片打通-操作手册-md-all-other-stages-are-unobstructed"><a href="#With-the-command-numbers-in-hand-proceed-in-the-order-of-Step-3→6-of-FM收音芯片打通-操作手册-md-all-other-stages-are-unobstructed" class="headerlink" title="With the command numbers in hand, proceed in the order of Step 3→6 of FM收音芯片打通_操作手册.md; all other stages are unobstructed."></a>With the command numbers in hand, proceed in the order of Step 3→6 of <code>FM收音芯片打通_操作手册.md</code>; <strong>all other stages are unobstructed</strong>.</h2><blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-FM-radio-bring-up-%E2%80%94-work-process-summary"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A FM radio bring-up — work process summary</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Task-background-and-initial-goals"><span class="toc-number">1.1.</span> <span class="toc-text">1. Task background and initial goals</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Analysis-framework-first-split-%E2%80%9Ccan-FM-be-done%E2%80%9D-into-five-layers"><span class="toc-number">1.2.</span> <span class="toc-text">2. Analysis framework: first split “can FM be done” into five layers</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-assault-process-by-timeline"><span class="toc-number">1.3.</span> <span class="toc-text">3. The assault process (by timeline)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-A-confirming-the-hardware-exists-%E2%80%94-only-one-SDIO-device"><span class="toc-number">1.3.1.</span> <span class="toc-text">Phase A: confirming the hardware exists — only one SDIO device</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-B-a-surprise-discovery-%E2%80%94-the-FM-driver-was-loaded-long-ago"><span class="toc-number">1.3.2.</span> <span class="toc-text">Phase B: a surprise discovery — the FM driver was loaded long ago</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-C-fully-mapping-the-driver%E2%80%99s-capabilities-%E2%80%94-inferring-with-strings-nm"><span class="toc-number">1.3.3.</span> <span class="toc-text">Phase C: fully mapping the driver’s capabilities — inferring with strings + nm</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-D-an-additional-clue-%E2%80%94-the-AT-command-style"><span class="toc-number">1.3.4.</span> <span class="toc-text">Phase D: an additional clue — the AT command style</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-E-audio-routing-%E2%80%94-finding-the-FM-dedicated-PCM-and-also-finding-there-are-no-command-line-tools"><span class="toc-number">1.3.5.</span> <span class="toc-text">Phase E: audio routing — finding the FM-dedicated PCM, and also finding there are no command-line tools</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-F-confirming-%E2%80%9Cthere-is-no-ready-made-user-space%E2%80%9D-to-avoid-reinventing-the-wheel"><span class="toc-number">1.3.6.</span> <span class="toc-text">Phase F: confirming “there is no ready-made user space” (to avoid reinventing the wheel)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-G-UI-integration-points-%E2%80%94-following-the-Bluetooth-pattern"><span class="toc-number">1.3.7.</span> <span class="toc-text">Phase G: UI integration points — following the Bluetooth pattern</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-H-font-constraints-%E2%80%94-an-easy-place-to-crash"><span class="toc-number">1.3.8.</span> <span class="toc-text">Phase H: font constraints — an easy place to crash</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Review-of-key-decisions-why-done-this-way"><span class="toc-number">1.4.</span> <span class="toc-text">4. Review of key decisions (why done this way)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Final-outcomes-and-consolidation"><span class="toc-number">1.5.</span> <span class="toc-text">5. Final outcomes and consolidation</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Deliverables"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 Deliverables</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Consolidated-hard-facts-directly-reusable"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 Consolidated hard facts (directly reusable)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Lessons-learned-reusable-for-other-modules"><span class="toc-number">1.6.</span> <span class="toc-text">6. Lessons learned (reusable for other modules)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Current-status-and-next-steps"><span class="toc-number">1.7.</span> <span class="toc-text">7. Current status and next steps</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#With-the-command-numbers-in-hand-proceed-in-the-order-of-Step-3%E2%86%926-of-FM%E6%94%B6%E9%9F%B3%E8%8A%AF%E7%89%87%E6%89%93%E9%80%9A-%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C-md-all-other-stages-are-unobstructed"><span class="toc-number">1.8.</span> <span class="toc-text">With the command numbers in hand, proceed in the order of Step 3→6 of FM收音芯片打通_操作手册.md; all other stages are unobstructed.</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&text=FM radio bring-up: work process summary"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&title=FM radio bring-up: work process summary"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&is_video=false&description=FM radio bring-up: work process summary"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM radio bring-up: work process summary&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&title=FM radio bring-up: work process summary"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&title=FM radio bring-up: work process summary"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&title=FM radio bring-up: work process summary"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&title=FM radio bring-up: work process summary"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-09-fm-md/&name=FM radio bring-up: work process summary&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

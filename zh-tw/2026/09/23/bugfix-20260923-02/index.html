@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_02 — 頁面離場不清焦點組，導致桌面焦點環消失 現象：進過任意頁面再返回桌面後，按方向鍵粉色焦點框憑空消失、且走不到目標圖標；重啟應用即恢復。觸摸點擊不受影響。根因層：LVGL 頁面框架的焦點組生命週期（lv_pm&#x2F;lv_page_manager.cc）&#x2F; 桌面自定義導航（main.c）。修復工作量：2 個文件（lv_pm&#x2F;lv_page_manager">
+<meta property="og:type" content="article">
+<meta property="og:title" content="頁面離場不清焦點組導致桌面焦點環消失">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_02 — 頁面離場不清焦點組，導致桌面焦點環消失 現象：進過任意頁面再返回桌面後，按方向鍵粉色焦點框憑空消失、且走不到目標圖標；重啟應用即恢復。觸摸點擊不受影響。根因層：LVGL 頁面框架的焦點組生命週期（lv_pm&#x2F;lv_page_manager.cc）&#x2F; 桌面自定義導航（main.c）。修復工作量：2 個文件（lv_pm&#x2F;lv_page_manager">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:45.653Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="桌面UI">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>頁面離場不清焦點組導致桌面焦點環消失</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/bugfix-20260923-04/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/bugfix-20260923-03/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&text=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&title=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&is_video=false&description=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=頁面離場不清焦點組導致桌面焦點環消失&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&title=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&title=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&title=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&title=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&name=頁面離場不清焦點組導致桌面焦點環消失&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-02-%E2%80%94-%E9%A0%81%E9%9D%A2%E9%9B%A2%E5%A0%B4%E4%B8%8D%E6%B8%85%E7%84%A6%E9%BB%9E%E7%B5%84%EF%BC%8C%E5%B0%8E%E8%87%B4%E6%A1%8C%E9%9D%A2%E7%84%A6%E9%BB%9E%E7%92%B0%E6%B6%88%E5%A4%B1"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_02 — 頁面離場不清焦點組，導致桌面焦點環消失</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E9%A0%81%E9%9D%A2%E9%9B%A2%E5%A0%B4%E6%99%82%EF%BC%8C%E4%B8%8D%E6%8A%8A%E8%87%AA%E5%B7%B1%E7%9A%84%E6%8E%A7%E4%BB%B6%E5%BE%9E%E2%80%9D%E5%85%AC%E5%85%B1%E7%84%A6%E9%BB%9E%E7%B5%84%E2%80%9D%E8%A3%A1%E6%91%98%E6%8E%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 頁面離場時，不把自己的控件從”公共焦點組”裡摘掉</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-group-find-neighbor-%E5%8F%AA%E7%9C%8B%E6%8E%A7%E4%BB%B6%E8%87%AA%E5%B7%B1%E7%9A%84-HIDDEN%EF%BC%8C%E4%B8%8D%E7%9C%8B%E7%A5%96%E5%85%88"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 group_find_neighbor 只看控件自己的 HIDDEN，不看祖先</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E9%81%8E%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位過程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%85%88%E7%A2%BA%E8%AA%8D%E2%80%9D%E7%84%A6%E9%BB%9E%E5%88%B0%E5%BA%95%E8%90%BD%E5%9C%A8%E8%AA%B0%E8%BA%AB%E4%B8%8A%E2%80%9D"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 先確認”焦點到底落在誰身上”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E6%8A%8A%E5%B9%BD%E9%9D%88%E2%80%9D%E6%89%93%E5%8D%B0%E5%87%BA%E4%BE%86%E2%80%9D%E5%86%8D%E5%8F%8D%E6%9F%A5"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 把幽靈”打印出來”再反查</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E6%8E%92%E9%99%A4%E6%8E%89%E7%9A%84%E6%96%B9%E5%90%91"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 排除掉的方向</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E6%B1%BA%E8%BE%A6%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解決辦法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E9%A0%81%E9%9D%A2%E7%AE%A1%E7%90%86%E5%99%A8%E7%B5%B1%E4%B8%80%E6%B8%85%E7%90%86%EF%BC%88%E4%B8%80%E8%99%95%E4%BF%AE%E5%A5%BD%E6%89%80%E6%9C%89%E9%A0%81%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 頁面管理器統一清理（一處修好所有頁）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E5%8F%AF%E8%A6%8B%E6%80%A7%E5%88%A4%E5%AE%9A%E6%94%B9%E7%82%BA%E2%80%9D%E7%A5%96%E5%85%88%E6%84%9F%E7%9F%A5%E2%80%9D"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 可見性判定改為”祖先感知”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A9%97%E8%AD%89"><span class="toc-number">1.6.</span> <span class="toc-text">驗證</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E7%B5%84%E8%A8%88%E6%95%B8%EF%BC%88%E9%A0%81%E9%9D%A2%E7%AE%A1%E7%90%86%E5%99%A8%E6%97%A5%E8%AA%8C%EF%BC%89"><span class="toc-number">1.6.1.</span> <span class="toc-text">6.1 組計數（頁面管理器日誌）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E6%8C%89%E9%8D%B5%E5%AF%A6%E6%B8%AC%EF%BC%88ssh-tools-nav-trace-py-E-B-L-L-%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">6.2 按鍵實測（ssh_tools&#x2F;nav_trace.py &quot;E B L L&quot;）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E6%9C%AA%E5%81%9A-%E5%BE%85%E8%A7%80%E5%AF%9F"><span class="toc-number">1.6.3.</span> <span class="toc-text">6.3 未做&#x2F;待觀察</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B6%93%E9%A9%97%E6%95%99%E8%A8%93"><span class="toc-number">1.7.</span> <span class="toc-text">經驗教訓</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        頁面離場不清焦點組導致桌面焦點環消失
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A1%8C%E9%9D%A2UI/" rel="tag">桌面UI</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-02-—-頁面離場不清焦點組，導致桌面焦點環消失"><a href="#bugfix-20260923-02-—-頁面離場不清焦點組，導致桌面焦點環消失" class="headerlink" title="bugfix_20260923_02 — 頁面離場不清焦點組，導致桌面焦點環消失"></a>bugfix_20260923_02 — 頁面離場不清焦點組，導致桌面焦點環消失</h1><blockquote>
+<p><strong>現象</strong>：進過任意頁面再返回桌面後，按方向鍵<strong>粉色焦點框憑空消失</strong>、且走不到目標圖標；<br>重啟應用即恢復。觸摸點擊不受影響。<br><strong>根因層</strong>：LVGL 頁面框架的焦點組生命週期（<code>lv_pm/lv_page_manager.cc</code>）&#x2F; 桌面自定義導航（<code>main.c</code>）。<br><strong>修復工作量</strong>：2 個文件（<code>lv_pm/lv_page_manager.cc</code> +49、<code>main.c</code> +7&#x2F;-1）。<br><strong>文件名</strong>：<code>bugfix_20260923_02_頁面離場不清焦點組導致桌面焦點環消失.md</code><br><strong>關聯提交</strong>：221fa7d<br><strong>日期</strong>：2026-09-23</p>
+</blockquote>
+<h2 id="現象"><a href="#現象" class="headerlink" title="現象"></a>現象</h2><p>在<strong>任何非桌面頁面</strong>裡返回桌面之後，桌面按方向鍵會出現：</p>
+<ol>
+<li><strong>粉色焦點框憑空消失</strong> —— 按了鍵，界面上看不出當前選中了哪個圖標；</li>
+<li>繼續按方向鍵<strong>走不到想去的圖標</strong>（比如想回到「收音機」，卻卡在別處或原地不動）；</li>
+<li>反覆按也沒有規律，<strong>重啟應用（不是重啟設備）後恢復正常</strong>，一進頁面再返回又壞。</li>
+</ol>
+<p>即在”進過頁面 → 返回桌面”這條路徑上，桌面導航會被汙染。</p>
+<blockquote>
+<p>這是排查「藍牙顯示已連接實際未連接」過程中<strong>連帶發現</strong>的 bug：<br>為了給藍牙頁做按鍵驗證（進頁面 → 返回 → 走到藍牙圖標），發現根本走不到，<br>一查才知道桌面焦點早就壞了。</p>
+</blockquote>
+<h2 id="影響範圍"><a href="#影響範圍" class="headerlink" title="影響範圍"></a>影響範圍</h2><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>受影響</strong></td>
+<td>桌面（launcher）的按鍵導航；所有”進過頁面再返回”的場景；間接觸發了本會話另一處「收音機頁進不去」的誤判</td>
+</tr>
+<tr>
+<td><strong>不受影響</strong></td>
+<td>觸摸點擊（不走焦點組）；頁面內部自身的導航；頁面渲染；FM 收音機、藍牙等業務邏輯</td>
+</tr>
+</tbody></table>
+<p>觸摸能點、按鍵不能走，是本 bug 最典型的表現。</p>
+<h2 id="根因"><a href="#根因" class="headerlink" title="根因"></a>根因</h2><p><strong>兩處獨立缺陷疊加</strong>，各自都能讓導航失靈。</p>
+<h3 id="3-1-頁面離場時，不把自己的控件從”公共焦點組”裡摘掉"><a href="#3-1-頁面離場時，不把自己的控件從”公共焦點組”裡摘掉" class="headerlink" title="3.1 頁面離場時，不把自己的控件從”公共焦點組”裡摘掉"></a>3.1 頁面離場時，不把自己的控件從”公共焦點組”裡摘掉</h3><p>LVGL 的默認焦點組是<strong>全局共享</strong>的。各頁面在 <code>onCreate</code> 裡調用<br><code>lv_group_add_obj(lv_group_get_default(), obj)</code> 把自己的控件掛進去，<br>但<strong>離開時幾乎沒有人調用 <code>lv_group_remove_obj()</code></strong> ——<br>全倉只有 3 個文件做了這一對操作，其餘頁面全是”只加不減”。</p>
+<p>於是每進一次頁面，就有一批<strong>已經隨頁面一起被刪除、或已不可見</strong>的控件<br>殘留在組裡，變成”幽靈焦點”。實測計數（<code>lv_group_get_obj_count</code>）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">乾淨啟動進桌面        默認焦點組 objcnt = 18   (桌面 17 個圖標格 + 狀態欄音量滑塊 1)</span><br><span class="line">進收音機頁            默認焦點組 objcnt = 37   (+19，收音機頁掛進來的)</span><br><span class="line">返回桌面(修復前)      默認焦點組 objcnt = 37   ← 19 個一個都沒收回</span><br><span class="line">頁面銷燬時清理後      默認焦點組 objcnt = 18   ← 只減不減的&quot;組計數&quot;才是真兇</span><br></pre></td></tr></table></figure>
+
+<p><code>group_find_neighbor</code> 在這些幽靈裡挑鄰居，於是：</p>
+<ul>
+<li>選中一個<strong>沒有 <code>user_data</code></strong> 的控件 → 桌面畫焦點框的代碼拿不到格子信息 → <strong>框消失</strong>；</li>
+<li>方向鍵的”鄰居關係”被幽靈攪亂 → <strong>走不到目標圖標</strong>。</li>
+</ul>
+<h3 id="3-2-group-find-neighbor-只看控件自己的-HIDDEN，不看祖先"><a href="#3-2-group-find-neighbor-只看控件自己的-HIDDEN，不看祖先" class="headerlink" title="3.2 group_find_neighbor 只看控件自己的 HIDDEN，不看祖先"></a>3.2 <code>group_find_neighbor</code> 只看控件自己的 HIDDEN，不看祖先</h3><p><code>main.c</code> 的自定義導航裡，原判定是：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(lv_obj_has_flag(o, LV_OBJ_FLAG_HIDDEN)) <span class="keyword">continue</span>;   <span class="comment">/* ← 只看自己 */</span></span><br></pre></td></tr></table></figure>
+
+<p>而 LVGL 裡<strong>隱藏一個面板，隱藏的是外層容器</strong>，裡面的子控件自己<strong>並不帶</strong><br><code>LV_OBJ_FLAG_HIDDEN</code>。結果：狀態欄那個<strong>收起狀態的音量浮層滑塊</strong><br>（父面板 340×42，滑塊自己 252×14）被當成合法候選選中了。</p>
+<p>定位到它靠的是”打印幽靈對象的形狀再反查”（見 §4.2）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cls=slider  pos=(66,5)  size=(252,14)  abs=(256,69)</span><br><span class="line">父容器 size=(340,42) 子對象數=2   -&gt; lv_status_bar/volume_control.c:207 的 s_volume_slider</span><br></pre></td></tr></table></figure>
+
+<p>選中它同樣沒有可用 <code>user_data</code> → 焦點框畫不出來。</p>
+<blockquote>
+<p>一句話：<strong>① 組裡有幽靈；② 判定可見性只看了自己，沒看祖先。</strong></p>
+</blockquote>
+<h2 id="定位過程"><a href="#定位過程" class="headerlink" title="定位過程"></a>定位過程</h2><h3 id="4-1-先確認”焦點到底落在誰身上”"><a href="#4-1-先確認”焦點到底落在誰身上”" class="headerlink" title="4.1 先確認”焦點到底落在誰身上”"></a>4.1 先確認”焦點到底落在誰身上”</h3><p>在桌面渲染焦點框的那段代碼里加了一行 stderr 打點（<code>printf</code> 會因塊緩衝延遲，<br>**必須用 <code>fprintf(stderr, ...)</code>**）：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(cell == f)</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;[fc] focus idx=%u/%u cell=%p content=%p box=%p\n&quot;</span>,</span><br><span class="line">            (<span class="type">unsigned</span>)i, (<span class="type">unsigned</span>)cnt, (<span class="type">void</span>*)cell, (<span class="type">void</span>*)content, (<span class="type">void</span>*)box);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>故障時</strong>（頁面管理器清理已上、祖先感知未上的中間狀態）：<br><code>[fc] focus idx=17/18 cell=0x... content=(nil) box=(nil)</code><br>→ <code>content</code>&#x2F;<code>box</code> 為 <strong>空指針</strong> &#x3D; 當前焦點對象<strong>沒有 <code>user_data</code><strong>，<br>桌面拿不到”這個焦點屬於哪個圖標格”的信息，</strong>框自然畫不出來</strong>。<br><code>idx=17/18</code> 也印證了：桌面只往組裡加了 17 個格子，<strong>第 17 個（0 基）根本不是桌面的</strong>。</li>
+<li><strong>修復後</strong>：<code>[fc] focus idx=7/18 cell=0xb70881d4 content=0xb7088374 box=0xb7088444</code><br>→ 三個指針都有值 &#x3D; 焦點框能正常畫出來。</li>
+</ul>
+<p><code>idx</code> 的<strong>分母</strong>（組內對象總數）本身就是線索：把每個頁面進&#x2F;出時的組計數打出來，<br>會看到數字<strong>只漲不跌</strong>（見 §3.1 與 §6.1）—— 這正是”幽靈在累積”的直接證據。</p>
+<h3 id="4-2-把幽靈”打印出來”再反查"><a href="#4-2-把幽靈”打印出來”再反查" class="headerlink" title="4.2 把幽靈”打印出來”再反查"></a>4.2 把幽靈”打印出來”再反查</h3><p>只加焦點打點不夠，還需要知道幽靈長什麼樣。臨時在頁面管理器里加了一段 dump：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* 臨時診斷：把默認組裡不屬於本頁的對象形狀打出來 */</span></span><br><span class="line"><span class="keyword">for</span>(<span class="type">uint32_t</span> i = <span class="number">0</span>; i &lt; lv_group_get_obj_count(g); i++) &#123;</span><br><span class="line">    <span class="type">lv_obj_t</span> *o = lv_group_get_obj_by_index(g, i);</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;  [g] #%u cls=%s pos=(%d,%d) size=(%d,%d) abs=(%d,%d) kids=%u\n&quot;</span>,</span><br><span class="line">            i, lv_obj_get_class(o)-&gt;name,</span><br><span class="line">            (<span class="type">int</span>)lv_obj_get_x(o), (<span class="type">int</span>)lv_obj_get_y(o),</span><br><span class="line">            (<span class="type">int</span>)lv_obj_get_width(o), (<span class="type">int</span>)lv_obj_get_height(o),</span><br><span class="line">            (<span class="type">int</span>)lv_obj_get_coords(o)-&gt;x1, (<span class="type">int</span>)lv_obj_get_coords(o)-&gt;y1,</span><br><span class="line">            (<span class="type">unsigned</span>)lv_obj_get_child_count(lv_obj_get_parent(o)));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>靠 <code>size=(252,14)</code> + <code>父容器 340×42</code> 這兩個特徵，在 <code>lv_status_bar/volume_control.c:207</code><br>找到 <code>s_volume_slider</code>，反證了 §3.2。診斷打點定位完後已清理。</p>
+<h3 id="4-3-排除掉的方向"><a href="#4-3-排除掉的方向" class="headerlink" title="4.3 排除掉的方向"></a>4.3 排除掉的方向</h3><table>
+<thead>
+<tr>
+<th>嘗試</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>懷疑桌面自己算錯鄰居（左右跨行問題）</td>
+<td>❌ 桌面邏輯沒變過，且<strong>重啟應用就恢復</strong> → 是”被外部汙染”，不是算法錯</td>
+</tr>
+<tr>
+<td>懷疑 <code>lv_obj_clean</code> 刪對象後組裡留懸垂指針導致崩潰</td>
+<td>❌ 沒有崩潰，只是焦點錯位；LVGL 刪對象時會自動移出組</td>
+</tr>
+<tr>
+<td>懷疑是”收音機頁沒銷燬”</td>
+<td>❌ <code>[pm] destroy &#39;radio&#39;</code> 正常打出，頁面確實銷燬了 —— 但<strong>控件還在組裡</strong>（組和對象生命週期是兩回事）</td>
+</tr>
+<tr>
+<td>只修 §3.1（頁面管理器統一清理）</td>
+<td>⚠️ 大部分恢復，但組計數仍是 18（&#x3D; 桌面 17 格 + <strong>1 個非桌面對象</strong>）→ 說明還有一個不屬於桌面的成員，必須同時修 §3.2</td>
+</tr>
+</tbody></table>
+<h2 id="解決辦法"><a href="#解決辦法" class="headerlink" title="解決辦法"></a>解決辦法</h2><h3 id="5-1-頁面管理器統一清理（一處修好所有頁）"><a href="#5-1-頁面管理器統一清理（一處修好所有頁）" class="headerlink" title="5.1 頁面管理器統一清理（一處修好所有頁）"></a>5.1 頁面管理器統一清理（一處修好所有頁）</h3><p>在 <code>lv_pm/lv_page_manager.cc</code> 裡新增：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * @brief 把某個頁面根對象下的控件從默認焦點組裡全部摘掉</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 為什麼必須做：默認焦點組是全局共享的，各頁面在 onCreate 裡把自己的控件</span></span><br><span class="line"><span class="comment"> * add 進去，但離開時從來沒有人 remove（全倉只有 3 個文件做對了）。</span></span><br><span class="line"><span class="comment"> * 殘留控件變成&quot;幽靈焦點&quot;：桌面按方向鍵會被吸到一個沒有 user_data 的控件上，</span></span><br><span class="line"><span class="comment"> * 選中框直接消失，而且走不到想去的圖標（實測默認組 17 -&gt; 18）。</span></span><br><span class="line"><span class="comment"> * 集中放在頁面管理器裡做，所有頁面一次修好，新頁面也不用再記這條規矩。</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">pm_purge_group_objs_of</span><span class="params">(<span class="type">lv_obj_t</span> *root)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">lv_group_t</span> *g = lv_group_get_default();</span><br><span class="line">    <span class="keyword">if</span>(!g || !root) <span class="keyword">return</span>;</span><br><span class="line">    <span class="type">uint32_t</span> cnt = lv_group_get_obj_count(g);</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">uint32_t</span> i = cnt; i &gt; <span class="number">0</span>; i--) &#123;          <span class="comment">/* 倒序：刪除會改變下標 */</span></span><br><span class="line">        <span class="type">lv_obj_t</span> *o = lv_group_get_obj_by_index(g, i - <span class="number">1</span>);</span><br><span class="line">        <span class="keyword">if</span>(!o || !lv_obj_is_valid(o)) <span class="keyword">continue</span>;</span><br><span class="line">        <span class="type">lv_obj_t</span> *p = o;</span><br><span class="line">        <span class="type">bool</span> mine = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">while</span>(p) &#123; <span class="keyword">if</span>(p == root) &#123; mine = <span class="literal">true</span>; <span class="keyword">break</span>; &#125; p = lv_obj_get_parent(p); &#125;</span><br><span class="line">        <span class="keyword">if</span>(mine) lv_group_remove_obj(o);          <span class="comment">/* 沿父鏈找根，判定歸屬 */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 <code>pm_page_destroy()</code> 裡、<code>page-&gt;onDestroy(page)</code> <strong>之前</strong>調用<br>（此時對象都還合法；<code>onDestroy</code> 裡可能已經釋放定時器&#x2F;回調）：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(pm_obj_valid(root)) &#123;</span><br><span class="line">    <span class="type">lv_group_t</span> *dbg_g = lv_group_get_default();</span><br><span class="line">    <span class="type">uint32_t</span> before = dbg_g ? lv_group_get_obj_count(dbg_g) : <span class="number">0</span>;</span><br><span class="line">    pm_purge_group_objs_of(root);</span><br><span class="line">    <span class="type">uint32_t</span> after = dbg_g ? lv_group_get_obj_count(dbg_g) : <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span>(after != before) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;[pm] 頁面 &#x27;%s&#x27; 離場，摘掉 %u 個焦點組殘留控件（現共 %u）\n&quot;</span>,</span><br><span class="line">                page-&gt;page_name ? page-&gt;page_name : <span class="string">&quot;?&quot;</span>,</span><br><span class="line">                (<span class="type">unsigned</span>)(before - after), (<span class="type">unsigned</span>)after);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>正常情況摘掉數量應為 0（不打日誌）；一旦有殘留就打一行，<br>**方便以後發現”某個頁面又忘了清理”**。</p>
+<blockquote>
+<p>該文件是 <code>.cc</code> 但原來只 include 了 <code>&lt;string.h&gt;</code>，用 <code>fprintf/stderr</code> 需補<br><code>#include &lt;stdio.h&gt;</code>，否則編譯報 <code>MAKE_RC=2 &#39;stderr&#39; was not declared</code>。</p>
+</blockquote>
+<h3 id="5-2-可見性判定改為”祖先感知”"><a href="#5-2-可見性判定改為”祖先感知”" class="headerlink" title="5.2 可見性判定改為”祖先感知”"></a>5.2 可見性判定改為”祖先感知”</h3><p><code>main.c</code> 的 <code>group_find_neighbor()</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">-    <span class="keyword">if</span>(lv_obj_has_flag(o, LV_OBJ_FLAG_HIDDEN)) <span class="keyword">continue</span>;</span><br><span class="line">+    <span class="comment">/* 必須連同祖先一起判斷可見性（nav_obj_visible）。</span></span><br><span class="line"><span class="comment">+     * 只看對象自己的 HIDDEN 是不夠的：面板收起時隱藏的是外層容器，</span></span><br><span class="line"><span class="comment">+     * 裡面的控件自己並不帶 HIDDEN，於是會被當成合法候選選中 ——</span></span><br><span class="line"><span class="comment">+     * 表現就是桌面按方向鍵時選中框憑空消失、走不到想去的圖標。 */</span></span><br><span class="line">+    <span class="keyword">if</span>(!nav_obj_visible(o)) <span class="keyword">continue</span>;</span><br></pre></td></tr></table></figure>
+
+<p><code>nav_obj_visible()</code> 是 <code>main.c</code> 裡已有的工具函數，會<strong>沿父鏈逐級檢查</strong> HIDDEN。</p>
+<h2 id="驗證"><a href="#驗證" class="headerlink" title="驗證"></a>驗證</h2><h3 id="6-1-組計數（頁面管理器日誌）"><a href="#6-1-組計數（頁面管理器日誌）" class="headerlink" title="6.1 組計數（頁面管理器日誌）"></a>6.1 組計數（頁面管理器日誌）</h3><p>修復後進&#x2F;出收音機頁：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[pm] 頁面 &#x27;radio&#x27; 離場，摘掉 19 個焦點組殘留控件（現共 18）</span><br></pre></td></tr></table></figure>
+
+<p>19 個正是收音機頁掛進去的控件數。剩 1 個即為 §3.2 的滑塊<br>（它由狀態欄常駐創建，不歸任何頁面管，只能靠”祖先感知導航”繞開）。</p>
+<h3 id="6-2-按鍵實測（ssh-tools-nav-trace-py-E-B-L-L-）"><a href="#6-2-按鍵實測（ssh-tools-nav-trace-py-E-B-L-L-）" class="headerlink" title="6.2 按鍵實測（ssh_tools/nav_trace.py &quot;E B L L&quot;）"></a>6.2 按鍵實測（<code>ssh_tools/nav_trace.py &quot;E B L L&quot;</code>）</h3><p>乾淨重啟應用 → 進收音機 → 返回桌面 → 連按兩次左鍵：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">--- 按 ENTER(28) ---   [ukbd] key=10</span><br><span class="line">--- 按 ESC(1)   ---   [ukbd] key=33554459</span><br><span class="line">--- 按 LEFT(105) ---  [ukbd] key=20</span><br><span class="line">                      [fc] focus idx=7/18 cell=0xb70881d4 content=0xb7088374 box=0xb7088444</span><br><span class="line">--- 按 LEFT(105) ---  [ukbd] key=20</span><br><span class="line">                      [fc] focus idx=6/18 cell=0xb7087bd0 content=0xb7087d6c box=0xb7087e3c</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>焦點<strong>連續左移</strong>：<code>idx 8(收音機) → 7(藍牙) → 6</code>，符合桌面圖標順序；</li>
+<li><code>content</code> &#x2F; <code>box</code> <strong>均非空</strong> → 焦點框每次都畫得出來；</li>
+<li>對比修復前 <code>content=(nil) box=(nil)</code>，問題消失。</li>
+</ul>
+<p>截圖 <code>shots/btz_3.png</code>：桌面「藍牙」圖標外圈有粉色焦點框（人眼確認）。</p>
+<h3 id="6-3-未做-待觀察"><a href="#6-3-未做-待觀察" class="headerlink" title="6.3 未做&#x2F;待觀察"></a>6.3 未做&#x2F;待觀察</h3><ul>
+<li>只覆蓋了”收音機頁 → 桌面”這條路。其餘 10+ 個頁面走的是同一個<br><code>pm_page_destroy</code> 清理，<strong>理論上一次修好</strong>；但<strong>未逐頁實測</strong>，<br>如有異常可直接看 <code>[pm]</code> 那行日誌確認是哪一頁漏了。</li>
+</ul>
+<h2 id="經驗教訓"><a href="#經驗教訓" class="headerlink" title="經驗教訓"></a>經驗教訓</h2><ol>
+<li><strong>全局共享的容器，進和出要成對。</strong> 焦點組是全局單例，頁面只 add 不 remove，<br>等於把垃圾倒進了公共區域 —— 而且<strong>症狀出現在受害者（桌面）身上，不在肇事者（頁面）身上</strong>，<br>極難從現象反推。凡是”全局註冊表”，就該由框架層統一託管生命週期，別指望每個頁面自覺。</li>
+<li><strong>生命週期要分兩層看：對象被刪 ≠ 從組裡摘掉。</strong> 頁面銷燬得乾乾淨淨（<code>[pm] destroy</code> 正常），<br>控件照樣賴在組裡。查這類問題時，<strong>打印”容器裡現有多少元素”比打印”我刪了什​麼”有效得多</strong>。</li>
+<li><strong>可見性判定必須祖先感知。</strong> <code>LV_OBJ_FLAG_HIDDEN</code> 只描述對象自己；<br>“這個控件現在用戶能不能看見”是一個<strong>沿父鏈</strong>的問題。LVGL 裡凡是”隱藏容器”的寫法，<br>都會踩這個坑。</li>
+<li><strong>“重啟應用就好”是強烈的”外部汙染”信號。</strong> 它說明故障不是算法本身錯，<br>而是運行期狀態被別處改髒了 —— 排查方向應立刻從”算得對不對”轉向”誰動過共享狀態”。</li>
+<li><strong>診斷打點用 <code>fprintf(stderr, ...)</code>。</strong> <code>printf</code> 寫文件是塊緩衝，日誌會滯後很久，<br>容易誤判成”代碼沒執行”（排查 FM 頁面時也踩過同一個坑）。</li>
+<li><strong>把”規範”下沉到框架層，而不是寫進文檔。</strong> 本例最初只是在文檔裡寫”記得 remove”，<br>結果沒人執行；搬進 <code>pm_page_destroy</code> 後，新舊頁面一次性合規。<br><strong>能被代碼強制的約定，不要靠自覺。</strong></li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-02-%E2%80%94-%E9%A0%81%E9%9D%A2%E9%9B%A2%E5%A0%B4%E4%B8%8D%E6%B8%85%E7%84%A6%E9%BB%9E%E7%B5%84%EF%BC%8C%E5%B0%8E%E8%87%B4%E6%A1%8C%E9%9D%A2%E7%84%A6%E9%BB%9E%E7%92%B0%E6%B6%88%E5%A4%B1"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_02 — 頁面離場不清焦點組，導致桌面焦點環消失</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E9%A0%81%E9%9D%A2%E9%9B%A2%E5%A0%B4%E6%99%82%EF%BC%8C%E4%B8%8D%E6%8A%8A%E8%87%AA%E5%B7%B1%E7%9A%84%E6%8E%A7%E4%BB%B6%E5%BE%9E%E2%80%9D%E5%85%AC%E5%85%B1%E7%84%A6%E9%BB%9E%E7%B5%84%E2%80%9D%E8%A3%A1%E6%91%98%E6%8E%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 頁面離場時，不把自己的控件從”公共焦點組”裡摘掉</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-group-find-neighbor-%E5%8F%AA%E7%9C%8B%E6%8E%A7%E4%BB%B6%E8%87%AA%E5%B7%B1%E7%9A%84-HIDDEN%EF%BC%8C%E4%B8%8D%E7%9C%8B%E7%A5%96%E5%85%88"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 group_find_neighbor 只看控件自己的 HIDDEN，不看祖先</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E9%81%8E%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位過程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%85%88%E7%A2%BA%E8%AA%8D%E2%80%9D%E7%84%A6%E9%BB%9E%E5%88%B0%E5%BA%95%E8%90%BD%E5%9C%A8%E8%AA%B0%E8%BA%AB%E4%B8%8A%E2%80%9D"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 先確認”焦點到底落在誰身上”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E6%8A%8A%E5%B9%BD%E9%9D%88%E2%80%9D%E6%89%93%E5%8D%B0%E5%87%BA%E4%BE%86%E2%80%9D%E5%86%8D%E5%8F%8D%E6%9F%A5"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 把幽靈”打印出來”再反查</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E6%8E%92%E9%99%A4%E6%8E%89%E7%9A%84%E6%96%B9%E5%90%91"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 排除掉的方向</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E6%B1%BA%E8%BE%A6%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解決辦法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E9%A0%81%E9%9D%A2%E7%AE%A1%E7%90%86%E5%99%A8%E7%B5%B1%E4%B8%80%E6%B8%85%E7%90%86%EF%BC%88%E4%B8%80%E8%99%95%E4%BF%AE%E5%A5%BD%E6%89%80%E6%9C%89%E9%A0%81%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 頁面管理器統一清理（一處修好所有頁）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E5%8F%AF%E8%A6%8B%E6%80%A7%E5%88%A4%E5%AE%9A%E6%94%B9%E7%82%BA%E2%80%9D%E7%A5%96%E5%85%88%E6%84%9F%E7%9F%A5%E2%80%9D"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 可見性判定改為”祖先感知”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A9%97%E8%AD%89"><span class="toc-number">1.6.</span> <span class="toc-text">驗證</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E7%B5%84%E8%A8%88%E6%95%B8%EF%BC%88%E9%A0%81%E9%9D%A2%E7%AE%A1%E7%90%86%E5%99%A8%E6%97%A5%E8%AA%8C%EF%BC%89"><span class="toc-number">1.6.1.</span> <span class="toc-text">6.1 組計數（頁面管理器日誌）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E6%8C%89%E9%8D%B5%E5%AF%A6%E6%B8%AC%EF%BC%88ssh-tools-nav-trace-py-E-B-L-L-%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">6.2 按鍵實測（ssh_tools&#x2F;nav_trace.py &quot;E B L L&quot;）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E6%9C%AA%E5%81%9A-%E5%BE%85%E8%A7%80%E5%AF%9F"><span class="toc-number">1.6.3.</span> <span class="toc-text">6.3 未做&#x2F;待觀察</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B6%93%E9%A9%97%E6%95%99%E8%A8%93"><span class="toc-number">1.7.</span> <span class="toc-text">經驗教訓</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&text=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&title=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&is_video=false&description=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=頁面離場不清焦點組導致桌面焦點環消失&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&title=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&title=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&title=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&title=頁面離場不清焦點組導致桌面焦點環消失"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-02/&name=頁面離場不清焦點組導致桌面焦點環消失&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="FM 出聲：廠商官方音頻通路（2026-09-23） 背景：本機 FM「應用層已通」（TUNE &#x2F; RDS &#x2F; 音量都有），唯獨沒有聲音。先前結論是「FM 音頻在用戶態不可行」，理由是：card1 DAPM 路由不完整、8 個 capture 全 EIO、codec_reg 是空文件。本次推翻該結論的一半：FM 音頻並非只能靠 marlin_fm.ko 裡的那幾個音頻 ioct">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM出聲_廠商官方音頻通路與實操步驟">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="FM 出聲：廠商官方音頻通路（2026-09-23） 背景：本機 FM「應用層已通」（TUNE &#x2F; RDS &#x2F; 音量都有），唯獨沒有聲音。先前結論是「FM 音頻在用戶態不可行」，理由是：card1 DAPM 路由不完整、8 個 capture 全 EIO、codec_reg 是空文件。本次推翻該結論的一半：FM 音頻並非只能靠 marlin_fm.ko 裡的那幾個音頻 ioct">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.194Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM出聲_廠商官方音頻通路與實操步驟</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/fm-02-fm-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/fm-04-fm-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&text=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&title=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&is_video=false&description=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM出聲_廠商官方音頻通路與實操步驟&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&title=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&title=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&title=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&title=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&name=FM出聲_廠商官方音頻通路與實操步驟&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#FM-%E5%87%BA%E8%81%B2%EF%BC%9A%E5%BB%A0%E5%95%86%E5%AE%98%E6%96%B9%E9%9F%B3%E9%A0%BB%E9%80%9A%E8%B7%AF%EF%BC%882026-09-23%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">FM 出聲：廠商官方音頻通路（2026-09-23）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%85%88%E8%AA%AA%E7%B5%90%E8%AB%96"><span class="toc-number">1.1.</span> <span class="toc-text">1. 先說結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BB%A0%E5%95%86%E5%AE%98%E6%96%B9-path-%E5%AE%9A%E7%BE%A9%EF%BC%88%E5%8E%9F%E6%96%87%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. 廠商官方 path 定義（原文）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E6%95%B8%E5%AD%97-FM-%E2%80%94%E2%80%94"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 數字 FM —— &lt;device name&#x3D;&quot;digital-fm&quot;&gt;</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E6%A8%A1%E6%93%AC-FM%EF%BC%88line-in-%E2%86%92-codec-loop%EF%BC%89"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 模擬 FM（line-in → codec loop）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E8%BC%B8%E5%87%BA%E5%81%B4%EF%BC%88%E6%95%B8%E5%AD%97-FM-%E4%B9%9F%E8%A6%81%E9%85%8D%E4%B8%80%E5%80%8B%EF%BC%89"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 輸出側（數字 FM 也要配一個）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%BD%A0%E6%80%8E%E9%BA%BC%E8%B7%91%EF%BC%88%E6%89%8B%E5%8B%95%E9%A9%97%E8%AD%89%E6%AD%A5%E9%A9%9F%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 你怎麼跑（手動驗證步驟）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-0-%E6%BA%96%E5%82%99"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.0 準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E5%85%88%E7%A2%BA%E8%AA%8D%E6%8E%A7%E4%BB%B6%E7%9C%9F%E5%90%8D%EF%BC%88%E9%9D%9E%E5%B8%B8%E9%87%8D%E8%A6%81%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.1 先確認控件真名（非常重要）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%96%B9%E6%A1%88-A%EF%BC%9A%E6%95%B8%E5%AD%97-FM-%E2%86%92-%E6%8F%9A%E8%81%B2%E5%99%A8%EF%BC%88%E6%8E%A8%E8%96%A6%E5%85%88%E8%A9%A6%EF%BC%89"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.2 方案 A：數字 FM → 揚聲器（推薦先試）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E6%96%B9%E6%A1%88-B%EF%BC%9A%E6%A8%A1%E6%93%AC-line-in-%E2%86%92-%E6%8F%9A%E8%81%B2%E5%99%A8-%E8%80%B3%E6%A9%9F"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.3 方案 B：模擬 line-in → 揚聲器 &#x2F; 耳機</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E9%97%9C-%E5%BE%A9%E4%BD%8D"><span class="toc-number">1.3.5.</span> <span class="toc-text">3.4 關 &#x2F; 復位</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%8E%92%E9%8C%AF%E8%A6%81%E9%BB%9E"><span class="toc-number">1.4.</span> <span class="toc-text">4. 排錯要點</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%BE%85%E7%A2%BA%E8%AA%8D%E6%B8%85%E5%96%AE%EF%BC%88%E9%A9%97%E8%AD%89%E5%BE%8C%E5%9B%9E%E5%A1%AB%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 待確認清單（驗證後回填）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%99%84%EF%BC%9A%E8%AD%89%E6%93%9A%E4%BE%86%E6%BA%90"><span class="toc-number">1.6.</span> <span class="toc-text">6. 附：證據來源</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM出聲_廠商官方音頻通路與實操步驟
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="FM-出聲：廠商官方音頻通路（2026-09-23）"><a href="#FM-出聲：廠商官方音頻通路（2026-09-23）" class="headerlink" title="FM 出聲：廠商官方音頻通路（2026-09-23）"></a>FM 出聲：廠商官方音頻通路（2026-09-23）</h1><blockquote>
+<p>背景：本機 FM「應用層已通」（TUNE &#x2F; RDS &#x2F; 音量都有），唯獨<strong>沒有聲音</strong>。<br>先前結論是「FM 音頻在用戶態不可行」，理由是：card1 DAPM 路由不完整、8 個 capture 全 EIO、<br><code>codec_reg</code> 是空文件。<br>本次<strong>推翻該結論的一半</strong>：FM 音頻並非只能靠 <code>marlin_fm.ko</code> 裡的那幾個音頻 ioctl ——<br><strong>廠商其實已經把 FM 音頻通路寫進了 Android 分區的配置文件裡</strong>，而且<br><strong>本機 card1 上這些 kcontrol 全部存在</strong>。<br>之前沒出來，是因為從來沒人按那份配置去設過。</p>
+<p>狀態：<strong>待你在設備上手動驗證</strong>（我不再跑驗證）。本文檔給出控件名、順序、命令、排錯要點。</p>
+</blockquote>
+<hr>
+<h2 id="1-先說結論"><a href="#1-先說結論" class="headerlink" title="1. 先說結論"></a>1. 先說結論</h2><table>
+<thead>
+<tr>
+<th>項</th>
+<th>結論</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>OVER_BT_ENABLE(0x1d)</code> &#x2F; <code>I2S_SETTING(0x21)</code> &#x2F; <code>ANA_SWITCH(0x1e)</code> &#x2F; <code>GET_AUDIO_INFO(0x30)</code></td>
+<td>本機 <code>marlin_fm.ko</code> 裡<strong>是空殼</strong>：<code>fm_ioctl</code> 進 case 只 printk 一行名字就返回，不發任何 SDIO 命令（反彙編已確認）。<strong>不要再指望用 FM ioctl 切音頻通路</strong>。</td>
+</tr>
+<tr>
+<td>上游開源驅動（同一份 <code>marlin2_fm</code>）</td>
+<td>同樣把這幾個 case 寫成 <code>ret = 0; break;</code>——<strong>廠商從來沒在這條鏈路上實現</strong>。這是 <code>OVER_BT_ENABLE</code> 這條路已死的權威證據。</td>
+</tr>
+<tr>
+<td><strong>真正的通路在哪</strong></td>
+<td>在 <strong>AP codec 側</strong>，廠商在 Android system 分區 <code>/etc/tiny_hw.xml</code> 裡給了完整定義。FM 芯片出來的音頻（數字 DIGFM 或模擬 AIL&#x2F;AIR line-in）→ codec → SPK&#x2F;耳機，<strong>AP 不需要搬音頻數據</strong>。</td>
+</tr>
+<tr>
+<td>本機是否具備</td>
+<td><strong>具備</strong>。card1（<code>sprdphone</code>）裡 <code>Digital FM Function</code>、<code>AD IISMUX</code>（enum 含 <code>DIGFM</code>）、<code>Line Function</code>、<code>ADCL/ADCR Mixer AILADCL/AIRADCR</code>、<code>SPKL Mixer ADCLSPKL</code>、<code>HPL Mixer ADCRHPL</code> 等控件<strong>全部存在</strong>。</td>
+</tr>
+<tr>
+<td>為什麼之前沒出來</td>
+<td>先前只設了 <code>Speaker Function</code>（把 DACL→EAR 打通），<strong>沒設 FM 側的任何一個控件</strong>，也<strong>沒有打開 <code>hw:1,4</code>(<code>Dfm</code>) PCM 去觸發 DAPM 上電</strong>。兩件事都沒做，自然沒聲。</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-廠商官方-path-定義（原文）"><a href="#2-廠商官方-path-定義（原文）" class="headerlink" title="2. 廠商官方 path 定義（原文）"></a>2. 廠商官方 path 定義（原文）</h2><p>來源：設備 Android system 分區 <code>/etc/tiny_hw.xml</code>（只讀掛載在 <code>/mnt/android_sys</code>）。</p>
+<h3 id="2-1-數字-FM-——"><a href="#2-1-數字-FM-——" class="headerlink" title="2.1 數字 FM —— &lt;device name=&quot;digital-fm&quot;&gt;"></a>2.1 數字 FM —— <code>&lt;device name=&quot;digital-fm&quot;&gt;</code></h3><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">device</span> <span class="attr">name</span>=<span class="string">&quot;digital-fm&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">path</span> <span class="attr">name</span>=<span class="string">&quot;on&quot;</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;Digital FM Function&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;DA0 ADDST MUX&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;DA1 ADDST MUX&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;AD IISMUX&quot;</span> <span class="attr">val</span>=<span class="string">&quot;2&quot;</span> /&gt;</span>        <span class="comment">&lt;!-- 2 = DIGFM --&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">path</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">path</span> <span class="attr">name</span>=<span class="string">&quot;off&quot;</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;Digital FM Function&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;DA0 ADDST MUX&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;DA1 ADDST MUX&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;DA0 ADDFM MUX&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;DA1 ADDFM MUX&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;AD IISMUX&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">path</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">device</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><code>AD IISMUX</code> 的 enum 選項（本機 card1 實測）：<br><code>[0]=AUDIIS0  [1]=DIGFM  [2]=EXTDIGFM  [3]=EXTIIS6  [4]=AUDIIS1</code></p>
+<p>⚠️ <strong>注意</strong>：本機 dump 出來的 enum 順序是 <code>(AUDIIS0/DIGFM/EXTDIGFM/EXTIIS6/AUDIIS1)</code>，<br><code>val=&quot;2&quot;</code> 在這個順序裡落在 <strong>EXTDIGFM</strong> 而不是 DIGFM。XML 是給另一份 kernel&#x2F;codec 版本寫的，<br><strong>兩個值都要試</strong>（建議先 2，再 1）。這是本方案裡最可能需要現場調的一個值。</p>
+<h3 id="2-2-模擬-FM（line-in-→-codec-loop）"><a href="#2-2-模擬-FM（line-in-→-codec-loop）" class="headerlink" title="2.2 模擬 FM（line-in → codec loop）"></a>2.2 模擬 FM（line-in → codec loop）</h3><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">device</span> <span class="attr">name</span>=<span class="string">&quot;line&quot;</span>&gt;</span>                      <span class="comment">&lt;!-- 模擬輸入側 --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">path</span> <span class="attr">name</span>=<span class="string">&quot;on&quot;</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;HeadPhone Mute&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span>      <span class="comment">&lt;!-- 先 mute，防 pop --&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;ADCL Mixer AILADCL Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;ADCR Mixer AIRADCR Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;Line Function&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;HeadPhone Mute&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span>      <span class="comment">&lt;!-- 再放開 --&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">path</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">path</span> <span class="attr">name</span>=<span class="string">&quot;off&quot;</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;Line Function&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;ADCL Mixer AILADCL Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;ADCR Mixer AIRADCR Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;0&quot;</span> /&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">path</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">device</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">device</span> <span class="attr">name</span>=<span class="string">&quot;line-speaker&quot;</span>&gt;</span>              <span class="comment">&lt;!-- 模擬 → 揚聲器 --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">path</span> <span class="attr">name</span>=<span class="string">&quot;on&quot;</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;SPKL Mixer ADCLSPKL Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;SPKL Mixer ADCRSPKL Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">path</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">device</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">device</span> <span class="attr">name</span>=<span class="string">&quot;line-headphone&quot;</span>&gt;</span>            <span class="comment">&lt;!-- 模擬 → 耳機 --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">path</span> <span class="attr">name</span>=<span class="string">&quot;on&quot;</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;HPL Mixer ADCRHPL Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;HPR Mixer ADCLHPR Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">path</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">device</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3-輸出側（數字-FM-也要配一個）"><a href="#2-3-輸出側（數字-FM-也要配一個）" class="headerlink" title="2.3 輸出側（數字 FM 也要配一個）"></a>2.3 輸出側（數字 FM 也要配一個）</h3><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">device</span> <span class="attr">name</span>=<span class="string">&quot;speaker&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">path</span> <span class="attr">name</span>=<span class="string">&quot;on&quot;</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;SPKL Mixer DACLSPKL Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;SPKL Mixer DACRSPKL Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;Speaker Function&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">path</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">device</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">device</span> <span class="attr">name</span>=<span class="string">&quot;headphone&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">path</span> <span class="attr">name</span>=<span class="string">&quot;on&quot;</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;HPL Mixer DACLHPL Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;HPR Mixer DACRHPR Switch&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">ctl</span> <span class="attr">name</span>=<span class="string">&quot;HeadPhone Function&quot;</span> <span class="attr">val</span>=<span class="string">&quot;1&quot;</span> /&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">path</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">device</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>參考：SC9832A 平臺同款 SoC 的公開分析確認 FM 音頻從 codec 的 <strong>AIL&#x2F;AIR</strong>（類似 MIC 的 line-in）進<br>codec，再「FM playback patch」直出，或經 VBC 給主控錄音——與上面的配置文件完全對得上。</p>
+<hr>
+<h2 id="3-你怎麼跑（手動驗證步驟）"><a href="#3-你怎麼跑（手動驗證步驟）" class="headerlink" title="3. 你怎麼跑（手動驗證步驟）"></a>3. 你怎麼跑（手動驗證步驟）</h2><h3 id="3-0-準備"><a href="#3-0-準備" class="headerlink" title="3.0 準備"></a>3.0 準備</h3><ol>
+<li>FM 上電鏈先起來：WiFi 固件下載 → <code>bt_bringup.start</code>（含 wcn BT-OPEN）→ 向 <code>@wcnd</code> 發 <code>wcn FM-OPEN</code><br>並<strong>長期保持連接</strong>。</li>
+<li><code>fm_user_daemon</code> 常開 <code>/dev/fm</code>（socket <code>/tmp/fm_ctl.sock</code>），TUNE 到一個本地強信號電臺。</li>
+<li>通過 <code>/tmp/fm_ctl.sock</code> 執行 <code>mute 0</code>，確認 FM 未處於靜音（socket 命令寫法見<br><code>AI工作流/*/docs/</code> 與 <code>lv_pages/radio_page.c</code>）。</li>
+<li>沒有 <code>amixer</code>&#x2F;<code>tinymix</code>，用已有的 <code>/root/fm_ctl</code>：<code>fm_ctl &lt;op&gt; &lt;card&gt; ...</code></li>
+</ol>
+<h3 id="3-1-先確認控件真名（非常重要）"><a href="#3-1-先確認控件真名（非常重要）" class="headerlink" title="3.1 先確認控件真名（非常重要）"></a>3.1 先確認控件真名（非常重要）</h3><p>之前 dump 出來的名字<strong>不一定等於 ALSA 全名</strong>（例如 dump 裡是 <code>ADCL Mixer AILADCL</code>，<br>XML 裡是 <code>ADCL Mixer AILADCL Switch</code>）。先 grep 一次拿真名：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">/root/fm_ctl grep card1 AIL</span><br><span class="line">/root/fm_ctl grep card1 IISMUX</span><br><span class="line">/root/fm_ctl grep card1 <span class="string">&quot;Digital FM&quot;</span></span><br><span class="line">/root/fm_ctl grep card1 SPKL</span><br><span class="line">/root/fm_ctl grep card1 Function</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-方案-A：數字-FM-→-揚聲器（推薦先試）"><a href="#3-2-方案-A：數字-FM-→-揚聲器（推薦先試）" class="headerlink" title="3.2 方案 A：數字 FM → 揚聲器（推薦先試）"></a>3.2 方案 A：數字 FM → 揚聲器（推薦先試）</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1) 輸出側 speaker（先鋪好輸出）</span></span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;Speaker Function&quot;</span> 1</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;SPKL Mixer DACLSPKL Switch&quot;</span> 1</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;SPKL Mixer DACRSPKL Switch&quot;</span> 1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) 數字 FM 通路</span></span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;Digital FM Function&quot;</span> 1</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;DA0 ADDST MUX&quot;</span> 0</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;DA1 ADDST MUX&quot;</span> 0</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;AD IISMUX&quot;</span> 2        <span class="comment"># 無聲再試 1 / 3</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) 打開 FM PCM 觸發 DAPM 上電（關鍵！本機 card1 的 01-04 就是 Dfm）</span></span><br><span class="line"><span class="comment">#    編譯：gcc -O2 -o /root/fm_pcm fm_pcm.c -lasound</span></span><br><span class="line">/root/fm_pcm <span class="string">&quot;hw:1,4&quot;</span> 60 &amp;                  <span class="comment"># 保持寫 60 秒</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>第 3 步是最容易漏的一步</strong>：<code>Dfm</code> 這個 PCM 設備存在的意義就是「開流把 DAPM 拉起來」，<br>只設 kcontrol 而 stream 沒起來，<code>bias_level</code> 會一直停在 <code>Off</code>（這正是之前觀察到的現象）。</p>
+</blockquote>
+<h3 id="3-3-方案-B：模擬-line-in-→-揚聲器-耳機"><a href="#3-3-方案-B：模擬-line-in-→-揚聲器-耳機" class="headerlink" title="3.3 方案 B：模擬 line-in → 揚聲器 &#x2F; 耳機"></a>3.3 方案 B：模擬 line-in → 揚聲器 &#x2F; 耳機</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;Line Function&quot;</span> 1</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;ADCL Mixer AILADCL Switch&quot;</span> 1</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;ADCR Mixer AIRADCR Switch&quot;</span> 1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 出到揚聲器</span></span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;SPKL Mixer ADCLSPKL Switch&quot;</span> 1</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;SPKL Mixer ADCRSPKL Switch&quot;</span> 1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 或出到耳機</span></span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;HPL Mixer ADCRHPL Switch&quot;</span> 1</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;HPR Mixer ADCLHPR Switch&quot;</span> 1</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;HeadPhone Function&quot;</span> 1</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-4-關-復位"><a href="#3-4-關-復位" class="headerlink" title="3.4 關 &#x2F; 復位"></a>3.4 關 &#x2F; 復位</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;Digital FM Function&quot;</span> 0</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;AD IISMUX&quot;</span> 0</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;Line Function&quot;</span> 0</span><br><span class="line">/root/fm_ctl <span class="built_in">set</span> card1 <span class="string">&quot;Speaker Function&quot;</span> 0</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="4-排錯要點"><a href="#4-排錯要點" class="headerlink" title="4. 排錯要點"></a>4. 排錯要點</h2><table>
+<thead>
+<tr>
+<th>現象</th>
+<th>可能原因</th>
+<th>處理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>完全無聲，<code>bias_level</code> 仍 Off</td>
+<td><code>hw:1,4</code> 沒被打開&#x2F;寫入</td>
+<td>確認 <code>fm_pcm</code> 進程在跑且 <code>writei</code> 沒返回錯誤</td>
+</tr>
+<tr>
+<td>有聲但很小 &#x2F; 失真</td>
+<td>走的是 line-in 模擬通路，增益沒配</td>
+<td>只保留一條 route（兩條同時開會互相串擾），並換另一個 <code>AD IISMUX</code> 取值再試</td>
+</tr>
+<tr>
+<td><code>AD IISMUX</code> 設不動</td>
+<td>enum 值範圍不同</td>
+<td>先 <code>fm_ctl get card1 &quot;AD IISMUX&quot;</code> 看允許的取值範圍</td>
+</tr>
+<tr>
+<td>需要插耳機</td>
+<td>FM 天線可能掛在耳機線上</td>
+<td>不插耳機 TUNE 到最強臺再試；若必須插，UI 要有提示</td>
+</tr>
+<tr>
+<td>數字 FM 一直不成</td>
+<td>本機固件可能沒把 FM 數字口接到 VBC</td>
+<td>退回方案 B（模擬 line-in），這條路最好 route 完整</td>
+</tr>
+</tbody></table>
+<p>沿用「末端證據」原則：<strong>判斷標準是人耳聽到電臺聲</strong>，不是 ioctl 返回 0。</p>
+<hr>
+<h2 id="5-待確認清單（驗證後回填）"><a href="#5-待確認清單（驗證後回填）" class="headerlink" title="5. 待確認清單（驗證後回填）"></a>5. 待確認清單（驗證後回填）</h2><ul>
+<li><input disabled="" type="checkbox"> <code>AD IISMUX</code> 正確取值（1 &#x2F; 2 &#x2F; 3 哪個是 <code>DIGFM</code>）</li>
+<li><input disabled="" type="checkbox"> 數字 FM 與模擬 line-in 哪條在本機真的通</li>
+<li><input disabled="" type="checkbox"> 是否需要插耳機當天線</li>
+<li><input disabled="" type="checkbox"> 音量到底歸 <code>SETVOL</code>(0x04) 管還是歸 codec 的 pga（<code>codec_pga.xml</code> 裡 <code>digital-fm</code> profile 用 <code>VBC STL DG Set</code> &#x2F; <code>VBC STR DG Set</code>）</li>
+<li><input disabled="" type="checkbox"> FM 與 A2DP 同時開時的串擾情況（決定聲道仲裁怎麼寫）</li>
+</ul>
+<hr>
+<h2 id="6-附：證據來源"><a href="#6-附：證據來源" class="headerlink" title="6. 附：證據來源"></a>6. 附：證據來源</h2><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/mnt/android_sys/etc/tiny_hw.xml</code></td>
+<td>廠商 mixer path 全量定義（本文 §2 原文出處）</td>
+</tr>
+<tr>
+<td><code>/mnt/android_sys/etc/codec_pga.xml</code></td>
+<td><code>digital-fm</code> profile → <code>VBC STL DG Set</code>(bit 0) &#x2F; <code>VBC STR DG Set</code>(bit 16)</td>
+</tr>
+<tr>
+<td><code>radio_docs/mixer_card1.txt</code></td>
+<td>本機 card1 全部 kcontrol dump（確認控件存在）</td>
+</tr>
+<tr>
+<td>LKML <code>[PATCH 2/2] misc: added Spreadtrum&#39;s radio driver</code>（Chunyan Zhang, 2017）</td>
+<td>驅動上游源碼：<code>FM_IOCTL_*</code> 全表、chip 側 <code>FM_*_CMD</code> 編號、以及 I2S&#x2F;AudioInfo case 是空實現</td>
+</tr>
+<tr>
+<td>公開分析《Sprd 9832A Android6.0 FM 模式下的幾種 Audio 路徑》</td>
+<td>AIL&#x2F;AIR 輸入、三種模式（Line_in-Codec &#x2F; Line_in-VBC-Codec &#x2F; Digital FM-VBC-Codec）的信號流</td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#FM-%E5%87%BA%E8%81%B2%EF%BC%9A%E5%BB%A0%E5%95%86%E5%AE%98%E6%96%B9%E9%9F%B3%E9%A0%BB%E9%80%9A%E8%B7%AF%EF%BC%882026-09-23%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">FM 出聲：廠商官方音頻通路（2026-09-23）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%85%88%E8%AA%AA%E7%B5%90%E8%AB%96"><span class="toc-number">1.1.</span> <span class="toc-text">1. 先說結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%BB%A0%E5%95%86%E5%AE%98%E6%96%B9-path-%E5%AE%9A%E7%BE%A9%EF%BC%88%E5%8E%9F%E6%96%87%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. 廠商官方 path 定義（原文）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E6%95%B8%E5%AD%97-FM-%E2%80%94%E2%80%94"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 數字 FM —— &lt;device name&#x3D;&quot;digital-fm&quot;&gt;</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E6%A8%A1%E6%93%AC-FM%EF%BC%88line-in-%E2%86%92-codec-loop%EF%BC%89"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 模擬 FM（line-in → codec loop）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E8%BC%B8%E5%87%BA%E5%81%B4%EF%BC%88%E6%95%B8%E5%AD%97-FM-%E4%B9%9F%E8%A6%81%E9%85%8D%E4%B8%80%E5%80%8B%EF%BC%89"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 輸出側（數字 FM 也要配一個）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%BD%A0%E6%80%8E%E9%BA%BC%E8%B7%91%EF%BC%88%E6%89%8B%E5%8B%95%E9%A9%97%E8%AD%89%E6%AD%A5%E9%A9%9F%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 你怎麼跑（手動驗證步驟）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-0-%E6%BA%96%E5%82%99"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.0 準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E5%85%88%E7%A2%BA%E8%AA%8D%E6%8E%A7%E4%BB%B6%E7%9C%9F%E5%90%8D%EF%BC%88%E9%9D%9E%E5%B8%B8%E9%87%8D%E8%A6%81%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.1 先確認控件真名（非常重要）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%96%B9%E6%A1%88-A%EF%BC%9A%E6%95%B8%E5%AD%97-FM-%E2%86%92-%E6%8F%9A%E8%81%B2%E5%99%A8%EF%BC%88%E6%8E%A8%E8%96%A6%E5%85%88%E8%A9%A6%EF%BC%89"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.2 方案 A：數字 FM → 揚聲器（推薦先試）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E6%96%B9%E6%A1%88-B%EF%BC%9A%E6%A8%A1%E6%93%AC-line-in-%E2%86%92-%E6%8F%9A%E8%81%B2%E5%99%A8-%E8%80%B3%E6%A9%9F"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.3 方案 B：模擬 line-in → 揚聲器 &#x2F; 耳機</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E9%97%9C-%E5%BE%A9%E4%BD%8D"><span class="toc-number">1.3.5.</span> <span class="toc-text">3.4 關 &#x2F; 復位</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%8E%92%E9%8C%AF%E8%A6%81%E9%BB%9E"><span class="toc-number">1.4.</span> <span class="toc-text">4. 排錯要點</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%BE%85%E7%A2%BA%E8%AA%8D%E6%B8%85%E5%96%AE%EF%BC%88%E9%A9%97%E8%AD%89%E5%BE%8C%E5%9B%9E%E5%A1%AB%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 待確認清單（驗證後回填）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%99%84%EF%BC%9A%E8%AD%89%E6%93%9A%E4%BE%86%E6%BA%90"><span class="toc-number">1.6.</span> <span class="toc-text">6. 附：證據來源</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&text=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&title=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&is_video=false&description=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM出聲_廠商官方音頻通路與實操步驟&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&title=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&title=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&title=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&title=FM出聲_廠商官方音頻通路與實操步驟"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-03-fm-md/&name=FM出聲_廠商官方音頻通路與實操步驟&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

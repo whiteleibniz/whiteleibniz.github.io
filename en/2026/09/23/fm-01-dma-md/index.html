@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="DMA support status &amp; feasibility survey of porting from Android Date: 2026-09-23 Question: does this device’s DMA actually support it? Can the Android audio stack be ported over? Conclusion: the D">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DMA support and feasibility survey of porting from Android">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="DMA support status &amp; feasibility survey of porting from Android Date: 2026-09-23 Question: does this device’s DMA actually support it? Can the Android audio stack be ported over? Conclusion: the D">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.951Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>DMA support and feasibility survey of porting from Android</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/23/fm-14-ht0fm-wiki-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/23/fm-02-fm-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&text=DMA support and feasibility survey of porting from Android"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&title=DMA support and feasibility survey of porting from Android"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&is_video=false&description=DMA support and feasibility survey of porting from Android"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=DMA support and feasibility survey of porting from Android&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&title=DMA support and feasibility survey of porting from Android"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&title=DMA support and feasibility survey of porting from Android"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&title=DMA support and feasibility survey of porting from Android"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&title=DMA support and feasibility survey of porting from Android"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&name=DMA support and feasibility survey of porting from Android&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#DMA-support-status-feasibility-survey-of-porting-from-Android"><span class="toc-number">1.</span> <span class="toc-text">DMA support status &amp; feasibility survey of porting from Android</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-First-correct-a-premise-Alpine-runs-the-factory-Android-kernel"><span class="toc-number">1.1.</span> <span class="toc-text">1. First correct a premise: Alpine runs the factory Android kernel</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-DMA-support-status-both-hardware-and-driver-are-present"><span class="toc-number">1.2.</span> <span class="toc-text">2. DMA support status: both hardware and driver are present</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-What-was-ported-from-Android-and-the-results"><span class="toc-number">1.3.</span> <span class="toc-text">3. What was ported from Android, and the results</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Blockage-localization-the-most-important-discovery-this-round"><span class="toc-number">1.4.</span> <span class="toc-text">4. Blockage localization (the most important discovery this round)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-The-codec%E2%80%99s-digital-registers-read-back-as-all-0"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 The codec’s digital registers read back as all 0</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-All-12-audio-power-domains-are-unused"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 All 12 audio power domains are unused</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Complete-causal-chain"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 Complete causal chain</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Actions-already-tried-do-not-repeat-them"><span class="toc-number">1.5.</span> <span class="toc-text">5. Actions already tried; do not repeat them</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-What-can-still-be-done"><span class="toc-number">1.6.</span> <span class="toc-text">6. What can still be done</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-On-site-state-after-the-survey"><span class="toc-number">1.7.</span> <span class="toc-text">7. On-site state (after the survey)</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        DMA support and feasibility survey of porting from Android
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="DMA-support-status-feasibility-survey-of-porting-from-Android"><a href="#DMA-support-status-feasibility-survey-of-porting-from-Android" class="headerlink" title="DMA support status &amp; feasibility survey of porting from Android"></a>DMA support status &amp; feasibility survey of porting from Android</h1><ul>
+<li><strong>Date</strong>: 2026-09-23</li>
+<li><strong>Question</strong>: does this device’s DMA actually support it? Can the Android audio stack be ported over?</li>
+<li><strong>Conclusion</strong>: <strong>the DMA hardware and driver are both present, but there is nothing portable at the kernel layer (Alpine runs the factory Android kernel)</strong>; everything portable in user space has been tried, all ineffective. The blockage has been localized to <strong>all 12 audio power domains being disabled and the codec’s digital registers reading back as all 0</strong>.</li>
+</ul>
+<hr>
+<h2 id="1-First-correct-a-premise-Alpine-runs-the-factory-Android-kernel"><a href="#1-First-correct-a-premise-Alpine-runs-the-factory-Android-kernel" class="headerlink" title="1. First correct a premise: Alpine runs the factory Android kernel"></a>1. First correct a premise: Alpine runs the factory Android kernel</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ uname -a</span><br><span class="line">Linux spd-box 3.10.65 #13 SMP PREEMPT Fri Apr 27 13:23:49 CST 2018 armv7l Linux</span><br><span class="line"></span><br><span class="line">$ cat /proc/cmdline</span><br><span class="line">... androidboot.hardware=sc9832 lcd_id=ID9881 ... androidboot.mode=charger</span><br></pre></td></tr></table></figure>
+
+<p>The kernel version, build time, and <code>androidboot.hardware=sc9832</code> all point to the <strong>vendor’s factory kernel</strong>,<br>and the boot partition <code>mmcblk0p16</code> starts with the standard <code>ANDROID!</code> boot.img magic number.</p>
+<blockquote>
+<p>So the direction of “porting drivers from Android” <strong>does not hold</strong> — the drivers are already in this kernel, and they are all <strong>builtin</strong><br>(on the Android side, <code>/mnt/android_sys/lib/modules/</code> contains only <code>sprdwl.ko / marlin_fm.ko / mali.ko / </code>gator.ko &#x2F; autotst.ko &#x2F; mmc_test.ko&#96;, with <strong>no audio modules at all</strong>).</p>
+</blockquote>
+<h2 id="2-DMA-support-status-both-hardware-and-driver-are-present"><a href="#2-DMA-support-status-both-hardware-and-driver-are-present" class="headerlink" title="2. DMA support status: both hardware and driver are present"></a>2. DMA support status: both hardware and driver are present</h2><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/sys/class/dma</code></td>
+<td><strong>does not exist</strong> — but this is normal: sprd uses its own DMA driver and <strong>does not go through the kernel dmaengine framework</strong></td>
+</tr>
+<tr>
+<td><code>0.dma-controller</code> &#x2F; <code>0.dmac</code></td>
+<td>present (platform device)</td>
+</tr>
+<tr>
+<td><code>sprd_dma_copy.27</code></td>
+<td>present</td>
+</tr>
+<tr>
+<td><code>i2s.38 / .39 / .40 / .41</code></td>
+<td>present</td>
+</tr>
+<tr>
+<td><code>sprd-pcm-audio.42</code>, <code>sprd-codec.34</code></td>
+<td>present</td>
+</tr>
+<tr>
+<td><code>vbc-r2p0.36</code>, <code>vaudio.37</code>, <code>saudio_lte.0</code>, <code>saudio_voip.1</code></td>
+<td>present</td>
+</tr>
+<tr>
+<td><code>sprd-audio-power.1 ~ .12</code></td>
+<td>12 audio power domains, each with a <code>regulator</code> subdirectory</td>
+</tr>
+<tr>
+<td>regulator framework &#x2F; <code>sc2723-regulator</code></td>
+<td>normal, 38 regulators in total</td>
+</tr>
+</tbody></table>
+<p><strong>Conclusion: DMA is neither missing a driver nor missing hardware.</strong></p>
+<h2 id="3-What-was-ported-from-Android-and-the-results"><a href="#3-What-was-ported-from-Android-and-the-results" class="headerlink" title="3. What was ported from Android, and the results"></a>3. What was ported from Android, and the results</h2><table>
+<thead>
+<tr>
+<th>Portable item</th>
+<th>Source</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>audio_para</code></strong></td>
+<td><code>/mnt/android_sys/etc/audio_para</code> (485KB), with <code>/etc/audio_para</code> and <code>/data/local/media/audio_para</code> explicitly in the HAL strings</td>
+<td>❌ <strong>ineffective</strong>. Already placed in <code>/etc/audio_para</code> + <code>/lib/firmware/audio_para</code> and <strong>rebooted</strong>, yet the codec’s digital registers <strong>still read all 0</strong></td>
+</tr>
+<tr>
+<td><strong>Audio HAL</strong></td>
+<td><code>/mnt/android_sys/lib/hw/audio.primary.sc8830.so</code></td>
+<td>❌ it is a <strong>bionic</strong> dynamic library, while this device is musl, <strong>so it cannot run</strong>. However, the control sequences inside it were reconstructed and measured earlier (see §5)</td>
+</tr>
+<tr>
+<td><strong>tinyplay &#x2F; tinycap &#x2F; tinymix</strong></td>
+<td><code>/mnt/android_sys/bin/</code></td>
+<td>❌ also bionic binaries. Equivalent functionality has been covered by self-written tools (<code>fm_cap_scan</code> &#x2F; <code>fm_play_probe</code>)</td>
+</tr>
+<tr>
+<td><strong>VBC path</strong></td>
+<td>the HAL uses <code>/dev/vbpipe6</code> and <code>/dev/pipe/mmi.audio.ctrl</code></td>
+<td>❌ <strong>neither <code>/dev/vbpipe*</code> nor <code>/dev/pipe</code> exists on this device</strong></td>
+</tr>
+<tr>
+<td><strong>AGDSP &#x2F; audio DSP</strong></td>
+<td>—</td>
+<td>❌ <strong>sipc only has <code>sipc-lte</code>(dst 0x5) and <code>sipc-pmsys</code>(dst 0x6)</strong>, <strong>with no audio DSP channel at all</strong>; under <code>/sys/kernel/debug/sipc/</code> there are sblock&#x2F;sbuf&#x2F;seblock&#x2F;sipx&#x2F;smem&#x2F;smsg, but the smsg channel list contains only lte&#x2F;pmsys</td>
+</tr>
+</tbody></table>
+<h2 id="4-Blockage-localization-the-most-important-discovery-this-round"><a href="#4-Blockage-localization-the-most-important-discovery-this-round" class="headerlink" title="4. Blockage localization (the most important discovery this round)"></a>4. Blockage localization (the most important discovery this round)</h2><h3 id="4-1-The-codec’s-digital-registers-read-back-as-all-0"><a href="#4-1-The-codec’s-digital-registers-read-back-as-all-0" class="headerlink" title="4.1 The codec’s digital registers read back as all 0"></a>4.1 The codec’s digital registers read back as all 0</h3><p><code>/proc/asound/sprdphone/sprd-codec</code> can dump the registers directly:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">sprd-codec.34 digital part</span><br><span class="line">0x0000 | 0x0000 0x0000 0x0000 0x0000      ← 全 0</span><br><span class="line">0x0010 | 0x0000 0x0000 0x0000 0x0000</span><br><span class="line">0x0020 | 0x0000 0x0000 0x0000 0x0000</span><br><span class="line">0x0030 | 0x0000 0x0000 0x0000 0x0000</span><br><span class="line">sprd-codec.34 analog part</span><br><span class="line">0x0000 | 0x0010 0x0081 0xb400 0x6d3c      ← 模拟部分有正常值</span><br><span class="line">0x0010 | 0x1070 0xa000 0x0000 0x0000</span><br></pre></td></tr></table></figure>
+
+<p>The analog part (via the SC2723’s ADI bus) is normal, while <strong>the digital part is empty</strong>.<br>After placing <code>audio_para</code> + rebooting it is <strong>still all 0</strong>.</p>
+<h3 id="4-2-All-12-audio-power-domains-are-unused"><a href="#4-2-All-12-audio-power-domains-are-unused" class="headerlink" title="4.2 All 12 audio power domains are unused"></a>4.2 All 12 audio power domains are unused</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">sprd-audio-power.1 → regulator.26 = SRG_VREG      num_users=0</span><br><span class="line">regulator.27 SRG_VB        regulator.28 SRG_BG</span><br><span class="line">regulator.29 SRG_BG_IBIAS  regulator.30 SRG_VCOM</span><br><span class="line">regulator.31 SRG_VCOM_BUF  regulator.32 SRG_VBO</span><br><span class="line">regulator.33 SRG_VMICBIAS  regulator.34 SRG_MICBIAS</span><br><span class="line">regulator.35 SRG_AUXMICBIAS regulator.36 SRG_HEADMICBIAS ...</span><br></pre></td></tr></table></figure>
+
+<p>All are <strong>disabled, users&#x3D;0</strong>. The Off widgets in DAPM like <code>Analog Power / DA Clk / AD Clk</code><br>correspond to these power domains.</p>
+<p><strong>Under <code>/sys/class/regulator/regulator.X/</code> there are only <code>device name num_users power subsystem suspend_* type uevent</code>, with no writable <code>state</code></strong> → <strong>user space cannot force enable</strong>, and it must be done by the kernel’s DAPM.</p>
+<h3 id="4-3-Complete-causal-chain"><a href="#4-3-Complete-causal-chain" class="headerlink" title="4.3 Complete causal chain"></a>4.3 Complete causal chain</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">sipc 无 audio DSP 通道 → VBC/AGDSP 类通路不可用（/dev/vbpipe 也不存在）</span><br><span class="line">                       ↓</span><br><span class="line">DAPM 需要 enable 的 12 个 SRG_* 电源域全部 disabled (users=0)</span><br><span class="line">                       ↓</span><br><span class="line">codec 数字部分上不了电 → 数字寄存器读写不到（全 0）</span><br><span class="line">                       ↓</span><br><span class="line">bias_level 永远 Off，DAPM 不 power up</span><br><span class="line">                       ↓</span><br><span class="line">i2s / DMA 不搬运 → 播放 writei 写一个 buffer 就 EAGAIN、采集 readi 直接 EIO</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-Actions-already-tried-do-not-repeat-them"><a href="#5-Actions-already-tried-do-not-repeat-them" class="headerlink" title="5. Actions already tried; do not repeat them"></a>5. Actions already tried; do not repeat them</h2><ul>
+<li>Configured the complete <code>digital-fm</code> + <code>speaker</code> path per the vendor’s <code>tiny_hw.xml</code>, and used <code>fm_hold</code> to keep <code>hw:1,4</code> running<br>→ <code>bias_level</code> still Off, ON widget count 0</li>
+<li>Placed <code>audio_para</code> in <code>/etc</code> and <code>/lib/firmware</code> and rebooted → ineffective</li>
+<li><code>unbind/bind</code> to re-probe <code>sprd-codec.34</code> → <strong>bind failed, the codec became <code>(null)</code></strong>,<br>recoverable only by reboot. <strong>Do not unbind <code>sprd-codec.34</code> again</strong>; it breaks the audio subsystem</li>
+</ul>
+<h2 id="6-What-can-still-be-done"><a href="#6-What-can-still-be-done" class="headerlink" title="6. What can still be done"></a>6. What can still be done</h2><ol>
+<li><strong>The vendor’s kernel source is needed to continue</strong>: investigate why <code>sprd-codec</code>‘s probe &#x2F; <code>set_bias_level</code> did not pull bias to<br>STANDBY, and why the digital registers are inaccessible. The local <code>/tmp/linux-3.10.65</code> is a vanilla tree without vendor code.</li>
+<li>Second best: use <code>dynamic_debug</code> to enable <code>sprd-codec</code> &#x2F; <code>snd_soc</code>‘s dapm and bias related prints,<br>which shows the DAPM decision process (some information can be obtained without the source).</li>
+<li><strong>Not recommended</strong> direction: continuing to tune kcontrols in user space — with the power domains unable to enable, no control setting helps.</li>
+</ol>
+<h2 id="7-On-site-state-after-the-survey"><a href="#7-On-site-state-after-the-survey" class="headerlink" title="7. On-site state (after the survey)"></a>7. On-site state (after the survey)</h2><ul>
+<li>The device has rebooted once and everything is normal: <code>lvgl_demo</code> &#x2F; <code>bt_user_daemon</code>(1177) &#x2F; <code>fm_user_daemon</code>(1228) &#x2F; <code>lvgl_watchdog</code> are all running</li>
+<li><code>/etc/audio_para</code> and <code>/lib/firmware/audio_para</code> are deployed (measured ineffective; harmless to keep)</li>
+<li>After the reboot the kcontrols have returned to their default values (the previously configured digital-fm &#x2F; speaker combination has been cleared)</li>
+<li>New tools: <code>/root/fm_cap_scan</code> (capture matrix scan), <code>/root/fm_play_probe</code> (playback matrix, non-blocking),<br><code>/root/fm_hold</code> (keeps PCM running)</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#DMA-support-status-feasibility-survey-of-porting-from-Android"><span class="toc-number">1.</span> <span class="toc-text">DMA support status &amp; feasibility survey of porting from Android</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-First-correct-a-premise-Alpine-runs-the-factory-Android-kernel"><span class="toc-number">1.1.</span> <span class="toc-text">1. First correct a premise: Alpine runs the factory Android kernel</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-DMA-support-status-both-hardware-and-driver-are-present"><span class="toc-number">1.2.</span> <span class="toc-text">2. DMA support status: both hardware and driver are present</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-What-was-ported-from-Android-and-the-results"><span class="toc-number">1.3.</span> <span class="toc-text">3. What was ported from Android, and the results</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Blockage-localization-the-most-important-discovery-this-round"><span class="toc-number">1.4.</span> <span class="toc-text">4. Blockage localization (the most important discovery this round)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-The-codec%E2%80%99s-digital-registers-read-back-as-all-0"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 The codec’s digital registers read back as all 0</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-All-12-audio-power-domains-are-unused"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 All 12 audio power domains are unused</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Complete-causal-chain"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 Complete causal chain</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Actions-already-tried-do-not-repeat-them"><span class="toc-number">1.5.</span> <span class="toc-text">5. Actions already tried; do not repeat them</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-What-can-still-be-done"><span class="toc-number">1.6.</span> <span class="toc-text">6. What can still be done</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-On-site-state-after-the-survey"><span class="toc-number">1.7.</span> <span class="toc-text">7. On-site state (after the survey)</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&text=DMA support and feasibility survey of porting from Android"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&title=DMA support and feasibility survey of porting from Android"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&is_video=false&description=DMA support and feasibility survey of porting from Android"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=DMA support and feasibility survey of porting from Android&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&title=DMA support and feasibility survey of porting from Android"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&title=DMA support and feasibility survey of porting from Android"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&title=DMA support and feasibility survey of porting from Android"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&title=DMA support and feasibility survey of porting from Android"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-01-dma-md/&name=DMA support and feasibility survey of porting from Android&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

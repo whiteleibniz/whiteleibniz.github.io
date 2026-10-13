@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="展訊 SC9832A 藍牙啟動流程 —— 安卓 vs Alpine（本設備）對比 硬件：展訊 Marlin combo WCN 芯片（WiFi + 藍牙同芯片）本設備：保留安卓 6.0 內核（3.10.65）+ switchroot 到 Alpine Linux目的：說清藍牙從開機到可用的完整流程，對比安卓原生與當前 Alpine 方案的原理差異   1. 芯片物理架構（兩種系統共用）123456">
+<meta property="og:type" content="article">
+<meta property="og:title" content="藍牙啟動流程_安卓vsAlpine對比">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="展訊 SC9832A 藍牙啟動流程 —— 安卓 vs Alpine（本設備）對比 硬件：展訊 Marlin combo WCN 芯片（WiFi + 藍牙同芯片）本設備：保留安卓 6.0 內核（3.10.65）+ switchroot 到 Alpine Linux目的：說清藍牙從開機到可用的完整流程，對比安卓原生與當前 Alpine 方案的原理差異   1. 芯片物理架構（兩種系統共用）123456">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-13T07:27:33.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:45.336Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="蓝牙">
+<meta property="article:tag" content="WCN">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>藍牙啟動流程_安卓vsAlpine對比</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/13/wifi-05-wifi-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/13/bt-04-ai-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&text=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&title=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&is_video=false&description=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=藍牙啟動流程_安卓vsAlpine對比&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&title=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&title=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&title=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&title=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&name=藍牙啟動流程_安卓vsAlpine對比&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%A8%8A-SC9832A-%E8%97%8D%E7%89%99%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B-%E2%80%94%E2%80%94-%E5%AE%89%E5%8D%93-vs-Alpine%EF%BC%88%E6%9C%AC%E8%A8%AD%E5%82%99%EF%BC%89%E5%B0%8D%E6%AF%94"><span class="toc-number">1.</span> <span class="toc-text">展訊 SC9832A 藍牙啟動流程 —— 安卓 vs Alpine（本設備）對比</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%8A%AF%E7%89%87%E7%89%A9%E7%90%86%E6%9E%B6%E6%A7%8B%EF%BC%88%E5%85%A9%E7%A8%AE%E7%B3%BB%E7%B5%B1%E5%85%B1%E7%94%A8%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1. 芯片物理架構（兩種系統共用）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AE%89%E5%8D%93-6-0-%E5%8E%9F%E7%94%9F%E8%97%8D%E7%89%99%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">2. 安卓 6.0 原生藍牙啟動流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E5%95%9F%E5%8B%95%E9%8F%88"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 啟動鏈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E5%AE%89%E5%8D%93%E9%97%9C%E9%8D%B5%E9%BB%9E"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 安卓關鍵點</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Alpine%EF%BC%88%E6%9C%AC%E8%A8%AD%E5%82%99%EF%BC%89%E8%97%8D%E7%89%99%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.</span> <span class="toc-text">3. Alpine（本設備）藍牙啟動流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E5%95%9F%E5%8B%95%E9%8F%88%EF%BC%88%E7%95%B6%E5%89%8D%E5%B7%B2%E5%9B%BA%E5%8C%96%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 啟動鏈（當前已固化）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Alpine-%E9%97%9C%E9%8D%B5%E9%BB%9E"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Alpine 關鍵點</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%80%90%E7%92%B0%E7%AF%80%E5%B0%8D%E6%AF%94%E8%A1%A8"><span class="toc-number">1.4.</span> <span class="toc-text">4. 逐環節對比表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%8E%9F%E7%90%86%E8%A6%81%E9%BB%9E%EF%BC%88%E7%82%BA%E4%BB%80%E9%BA%BC%E8%83%BD%E9%80%9A%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 原理要點（為什麼能通）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B8%BD%E7%B5%90"><span class="toc-number">1.6.</span> <span class="toc-text">6. 一句話總結</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BA%95%E5%B1%A4%E7%A1%AC%E4%BB%B6%E9%8F%88%E8%B7%AF%E5%AE%8C%E5%85%A8%E4%B8%80%E8%87%B4%EF%BC%8C%E5%B7%AE%E7%95%B0%E5%8F%AA%E5%9C%A8%E2%80%9D%E7%94%B1%E8%AA%B0%E4%BE%86%E5%9F%B7%E8%A1%8C%E2%80%9D%EF%BC%9A%E5%AE%89%E5%8D%93%E9%9D%A0-init-%E5%AE%8C%E6%95%B4%E5%8D%94%E8%AD%B0%E6%A3%A7%EF%BC%8C%E6%9C%AC%E8%A8%AD%E5%82%99%E9%9D%A0%E9%96%8B%E6%A9%9F%E8%85%B3%E6%9C%AC-%E8%87%AA%E5%AF%AB%E7%94%A8%E6%88%B6%E6%85%8B%E5%AE%88%E8%AD%B7%E9%80%B2%E7%A8%8B%EF%BC%8C%E7%94%A8%E6%9C%80%E5%B0%8F%E5%AF%A6%E7%8F%BE%E6%8F%9B%E6%8E%89%E5%AE%89%E5%8D%93%E9%82%A3%E4%B8%80%E6%95%B4%E5%A5%97%E4%BE%9D%E8%B3%B4%E3%80%82"><span class="toc-number">1.7.</span> <span class="toc-text">底層硬件鏈路完全一致，差異只在”由誰來執行”：安卓靠 init + 完整協議棧，本設備靠開機腳本 + 自寫用戶態守護進程，用最小實現換掉安卓那一整套依賴。</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        藍牙啟動流程_安卓vsAlpine對比
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-13T07:27:33.000Z" itemprop="datePublished">2026-09-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/WCN/" rel="tag">WCN</a>, <a class="tag-link-link" href="/tags/%E8%93%9D%E7%89%99/" rel="tag">蓝牙</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="展訊-SC9832A-藍牙啟動流程-——-安卓-vs-Alpine（本設備）對比"><a href="#展訊-SC9832A-藍牙啟動流程-——-安卓-vs-Alpine（本設備）對比" class="headerlink" title="展訊 SC9832A 藍牙啟動流程 —— 安卓 vs Alpine（本設備）對比"></a>展訊 SC9832A 藍牙啟動流程 —— 安卓 vs Alpine（本設備）對比</h1><blockquote>
+<p>硬件：展訊 Marlin combo WCN 芯片（WiFi + 藍牙同芯片）<br>本設備：保留安卓 6.0 內核（3.10.65）+ switchroot 到 Alpine Linux<br>目的：說清藍牙從開機到可用的完整流程，對比安卓原生與當前 Alpine 方案的原理差異</p>
+</blockquote>
+<hr>
+<h2 id="1-芯片物理架構（兩種系統共用）"><a href="#1-芯片物理架構（兩種系統共用）" class="headerlink" title="1. 芯片物理架構（兩種系統共用）"></a>1. 芯片物理架構（兩種系統共用）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">            ┌─────────────────────────────┐</span><br><span class="line">            │      Marlin combo WCN       │</span><br><span class="line">            │  ┌──────────┐  ┌──────────┐ │</span><br><span class="line">            │  │ WiFi     │  │ Bluetooth│ │</span><br><span class="line">            │  │ (wlan0)  │  │ (HCI)    │ │</span><br><span class="line">            │  └──────────┘  └──────────┘ │</span><br><span class="line">            └──────┬──────────────┬───────┘</span><br><span class="line">                   │ SDIO         │ UART</span><br><span class="line">                   │              │ ttyS0 (3M + CRTSCTS)</span><br><span class="line">┌──────────────────┴──┐      ┌────┴─────────────┐</span><br><span class="line">│ mmc2:8800:1 (0x2331)│      │ /proc/bluetooth/ │</span><br><span class="line">│                     │      │ sleep/btwrite    │  ← 喚醒節點</span><br><span class="line">└─────────────────────┘      └──────────────────┘</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>SDIO</strong>：數據通道（WiFi 數據、藍牙固件大塊下載都走這裡）</li>
+<li><strong>UART ttyS0</strong>：藍牙 HCI 控制通道（3M 波特率 + 硬件流控 CRTSCTS，H4 協議）</li>
+<li><strong>btwrite 節點</strong>：<code>/proc/bluetooth/sleep/btwrite</code> —— 寫 1 喚醒藍牙引擎（省電模式管理）</li>
+</ul>
+<hr>
+<h2 id="2-安卓-6-0-原生藍牙啟動流程"><a href="#2-安卓-6-0-原生藍牙啟動流程" class="headerlink" title="2. 安卓 6.0 原生藍牙啟動流程"></a>2. 安卓 6.0 原生藍牙啟動流程</h2><p>安卓側關鍵信息來自原機 <code>init.board.rc</code> &#x2F; <code>init.rc</code> &#x2F; <code>ueventd.rc</code>：</p>
+<h3 id="2-1-啟動鏈"><a href="#2-1-啟動鏈" class="headerlink" title="2.1 啟動鏈"></a>2.1 啟動鏈</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">開機</span><br><span class="line"> └─ init 執行 init.board.rc</span><br><span class="line">     ├─ chmod 660 /proc/bluetooth/sleep/btwrite    ← 喚醒節點權限</span><br><span class="line">     ├─ chmod 660 /sys/devices/70000000.uart/uart_conf ← UART 配置節點</span><br><span class="line">     ├─ chown bluetooth system ...（屬主）</span><br><span class="line">     ├─ service download  /system/bin/download     ← 固件下載（class core, oneshot）</span><br><span class="line">     │     user system / group system shell wifi bluetooth</span><br><span class="line">     ├─ service btld /system/bin/btld -lpm 0 -hb 3000000  ← 藍牙低功耗管理（3M 波特率）</span><br><span class="line">     │     user root / group bluetooth net_bt_admin</span><br><span class="line">     ├─ service bt_rm /system/bin/bt_rm             ← 藍牙射頻管理</span><br><span class="line">     ├─ #service hciattach /system/bin/hciattach -n /dev/sttybt0 sprd_shark（被註釋掉）</span><br><span class="line">     └─ Bluedroid 協議棧（bluetooth.default.so + libbt-vendor）</span><br><span class="line">           ├─ libbt-vendor: btwrite 喚醒（H709 日誌可見每 30s 週期寫 1→1.5s→寫 2）</span><br><span class="line">           ├─ libbt-vendor: 讀 uart_conf、發 pskey（BT_PSKEY_CONFIG_INFO_T）</span><br><span class="line">           ├─ 固件回 SPRD3 身份幀 → HCI 標準命令就緒</span><br><span class="line">           └─ BluetoothCtrl 管理（掃描/配對/連接）</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2-安卓關鍵點"><a href="#2-2-安卓關鍵點" class="headerlink" title="2.2 安卓關鍵點"></a>2.2 安卓關鍵點</h3><table>
+<thead>
+<tr>
+<th>環節</th>
+<th>安卓做法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>固件下載</td>
+<td><code>download</code> 開機 oneshot 執行，讀 <code>connectivity_configure.ini</code>（含藍牙 pskey [SETCTION 6]）+ calibration，SDIO 大塊寫入</td>
+</tr>
+<tr>
+<td>上電控制</td>
+<td><code>wcnd</code>（BT-OPEN 命令觸發藍牙子系統上電）</td>
+</tr>
+<tr>
+<td>喚醒管理</td>
+<td>libbt-vendor 週期性 <code>btwrite</code> 喚醒（H709 日誌：每 30s 寫 1 → 1.5s → 寫 2）</td>
+</tr>
+<tr>
+<td>HCI 通道</td>
+<td>傳統上 hciattach 走 &#x2F;dev&#x2F;sttybt0 sprd_shark；本機實際靠 libbt-vendor 直接管理 UART（uart_conf 控制波特率）</td>
+</tr>
+<tr>
+<td>協議棧</td>
+<td>Bluedroid（bluetooth.default.so + libbt-vendor.so）</td>
+</tr>
+<tr>
+<td>用戶工具</td>
+<td>BluetoothCtrl（展訊定製藍牙控制）</td>
+</tr>
+<tr>
+<td>節點&#x2F;權限</td>
+<td>init.board.rc 開機統一 chmod&#x2F;chown</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="3-Alpine（本設備）藍牙啟動流程"><a href="#3-Alpine（本設備）藍牙啟動流程" class="headerlink" title="3. Alpine（本設備）藍牙啟動流程"></a>3. Alpine（本設備）藍牙啟動流程</h2><h3 id="3-1-啟動鏈（當前已固化）"><a href="#3-1-啟動鏈（當前已固化）" class="headerlink" title="3.1 啟動鏈（當前已固化）"></a>3.1 啟動鏈（當前已固化）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">開機</span><br><span class="line"> ├─ /etc/local.d/wifi.start        （local 腳本）</span><br><span class="line"> │     ├─ setsid /tmp/logdw                       ← 固件下載日誌通道</span><br><span class="line"> │     ├─ setsid chroot /tmp/aand /bin/download -i wlan0   ← 固件下載（常駐）</span><br><span class="line"> │     ├─ SDIO 枚舉驗證 mmc2:8800:1 = 0x2331</span><br><span class="line"> │     ├─ insmod marlin_fm.ko → sprdwl.ko         ← WiFi 驅動</span><br><span class="line"> │     └─ ip link set wlan0 up</span><br><span class="line"> ├─ /etc/local.d/lvgl_demo.start</span><br><span class="line"> │     └─ setsid /usr/local/bin/lvgl_demo         ← LVGL 桌面（含藍牙設置頁）</span><br><span class="line"> ├─ /etc/init.d/bt_daemon          （openrc）</span><br><span class="line"> │     ├─ chmod 666 /tmp/aand/proc/mdbg/*         ← 修復 BT-OPEN 權限（重啟後必做）</span><br><span class="line"> │     ├─ setsid chroot /tmp/aand /bin/wcnd       ← 上電守護</span><br><span class="line"> │     ├─ setsid /tmp/bt_once 900                 ← BT-OPEN（期望 WCNBTWIFI-CMD OK）</span><br><span class="line"> │     ├─ setsid /tmp/bt_wake.sh                  ← btwrite 週期喚醒</span><br><span class="line"> │     └─ setsid /usr/local/bin/bt_user_daemon    ← 用戶態 HCI 守護（unix socket 服務）</span><br><span class="line"> └─ LVGL 藍牙設置頁</span><br><span class="line">       ├─ 開關 → socket `on`/`off`</span><br><span class="line">       ├─ 搜索 → socket `scan N`</span><br><span class="line">       └─ 設備列表 ← socket 返回 bd_addr class rssi</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-Alpine-關鍵點"><a href="#3-2-Alpine-關鍵點" class="headerlink" title="3.2 Alpine 關鍵點"></a>3.2 Alpine 關鍵點</h3><table>
+<thead>
+<tr>
+<th>環節</th>
+<th>Alpine 做法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>固件下載</td>
+<td><strong>複用安卓原版 download</strong>，在 chroot <code>/tmp/aand</code> 內運行（依賴安卓庫&#x2F;節點&#x2F;分區軟鏈），參數 <code>-i wlan0</code>（WiFi 模式，藍牙固件隨 combo 一起下載）</td>
+</tr>
+<tr>
+<td>上電控制</td>
+<td>複用安卓原版 wcnd（chroot 內）+ bt_once 觸發 BT-OPEN</td>
+</tr>
+<tr>
+<td>喚醒管理</td>
+<td>自寫 <code>/tmp/bt_wake.sh</code> 每 1.5~2s 寫 btwrite&#x3D;1（比安卓 30s 更勤，保證 HCI 穩定響應）</td>
+</tr>
+<tr>
+<td>HCI 通道</td>
+<td><strong>自寫用戶態 daemon</strong> 直接打開 &#x2F;dev&#x2F;ttyS0（3M+CRTSCTS，H4），不依賴內核 hci_uart 驅動</td>
+</tr>
+<tr>
+<td>協議棧</td>
+<td>無 Bluedroid；daemon 實現最小 HCI 命令集（Reset&#x2F;Version&#x2F;BD_ADDR&#x2F;Features&#x2F;Scan）</td>
+</tr>
+<tr>
+<td>用戶工具</td>
+<td>LVGL 藍牙設置頁（unix socket 與 daemon 通信）</td>
+</tr>
+<tr>
+<td>節點&#x2F;權限</td>
+<td>開機腳本 chmod 666 mdbg + bt_daemon openrc 管理</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-逐環節對比表"><a href="#4-逐環節對比表" class="headerlink" title="4. 逐環節對比表"></a>4. 逐環節對比表</h2><table>
+<thead>
+<tr>
+<th>對比項</th>
+<th>安卓 6.0 原生</th>
+<th>Alpine（本設備）</th>
+<th>差異原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>固件下載</td>
+<td>download（oneshot，system 用戶）</td>
+<td>download（chroot，常駐）</td>
+<td>Alpine 無安卓 init，需保持進程防芯片掉固件</td>
+</tr>
+<tr>
+<td>固件來源</td>
+<td>分區 wcnfdl&#x2F;wcnmodem</td>
+<td>同分區（by-name 軟鏈到 chroot）</td>
+<td>內核相同，分區佈局不變</td>
+</tr>
+<tr>
+<td>pskey 下發</td>
+<td>libbt-vendor 初始化時發 VSC</td>
+<td>download 下載時經 connectivity_configure.ini 下發</td>
+<td>固件已在下載階段拿到 pskey（實測 feature_set 生效）</td>
+</tr>
+<tr>
+<td>BT 上電</td>
+<td>wcnd + BT-OPEN（init 觸發）</td>
+<td>wcnd（chroot）+ bt_once</td>
+<td>複用原版，僅執行者不同</td>
+</tr>
+<tr>
+<td>喚醒</td>
+<td>libbt-vendor 每 30s btwrite</td>
+<td>bt_wake.sh 每 1.5~2s btwrite</td>
+<td>用戶態無 libbt-vendor，自寫更勤的喚醒保證不丟響應</td>
+</tr>
+<tr>
+<td>HCI 通道</td>
+<td>libbt-vendor 直接管 UART</td>
+<td>自寫 daemon 直接讀 &#x2F;dev&#x2F;ttyS0</td>
+<td>同樣繞過內核協議棧，直接操作串口</td>
+</tr>
+<tr>
+<td>內核驅動</td>
+<td>無 hci_uart（vendor 直管）</td>
+<td>嘗試過 hci_uart.ko → 放棄（TX&#x3D;0）</td>
+<td>3.10 內核 tty_struct 偏移與新版驅動不匹配</td>
+</tr>
+<tr>
+<td>協議棧</td>
+<td>Bluedroid（完整 stack）</td>
+<td>無協議棧，daemon 僅 HCI 層</td>
+<td>Alpine 無 Bluedroid；LVGL 應用層直接消費 HCI 掃描結果</td>
+</tr>
+<tr>
+<td>掃描實現</td>
+<td>Bluedroid Inquiry</td>
+<td>daemon Inquiry + Write Scan Enable 前置</td>
+<td>展訊固件特性：不先開掃描使能就不回 Inquiry Result</td>
+</tr>
+<tr>
+<td>管理工具</td>
+<td>BluetoothCtrl</td>
+<td>LVGL 藍牙設置頁（socket）</td>
+<td>面向桌面應用的定製 UI</td>
+</tr>
+<tr>
+<td>波特率</td>
+<td>115200 → 3M（uart_conf 切換）</td>
+<td>直接 3M 打開 ttyS0</td>
+<td>固件 BT 初始化後切到 3M，daemon 固定用 3M</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-原理要點（為什麼能通）"><a href="#5-原理要點（為什麼能通）" class="headerlink" title="5. 原理要點（為什麼能通）"></a>5. 原理要點（為什麼能通）</h2><ol>
+<li><p><strong>同一顆 combo 芯片，固件是 WiFi+BT 一體的</strong> —— download 以 <code>-i wlan0</code> 下載時，藍牙固件部分已隨 combo 鏡像進入芯片，因此”WiFi 拉起後藍牙固件已就緒”，後續只需上電 + 喚醒 + HCI 通信，不需要單獨再燒藍牙固件。</p>
+</li>
+<li><p><strong>SPRD3 身份幀是引擎啟動信號</strong> —— 喚醒後固件回 <code>55 7e 00 81 00 06 53 50 52 44 33 00 57 0a 7e</code>（”SPRD3” &#x3D; 展訊芯片標識），說明藍牙引擎在跑、HCI 通道活著；此後才能發標準 HCI 命令。</p>
+</li>
+<li><p><strong>btwrite 是省電開關</strong> —— 藍牙引擎空閒進入低功耗，必須週期性寫 1 喚醒；缺這一步，HCI 命令發出去沒有響應（這是早期所有測試失敗的共同根因之一）。</p>
+</li>
+<li><p><strong>Write Scan Enable 是掃描前提</strong> —— 展訊固件要求先發 <code>0x0c1a (0x03)</code> 開啟掃描使能，Inquiry 才會返回 Inquiry Result 事件；裸發 Inquiry 會被接受（CMD_STATUS 0x00）但永遠等不到結果。</p>
+</li>
+<li><p><strong>用戶態方案 vs 內核驅動</strong> —— 該設備內核為安卓定製 3.10.65，hci_uart.ko 依賴的 tty_struct 內部佈局與主線不一致，硬編碼偏移導致 TX&#x3D;0、up 超時。直接用戶態讀寫 &#x2F;dev&#x2F;ttyS0 繞開內核協議棧，反而最可靠（安卓 vendor 本來就是這麼幹的）。</p>
+</li>
+</ol>
+<hr>
+<h2 id="6-一句話總結"><a href="#6-一句話總結" class="headerlink" title="6. 一句話總結"></a>6. 一句話總結</h2><blockquote>
+<p><strong>安卓</strong>：init → download → wcnd&#x2F;BT-OPEN → libbt-vendor（btwrite 喚醒 + pskey + HCI）→ Bluedroid → BluetoothCtrl<br><strong>Alpine（本設備）</strong>：開機腳本 → chroot download（WiFi 模式，combo 固件一起下）→ wcnd&#x2F;bt_once → bt_wake.sh（btwrite）→ 自寫用戶態 daemon（H4 HCI）→ LVGL 藍牙設置頁</p>
+</blockquote>
+<h2 id="底層硬件鏈路完全一致，差異只在”由誰來執行”：安卓靠-init-完整協議棧，本設備靠開機腳本-自寫用戶態守護進程，用最小實現換掉安卓那一整套依賴。"><a href="#底層硬件鏈路完全一致，差異只在”由誰來執行”：安卓靠-init-完整協議棧，本設備靠開機腳本-自寫用戶態守護進程，用最小實現換掉安卓那一整套依賴。" class="headerlink" title="底層硬件鏈路完全一致，差異只在”由誰來執行”：安卓靠 init + 完整協議棧，本設備靠開機腳本 + 自寫用戶態守護進程，用最小實現換掉安卓那一整套依賴。"></a>底層硬件鏈路完全一致，差異只在”由誰來執行”：安卓靠 init + 完整協議棧，本設備靠開機腳本 + 自寫用戶態守護進程，用最小實現換掉安卓那一整套依賴。</h2><blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%A8%8A-SC9832A-%E8%97%8D%E7%89%99%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B-%E2%80%94%E2%80%94-%E5%AE%89%E5%8D%93-vs-Alpine%EF%BC%88%E6%9C%AC%E8%A8%AD%E5%82%99%EF%BC%89%E5%B0%8D%E6%AF%94"><span class="toc-number">1.</span> <span class="toc-text">展訊 SC9832A 藍牙啟動流程 —— 安卓 vs Alpine（本設備）對比</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%8A%AF%E7%89%87%E7%89%A9%E7%90%86%E6%9E%B6%E6%A7%8B%EF%BC%88%E5%85%A9%E7%A8%AE%E7%B3%BB%E7%B5%B1%E5%85%B1%E7%94%A8%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1. 芯片物理架構（兩種系統共用）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AE%89%E5%8D%93-6-0-%E5%8E%9F%E7%94%9F%E8%97%8D%E7%89%99%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">2. 安卓 6.0 原生藍牙啟動流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E5%95%9F%E5%8B%95%E9%8F%88"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 啟動鏈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E5%AE%89%E5%8D%93%E9%97%9C%E9%8D%B5%E9%BB%9E"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 安卓關鍵點</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Alpine%EF%BC%88%E6%9C%AC%E8%A8%AD%E5%82%99%EF%BC%89%E8%97%8D%E7%89%99%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.</span> <span class="toc-text">3. Alpine（本設備）藍牙啟動流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E5%95%9F%E5%8B%95%E9%8F%88%EF%BC%88%E7%95%B6%E5%89%8D%E5%B7%B2%E5%9B%BA%E5%8C%96%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 啟動鏈（當前已固化）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Alpine-%E9%97%9C%E9%8D%B5%E9%BB%9E"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Alpine 關鍵點</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%80%90%E7%92%B0%E7%AF%80%E5%B0%8D%E6%AF%94%E8%A1%A8"><span class="toc-number">1.4.</span> <span class="toc-text">4. 逐環節對比表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%8E%9F%E7%90%86%E8%A6%81%E9%BB%9E%EF%BC%88%E7%82%BA%E4%BB%80%E9%BA%BC%E8%83%BD%E9%80%9A%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 原理要點（為什麼能通）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B8%BD%E7%B5%90"><span class="toc-number">1.6.</span> <span class="toc-text">6. 一句話總結</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BA%95%E5%B1%A4%E7%A1%AC%E4%BB%B6%E9%8F%88%E8%B7%AF%E5%AE%8C%E5%85%A8%E4%B8%80%E8%87%B4%EF%BC%8C%E5%B7%AE%E7%95%B0%E5%8F%AA%E5%9C%A8%E2%80%9D%E7%94%B1%E8%AA%B0%E4%BE%86%E5%9F%B7%E8%A1%8C%E2%80%9D%EF%BC%9A%E5%AE%89%E5%8D%93%E9%9D%A0-init-%E5%AE%8C%E6%95%B4%E5%8D%94%E8%AD%B0%E6%A3%A7%EF%BC%8C%E6%9C%AC%E8%A8%AD%E5%82%99%E9%9D%A0%E9%96%8B%E6%A9%9F%E8%85%B3%E6%9C%AC-%E8%87%AA%E5%AF%AB%E7%94%A8%E6%88%B6%E6%85%8B%E5%AE%88%E8%AD%B7%E9%80%B2%E7%A8%8B%EF%BC%8C%E7%94%A8%E6%9C%80%E5%B0%8F%E5%AF%A6%E7%8F%BE%E6%8F%9B%E6%8E%89%E5%AE%89%E5%8D%93%E9%82%A3%E4%B8%80%E6%95%B4%E5%A5%97%E4%BE%9D%E8%B3%B4%E3%80%82"><span class="toc-number">1.7.</span> <span class="toc-text">底層硬件鏈路完全一致，差異只在”由誰來執行”：安卓靠 init + 完整協議棧，本設備靠開機腳本 + 自寫用戶態守護進程，用最小實現換掉安卓那一整套依賴。</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&text=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&title=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&is_video=false&description=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=藍牙啟動流程_安卓vsAlpine對比&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&title=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&title=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&title=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&title=藍牙啟動流程_安卓vsAlpine對比"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/bt-03-vsalpine-md/&name=藍牙啟動流程_安卓vsAlpine對比&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

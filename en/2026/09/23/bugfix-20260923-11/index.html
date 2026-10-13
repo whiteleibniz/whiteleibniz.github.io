@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_11 — GBA exit hangs on a black screen, and FC is implicated (complete front-end separation)   Item Content    Discovery time 2026-09-23   Fix time 2026-09-23   Module extern&#x2F;miniretro&#x2F;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_11 — GBA exit hangs on a black screen, and FC is implicated (complete front-end separation)   Item Content    Discovery time 2026-09-23   Fix time 2026-09-23   Module extern&#x2F;miniretro&#x2F;">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.943Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/23/bugfix-20260923-10/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/23/bugfix-20260923-12/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&text=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&title=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&is_video=false&description=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&title=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&title=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&title=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&title=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&name=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-11-%E2%80%94-GBA-exit-hangs-on-a-black-screen-and-FC-is-implicated-complete-front-end-separation"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_11 — GBA exit hangs on a black screen, and FC is implicated (complete front-end separation)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Problem-symptoms"><span class="toc-number">1.1.</span> <span class="toc-text">1. Problem symptoms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Scope-of-impact"><span class="toc-number">1.2.</span> <span class="toc-text">2. Scope of impact</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Root-cause-analysis"><span class="toc-number">1.3.</span> <span class="toc-text">3. Root cause analysis</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E2%98%85-The-waiting-loop-sets-a-cap-of-%E2%80%9Crunning-for-N-seconds-counts-as-exited%E2%80%9D-the-direct-cause-of-the-black-screen-hang"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 ★ The waiting loop sets a cap of “running for N seconds counts as exited” (the direct cause of the black-screen hang)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-UI-recovery-is-tied-to-%E2%80%9Cthe-child-process-disappearing%E2%80%9D-prolonging-the-black-screen"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 UI recovery is tied to “the child process disappearing” (prolonging the black screen)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-Detail-issues"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 Detail issues</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-Structural-root-cause-a-shared-front-end"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4 Structural root cause: a shared front-end</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Fix"><span class="toc-number">1.4.</span> <span class="toc-text">4. Fix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E2%98%85-Complete-front-end-separation-the-user%E2%80%99s-scheme"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 ★ Complete front-end separation (the user’s scheme)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Four-fixes-to-the-exit-logic-only-on-the-GBA-page"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 Four fixes to the exit logic (only on the GBA page)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification-method-and-results"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification method and results</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Separation-result-verification-device-side"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 Separation result verification (device side)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Each-front-end-runs-on-the-real-machine-ssh-tools-split-verify-py"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 Each front-end runs on the real machine (ssh_tools&#x2F;split_verify.py)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-One-correction-to-the-deployment-script"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 One correction to the deployment script</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Regression-risks"><span class="toc-number">1.6.</span> <span class="toc-text">6. Regression risks</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Related-files"><span class="toc-number">1.7.</span> <span class="toc-text">7. Related files</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-11-—-GBA-exit-hangs-on-a-black-screen-and-FC-is-implicated-complete-front-end-separation"><a href="#bugfix-20260923-11-—-GBA-exit-hangs-on-a-black-screen-and-FC-is-implicated-complete-front-end-separation" class="headerlink" title="bugfix_20260923_11 — GBA exit hangs on a black screen, and FC is implicated (complete front-end separation)"></a>bugfix_20260923_11 — GBA exit hangs on a black screen, and FC is implicated (complete front-end separation)</h1><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Discovery time</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>Fix time</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>Module</td>
+<td><code>extern/miniretro/*</code> (new separated artifacts), <code>lv_pages/gba_game_page.c</code></td>
+</tr>
+<tr>
+<td>Versions involved</td>
+<td>Taking over the site after bugfix_20260923_10</td>
+</tr>
+<tr>
+<td>Severity level</td>
+<td>High (GBA exit is unusable and it drags down the originally normal FC as well)</td>
+</tr>
+</tbody></table>
+<h2 id="1-Problem-symptoms"><a href="#1-Problem-symptoms" class="headerlink" title="1. Problem symptoms"></a>1. Problem symptoms</h2><p>The user reported two consecutive rounds:</p>
+<ol>
+<li>“The exit logic still has problems, <strong>it still hangs on a black screen</strong>“;</li>
+<li>“<strong>Separate the GBA and FC miniretro</strong>; FC’s original version always worked well, but it was polluted by the GBA changes, which made FC’s miniretro not work well either, making FC unplayable, with inexplicable exits”.</li>
+</ol>
+<p>Item 2 is the key judgment: <strong>the two game pages share a single front-end binary, so changing GBA is bound to affect FC</strong>. The user’s demand (physical isolation) is more correct than “keep patching the shared component”.</p>
+<h2 id="2-Scope-of-impact"><a href="#2-Scope-of-impact" class="headerlink" title="2. Scope of impact"></a>2. Scope of impact</h2><ul>
+<li>GBA game page: black screen after exit, and the exit key stops working;</li>
+<li>FC game page: collaterally affected by the changes to the same <code>miniretro</code>, with abnormal exits;</li>
+<li>At the root-cause level: any design of “multiple pages sharing one executable front-end” is a breeding ground for this kind of cross-module pollution.</li>
+</ul>
+<h2 id="3-Root-cause-analysis"><a href="#3-Root-cause-analysis" class="headerlink" title="3. Root cause analysis"></a>3. Root cause analysis</h2><h3 id="3-1-★-The-waiting-loop-sets-a-cap-of-“running-for-N-seconds-counts-as-exited”-the-direct-cause-of-the-black-screen-hang"><a href="#3-1-★-The-waiting-loop-sets-a-cap-of-“running-for-N-seconds-counts-as-exited”-the-direct-cause-of-the-black-screen-hang" class="headerlink" title="3.1 ★ The waiting loop sets a cap of “running for N seconds counts as exited” (the direct cause of the black-screen hang)"></a>3.1 ★ The waiting loop sets a cap of “running for N seconds counts as exited” (the direct cause of the black-screen hang)</h3><p><code>gba_wait_thread</code> was originally written as “proceed once enough time has been waited”:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">600</span>; i++) &#123;           <span class="comment">/* 600 × 5ms = 3s（更早是 500ms + 5s 两段） */</span></span><br><span class="line">    ...等信号 / 等子进程退出...</span><br><span class="line">    usleep(<span class="number">5</span> * <span class="number">1000</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/* 循环结束后【无条件】恢复 UI */</span></span><br><span class="line">hardware_keys_set_grab(<span class="literal">true</span>);</span><br><span class="line">hardware_keys_set_interceptor(<span class="literal">NULL</span>, <span class="literal">NULL</span>);   <span class="comment">/* ← 摘掉按键拦截器 */</span></span><br><span class="line">app_runtime_set_lvgl_paused(<span class="literal">false</span>);          <span class="comment">/* ← LVGL 抢回 fb0 */</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>The game runs normally for a full 3 seconds</strong>, which satisfies the “loop finished” condition, so:</p>
+<ol>
+<li><code>hardware_keys_set_interceptor(NULL, NULL)</code> removes the key interceptor → <strong>the 买单 (pay-the-bill) key is no longer intercepted → the game cannot be exited</strong>;</li>
+<li><code>app_runtime_set_lvgl_paused(false)</code> lets LVGL resume drawing → <strong>the parent process grabs back fb0, overwriting the still-running game</strong>;</li>
+<li>The two combined &#x3D; what the user sees as 「<strong>hangs on a black screen</strong>」, and <strong>only a restart can recover</strong>.</li>
+</ol>
+<p><strong>This is precisely the watershed of “FC is fine, GBA has problems”</strong>: the FC page uses a <strong>blocking</strong> <code>while(waitpid(pid, &amp;status, 0) &lt; 0) &#123;...&#125;</code> (no cap), so it never misjudges.<br>The GBA page introduced the cap to “recover the UI faster”, which instead created the bug.</p>
+<h3 id="3-2-UI-recovery-is-tied-to-“the-child-process-disappearing”-prolonging-the-black-screen"><a href="#3-2-UI-recovery-is-tied-to-“the-child-process-disappearing”-prolonging-the-black-screen" class="headerlink" title="3.2 UI recovery is tied to “the child process disappearing” (prolonging the black screen)"></a>3.2 UI recovery is tied to “the child process disappearing” (prolonging the black screen)</h3><p>This machine’s kernel takes several hundred milliseconds to reclaim <code>/dev/input/eventX</code>; measured at <strong>~455ms from signal to reaping complete</strong>,<br>while the picture is handed back in ~40ms. Waiting for the reaping before recovering the UI wastes 400ms — during which the screen is entirely black.</p>
+<h3 id="3-3-Detail-issues"><a href="#3-3-Detail-issues" class="headerlink" title="3.3 Detail issues"></a>3.3 Detail issues</h3><ul>
+<li><code>gba_timer_cb</code> only calls <code>lv_obj_invalidate(lv_screen_active())</code> once, which may be out of sync with LVGL’s recovery timing and get swallowed (the flag is consumed but the picture is not drawn back);</li>
+<li><code>fb_restore()</code> calls <code>FBIOPAN_DISPLAY</code> <strong>without checking the result</strong>: if <code>yoffset</code> does not really return to zero, LVGL draws on page 0 while the screen still shows page 1 → <strong>a permanent black screen, completely silent</strong>, and impossible to locate.</li>
+</ul>
+<h3 id="3-4-Structural-root-cause-a-shared-front-end"><a href="#3-4-Structural-root-cause-a-shared-front-end" class="headerlink" title="3.4 Structural root cause: a shared front-end"></a>3.4 Structural root cause: a shared front-end</h3><p>FC and GBA share <code>extern/miniretro/miniretro</code>. All the changes added for GBA — <strong>double-buffered page flipping, pitch addressing, 240×160 admission, audio resampling, and exit signal handling</strong> — land on this single shared artifact. FC is thus repeatedly implicated — this is the inevitable result of “change A, break B”, not any single change being written poorly.</p>
+<h2 id="4-Fix"><a href="#4-Fix" class="headerlink" title="4. Fix"></a>4. Fix</h2><h3 id="4-1-★-Complete-front-end-separation-the-user’s-scheme"><a href="#4-1-★-Complete-front-end-separation-the-user’s-scheme" class="headerlink" title="4.1 ★ Complete front-end separation (the user’s scheme)"></a>4.1 ★ Complete front-end separation (the user’s scheme)</h3><table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>Owner</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>extern/miniretro/miniretro</code></td>
+<td><strong>FC only</strong></td>
+<td>Restored to the repository’s original version via <code>git checkout</code>, and <strong>never recompiled or touched by GBA changes from now on</strong></td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro_gba</code></td>
+<td><strong>GBA only</strong></td>
+<td>Contains double buffering &#x2F; pitch &#x2F; 240×160 &#x2F; audio fixes &#x2F; exit fixes</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro_gba.c</code></td>
+<td>GBA source</td>
+<td></td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro.c</code></td>
+<td>FC source</td>
+<td>Already restored to the original version along with the binary</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/build.sh</code></td>
+<td>—</td>
+<td><strong>Only compiles <code>miniretro_gba</code></strong>, and states at the top of the script “do not write the artifact as miniretro again”</td>
+</tr>
+</tbody></table>
+<p>The first-choice path of <code>gba_find_bin()</code> on the page side is changed to <code>miniretro_gba</code>, keeping <code>miniretro</code> as a fallback:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">char</span> *c[] = &#123;</span><br><span class="line">    GBA_EXTERN_DIR <span class="string">&quot;/miniretro_gba&quot;</span>,     <span class="comment">/* ★ GBA 专用, 与 FC 隔离 */</span></span><br><span class="line">    <span class="string">&quot;/usr/local/bin/miniretro_gba&quot;</span>,</span><br><span class="line">    GBA_EXTERN_DIR <span class="string">&quot;/miniretro&quot;</span>,          <span class="comment">/* 兜底: 尚未分离时仍可用 */</span></span><br><span class="line">    <span class="string">&quot;/usr/local/bin/miniretro&quot;</span>,</span><br><span class="line">    <span class="literal">NULL</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-Four-fixes-to-the-exit-logic-only-on-the-GBA-page"><a href="#4-2-Four-fixes-to-the-exit-logic-only-on-the-GBA-page" class="headerlink" title="4.2 Four fixes to the exit logic (only on the GBA page)"></a>4.2 Four fixes to the exit logic (only on the GBA page)</h3><ol>
+<li><p><strong>Remove the time cap from the waiting loop</strong>, recognizing only two real termination conditions:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span>(;;) &#123;</span><br><span class="line">    <span class="keyword">if</span>(s_gba.exiting) <span class="keyword">break</span>;                        <span class="comment">/* 页面发起退出: 画面已交还 */</span></span><br><span class="line">    <span class="type">pid_t</span> r = waitpid(pid, &amp;status, WNOHANG);</span><br><span class="line">    <span class="keyword">if</span>(r == pid || (r &lt; <span class="number">0</span> &amp;&amp; errno == ECHILD)) &#123; reaped = <span class="literal">true</span>; <span class="keyword">break</span>; &#125;   <span class="comment">/* 自然退出 */</span></span><br><span class="line">    usleep(<span class="number">5</span> * <span class="number">1000</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Add the <code>exiting</code> flag: recover the UI as soon as the picture is handed back, without waiting for reaping</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* gba_exit_to_list: */</span></span><br><span class="line">kill(pid, SIGTERM);</span><br><span class="line">usleep(<span class="number">120</span> * <span class="number">1000</span>);                     <span class="comment">/* 等它翻回第 0 页 + 清屏(实测 ~40ms 完成) */</span></span><br><span class="line"><span class="keyword">if</span>(kill(pid, <span class="number">0</span>) == <span class="number">0</span>) kill(pid, SIGKILL);   <span class="comment">/* 不等内核慢慢收 fd */</span></span><br><span class="line">s_gba.exiting = <span class="literal">true</span>;                   <span class="comment">/* 立刻放行 UI; 收尸丢后台 */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* gba_wait_thread: 未收尸则交后台, 不阻塞画面 */</span></span><br><span class="line"><span class="keyword">if</span>(!reaped) &#123; pthread_create(..., gba_reap_bg, ...); &#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Refresh 3 frames in a row on recovery</strong>, not relying on a single invalidate:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">lv_obj_invalidate(lv_screen_active());</span><br><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) lv_refr_now(<span class="literal">NULL</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong><code>fb_restore()</code> verifies the page-flip result</strong>: only pan when <code>yoffset != 0</code>, and read back to confirm after panning, logging a warning if it does not return to zero (turning “a permanent black screen with no clues at all” into something locatable).</p>
+</li>
+</ol>
+<p>Also add a “still my own pid” check to the waiting thread, preventing a previous round’s thread from waking up and clearing the new round’s state.</p>
+<h2 id="5-Verification-method-and-results"><a href="#5-Verification-method-and-results" class="headerlink" title="5. Verification method and results"></a>5. Verification method and results</h2><h3 id="5-1-Separation-result-verification-device-side"><a href="#5-1-Separation-result-verification-device-side" class="headerlink" title="5.1 Separation result verification (device side)"></a>5.1 Separation result verification (device side)</h3><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>miniretro</code> working copy md5</td>
+<td><code>a95d9171d8d8b82a52c12ac84e68aaa2</code></td>
+</tr>
+<tr>
+<td><code>git show HEAD:...miniretro</code> md5</td>
+<td><code>a95d9171d8d8b82a52c12ac84e68aaa2</code> (<strong>exactly matching &#x3D; restored</strong>)</td>
+</tr>
+<tr>
+<td>Whether the HEAD version contains <code>RELEASE_SIGNAL</code> &#x2F; <code>on_quit_signal</code></td>
+<td>0 &#x2F; 0 (confirmed to be a pure FC version, with no GBA changes)</td>
+</tr>
+<tr>
+<td><code>miniretro_gba</code> md5</td>
+<td><code>2b958d4f8fcec85b6f2668985848887b</code> (different from the above &#x3D; truly separated)</td>
+</tr>
+<tr>
+<td>Size</td>
+<td><code>miniretro</code> 25648 B ／ <code>miniretro_gba</code> 35404 B</td>
+</tr>
+<tr>
+<td>Compilation</td>
+<td><code>make -j2</code> RC&#x3D;0, 0 errors</td>
+</tr>
+</tbody></table>
+<h3 id="5-2-Each-front-end-runs-on-the-real-machine-ssh-tools-split-verify-py"><a href="#5-2-Each-front-end-runs-on-the-real-machine-ssh-tools-split-verify-py" class="headerlink" title="5.2 Each front-end runs on the real machine (ssh_tools/split_verify.py)"></a>5.2 Each front-end runs on the real machine (<code>ssh_tools/split_verify.py</code>)</h3><table>
+<thead>
+<tr>
+<th></th>
+<th>Front-end</th>
+<th>Core</th>
+<th>Picture (non-black pixel ratio)</th>
+<th>Exit code</th>
+<th>Reaping time</th>
+<th>yoffset after exit</th>
+<th>Zombies</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>FC</td>
+<td><code>miniretro</code> (original)</td>
+<td>fceumm</td>
+<td>0.600 ✓</td>
+<td>-15 (killed directly by SIGTERM, the original behavior)</td>
+<td>549 ms</td>
+<td>0 ✓</td>
+<td>None</td>
+</tr>
+<tr>
+<td>GBA</td>
+<td><code>miniretro_gba</code></td>
+<td>mGBA</td>
+<td>0.380 ✓</td>
+<td>0 (graceful exit)</td>
+<td>575 ms</td>
+<td>0 ✓</td>
+<td>None</td>
+</tr>
+</tbody></table>
+<ul>
+<li>FC’s exit code -15 matches the expectation of “the original version has no signal handling”; its page side detects after 120ms that the process has disappeared and recovers the UI directly — this is precisely the behavior the user remembers as “FC used to work well”.</li>
+<li>On the GBA side, the <code>exiting</code> flag lets the UI recover in ~125ms, with reaping moved to the background; <code>yoffset</code> returning to zero confirms there is no black-screen risk.</li>
+<li>After recovery, <code>lvgl_demo</code> ×1 + <code>lvgl_watchdog</code> ×1, single instance, no leftovers.</li>
+</ul>
+<h3 id="5-3-One-correction-to-the-deployment-script"><a href="#5-3-One-correction-to-the-deployment-script" class="headerlink" title="5.3 One correction to the deployment script"></a>5.3 One correction to the deployment script</h3><p><code>gba_redeploy.py</code> uses <code>ps -o pid,args | grep &#39;&lt;name&gt;&#39;</code> to get the PID to kill,<br>but <strong>that command’s own command line contains this string</strong> → it matches the <code>sh -c</code> carrying the command → <strong>kills its own SSH connection</strong><br>(a <code>ConnectionResetError</code> was actually measured this time). It has been uniformly changed to <code>ps -o pid,comm</code> (the <code>comm</code> of the carrying shell is <code>sh</code>, so it is not hit by mistake); see <code>split_miniretro_gba.py</code> &#x2F; <code>split_verify.py</code>.</p>
+<h2 id="6-Regression-risks"><a href="#6-Regression-risks" class="headerlink" title="6. Regression risks"></a>6. Regression risks</h2><ul>
+<li><strong><code>miniretro</code> has been restored to the original version</strong>: any future change needed on the FC side must be done <strong>independently</strong>, and can no longer go through the path of “recompiling miniretro” (<code>build.sh</code> now only produces <code>miniretro_gba</code>). If FC really needs to be changed, first <code>git checkout</code> a copy under another name (such as <code>miniretro_fc</code>) before changing it, keeping the three from interfering with each other.</li>
+<li><strong>The GBA side no longer has a “time cap”</strong>: the waiting thread keeps looping during the game (once every 5ms, negligible overhead).<br>This is a deliberate choice — better to spin a few more times than to misjudge “already exited”.</li>
+<li>Both the <code>gba_reap_bg</code> &#x2F; <code>onDestroy</code> reaping paths may call <code>waitpid</code> on the same pid; both sides already handle <code>ECHILD</code>.</li>
+<li>This change did not touch the rendering or audio chain, so the color, sound quality, and frame rate should not change.</li>
+</ul>
+<h2 id="7-Related-files"><a href="#7-Related-files" class="headerlink" title="7. Related files"></a>7. Related files</h2><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>extern/miniretro/miniretro</code></td>
+<td>FC-only front-end, restored to the git original version (25648 B)</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro.c</code></td>
+<td>Same as above, source restored</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro_gba</code></td>
+<td>GBA-only front-end (35404 B)</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/miniretro_gba.c</code></td>
+<td>GBA source (includes exit fixes)</td>
+</tr>
+<tr>
+<td><code>extern/miniretro/build.sh</code></td>
+<td>Changed to only compile <code>miniretro_gba</code>, with atomic replacement</td>
+</tr>
+<tr>
+<td><code>lv_pages/gba_game_page.c</code></td>
+<td><code>gba_find_bin</code> prefers <code>miniretro_gba</code>; the waiting loop has its cap removed; <code>exiting</code> added; 3 frames refreshed in a row</td>
+</tr>
+<tr>
+<td><code>ssh_tools/split_miniretro_gba.py</code></td>
+<td>This separation deployment script (reusable)</td>
+</tr>
+<tr>
+<td><code>ssh_tools/split_verify.py</code></td>
+<td>Dual front-end verification after separation</td>
+</tr>
+<tr>
+<td><code>bugfix_20260923_10</code></td>
+<td>Previous round’s rollback record (its “UI recovery waits for reaping” approach is corrected by this change)</td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-11-%E2%80%94-GBA-exit-hangs-on-a-black-screen-and-FC-is-implicated-complete-front-end-separation"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_11 — GBA exit hangs on a black screen, and FC is implicated (complete front-end separation)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Problem-symptoms"><span class="toc-number">1.1.</span> <span class="toc-text">1. Problem symptoms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Scope-of-impact"><span class="toc-number">1.2.</span> <span class="toc-text">2. Scope of impact</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Root-cause-analysis"><span class="toc-number">1.3.</span> <span class="toc-text">3. Root cause analysis</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E2%98%85-The-waiting-loop-sets-a-cap-of-%E2%80%9Crunning-for-N-seconds-counts-as-exited%E2%80%9D-the-direct-cause-of-the-black-screen-hang"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 ★ The waiting loop sets a cap of “running for N seconds counts as exited” (the direct cause of the black-screen hang)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-UI-recovery-is-tied-to-%E2%80%9Cthe-child-process-disappearing%E2%80%9D-prolonging-the-black-screen"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 UI recovery is tied to “the child process disappearing” (prolonging the black screen)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-Detail-issues"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 Detail issues</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-Structural-root-cause-a-shared-front-end"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4 Structural root cause: a shared front-end</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Fix"><span class="toc-number">1.4.</span> <span class="toc-text">4. Fix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E2%98%85-Complete-front-end-separation-the-user%E2%80%99s-scheme"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 ★ Complete front-end separation (the user’s scheme)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Four-fixes-to-the-exit-logic-only-on-the-GBA-page"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 Four fixes to the exit logic (only on the GBA page)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification-method-and-results"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification method and results</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Separation-result-verification-device-side"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 Separation result verification (device side)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Each-front-end-runs-on-the-real-machine-ssh-tools-split-verify-py"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 Each front-end runs on the real machine (ssh_tools&#x2F;split_verify.py)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-One-correction-to-the-deployment-script"><span class="toc-number">1.5.3.</span> <span class="toc-text">5.3 One correction to the deployment script</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Regression-risks"><span class="toc-number">1.6.</span> <span class="toc-text">6. Regression risks</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Related-files"><span class="toc-number">1.7.</span> <span class="toc-text">7. Related files</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&text=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&title=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&is_video=false&description=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&title=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&title=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&title=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&title=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-11/&name=GBA Exit Hangs on a Black Screen and FC Gets Collateral Damage — Fully Separating the Frontends&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

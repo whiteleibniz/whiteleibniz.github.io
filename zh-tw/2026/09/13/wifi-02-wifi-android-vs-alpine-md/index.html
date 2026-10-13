@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="WiFi 芯片啟動流程對比 —— Android 原生 vs Alpine Linux（該設備） 主題：Marlin SC2331 WiFi 芯片在 Android 6.0（出廠系統）與 Alpine Linux（switchroot 後）兩種環境下的啟動流程對比、原理差異，以及”如何在 Alpine 裡復刻 Android 的啟動序列”。文檔版本：v1.0　|　2026-09   1. 為什麼對">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WiFi芯片啟動流程對比_Android_vs_Alpine">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="WiFi 芯片啟動流程對比 —— Android 原生 vs Alpine Linux（該設備） 主題：Marlin SC2331 WiFi 芯片在 Android 6.0（出廠系統）與 Alpine Linux（switchroot 後）兩種環境下的啟動流程對比、原理差異，以及”如何在 Alpine 裡復刻 Android 的啟動序列”。文檔版本：v1.0　|　2026-09   1. 為什麼對">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-13T07:27:33.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:47.222Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="WiFi">
+<meta property="article:tag" content="SC2331">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>WiFi芯片啟動流程對比_Android_vs_Alpine</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/13/wifi-01-wifi-ai-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/13/wifi-05-wifi-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&text=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&title=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&is_video=false&description=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=WiFi芯片啟動流程對比_Android_vs_Alpine&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&title=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&title=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&title=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&title=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&name=WiFi芯片啟動流程對比_Android_vs_Alpine&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#WiFi-%E8%8A%AF%E7%89%87%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B%E5%B0%8D%E6%AF%94-%E2%80%94%E2%80%94-Android-%E5%8E%9F%E7%94%9F-vs-Alpine-Linux%EF%BC%88%E8%A9%B2%E8%A8%AD%E5%82%99%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">WiFi 芯片啟動流程對比 —— Android 原生 vs Alpine Linux（該設備）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%82%BA%E4%BB%80%E9%BA%BC%E5%B0%8D%E6%AF%94%E9%80%99%E5%85%A9%E8%80%85"><span class="toc-number">1.1.</span> <span class="toc-text">1. 為什麼對比這兩者</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%A1%AC%E4%BB%B6%E8%88%87%E8%8A%AF%E7%89%87%E8%83%8C%E6%99%AF"><span class="toc-number">1.2.</span> <span class="toc-text">2. 硬件與芯片背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Android-6-0-%E5%8E%9F%E7%94%9F%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.</span> <span class="toc-text">3. Android 6.0 原生啟動流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Alpine-Linux%EF%BC%88switchroot-%E5%BE%8C%EF%BC%89%E5%8E%9F%E7%94%9F%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B%EF%BC%88%E5%A4%B1%E6%95%97%E6%85%8B%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. Alpine Linux（switchroot 後）原生啟動流程（失敗態）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%80%90%E7%92%B0%E7%AF%80%E5%B0%8D%E6%AF%94%E8%A1%A8"><span class="toc-number">1.5.</span> <span class="toc-text">5. 逐環節對比表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90%EF%BC%9A%E7%82%BA%E4%BB%80%E9%BA%BC-Alpine-%E4%B8%8D%E8%83%BD%E7%9B%B4%E6%8E%A5%E5%B7%A5%E4%BD%9C"><span class="toc-number">1.6.</span> <span class="toc-text">6. 原理分析：為什麼 Alpine 不能直接工作</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E7%9B%B4%E6%8E%A5%E5%8E%9F%E5%9B%A0"><span class="toc-number">1.6.1.</span> <span class="toc-text">6.1 直接原因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E6%B7%B1%E5%B1%A4%E5%8E%9F%E5%9B%A0%EF%BC%88%E7%82%BA%E4%BB%80%E9%BA%BC%E4%B8%8D%E8%83%BD%E7%B0%A1%E5%96%AE%E2%80%9D%E8%A3%9D%E5%80%8B%E9%A9%85%E5%8B%95%E2%80%9D%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">6.2 深層原因（為什麼不能簡單”裝個驅動”）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E7%82%BA%E4%BB%80%E9%BA%BC-Android-%E7%9A%84-wpa-supplicant-%E4%B8%8D%E8%83%BD%E7%9B%B4%E6%8E%A5%E7%94%A8"><span class="toc-number">1.6.3.</span> <span class="toc-text">6.3 為什麼 Android 的 wpa_supplicant 不能直接用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E8%A7%A3%E6%B1%BA%E6%96%B9%E6%A1%88%E7%9A%84%E5%8E%9F%E7%90%86%EF%BC%9A%E5%9C%A8-Alpine-%E8%A3%A1%E2%80%9D%E5%80%9F%E6%AE%BC%E2%80%9D-Android"><span class="toc-number">1.7.</span> <span class="toc-text">7. 解決方案的原理：在 Alpine 裡”借殼” Android</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E4%B8%80%E6%AC%A1%E5%AE%8C%E6%95%B4%E7%9A%84%E2%80%9D%E7%90%86%E6%83%B3%E5%95%9F%E5%8B%95%E6%99%82%E5%BA%8F%E2%80%9D%EF%BC%88%E6%89%93%E9%80%9A%E5%BE%8C%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">8. 一次完整的”理想啟動時序”（打通後）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8D%E6%AF%94%E7%B5%90%E8%AB%96%EF%BC%9A%E7%A1%AC%E4%BB%B6%E8%88%87%E5%85%A7%E6%A0%B8%E7%9B%B8%E5%90%8C%EF%BC%8C%E5%B7%AE%E7%95%B0%E9%9B%86%E4%B8%AD%E5%9C%A8%E7%94%A8%E6%88%B6%E6%85%8B%E2%80%9D%E4%B8%8A%E9%9B%BB-%E5%9B%BA%E4%BB%B6%E4%B8%8B%E8%BC%89%E2%80%9D%E6%9C%8D%E5%8B%99%E3%80%82%E5%BE%A9%E5%88%BB%E5%AE%83%EF%BC%8CWiFi-%E5%8D%B3%E9%80%9A%E3%80%82"><span class="toc-number">1.9.</span> <span class="toc-text">對比結論：硬件與內核相同，差異集中在用戶態”上電+固件下載”服務。復刻它，WiFi 即通。</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        WiFi芯片啟動流程對比_Android_vs_Alpine
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-13T07:27:33.000Z" itemprop="datePublished">2026-09-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/SC2331/" rel="tag">SC2331</a>, <a class="tag-link-link" href="/tags/WiFi/" rel="tag">WiFi</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="WiFi-芯片啟動流程對比-——-Android-原生-vs-Alpine-Linux（該設備）"><a href="#WiFi-芯片啟動流程對比-——-Android-原生-vs-Alpine-Linux（該設備）" class="headerlink" title="WiFi 芯片啟動流程對比 —— Android 原生 vs Alpine Linux（該設備）"></a>WiFi 芯片啟動流程對比 —— Android 原生 vs Alpine Linux（該設備）</h1><blockquote>
+<p><strong>主題</strong>：Marlin SC2331 WiFi 芯片在 Android 6.0（出廠系統）與 Alpine Linux（switchroot 後）兩種環境下的啟動流程對比、原理差異，以及”如何在 Alpine 裡復刻 Android 的啟動序列”。<br><strong>文檔版本</strong>：v1.0　|　2026-09</p>
+</blockquote>
+<hr>
+<h2 id="1-為什麼對比這兩者"><a href="#1-為什麼對比這兩者" class="headerlink" title="1. 為什麼對比這兩者"></a>1. 為什麼對比這兩者</h2><ul>
+<li>該設備出廠跑 <strong>Android 6.0</strong>，WiFi&#x2F;藍牙<strong>正常</strong>——說明硬件、固件、驅動本身沒問題。</li>
+<li>switchroot 到 <strong>Alpine Linux 3.21</strong>（保留 Android 內核 3.10.65）後，WiFi <strong>徹底失效</strong>，內核枚舉不出芯片。</li>
+<li>硬件沒變、內核沒變，變的只是<strong>根文件系統</strong>。差異必然出在<strong>用戶態啟動邏輯</strong>上。</li>
+<li>因此：把 Android 的啟動流程和 Alpine 的啟動流程逐環節對比，就能精確定位”Alpine 缺了什麼”。</li>
+</ul>
+<hr>
+<h2 id="2-硬件與芯片背景"><a href="#2-硬件與芯片背景" class="headerlink" title="2. 硬件與芯片背景"></a>2. 硬件與芯片背景</h2><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SoC</td>
+<td>展銳 SC9832A（四核 ARMv7，集成 WCN 子系統控制器）</td>
+</tr>
+<tr>
+<td>WiFi&#x2F;BT 芯片</td>
+<td>Marlin SC2331（Combo 芯片），<strong>SDIO 接口</strong></td>
+</tr>
+<tr>
+<td>內核枚舉地址</td>
+<td><code>mmc2:8800:1</code>，device <code>0x2331</code></td>
+</tr>
+<tr>
+<td>關鍵引腳</td>
+<td>GPIO94 &#x3D; 芯片 READY 信號（上電完成後拉高）</td>
+</tr>
+<tr>
+<td>固件所在分區</td>
+<td><code>wcnfdl</code>（p14）、<code>wcnmodem</code>（p15）</td>
+</tr>
+<tr>
+<td>電源&#x2F;下載控制節點</td>
+<td><code>/dev/power_ctl</code>、<code>/dev/download</code>（由內核驅動創建）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>SC2331 的典型特性：<strong>不先上電並下載固件，SDIO 總線上的從設備不會就緒</strong>，內核自然枚舉不到。這是整條問題的物理根因。</p>
+</blockquote>
+<hr>
+<h2 id="3-Android-6-0-原生啟動流程"><a href="#3-Android-6-0-原生啟動流程" class="headerlink" title="3. Android 6.0 原生啟動流程"></a>3. Android 6.0 原生啟動流程</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">開機</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">內核啟動（boot 分區內核 + DTB）</span><br><span class="line">  │  （DTB 描述 wlan 電源、時鐘、SDIO 控制器、GPIO94）</span><br><span class="line">  ▼</span><br><span class="line">驅動初始化</span><br><span class="line">  ├─ sdio 控制器驅動枚舉 mmc2（此時芯片未上電，無從設備）</span><br><span class="line">  ├─ power_ctl / download 字符設備註冊（由 WCN 控制器驅動創建）</span><br><span class="line">  └─ ttyS0 串口（與芯片握手用）</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">Android init（init.rc）</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">【關鍵】常駐 download 服務（/system/bin/download）</span><br><span class="line">  │  由 init 按 rc 文件啟動，開機常駐</span><br><span class="line">  │</span><br><span class="line">  ├─ 打開 /dev/power_ctl</span><br><span class="line">  │    寫入上電序列：SLEEP → POWER_ON → POWER_RST（循環/時序控制）</span><br><span class="line">  ├─ 打開 /dev/download</span><br><span class="line">  │    按 /etc/marlinba/*.ini 裡的路徑配置，讀取 wcnfdl/wcnmodem 分區固件</span><br><span class="line">  ├─ ttyS0 @115200 與芯片引導握手</span><br><span class="line">  ├─ 通過 SDIO 把固件大塊寫入芯片（sprd_download_sdio_write，塊大小如 131080）</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">芯片完成啟動 → GPIO94 READY 拉高 → SDIO 從設備就緒</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">內核枚舉 mmc2:8800:1（device 0x2331）</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">wlan 驅動（sprdwl.ko + marlin_fm.ko）綁定 wlan0</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">wpa_supplicant（Android 自帶）→ 掃描/連接</span><br></pre></td></tr></table></figure>
+
+<p><strong>Android 流程的三個要點</strong>：</p>
+<ol>
+<li><strong>上電+固件下載是”用戶態服務”乾的</strong>，不是內核開機自動完成的；</li>
+<li>服務讀取的固件、ini 配置、設備節點<strong>全在 Android 文件系統裡</strong>；</li>
+<li>DTB 提供了正確的電源&#x2F;時鐘描述，download 服務才能把電上對。</li>
+</ol>
+<hr>
+<h2 id="4-Alpine-Linux（switchroot-後）原生啟動流程（失敗態）"><a href="#4-Alpine-Linux（switchroot-後）原生啟動流程（失敗態）" class="headerlink" title="4. Alpine Linux（switchroot 後）原生啟動流程（失敗態）"></a>4. Alpine Linux（switchroot 後）原生啟動流程（失敗態）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">開機</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">內核啟動（同一 Android 內核 3.10.65 + DTB）</span><br><span class="line">  │   ↓ 若 DTB 是 Alpine 側改過的（電源屬性缺失/錯誤）→ 後續全錯</span><br><span class="line">  ▼</span><br><span class="line">驅動初始化（同 Android：sdio 控制器、power_ctl、download 節點）</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">Alpine init（openrc / busybox init）</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">【缺口】沒有 download 服務！</span><br><span class="line">  ├─ /system/bin/download 不在 Alpine 根文件系統</span><br><span class="line">  ├─ /dev/power_ctl 從未被寫入 → 芯片從未上電</span><br><span class="line">  ├─ wcnfdl / wcnmodem 固件從未下載</span><br><span class="line">  └─ 無人打開 ttyS0 與芯片握手</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">芯片保持斷電狀態 → GPIO94 READY 恆 0 → SDIO 從設備不存在</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">內核 dmesg 反覆：SDIO dev not ready</span><br><span class="line">  │</span><br><span class="line">  ▼</span><br><span class="line">insmod sprdwl.ko → wlan0 不出現（或出現但無法工作）</span><br></pre></td></tr></table></figure>
+
+<p><strong>Alpine 失敗態的三個缺口</strong>：</p>
+<ol>
+<li><strong>缺上電動作</strong>（無人寫 <code>/dev/power_ctl</code>）；</li>
+<li><strong>缺固件下載</strong>（無人讀 wcnfdl&#x2F;wcnmodem 並寫入芯片）；</li>
+<li><strong>缺正確的 DTB</strong>（部分嘗試階段 Alpine 側 DTB 電源屬性不完整）。</li>
+</ol>
+<hr>
+<h2 id="5-逐環節對比表"><a href="#5-逐環節對比表" class="headerlink" title="5. 逐環節對比表"></a>5. 逐環節對比表</h2><table>
+<thead>
+<tr>
+<th>環節</th>
+<th>Android 6.0（正常）</th>
+<th>Alpine（原始，失敗）</th>
+<th>差異性質</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>內核</td>
+<td>3.10.65 Android 內核</td>
+<td>同一內核</td>
+<td>✅ 一致</td>
+</tr>
+<tr>
+<td>設備樹 DTB</td>
+<td>Android 原版（電源&#x2F;時鐘完整）</td>
+<td>初始為 Android 原版，中途有被改壞的風險</td>
+<td>⚠️ 需確保原版</td>
+</tr>
+<tr>
+<td>SDIO 控制器驅動</td>
+<td>初始化</td>
+<td>初始化</td>
+<td>✅ 一致</td>
+</tr>
+<tr>
+<td>power_ctl &#x2F; download 節點</td>
+<td>註冊</td>
+<td>註冊</td>
+<td>✅ 一致</td>
+</tr>
+<tr>
+<td><strong>上電序列</strong></td>
+<td>download 服務寫 <code>/dev/power_ctl</code></td>
+<td><strong>無人執行</strong></td>
+<td>❌ <strong>核心缺口</strong></td>
+</tr>
+<tr>
+<td><strong>固件下載</strong></td>
+<td>download 服務讀 wcnfdl&#x2F;wcnmodem 刷入芯片</td>
+<td><strong>無人執行</strong></td>
+<td>❌ <strong>核心缺口</strong></td>
+</tr>
+<tr>
+<td>ttyS0 芯片握手</td>
+<td>download 服務負責</td>
+<td>無人執行</td>
+<td>❌ 核心缺口</td>
+</tr>
+<tr>
+<td>GPIO94 READY</td>
+<td>上電完成後拉高</td>
+<td>恆 0</td>
+<td>結果差異</td>
+</tr>
+<tr>
+<td>SDIO 從設備枚舉</td>
+<td><code>mmc2:8800:1</code>（0x2331）</td>
+<td>不存在</td>
+<td>結果差異</td>
+</tr>
+<tr>
+<td>WiFi 驅動</td>
+<td>sprdwl.ko + marlin_fm.ko</td>
+<td>存在但加載無效（芯片沒起來）</td>
+<td>依賴前置</td>
+</tr>
+<tr>
+<td>用戶態配置</td>
+<td>Android wpa_supplicant</td>
+<td>需另裝 Alpine 版 wpa_supplicant</td>
+<td>需要補齊</td>
+</tr>
+<tr>
+<td>開機自啟</td>
+<td>init.rc 常駐 download</td>
+<td>openrc 無對應服務</td>
+<td>需要補齊</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-原理分析：為什麼-Alpine-不能直接工作"><a href="#6-原理分析：為什麼-Alpine-不能直接工作" class="headerlink" title="6. 原理分析：為什麼 Alpine 不能直接工作"></a>6. 原理分析：為什麼 Alpine 不能直接工作</h2><h3 id="6-1-直接原因"><a href="#6-1-直接原因" class="headerlink" title="6.1 直接原因"></a>6.1 直接原因</h3><p>SC2331 芯片<strong>上電不下載固件 &#x3D; 不工作</strong>，而下載固件這件事在 Android 裡由<strong>用戶態常駐服務</strong>完成，不是內核自動行為。Alpine 只是換掉了用戶態，沒人做這件事。</p>
+<h3 id="6-2-深層原因（為什麼不能簡單”裝個驅動”）"><a href="#6-2-深層原因（為什麼不能簡單”裝個驅動”）" class="headerlink" title="6.2 深層原因（為什麼不能簡單”裝個驅動”）"></a>6.2 深層原因（為什麼不能簡單”裝個驅動”）</h3><ul>
+<li>驅動 <code>sprdwl.ko</code> 依賴<strong>芯片已枚舉</strong>（<code>mmc2:8800:1</code> 存在）才能綁定；</li>
+<li>芯片枚舉依賴<strong>固件已下載</strong>；</li>
+<li>固件下載依賴<strong>上電序列正確執行</strong>；</li>
+<li>上電序列依賴 <strong>DTB 電源描述 + &#x2F;dev&#x2F;power_ctl 可寫 + Android 的 download 二進制及配套庫&#x2F;固件</strong>。</li>
+</ul>
+<p>這就是一條<strong>單向依賴鏈</strong>，任何一環缺失都會讓 WiFi 表現為”硬件壞了”。</p>
+<h3 id="6-3-為什麼-Android-的-wpa-supplicant-不能直接用"><a href="#6-3-為什麼-Android-的-wpa-supplicant-不能直接用" class="headerlink" title="6.3 為什麼 Android 的 wpa_supplicant 不能直接用"></a>6.3 為什麼 Android 的 wpa_supplicant 不能直接用</h3><p>曾嘗試在 Alpine chroot 裡直接跑 Android 的 wpa_supplicant 2.5：</p>
+<ul>
+<li>報 <code>CANNOT LINK</code>（缺庫）→ 補了 <code>/mnt/android_sys/lib/*.so</code> 後仍 Aborted；</li>
+<li>原因：Android Bionic libc 與 glibc&#x2F;musl 環境、linker 機制不兼容，二進制無法穩定運行。</li>
+<li>結論：<strong>用戶態 supplicant 用 Alpine 原生包</strong>（armhf），只複用 Android 的<strong>底層固件下載邏輯</strong>。</li>
+</ul>
+<hr>
+<h2 id="7-解決方案的原理：在-Alpine-裡”借殼”-Android"><a href="#7-解決方案的原理：在-Alpine-裡”借殼”-Android" class="headerlink" title="7. 解決方案的原理：在 Alpine 裡”借殼” Android"></a>7. 解決方案的原理：在 Alpine 裡”借殼” Android</h2><p>不重寫上電邏輯，而是<strong>複用 Android 原版 download 二進制</strong>，給它搭一個最小運行環境：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Alpine 側</span><br><span class="line">  │</span><br><span class="line">  ├─ /tmp/aand/  = 迷你 Android 用戶態（chroot 根）</span><br><span class="line">  │    ├─ bin/download        （Android 原版上電+固件下載程序）</span><br><span class="line">  │    ├─ lib/*.so            （Android system 庫）</span><br><span class="line">  │    ├─ etc/marlinba/*.ini  （固件路徑配置）</span><br><span class="line">  │    └─ dev/                （mount --bind /dev，含 power_ctl/download）</span><br><span class="line">  │</span><br><span class="line">  ├─ by-name 鏈接：wcnfdl → mmcblk0p14，wcnmodem → mmcblk0p15</span><br><span class="line">  │</span><br><span class="line">  └─ chroot /tmp/aand /bin/download -i wlan0</span><br><span class="line">        = 在 Alpine 裡完整復刻 Android 的上電 + 固件下載序列</span><br></pre></td></tr></table></figure>
+
+<p><strong>為什麼能成功</strong>：</p>
+<ul>
+<li>上電序列的硬件操作（寫 power_ctl、ttyS0 握手、SDIO 寫固件）是<strong>內核驅動的 ioctl&#x2F;設備操作</strong>，與用戶態 libc 無關；</li>
+<li>download 二進制只要能找到設備節點、固件、ini，就能驅動內核完成整套動作；</li>
+<li>所以只要 chroot 環境<strong>文件齊全 + 設備節點 bind + 固件分區鏈接</strong>，Android 二進制在 Alpine 內核上可以原樣工作。</li>
+</ul>
+<p><strong>原理上的分工總結</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>層</th>
+<th>由誰負責</th>
+<th>在 Alpine 裡如何獲得</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>電源&#x2F;時鐘描述</td>
+<td>內核 + DTB</td>
+<td>用 Android 原版 DTB</td>
+</tr>
+<tr>
+<td>上電時序</td>
+<td>Android download 用戶態</td>
+<td>chroot 複用 Android 二進制</td>
+</tr>
+<tr>
+<td>固件下載</td>
+<td>Android download 用戶態</td>
+<td>chroot 複用 Android 二進制</td>
+</tr>
+<tr>
+<td>芯片枚舉</td>
+<td>內核（自動）</td>
+<td>前置完成後自動出現</td>
+</tr>
+<tr>
+<td>WiFi 數據通路</td>
+<td>sprdwl.ko 驅動</td>
+<td>Alpine 內核模塊（已備好）</td>
+</tr>
+<tr>
+<td>掃描&#x2F;連接</td>
+<td>wpa_supplicant</td>
+<td>Alpine armhf 原生包</td>
+</tr>
+<tr>
+<td>開機自啟</td>
+<td>openrc</td>
+<td>自定義 &#x2F;etc&#x2F;local.d 腳本</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-一次完整的”理想啟動時序”（打通後）"><a href="#8-一次完整的”理想啟動時序”（打通後）" class="headerlink" title="8. 一次完整的”理想啟動時序”（打通後）"></a>8. 一次完整的”理想啟動時序”（打通後）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">內核啟動（Android 原版 DTB）</span><br><span class="line">  → sdio 控制器初始化，註冊 power_ctl/download 節點</span><br><span class="line">  → [local 腳本] mount --bind /dev → chroot 跑 download</span><br><span class="line">  → download: SLEEP→POWER_ON→POWER_RST → ttyS0 握手 → 刷 wcnfdl/wcnmodem</span><br><span class="line">  → 芯片 READY 拉高 → 內核枚舉 mmc2:8800:1 (0x2331)</span><br><span class="line">  → insmod marlin_fm.ko → insmod sprdwl.ko → wlan0 出現</span><br><span class="line">  → ip link set wlan0 up</span><br><span class="line">  → wpa_supplicant -i wlan0 -B</span><br><span class="line">  → wpa_cli scan / connect</span><br></pre></td></tr></table></figure>
+
+<p><strong>關鍵區別一句話</strong>：Android 靠 init.rc 常駐 download 服務完成芯片”初始化”；Alpine 用 chroot + local 腳本<strong>人工復刻了這一步</strong>，之後的一切（驅動、supplicant）都回到常規 Linux 流程。</p>
+<hr>
+<h2 id="對比結論：硬件與內核相同，差異集中在用戶態”上電-固件下載”服務。復刻它，WiFi-即通。"><a href="#對比結論：硬件與內核相同，差異集中在用戶態”上電-固件下載”服務。復刻它，WiFi-即通。" class="headerlink" title="對比結論：硬件與內核相同，差異集中在用戶態”上電+固件下載”服務。復刻它，WiFi 即通。"></a><em>對比結論：硬件與內核相同，差異集中在用戶態”上電+固件下載”服務。復刻它，WiFi 即通。</em></h2><blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#WiFi-%E8%8A%AF%E7%89%87%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B%E5%B0%8D%E6%AF%94-%E2%80%94%E2%80%94-Android-%E5%8E%9F%E7%94%9F-vs-Alpine-Linux%EF%BC%88%E8%A9%B2%E8%A8%AD%E5%82%99%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">WiFi 芯片啟動流程對比 —— Android 原生 vs Alpine Linux（該設備）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%82%BA%E4%BB%80%E9%BA%BC%E5%B0%8D%E6%AF%94%E9%80%99%E5%85%A9%E8%80%85"><span class="toc-number">1.1.</span> <span class="toc-text">1. 為什麼對比這兩者</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%A1%AC%E4%BB%B6%E8%88%87%E8%8A%AF%E7%89%87%E8%83%8C%E6%99%AF"><span class="toc-number">1.2.</span> <span class="toc-text">2. 硬件與芯片背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Android-6-0-%E5%8E%9F%E7%94%9F%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.</span> <span class="toc-text">3. Android 6.0 原生啟動流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Alpine-Linux%EF%BC%88switchroot-%E5%BE%8C%EF%BC%89%E5%8E%9F%E7%94%9F%E5%95%9F%E5%8B%95%E6%B5%81%E7%A8%8B%EF%BC%88%E5%A4%B1%E6%95%97%E6%85%8B%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. Alpine Linux（switchroot 後）原生啟動流程（失敗態）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%80%90%E7%92%B0%E7%AF%80%E5%B0%8D%E6%AF%94%E8%A1%A8"><span class="toc-number">1.5.</span> <span class="toc-text">5. 逐環節對比表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90%EF%BC%9A%E7%82%BA%E4%BB%80%E9%BA%BC-Alpine-%E4%B8%8D%E8%83%BD%E7%9B%B4%E6%8E%A5%E5%B7%A5%E4%BD%9C"><span class="toc-number">1.6.</span> <span class="toc-text">6. 原理分析：為什麼 Alpine 不能直接工作</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E7%9B%B4%E6%8E%A5%E5%8E%9F%E5%9B%A0"><span class="toc-number">1.6.1.</span> <span class="toc-text">6.1 直接原因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E6%B7%B1%E5%B1%A4%E5%8E%9F%E5%9B%A0%EF%BC%88%E7%82%BA%E4%BB%80%E9%BA%BC%E4%B8%8D%E8%83%BD%E7%B0%A1%E5%96%AE%E2%80%9D%E8%A3%9D%E5%80%8B%E9%A9%85%E5%8B%95%E2%80%9D%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">6.2 深層原因（為什麼不能簡單”裝個驅動”）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E7%82%BA%E4%BB%80%E9%BA%BC-Android-%E7%9A%84-wpa-supplicant-%E4%B8%8D%E8%83%BD%E7%9B%B4%E6%8E%A5%E7%94%A8"><span class="toc-number">1.6.3.</span> <span class="toc-text">6.3 為什麼 Android 的 wpa_supplicant 不能直接用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E8%A7%A3%E6%B1%BA%E6%96%B9%E6%A1%88%E7%9A%84%E5%8E%9F%E7%90%86%EF%BC%9A%E5%9C%A8-Alpine-%E8%A3%A1%E2%80%9D%E5%80%9F%E6%AE%BC%E2%80%9D-Android"><span class="toc-number">1.7.</span> <span class="toc-text">7. 解決方案的原理：在 Alpine 裡”借殼” Android</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E4%B8%80%E6%AC%A1%E5%AE%8C%E6%95%B4%E7%9A%84%E2%80%9D%E7%90%86%E6%83%B3%E5%95%9F%E5%8B%95%E6%99%82%E5%BA%8F%E2%80%9D%EF%BC%88%E6%89%93%E9%80%9A%E5%BE%8C%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">8. 一次完整的”理想啟動時序”（打通後）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8D%E6%AF%94%E7%B5%90%E8%AB%96%EF%BC%9A%E7%A1%AC%E4%BB%B6%E8%88%87%E5%85%A7%E6%A0%B8%E7%9B%B8%E5%90%8C%EF%BC%8C%E5%B7%AE%E7%95%B0%E9%9B%86%E4%B8%AD%E5%9C%A8%E7%94%A8%E6%88%B6%E6%85%8B%E2%80%9D%E4%B8%8A%E9%9B%BB-%E5%9B%BA%E4%BB%B6%E4%B8%8B%E8%BC%89%E2%80%9D%E6%9C%8D%E5%8B%99%E3%80%82%E5%BE%A9%E5%88%BB%E5%AE%83%EF%BC%8CWiFi-%E5%8D%B3%E9%80%9A%E3%80%82"><span class="toc-number">1.9.</span> <span class="toc-text">對比結論：硬件與內核相同，差異集中在用戶態”上電+固件下載”服務。復刻它，WiFi 即通。</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&text=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&title=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&is_video=false&description=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=WiFi芯片啟動流程對比_Android_vs_Alpine&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&title=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&title=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&title=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&title=WiFi芯片啟動流程對比_Android_vs_Alpine"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/wifi-02-wifi-android-vs-alpine-md/&name=WiFi芯片啟動流程對比_Android_vs_Alpine&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

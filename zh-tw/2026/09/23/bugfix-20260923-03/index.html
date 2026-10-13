@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_03 — GBA 遊戲點確認後無法打開（模擬器前端選型錯誤） 現象：桌面「GBA遊戲」列表頁正常，選中 ROM 按確認鍵後沒有任何畫面（屏幕閃一下即回到列表），日誌只有一行 Could not initialize video: fbcon not available。根因層：模擬器前端選型 &#x2F; SDL2 視頻後端（編譯期能力缺失）。修復工作量：新增 lv">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA遊戲點確認後無法打開">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_03 — GBA 遊戲點確認後無法打開（模擬器前端選型錯誤） 現象：桌面「GBA遊戲」列表頁正常，選中 ROM 按確認鍵後沒有任何畫面（屏幕閃一下即回到列表），日誌只有一行 Could not initialize video: fbcon not available。根因層：模擬器前端選型 &#x2F; SDL2 視頻後端（編譯期能力缺失）。修復工作量：新增 lv">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:45.715Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA遊戲點確認後無法打開</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/bugfix-20260923-02/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/bugfix-20260923-05/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&text=GBA遊戲點確認後無法打開"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&title=GBA遊戲點確認後無法打開"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&is_video=false&description=GBA遊戲點確認後無法打開"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA遊戲點確認後無法打開&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&title=GBA遊戲點確認後無法打開"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&title=GBA遊戲點確認後無法打開"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&title=GBA遊戲點確認後無法打開"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&title=GBA遊戲點確認後無法打開"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&name=GBA遊戲點確認後無法打開&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-03-%E2%80%94-GBA-%E9%81%8A%E6%88%B2%E9%BB%9E%E7%A2%BA%E8%AA%8D%E5%BE%8C%E7%84%A1%E6%B3%95%E6%89%93%E9%96%8B%EF%BC%88%E6%A8%A1%E6%93%AC%E5%99%A8%E5%89%8D%E7%AB%AF%E9%81%B8%E5%9E%8B%E9%8C%AF%E8%AA%A4%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_03 — GBA 遊戲點確認後無法打開（模擬器前端選型錯誤）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E9%81%8E%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位過程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E6%B1%BA%E8%BE%A6%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解決辦法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A9%97%E8%AD%89"><span class="toc-number">1.6.</span> <span class="toc-text">驗證</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B6%93%E9%A9%97%E6%95%99%E8%A8%93"><span class="toc-number">1.7.</span> <span class="toc-text">經驗教訓</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA遊戲點確認後無法打開
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-03-—-GBA-遊戲點確認後無法打開（模擬器前端選型錯誤）"><a href="#bugfix-20260923-03-—-GBA-遊戲點確認後無法打開（模擬器前端選型錯誤）" class="headerlink" title="bugfix_20260923_03 — GBA 遊戲點確認後無法打開（模擬器前端選型錯誤）"></a>bugfix_20260923_03 — GBA 遊戲點確認後無法打開（模擬器前端選型錯誤）</h1><blockquote>
+<p><strong>現象</strong>：桌面「GBA遊戲」列表頁正常，選中 ROM 按確認鍵後<strong>沒有任何畫面</strong>（屏幕閃一下即回到列表），日誌只有一行 <code>Could not initialize video: fbcon not available</code>。<br><strong>根因層</strong>：模擬器前端選型 &#x2F; SDL2 視頻後端（編譯期能力缺失）。<br><strong>修復工作量</strong>：新增 <code>lv_pages/gba_game_page.c</code>(+649)&#x2F;<code>.h</code>(+17)；<code>lv_pages/launcher_page.c</code> +5&#x2F;-0（新增入口）；設備端新增 <code>extern/miniretro/mgba_libretro.so</code>。<br><strong>文件名</strong>：<code>bugfix_20260923_03_GBA遊戲點確認後無法打開.md</code><br><strong>關聯提交</strong>：（待提交後回填）<br><strong>日期</strong>：2026-09-23</p>
+</blockquote>
+<h2 id="現象"><a href="#現象" class="headerlink" title="現象"></a>現象</h2><ol>
+<li>桌面 → 「GBA遊戲」→ 列表正常顯示 <code>sdcard/game/gba/</code> 下的 <code>.gba</code> 與同名封面。</li>
+<li>選中 ROM 按確認鍵（福利鍵 115）：屏幕閃一下，<strong>無遊戲畫面</strong>，回到列表。</li>
+<li><code>stderr</code> 捕獲到 mGBA 的報錯：<code>Could not initialize video: fbcon not available</code>。</li>
+</ol>
+<p>對照線索：<strong>機器上原有的「FC 遊戲」應用一切正常</strong>（同一 Launcher、同一全屏接管機制、同一個 <code>miniretro</code> 前端）。只有 GBA 打不開。</p>
+<h2 id="影響範圍"><a href="#影響範圍" class="headerlink" title="影響範圍"></a>影響範圍</h2><ul>
+<li><strong>受影響</strong>：GBA 遊戲應用（<code>gba_game_page</code>）。</li>
+<li><strong>不受影響</strong>：FC 遊戲應用、桌面、其它頁面。<br>原因：FC 走 <code>miniretro</code> **直接寫 <code>/dev/fb0</code>**，全程不碰 SDL；GBA 當時走 <code>mgba-sdl</code>，依賴 SDL。</li>
+</ul>
+<h2 id="根因"><a href="#根因" class="headerlink" title="根因"></a>根因</h2><p>初版 <code>gba_game_page.c</code> 照搬 FC 框架，但把模擬器換成了 **mGBA 的 SDL 前端 <code>mgba-sdl</code>**，並在 <code>fork</code> 前設置：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">setenv(<span class="string">&quot;SDL_VIDEODRIVER&quot;</span>, <span class="string">&quot;fbcon&quot;</span>, <span class="number">1</span>);</span><br><span class="line">setenv(<span class="string">&quot;SDL_FBDEV&quot;</span>, <span class="string">&quot;/dev/fb0&quot;</span>, <span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
+<p>而本機 SDL2（2.30.9, musl&#x2F;arm）在<strong>編譯期</strong>就沒有啟用 <code>fbcon</code> 視頻後端——實測：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ strings /usr/lib/libSDL2-2.0.so.0 | grep -iE &#x27;fbcon|kmsdrm|x11|wayland|dummy&#x27;</span><br><span class="line">  只有 wayland / x11 / kmsdrm / dummy，無 fbcon</span><br><span class="line">$ ls /dev/dri</span><br><span class="line">  不存在（kmsdrm 也無法工作）</span><br></pre></td></tr></table></figure>
+
+<p>所以 <code>SDL_VIDEODRIVER=fbcon</code> 指定的後端根本不存在，SDL 無可用視頻設備 → 初始化失敗 → 進程退出 → 表現為”打不開”。這是<strong>編譯期能力問題</strong>，改啟動參數無解。</p>
+<h2 id="定位過程"><a href="#定位過程" class="headerlink" title="定位過程"></a>定位過程</h2><ol>
+<li><strong>先查現象</strong>：桌面進程、<code>sdcard/game/gba/</code> 內容、<code>/tmp/lvgl_demo.log</code> 末尾——確認列表頁正常、ROM 存在、有報錯。</li>
+<li><strong>彎路一（錯方向）</strong>：一度懷疑”多個 <code>lvgl_demo</code> 實例搶 <code>/dev/fb0</code>“”新二進制沒生效”。這些確實是當時存在的干擾（見經驗教訓），但<strong>不是</strong>本次打不開的根因。</li>
+<li><strong>定位到 fbcon</strong>：日誌裡 <code>fbcon not available</code> 是決定性線索。</li>
+<li><strong>驗證 SDL2 能力</strong>：<code>strings libSDL2 | grep 後端名</code> 無 <code>fbcon</code>；<code>/dev/dri</code> 不存在 → 證實無可用後端（<strong>實測</strong>，非推理）。</li>
+<li><strong>確認正確路線</strong>：讀 FC 的 <code>fc_game_page.c</code>，其啟動命令為<br><code>miniretro &lt;core.so&gt; &lt;rom&gt; [keymap.conf]</code>，<code>miniretro</code> 自行 mmap <code>/dev/fb0</code> 並直接繪製，<strong>完全繞開 SDL</strong>。</li>
+</ol>
+<h2 id="解決辦法"><a href="#解決辦法" class="headerlink" title="解決辦法"></a>解決辦法</h2><p><strong>放棄 <code>mgba-sdl</code>，改用從 mGBA 源碼編譯出的 libretro 核心 <code>mgba_libretro.so</code>，走與 FC 完全相同的 <code>miniretro</code> 直寫 fb 通道。</strong></p>
+<ul>
+<li><p>設備端重新配置編譯（mGBA 的 <code>CMakeLists.txt</code> 支持 <code>BUILD_LIBRETRO</code>，會鏈接核心源文件而非只編空殼）：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /home/GBAgame/mgba/build</span><br><span class="line">cmake -DBUILD_QT=OFF -DBUILD_SDL=ON -DUSE_LIBZIP=OFF -DUSE_EPOXY=OFF -DBUILD_LIBRETRO=ON ..</span><br><span class="line">make -j2        <span class="comment"># 產出 build/mgba_libretro.so</span></span><br><span class="line"><span class="built_in">cp</span> build/mgba_libretro.so /home/lvgl_demo/lvgl_demo/extern/miniretro/</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>gba_game_page.c</code> 的 <code>gba_launch()</code> 由 <code>execl(/usr/local/bin/mgba-sdl, &quot;-f&quot;, ...)</code> 改為：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">execl(<span class="string">&quot;extern/miniretro/miniretro&quot;</span>,</span><br><span class="line">      <span class="string">&quot;miniretro&quot;</span>, <span class="string">&quot;extern/miniretro/mgba_libretro.so&quot;</span>, path,</span><br><span class="line">      <span class="string">&quot;extern/miniretro/keymap.conf&quot;</span>, (<span class="type">char</span> *)<span class="literal">NULL</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>keymap.conf</code> 直接複用 FC 的那份（已含 A&#x2F;B&#x2F;L&#x2F;R&#x2F;START&#x2F;SELECT&#x2F;方向鍵）。</p>
+</li>
+</ul>
+<h2 id="驗證"><a href="#驗證" class="headerlink" title="驗證"></a>驗證</h2><ul>
+<li><strong>當時（僅到”能否加載”這一步）</strong>：受控冒煙測試單獨運行<br><code>miniretro extern/miniretro/mgba_libretro.so &lt;ROM&gt; extern/miniretro/keymap.conf</code>，<br>日誌給出 <code>core: mGBA 0.11.0</code>、<code>遊戲已加載 240x160, 59.73 fps</code>、<code>/dev/fb0 720x1280 @32bpp 已映射</code>。<br>→ <strong>核心與前端鏈路可用</strong>（但此時畫面仍未出，原因見 <code>bugfix_20260923_04</code>）。</li>
+<li><strong>最終用戶驗證</strong>：見 <code>bugfix_20260923_05</code> 末尾（三篇是同一功能修復的連續三階段）。</li>
+</ul>
+<h2 id="經驗教訓"><a href="#經驗教訓" class="headerlink" title="經驗教訓"></a>經驗教訓</h2><ol>
+<li><strong>嵌入式設備上，SDL2 的可用視頻後端是編譯期決定的，不能假設 <code>fbcon</code> 存在。</strong><br>選前端前先做兩件事：<code>strings libSDL2*.so | grep 後端名</code>、<code>ls /dev/dri</code>。</li>
+<li><strong>沒有 GPU &#x2F; 沒有可用 SDL 後端時，”libretro 核心 + 前端直寫 fb”比”SDL 前端”穩得多</strong>——<br>它只依賴 <code>/dev/fb0</code>，不依賴 SDL&#x2F;DRM&#x2F;GPU 任何一層。</li>
+<li><strong>別照搬”同一功能”的兄弟應用卻不核對底層依賴</strong>：FC 能跑不代表 GBA 也能用同一種模擬器形態；<br>FC 用的是 libretro 核心，GBA 初版卻選了 SDL 獨立前端，這是選型層面的不一致。</li>
+<li><strong>干擾項要分清</strong>：那一刻同時存在”多實例搶 fb0””新二進制未生效”等真實問題，但它們會<strong>掩蓋</strong>真正的根因，<br>排查時要把”環境髒”和”功能壞”分開處理。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-03-%E2%80%94-GBA-%E9%81%8A%E6%88%B2%E9%BB%9E%E7%A2%BA%E8%AA%8D%E5%BE%8C%E7%84%A1%E6%B3%95%E6%89%93%E9%96%8B%EF%BC%88%E6%A8%A1%E6%93%AC%E5%99%A8%E5%89%8D%E7%AB%AF%E9%81%B8%E5%9E%8B%E9%8C%AF%E8%AA%A4%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_03 — GBA 遊戲點確認後無法打開（模擬器前端選型錯誤）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E9%81%8E%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位過程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E6%B1%BA%E8%BE%A6%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解決辦法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A9%97%E8%AD%89"><span class="toc-number">1.6.</span> <span class="toc-text">驗證</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B6%93%E9%A9%97%E6%95%99%E8%A8%93"><span class="toc-number">1.7.</span> <span class="toc-text">經驗教訓</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&text=GBA遊戲點確認後無法打開"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&title=GBA遊戲點確認後無法打開"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&is_video=false&description=GBA遊戲點確認後無法打開"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA遊戲點確認後無法打開&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&title=GBA遊戲點確認後無法打開"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&title=GBA遊戲點確認後無法打開"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&title=GBA遊戲點確認後無法打開"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&title=GBA遊戲點確認後無法打開"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-03/&name=GBA遊戲點確認後無法打開&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

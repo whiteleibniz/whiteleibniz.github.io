@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_01 — 藍牙顯示「已連接」但實際未連接 現象：藍牙頁顯示「已連接: 小愛音箱-1303」，實際沒有可用連接 —— 音箱不出聲，約 1 分鐘後狀態自己翻回「已配對」，反覆重連都一樣。根因層：用戶態藍牙協議棧 bt_user_daemon 的 conn 語義 &#x2F; LVGL 藍牙頁判據。修復工作量：1 個文件 +64&#x2F;-13 行（lv_pages&#x2F;b">
+<meta property="og:type" content="article">
+<meta property="og:title" content="藍牙顯示已連接實際未連接">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_01 — 藍牙顯示「已連接」但實際未連接 現象：藍牙頁顯示「已連接: 小愛音箱-1303」，實際沒有可用連接 —— 音箱不出聲，約 1 分鐘後狀態自己翻回「已配對」，反覆重連都一樣。根因層：用戶態藍牙協議棧 bt_user_daemon 的 conn 語義 &#x2F; LVGL 藍牙頁判據。修復工作量：1 個文件 +64&#x2F;-13 行（lv_pages&#x2F;b">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:45.613Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="蓝牙">
+<meta property="article:tag" content="bugfix">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>藍牙顯示已連接實際未連接</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/23/bugfix-20260923-18/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/bugfix-20260923-04/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&text=藍牙顯示已連接實際未連接"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&title=藍牙顯示已連接實際未連接"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&is_video=false&description=藍牙顯示已連接實際未連接"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=藍牙顯示已連接實際未連接&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&title=藍牙顯示已連接實際未連接"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&title=藍牙顯示已連接實際未連接"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&title=藍牙顯示已連接實際未連接"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&title=藍牙顯示已連接實際未連接"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&name=藍牙顯示已連接實際未連接&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-01-%E2%80%94-%E8%97%8D%E7%89%99%E9%A1%AF%E7%A4%BA%E3%80%8C%E5%B7%B2%E9%80%A3%E6%8E%A5%E3%80%8D%E4%BD%86%E5%AF%A6%E9%9A%9B%E6%9C%AA%E9%80%A3%E6%8E%A5"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_01 — 藍牙顯示「已連接」但實際未連接</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E7%9B%B4%E6%8E%A5%E5%8E%9F%E5%9B%A0%EF%BC%9A%E8%97%8D%E7%89%99%E9%A0%81%E6%8A%8A%E2%80%9DACL-%E9%8F%88%E8%B7%AF%E5%AD%98%E5%9C%A8%E2%80%9D%E7%95%B6%E6%88%90%E4%BA%86%E2%80%9D%E5%B7%B2%E9%80%A3%E6%8E%A5%E2%80%9D"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 直接原因：藍牙頁把”ACL 鏈路存在”當成了”已連接”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%A0%B9%E6%9C%AC%E5%8E%9F%E5%9B%A0%EF%BC%9A%E6%9C%AC%E6%A9%9F%E5%AD%98%E7%9A%84-link-key-%E5%B7%B2%E8%A2%AB%E9%9F%B3%E7%AE%B1%E5%81%B4%E4%BD%9C%E5%BB%A2%EF%BC%8C%E8%AA%8D%E8%AD%89%E5%A4%B1%E6%95%97"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 根本原因：本機存的 link key 已被音箱側作廢，認證失敗</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E9%81%8E%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位過程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E9%97%9C%E9%8D%B5%E5%88%A4%E7%9C%9F%E5%99%A8%EF%BC%9A-tmp-bt-audio-fifo-%E6%9C%89%E6%B2%92%E6%9C%89%E8%AE%80%E8%80%85"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 關鍵判真器：&#x2F;tmp&#x2F;bt_audio.fifo 有沒有讀者</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E8%A9%A6%E9%8C%AF%E8%88%87%E6%8E%92%E9%99%A4"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 試錯與排除</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E4%BF%AE%E5%A5%BD%E4%B9%8B%E5%BE%8C%E5%8D%94%E8%AD%B0%E6%A3%A7%E7%9A%84%E5%8E%9F%E8%A9%B1"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 修好之後協議棧的原話</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E6%B1%BA%E8%BE%A6%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解決辦法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E7%8F%BE%E5%A0%B4%E8%99%95%E7%BD%AE%EF%BC%88%E5%8F%AF%E5%9B%9E%E6%BB%BE%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 現場處置（可回滾）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E4%BB%A3%E7%A2%BC%E4%BF%AE%E6%94%B9%EF%BC%9Alv-pages-bluetooth-page-c"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 代碼修改：lv_pages&#x2F;bluetooth_page.c</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A9%97%E8%AD%89"><span class="toc-number">1.6.</span> <span class="toc-text">驗證</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E6%AD%A3%E4%BE%8B%EF%BC%88%E7%9C%9F%E9%80%A3%E6%8E%A5%EF%BC%89"><span class="toc-number">1.6.1.</span> <span class="toc-text">6.1 正例（真連接）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E5%8F%8D%E4%BE%8B%EF%BC%88%E6%95%85%E6%84%8F%E6%8A%8A-link-key-%E5%AF%AB%E5%A3%9E%EF%BC%8C%E5%BE%A9%E7%8F%BE%E5%8E%9F%E4%BE%86%E7%9A%84%E5%81%87%E9%80%A3%E6%8E%A5%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">6.2 反例（故意把 link key 寫壞，復現原來的假連接）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E7%AB%AF%E5%88%B0%E7%AB%AF%EF%BC%9A%E9%9F%B3%E9%A0%BB%E9%80%9A%E8%B7%AF%E7%A2%BA%E5%AF%A6%E6%98%AF%E9%80%9A%E7%9A%84"><span class="toc-number">1.6.3.</span> <span class="toc-text">6.3 端到端：音頻通路確實是通的</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B6%93%E9%A9%97%E6%95%99%E8%A8%93"><span class="toc-number">1.7.</span> <span class="toc-text">經驗教訓</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        藍牙顯示已連接實際未連接
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E8%93%9D%E7%89%99/" rel="tag">蓝牙</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-01-—-藍牙顯示「已連接」但實際未連接"><a href="#bugfix-20260923-01-—-藍牙顯示「已連接」但實際未連接" class="headerlink" title="bugfix_20260923_01 — 藍牙顯示「已連接」但實際未連接"></a>bugfix_20260923_01 — 藍牙顯示「已連接」但實際未連接</h1><blockquote>
+<p><strong>現象</strong>：藍牙頁顯示「已連接: 小愛音箱-1303」，實際沒有可用連接 —— 音箱不出聲，<br>約 1 分鐘後狀態自己翻回「已配對」，反覆重連都一樣。<br><strong>根因層</strong>：用戶態藍牙協議棧 <code>bt_user_daemon</code> 的 <code>conn</code> 語義 &#x2F; LVGL 藍牙頁判據。<br><strong>修復工作量</strong>：1 個文件 +64&#x2F;-13 行（<code>lv_pages/bluetooth_page.c</code>）。<br><strong>文件名</strong>：<code>bugfix_20260923_01_藍牙顯示已連接實際未連接.md</code><br><strong>關聯提交</strong>：221fa7d<br><strong>日期</strong>：2026-09-23</p>
+</blockquote>
+<h2 id="現象"><a href="#現象" class="headerlink" title="現象"></a>現象</h2><p>藍牙設置頁顯示 <strong><code>已連接: 小愛音箱-1303</code><strong>，設備行右側也是</strong>綠色「已連接」</strong>，<br>但：</p>
+<ul>
+<li>音箱沒有任何反應（不播提示音、手機&#x2F;音箱側也不顯示被連接）；</li>
+<li>過一段時間（約 1 分鐘）狀態會<strong>自己變回「已配對」</strong>；</li>
+<li>反覆點擊設備重連都一樣，永遠”連上又像是沒連”。</li>
+</ul>
+<p>即：<strong>UI 說已連接，實際沒有可用連接。</strong></p>
+<h2 id="影響範圍"><a href="#影響範圍" class="headerlink" title="影響範圍"></a>影響範圍</h2><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>受影響</strong></td>
+<td>藍牙頁的連接狀態顯示；A2DP 音頻輸出（音箱不出聲）；用戶無法判斷到底連沒連上</td>
+</tr>
+<tr>
+<td><strong>不受影響</strong></td>
+<td>藍牙開關、掃描&#x2F;配對列表讀取、配對記錄本身；FM 收音機；桌面與其它頁面</td>
+</tr>
+</tbody></table>
+<h2 id="根因"><a href="#根因" class="headerlink" title="根因"></a>根因</h2><p><strong>兩層原因疊加</strong>，缺一不可。</p>
+<h3 id="3-1-直接原因：藍牙頁把”ACL-鏈路存在”當成了”已連接”"><a href="#3-1-直接原因：藍牙頁把”ACL-鏈路存在”當成了”已連接”" class="headerlink" title="3.1 直接原因：藍牙頁把”ACL 鏈路存在”當成了”已連接”"></a>3.1 直接原因：藍牙頁把”ACL 鏈路存在”當成了”已連接”</h3><p><code>bt_user_daemon</code> 的 <code>conn</code> 命令只表示 <strong>ACL（基帶鏈路）已建立</strong>，不代表上層 profile<br>（A2DP）可用。而 <code>bluetooth_page.c</code> 原來就是這個判據：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bp_get_conn_mac(conn_mac, <span class="keyword">sizeof</span>(conn_mac));   <span class="comment">/* conn 命令 */</span></span><br><span class="line"><span class="keyword">if</span>(conn_mac[<span class="number">0</span>]) <span class="built_in">snprintf</span>(detail, ..., <span class="string">&quot;已連接: %s&quot;</span>, nm);   <span class="comment">/* ← 直接當成已連接 */</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-根本原因：本機存的-link-key-已被音箱側作廢，認證失敗"><a href="#3-2-根本原因：本機存的-link-key-已被音箱側作廢，認證失敗" class="headerlink" title="3.2 根本原因：本機存的 link key 已被音箱側作廢，認證失敗"></a>3.2 根本原因：本機存的 link key 已被音箱側作廢，認證失敗</h3><ul>
+<li>link key 存在 <code>/tmp/bt_linkkey.conf</code>（<code>&lt;MAC&gt; &lt;32位十六進制&gt;</code>，16 字節）。</li>
+<li>音箱側把這條配對記錄丟了&#x2F;重新生成過 → 本機的 key <strong>對不上</strong>。</li>
+<li>但 daemon 收到控制器的 <code>Link Key Request</code> 時，<strong>只要本地有 key 就回 positive</strong><br>（日誌原話：<code>[pair] link key req -&gt; positive(已存 key, 免 SSP)</code>），於是<strong>沒有走重新配對</strong>。</li>
+<li>結果：HCI 認證失敗——</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[pair] auth complete status=5        ← 0x05 = Authentication Failure</span><br><span class="line">[pair] done paired=1 auth_ok=1 enc_ok=0 -&gt; A2DP</span><br><span class="line">[auth] auth complete status=5</span><br><span class="line">[auth] auth failed</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>enc_ok=0</code> 表示<strong>鏈路加密從未建立</strong>，A2DP 自然建不起來（<code>AVDTP_START</code> 不會發出）。</li>
+<li>但 <strong>ACL 已經建上了</strong>（L2CAP 能通、SDP 能查），所以 daemon 的 <code>conn</code> 照樣回<br><code>OK CONN c5:09:5d:3e:bd:3c 小愛音箱-1303</code> → UI 顯示”已連接”。</li>
+<li>約 60 秒後音箱側放棄，鏈路斷開（<code>[main] disconnect complete evt</code>），daemon 才翻回 <code>IDLE</code>。</li>
+</ul>
+<p>一句話：<strong>ACL 通、認證掛、加密沒建立、A2DP 沒起，UI 卻只看 ACL。</strong></p>
+<h2 id="定位過程"><a href="#定位過程" class="headerlink" title="定位過程"></a>定位過程</h2><h3 id="4-1-關鍵判真器：-tmp-bt-audio-fifo-有沒有讀者"><a href="#4-1-關鍵判真器：-tmp-bt-audio-fifo-有沒有讀者" class="headerlink" title="4.1 關鍵判真器：/tmp/bt_audio.fifo 有沒有讀者"></a>4.1 關鍵判真器：<code>/tmp/bt_audio.fifo</code> 有沒有讀者</h3><p>daemon 的 A2DP 媒體循環啟動時會<strong>打開 <code>/tmp/bt_audio.fifo</code> 的讀端</strong>。<br>於是用非阻塞方式打開寫端即可判斷媒體循環是否在跑：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    fd = os.<span class="built_in">open</span>(<span class="string">&quot;/tmp/bt_audio.fifo&quot;</span>, os.O_WRONLY | os.O_NONBLOCK); os.close(fd)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;a2dp=True  (有讀者，媒體循環在跑)&quot;</span>)</span><br><span class="line"><span class="keyword">except</span> OSError <span class="keyword">as</span> e:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;a2dp=False (無讀者)&quot;</span>, e)      <span class="comment"># ENXIO(6) = No such device or address</span></span><br></pre></td></tr></table></figure>
+
+<p>這是本機能拿到的<strong>唯一用戶態可見的 A2DP 真相</strong>。實測：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">T+00  conn=&#x27;OK IDLE&#x27;                                  a2dp=False</span><br><span class="line">T+02  conn=&#x27;OK CONN c5:09:... 小愛音箱-1303&#x27;          a2dp=False   ← 假連接</span><br><span class="line">...   （持續 60 秒）                                   a2dp=False</span><br><span class="line">T+62  conn=&#x27;OK IDLE&#x27;                                  a2dp=False</span><br><span class="line">RESULT connect -&gt; &#x27;RC 0&#x27;        ← connect 還回成功！</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>connect</code> 返回 <code>RC 0</code> + <code>conn</code> 報 CONN，但 fifo 始終沒有讀者</strong> → 判定為假連接。</p>
+<h3 id="4-2-試錯與排除"><a href="#4-2-試錯與排除" class="headerlink" title="4.2 試錯與排除"></a>4.2 試錯與排除</h3><table>
+<thead>
+<tr>
+<th>嘗試</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>懷疑 UI 只查一次、不刷新</td>
+<td>❌ 頁面本來就有 15 s 自動刷新（<code>BP_AUTO_REFRESH_MS</code>），排除</td>
+</tr>
+<tr>
+<td>懷疑 daemon 掛了</td>
+<td>❌ <code>state/paired</code> 正常，socket 正常</td>
+</tr>
+<tr>
+<td>用 <code>/etc/init.d/bt_daemon restart</code> 重啟以清內存裡的舊 key</td>
+<td>❌ <strong>沒生效</strong>！openrc 報 <code>udev failed to start</code>，且 pid 仍是 1222（沒換進程）→ 舊 key 還在內存裡，修復無效</td>
+</tr>
+<tr>
+<td>按 <code>bt_bringup.start</code> 的方式 <code>kill -9</code> + <code>setsid</code> 重啟</td>
+<td>✅ pid 1222 → 382，key 真的清了</td>
+</tr>
+<tr>
+<td>用高頻循環 <code>connect</code> 撐住”假連接”窗口以便截圖</td>
+<td>⚠️ 打滿 daemon accept 隊列，後續請求 <code>errno 11 (EAGAIN)</code>。<strong>不要高頻探測 daemon</strong></td>
+</tr>
+</tbody></table>
+<h3 id="4-3-修好之後協議棧的原話"><a href="#4-3-修好之後協議棧的原話" class="headerlink" title="4.3 修好之後協議棧的原話"></a>4.3 修好之後協議棧的原話</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[auth] auth complete status=0            ← 原來是 5</span><br><span class="line">[auth] auth ok -&gt; Set Encryption (0x0413)</span><br><span class="line">[auth] encryption change status=0 enc=1  ← 加密建立</span><br><span class="line">[l2cap] SDP 斷開 + 認證完成 -&gt; 建 AVDTP</span><br><span class="line">[a2dp] avdtp begin: L2CAP conn req PSM=0x0019</span><br><span class="line">[avdtp] DISCOVER_RSP seid=4 tsep=0 media=0</span><br><span class="line">[a2dp] media channel ready, sent AVDTP_START seid=4</span><br><span class="line">[a2dp] media loop start GOLD NF=7 bp=35 fl=83 persamp=128 framedur=2902us nch=2</span><br></pre></td></tr></table></figure>
+
+<h2 id="解決辦法"><a href="#解決辦法" class="headerlink" title="解決辦法"></a>解決辦法</h2><h3 id="5-1-現場處置（可回滾）"><a href="#5-1-現場處置（可回滾）" class="headerlink" title="5.1 現場處置（可回滾）"></a>5.1 現場處置（可回滾）</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 0) 備份</span></span><br><span class="line"><span class="built_in">cp</span> /tmp/bt_linkkey.conf /tmp/bt_linkkey.good</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1) 刪掉失效的 link key（文件裡那一行）</span></span><br><span class="line">grep -v <span class="string">&#x27;^c5:09:5d:3e:bd:3c&#x27;</span> /tmp/bt_linkkey.conf &gt; /tmp/lk.tmp &amp;&amp; <span class="built_in">mv</span> /tmp/lk.tmp /tmp/bt_linkkey.conf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) 真重啟 daemon（openrc restart 不生效，必須 kill + setsid）</span></span><br><span class="line"><span class="keyword">for</span> p <span class="keyword">in</span> $(pidof bt_user_daemon); <span class="keyword">do</span> <span class="built_in">kill</span> -9 <span class="variable">$p</span>; <span class="keyword">done</span></span><br><span class="line"><span class="built_in">sleep</span> 2; <span class="built_in">rm</span> -f /tmp/bt_ctl.sock</span><br><span class="line">setsid /usr/local/bin/bt_user_daemon &gt;/tmp/bt_daemon.log 2&gt;&amp;1 &lt;/dev/null &amp;</span><br><span class="line"><span class="built_in">sleep</span> 10</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) 重新連接 -&gt; 這一次會走完整配對(SSP)，並把新 key 寫回 /tmp/bt_linkkey.conf</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&#x27;connect c5:09:5d:3e:bd:3c\n&#x27;</span> | nc -U /tmp/bt_ctl.sock   <span class="comment"># 或走 fm_ctl 同類客戶端</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="5-2-代碼修改：lv-pages-bluetooth-page-c"><a href="#5-2-代碼修改：lv-pages-bluetooth-page-c" class="headerlink" title="5.2 代碼修改：lv_pages/bluetooth_page.c"></a>5.2 代碼修改：<code>lv_pages/bluetooth_page.c</code></h3><p>新增”音頻是否真的通了”的判據，並把三處文案全部改為以它為準：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> BP_A2DP_FIFO <span class="string">&quot;/tmp/bt_audio.fifo&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> BP_CONN_AUDIO_WAIT_MS 25000</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* ★ 判斷 A2DP 音頻流是否真的跑起來了</span></span><br><span class="line"><span class="comment"> * daemon 的 conn 只表示 ACL 鏈路存在；Link Key 失效時認證失敗(status=5)，</span></span><br><span class="line"><span class="comment"> * A2DP 建不起來、音箱不出聲，但 conn 照樣回 OK CONN。</span></span><br><span class="line"><span class="comment"> * 判據: 非阻塞打開 fifo 寫端 —— 有讀者才說明 media loop 在跑。 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">bool</span> <span class="title function_">bp_a2dp_ready</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> fd = open(BP_A2DP_FIFO, O_WRONLY | O_NONBLOCK);</span><br><span class="line">    <span class="keyword">if</span>(fd &gt;= <span class="number">0</span>) &#123; close(fd); <span class="keyword">return</span> <span class="literal">true</span>; &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><strong>狀態區文案</strong>：<code>conn_mac[0] &amp;&amp; bp_a2dp_ready()</code> 才寫”已連接: xx”；<br><code>conn_mac[0]</code> 但音頻沒通時寫 **”鏈路已建立但音頻未連通”**。</li>
+<li><strong>設備行標籤</strong>：只有鏈路 → 橙色 <strong>「無音頻」</strong>；鏈路+音頻 → 綠色「已連接」；僅配對 → 灰色「已配對」。</li>
+<li><strong>連接結果 toast</strong>：<code>connect</code> 返回 <code>RC 0</code> 後<strong>不立刻報成功</strong>，而是每 300 ms 檢查一次<br><code>bp_a2dp_ready()</code>，最多等 25 s：等到了才提示”已連接 xx”，超時才提示”鏈路已建立，但音頻未連通”。</li>
+</ol>
+<h2 id="驗證"><a href="#驗證" class="headerlink" title="驗證"></a>驗證</h2><h3 id="6-1-正例（真連接）"><a href="#6-1-正例（真連接）" class="headerlink" title="6.1 正例（真連接）"></a>6.1 正例（真連接）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[conn] -&gt; &#x27;OK CONN c5:09:5d:3e:bd:3c 小愛音箱-1303&#x27;</span><br><span class="line">bt_audio.fifo 有讀者: True (OK)          ← 媒體循環真在跑</span><br></pre></td></tr></table></figure>
+<p>截圖 <code>shots/btlive_0.png</code>：狀態區「已連接: 小愛音箱-1303」，設備行右側<strong>綠色「已連接」</strong>。<br>→ 這次 UI 說的是真話。</p>
+<h3 id="6-2-反例（故意把-link-key-寫壞，復現原來的假連接）"><a href="#6-2-反例（故意把-link-key-寫壞，復現原來的假連接）" class="headerlink" title="6.2 反例（故意把 link key 寫壞，復現原來的假連接）"></a>6.2 反例（故意把 link key 寫壞，復現原來的假連接）</h3><p>把 key 整條替換成 16 個 <code>0x00</code> 並重啟 daemon 後重連：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">connect -&gt; RC 0</span><br><span class="line">T+00 conn=&#x27;OK CONN c5:09:5d:3e:bd:3c 小愛音箱-1303&#x27;   a2dp=False</span><br><span class="line">T+02 conn=&#x27;OK IDLE&#x27;                                     a2dp=False</span><br><span class="line">[pair] auth complete status=5 / enc_ok=0 -&gt; ABORT</span><br></pre></td></tr></table></figure>
+<p>截圖 <code>shots/btfake_0.png</code>：狀態區 <strong>「鏈路已建立但音頻未連通」</strong>，設備行右側<strong>橙色「無音頻」</strong>。<br>→ 同樣的硬件狀態，UI 不再謊報”已連接”。</p>
+<h3 id="6-3-端到端：音頻通路確實是通的"><a href="#6-3-端到端：音頻通路確實是通的" class="headerlink" title="6.3 端到端：音頻通路確實是通的"></a>6.3 端到端：音頻通路確實是通的</h3><p>連上後持續把靜音 PCM 灌進 fifo（格式由 daemon 日誌反推：44100Hz &#x2F; 2ch &#x2F; S16_LE）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">fifo 寫端已打開，開始灌靜音 PCM（50.0s）</span><br><span class="line">寫完 8634780 字節 (約 49.0 秒音頻)</span><br><span class="line">conn(after) = OK CONN c5:09:5d:3e:bd:3c 小愛音箱-1303</span><br><span class="line">[hci] credit inflight=5/1776   ← 全程在收發</span><br></pre></td></tr></table></figure>
+
+<p><strong>鏈路在持續供數時 50 s 不掉</strong>，HCI 信用持續變化 → SBC 幀真的發上去了。</p>
+<h2 id="經驗教訓"><a href="#經驗教訓" class="headerlink" title="經驗教訓"></a>經驗教訓</h2><ol>
+<li><strong>“已連接”必須由最末端的證據來定義。</strong> ACL 存在 ≠ profile 可用 ≠ 流在跑。<br>用中間層狀態代理末端的結論，遲早要說謊。本次的正確判據是”fifo 有沒有讀者”。</li>
+<li><strong>link key 失效要作為音箱類設備的一級排查項。</strong> 音箱換手機連過、被重置、<br>固件升級都可能作廢本機 key；此時現象就是”連上又像沒連”，很容易誤判成信號&#x2F;兼容性問題。</li>
+<li><strong><code>openrc restart</code> 不一定真的重啟。</strong> 本機 <code>bt_daemon</code> 的 <code>restart</code> 因 <code>udev</code> 依賴失敗而空轉，<br>pid 沒變 —— 凡是”改了狀態&#x2F;清了緩存要生效”的場合，<strong>必須校驗 pid 是否真的變了</strong>。</li>
+<li><strong>不要寫高頻探測腳本打自己的 daemon。</strong> 1 秒一次 <code>connect</code> 會把 accept 隊列打滿，<br>後續全部 <code>errno 11</code>，反而搞亂現場。</li>
+<li><strong>daemon 的接口語義要寫進文檔</strong>：<code>conn</code> &#x3D; ACL，不等於連接可用。<br>已同步到 <code>lv_pages/bluetooth_page.c</code> 頂部註釋與項目記憶。</li>
+<li><strong>“沒聲音”不一定是通路壞了。</strong> 本機 A2DP 媒體循環是”有數據才活”：<br>沒有 PCM 進 fifo，音箱會因超時主動斷開。判斷”音頻鏈路是否可用”要<strong>同時</strong>看<br>fifo 有無讀者 + 連接是否維持，不能只看其中一個。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-01-%E2%80%94-%E8%97%8D%E7%89%99%E9%A1%AF%E7%A4%BA%E3%80%8C%E5%B7%B2%E9%80%A3%E6%8E%A5%E3%80%8D%E4%BD%86%E5%AF%A6%E9%9A%9B%E6%9C%AA%E9%80%A3%E6%8E%A5"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_01 — 藍牙顯示「已連接」但實際未連接</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%B1%E9%9F%BF%E7%AF%84%E5%9C%8D"><span class="toc-number">1.2.</span> <span class="toc-text">影響範圍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0"><span class="toc-number">1.3.</span> <span class="toc-text">根因</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E7%9B%B4%E6%8E%A5%E5%8E%9F%E5%9B%A0%EF%BC%9A%E8%97%8D%E7%89%99%E9%A0%81%E6%8A%8A%E2%80%9DACL-%E9%8F%88%E8%B7%AF%E5%AD%98%E5%9C%A8%E2%80%9D%E7%95%B6%E6%88%90%E4%BA%86%E2%80%9D%E5%B7%B2%E9%80%A3%E6%8E%A5%E2%80%9D"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 直接原因：藍牙頁把”ACL 鏈路存在”當成了”已連接”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%A0%B9%E6%9C%AC%E5%8E%9F%E5%9B%A0%EF%BC%9A%E6%9C%AC%E6%A9%9F%E5%AD%98%E7%9A%84-link-key-%E5%B7%B2%E8%A2%AB%E9%9F%B3%E7%AE%B1%E5%81%B4%E4%BD%9C%E5%BB%A2%EF%BC%8C%E8%AA%8D%E8%AD%89%E5%A4%B1%E6%95%97"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 根本原因：本機存的 link key 已被音箱側作廢，認證失敗</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8D%E9%81%8E%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">定位過程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E9%97%9C%E9%8D%B5%E5%88%A4%E7%9C%9F%E5%99%A8%EF%BC%9A-tmp-bt-audio-fifo-%E6%9C%89%E6%B2%92%E6%9C%89%E8%AE%80%E8%80%85"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 關鍵判真器：&#x2F;tmp&#x2F;bt_audio.fifo 有沒有讀者</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E8%A9%A6%E9%8C%AF%E8%88%87%E6%8E%92%E9%99%A4"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 試錯與排除</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E4%BF%AE%E5%A5%BD%E4%B9%8B%E5%BE%8C%E5%8D%94%E8%AD%B0%E6%A3%A7%E7%9A%84%E5%8E%9F%E8%A9%B1"><span class="toc-number">1.4.3.</span> <span class="toc-text">4.3 修好之後協議棧的原話</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E6%B1%BA%E8%BE%A6%E6%B3%95"><span class="toc-number">1.5.</span> <span class="toc-text">解決辦法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E7%8F%BE%E5%A0%B4%E8%99%95%E7%BD%AE%EF%BC%88%E5%8F%AF%E5%9B%9E%E6%BB%BE%EF%BC%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 現場處置（可回滾）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E4%BB%A3%E7%A2%BC%E4%BF%AE%E6%94%B9%EF%BC%9Alv-pages-bluetooth-page-c"><span class="toc-number">1.5.2.</span> <span class="toc-text">5.2 代碼修改：lv_pages&#x2F;bluetooth_page.c</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A9%97%E8%AD%89"><span class="toc-number">1.6.</span> <span class="toc-text">驗證</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E6%AD%A3%E4%BE%8B%EF%BC%88%E7%9C%9F%E9%80%A3%E6%8E%A5%EF%BC%89"><span class="toc-number">1.6.1.</span> <span class="toc-text">6.1 正例（真連接）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E5%8F%8D%E4%BE%8B%EF%BC%88%E6%95%85%E6%84%8F%E6%8A%8A-link-key-%E5%AF%AB%E5%A3%9E%EF%BC%8C%E5%BE%A9%E7%8F%BE%E5%8E%9F%E4%BE%86%E7%9A%84%E5%81%87%E9%80%A3%E6%8E%A5%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">6.2 反例（故意把 link key 寫壞，復現原來的假連接）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E7%AB%AF%E5%88%B0%E7%AB%AF%EF%BC%9A%E9%9F%B3%E9%A0%BB%E9%80%9A%E8%B7%AF%E7%A2%BA%E5%AF%A6%E6%98%AF%E9%80%9A%E7%9A%84"><span class="toc-number">1.6.3.</span> <span class="toc-text">6.3 端到端：音頻通路確實是通的</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B6%93%E9%A9%97%E6%95%99%E8%A8%93"><span class="toc-number">1.7.</span> <span class="toc-text">經驗教訓</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&text=藍牙顯示已連接實際未連接"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&title=藍牙顯示已連接實際未連接"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&is_video=false&description=藍牙顯示已連接實際未連接"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=藍牙顯示已連接實際未連接&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&title=藍牙顯示已連接實際未連接"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&title=藍牙顯示已連接實際未連接"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&title=藍牙顯示已連接實際未連接"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&title=藍牙顯示已連接實際未連接"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-01/&name=藍牙顯示已連接實際未連接&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

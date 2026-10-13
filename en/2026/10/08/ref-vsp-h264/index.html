@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="SC8830 Hardware Decoding Effort — h264dec Disassembly Verdict (2026-10-08) This machine’s workspace is not a git repository; the code is on the device at &#x2F;tmp&#x2F;sprd_msg.c, and the build script is &#x2F;tmp&#x2F;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ref_h264 Hardware Decoding_h264dec Verdict">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="SC8830 Hardware Decoding Effort — h264dec Disassembly Verdict (2026-10-08) This machine’s workspace is not a git repository; the code is on the device at &#x2F;tmp&#x2F;sprd_msg.c, and the build script is &#x2F;tmp&#x2F;">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-08T11:08:38.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.981Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="H264">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>ref_h264 Hardware Decoding_h264dec Verdict</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/08/ref-vsp-h264/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/10/08/ref-vsp-h264/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&text=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&title=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&is_video=false&description=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_h264 Hardware Decoding_h264dec Verdict&body=Check out this article: https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&title=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&title=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&title=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&title=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&name=ref_h264 Hardware Decoding_h264dec Verdict&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#SC8830-Hardware-Decoding-Effort-%E2%80%94-h264dec-Disassembly-Verdict-2026-10-08"><span class="toc-number">1.</span> <span class="toc-text">SC8830 Hardware Decoding Effort — h264dec Disassembly Verdict (2026-10-08)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-The-complete-gate-chain-of-the-real-body-of-onQueueFilled-starting-at-0x7cec"><span class="toc-number">1.1.</span> <span class="toc-text">1. The complete gate chain of the real body of onQueueFilled (starting at 0x7cec)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Field-semantics-master-table-%E2%98%85-all-settled-by-past-pitfalls"><span class="toc-number">1.1.1.</span> <span class="toc-text">Field semantics master table (★ all settled by past pitfalls)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E2%98%85-Three-counterproductive-manual-interventions-all-tried-and-rolled-back-do-not-repeat"><span class="toc-number">1.2.</span> <span class="toc-text">2. ★ Three counterproductive manual interventions (all tried and rolled back; do not repeat)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Manually-setting-0x9c-%E2%80%94-will-deadlock-the-loop"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. Manually setting [0x9c] — will deadlock the loop</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Manually-setting-0x1f0-works-but-must-be-reset-every-round"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. Manually setting [0x1f0] works, but must be reset every round</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Double-emptying-the-same-in-buffer-will-ASSERT"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. Double-emptying the same in buffer will ASSERT</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-gralloc-handle-three-layer-layout-all-settled-by-measurement"><span class="toc-number">1.3.</span> <span class="toc-text">3. gralloc &#x2F; handle three-layer layout (all settled by measurement)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E2%98%85-Frame-reading-path-three-level-fallback-level-%E2%91%A0-is-verified-to-work"><span class="toc-number">1.4.</span> <span class="toc-text">4. ★ Frame reading path (three-level fallback; level ① is verified to work)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E2%98%85%E2%98%85%E2%98%85-0x92-IOMMU-switch-%E2%80%94-all-previous-experiments-ran-on-the-wrong-path"><span class="toc-number">1.5.</span> <span class="toc-text">5. ★★★ [0x92] &#x3D; IOMMU switch — all previous experiments ran on the wrong path</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%9A%A0-Directly-restoring-0x92-1-will-Segfault-in-the-useBuffer-segment"><span class="toc-number">1.5.1.</span> <span class="toc-text">⚠ Directly restoring [0x92]&#x3D;1 will Segfault in the useBuffer segment</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E2%98%85%E2%98%85-Two-mutually-exclusive-paths-deadlock-discovered-while-wrapping-up-on-2026-10-08"><span class="toc-number">1.6.</span> <span class="toc-text">6. ★★ Two mutually exclusive paths (deadlock discovered while wrapping up on 2026-10-08)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Deadlock"><span class="toc-number">1.6.1.</span> <span class="toc-text">Deadlock</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Already-ruled-out-hypotheses-measured-by-A-B-experiments"><span class="toc-number">1.6.2.</span> <span class="toc-text">Already-ruled-out hypotheses (measured by A&#x2F;B experiments)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#The-structure-of-internalUseBuffer-0x4514-it-crashes-here-with-0x92-1"><span class="toc-number">1.6.3.</span> <span class="toc-text">The structure of internalUseBuffer@0x4514 (it crashes here with [0x92]&#x3D;1)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Current-Sticking-Point-next-step"><span class="toc-number">1.7.</span> <span class="toc-text">7. Current Sticking Point (next step)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Build-Run"><span class="toc-number">1.8.</span> <span class="toc-text">6. Build &#x2F; Run</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E2%98%85%E2%98%85-IOVA-Chain-Breakthrough-Verdict-2026-10-08-afternoon-SPRD-IOMMU-1-path"><span class="toc-number">1.9.</span> <span class="toc-text">8. ★★ IOVA Chain Breakthrough Verdict (2026-10-08 afternoon, SPRD_IOMMU&#x3D;1 path)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Already-fixed-all-measured"><span class="toc-number">1.9.1.</span> <span class="toc-text">Already fixed (all measured)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Current-status-run-iova3"><span class="toc-number">1.9.2.</span> <span class="toc-text">Current status (run_iova3)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Supplementary-verdict-0x8090-0x8190-VSP-DecodeFrame-parameters"><span class="toc-number">1.9.3.</span> <span class="toc-text">Supplementary verdict (0x8090-0x8190 VSP DecodeFrame parameters)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E2%98%85%E2%98%85%E2%98%85-2026-10-08-afternoon-hardware-decoding-produces-an-image-milestone"><span class="toc-number">1.10.</span> <span class="toc-text">9. ★★★ 2026-10-08 afternoon: hardware decoding produces an image (milestone)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-cause-chain-all-empirically-verified-this-round"><span class="toc-number">1.10.1.</span> <span class="toc-text">Root cause chain (all empirically verified this round)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Behavior-when-producing-an-image"><span class="toc-number">1.10.2.</span> <span class="toc-text">Behavior when producing an image</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Remaining-work"><span class="toc-number">1.10.3.</span> <span class="toc-text">Remaining work</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E2%98%85%E2%98%85%E2%98%85-2026-10-08-evening-continuous-multi-frame-decoding-connected"><span class="toc-number">1.11.</span> <span class="toc-text">10. ★★★ 2026-10-08 evening: continuous multi-frame decoding connected</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-%E2%98%85%E2%98%85%E2%98%85-2026-10-08-evening-real-stream-NAL-streaming-hardware-decoding-connected-about-95"><span class="toc-number">1.12.</span> <span class="toc-text">11. ★★★ 2026-10-08 evening: real-stream NAL streaming hardware decoding connected (about 95%)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Feeding-model-verdict"><span class="toc-number">1.12.1.</span> <span class="toc-text">Feeding model verdict</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85-error-flag-Need-I-frame-deadlock-chain-disassembly-verdict-libomx-avcdec-hw-sprd-so"><span class="toc-number">1.12.2.</span> <span class="toc-text">★ error_flag&#x2F;Need I frame deadlock chain (disassembly verdict, libomx_avcdec_hw_sprd.so)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Memory-ledger-CMA-pool-7MB-hid-0-area-starting-at-0x9fd20000-contiguous-linear-allocation"><span class="toc-number">1.12.3.</span> <span class="toc-text">Memory ledger (CMA pool ~7MB, hid&#x3D;0 area starting at 0x9fd20000, contiguous linear allocation)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Remaining-bad-frames-the-only-remaining-problem-about-1-3-of-frames"><span class="toc-number">1.12.4.</span> <span class="toc-text">Remaining bad frames (the only remaining problem, about 1&#x2F;3 of frames)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Engineering-miscellany"><span class="toc-number">1.12.5.</span> <span class="toc-text">Engineering miscellany</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-%E2%98%85%E2%98%85%E2%98%85-2026-10-08-evening-2-fb-direct-display-connected-about-97"><span class="toc-number">1.13.</span> <span class="toc-text">12. ★★★ 2026-10-08 evening 2: fb direct display connected (about 97%)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Remaining-bad-frames-verdict-important-reversal"><span class="toc-number">1.13.1.</span> <span class="toc-text">Remaining bad frames verdict (important reversal)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#fb-direct-display-pipeline-fb-init-fb-render-fb-home-inside-sprd-msg-c"><span class="toc-number">1.13.2.</span> <span class="toc-text">fb direct display pipeline (fb_init&#x2F;fb_render&#x2F;fb_home inside sprd_msg.c)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Remaining-work-1"><span class="toc-number">1.13.3.</span> <span class="toc-text">Remaining work</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#13-%E2%98%85%E2%98%85%E2%98%85-2026-10-08-evening-3-player-binary-complete-about-98"><span class="toc-number">1.14.</span> <span class="toc-text">13. ★★★ 2026-10-08 evening 3: player binary complete (about 98%)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Player-usage-sprd-msg-is-now-player-ized"><span class="toc-number">1.14.1.</span> <span class="toc-text">Player usage (sprd_msg is now player-ized)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Performance-localization-methodology-and-conclusions-ms-timestamp-step-by-step-elimination"><span class="toc-number">1.14.2.</span> <span class="toc-text">Performance localization methodology and conclusions (@ms timestamp step-by-step elimination)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85%E2%98%85-Two-kernel-panics-same-root-cause"><span class="toc-number">1.14.3.</span> <span class="toc-text">★★ Two kernel panics (same root cause)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85-mbinfo-OOM-forces-fallback-to-LRU"><span class="toc-number">1.14.4.</span> <span class="toc-text">★ mbinfo OOM forces fallback to LRU</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Accidents-and-lessons"><span class="toc-number">1.14.5.</span> <span class="toc-text">Accidents and lessons</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Remaining-user-participation-required"><span class="toc-number">1.14.6.</span> <span class="toc-text">Remaining (user participation required)</span></a></li></ol></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        ref_h264 Hardware Decoding_h264dec Verdict
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-08T11:08:38.000Z" itemprop="datePublished">2026-10-08</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/H264/" rel="tag">H264</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="SC8830-Hardware-Decoding-Effort-—-h264dec-Disassembly-Verdict-2026-10-08"><a href="#SC8830-Hardware-Decoding-Effort-—-h264dec-Disassembly-Verdict-2026-10-08" class="headerlink" title="SC8830 Hardware Decoding Effort — h264dec Disassembly Verdict (2026-10-08)"></a>SC8830 Hardware Decoding Effort — h264dec Disassembly Verdict (2026-10-08)</h1><blockquote>
+<p>This machine’s workspace is not a git repository; the code is on the device at <code>/tmp/sprd_msg.c</code>, and the build script is <code>/tmp/smb.sh</code>.<br>All conclusions come from <code>objdump -d /mnt/android_sys/lib/libstagefright_sprd_h264dec.so</code>.</p>
+</blockquote>
+<h2 id="1-The-complete-gate-chain-of-the-real-body-of-onQueueFilled-starting-at-0x7cec"><a href="#1-The-complete-gate-chain-of-the-real-body-of-onQueueFilled-starting-at-0x7cec" class="headerlink" title="1. The complete gate chain of the real body of onQueueFilled (starting at 0x7cec)"></a>1. The complete gate chain of the real body of onQueueFilled (starting at <code>0x7cec</code>)</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">7d78 ldr ip,[r4,#0x9c] ; cmp #0 ; bne 84f0    ← entry: [0x9c]!=0 goes to 84f0</span><br><span class="line">7d7c-7d88 bl initDecoder / freeOutputBufferIOVA</span><br><span class="line">7da4 bl getPortQueue(0) → [sp+0x34]   (in queue)</span><br><span class="line">7db4 bl getPortQueue(1) → sl          (out queue)</span><br><span class="line">7dbc ldrb r8,[r4,#0x9a] ; cmp #0 ; bne 83dc   ★ [0x9a]!=0 → return directly</span><br><span class="line">7dc8 ldr r5,[r4,#0x84] ; cmp #0 ; bne 7de8   ← [0x84]!=0 forces entry into the decode area</span><br><span class="line">7dd4 ldr fp,[r2,#4] / 7de4 beq 83dc           ← in queue empty → return</span><br><span class="line">7de8 ldr r8,[sl,#4] / 7df4 beq 83dc           ★ out queue empty → return</span><br><span class="line">7df8 cmp r5,#1 ; beq 8718                     ← [0x84]==1 goes to drainAllOutputBuffers</span><br></pre></td></tr></table></figure>
+
+<h3 id="Field-semantics-master-table-★-all-settled-by-past-pitfalls"><a href="#Field-semantics-master-table-★-all-settled-by-past-pitfalls" class="headerlink" title="Field semantics master table (★ all settled by past pitfalls)"></a>Field semantics master table (★ all settled by past pitfalls)</h3><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Semantics</th>
+<th>Writer</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>[0x84]</code></td>
+<td>Decode switch. <code>!=0</code> forces entry into the decode area; <code>==1</code> additionally goes to 8718 drainAllOutputBuffers</td>
+<td><code>0x7ee0</code> (nFlags&amp;1), becomes 2 after running</td>
+</tr>
+<tr>
+<td><code>[0x88]</code></td>
+<td>Port size change pending gate (non-zero returns directly)</td>
+<td>handlePortSettingChangeEvent</td>
+</tr>
+<tr>
+<td><code>[0x8c]</code></td>
+<td>Internal drain loop switch. <code>0x83c4 ldrb; cmp #0; bne 8334</code></td>
+<td>can be enabled by manually setting it to 1</td>
+</tr>
+<tr>
+<td><code>[0x9a]</code></td>
+<td><strong>Stop flag</strong>. Non-zero → entry 7dbc returns directly</td>
+<td><code>0x83b0</code> (automatically set to 1 when <code>[0x9c]!=0</code>)</td>
+</tr>
+<tr>
+<td><code>[0x9c]</code></td>
+<td>Pending byte count. <code>0x7f68 beq 8518</code> &#x3D; skip the scratch copy</td>
+<td>★<strong>do not set manually</strong>, see below</td>
+</tr>
+<tr>
+<td><code>[0x1dc]</code></td>
+<td>SPS landed flag</td>
+<td><code>0x8240</code> (VSP writes back <code>[sp+0xa4]</code>)</td>
+</tr>
+<tr>
+<td><code>[0x1dd]</code></td>
+<td>PPS landed flag</td>
+<td><code>0x8248</code> (VSP writes back <code>[sp+0xa5]</code>)</td>
+</tr>
+<tr>
+<td><code>[0x1e0]/[0x1e4]</code></td>
+<td>SPS buffer &#x2F; length (length limit 1024, <code>cmp #0x400</code>)</td>
+<td><code>0x7ccc</code></td>
+</tr>
+<tr>
+<td><code>[0x1e8]/[0x1ec]</code></td>
+<td>PPS buffer &#x2F; length (same limit)</td>
+<td><code>0x7ca4</code></td>
+</tr>
+<tr>
+<td><code>[0x1f0]</code></td>
+<td><strong>Frame output master gate, one-shot</strong>. <code>0x8314 ldrb; beq 85fc</code></td>
+<td><code>0x8710</code>, and <code>0x8324</code> clears it to 0 immediately after use</td>
+</tr>
+<tr>
+<td><code>[0x228]</code></td>
+<td>IOVA&#x2F;gbMapper path. <code>!=0</code> → <code>0x8254 bne 85c0</code> takes the IOVA branch</td>
+<td>setParameter(port1)</td>
+</tr>
+<tr>
+<td><code>[0x234]/[0x238]</code></td>
+<td>crop w&#x2F;h (first log line 1920&#x2F;1088). <code>0x82d0/0x82e4</code> compares with the scratch position, jumps to <code>87a8</code> if mismatched</td>
+<td>SPS parsing</td>
+</tr>
+<tr>
+<td><code>[0x64]/[0x68]</code></td>
+<td>VSP-side output w&#x2F;h</td>
+<td>handlePortSettingChangeEvent</td>
+</tr>
+<tr>
+<td><code>[0xac]/[0xb0]/[0xb4]</code></td>
+<td>VSP scratch(1MB malloc) &#x2F; write pointer &#x2F; length</td>
+<td>initDecoder</td>
+</tr>
+<tr>
+<td><code>[0x208]</code></td>
+<td>VSP DecodeFrame function pointer</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<h2 id="2-★-Three-counterproductive-manual-interventions-all-tried-and-rolled-back-do-not-repeat"><a href="#2-★-Three-counterproductive-manual-interventions-all-tried-and-rolled-back-do-not-repeat" class="headerlink" title="2. ★ Three counterproductive manual interventions (all tried and rolled back; do not repeat)"></a>2. ★ Three counterproductive manual interventions (all tried and rolled back; do not repeat)</h2><h3 id="1-Manually-setting-0x9c-—-will-deadlock-the-loop"><a href="#1-Manually-setting-0x9c-—-will-deadlock-the-loop" class="headerlink" title="1. Manually setting [0x9c] — will deadlock the loop"></a>1. Manually setting <code>[0x9c]</code> — will deadlock the loop</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">839c ldr r0,[r4,#0x9c] ; cmp #0</span><br><span class="line">83b0 strbne r2,[r4,#0x9a]    ★ [0x9c]!=0 → [0x9a]=1</span><br><span class="line">7dbc ldrb r8,[r4,#0x9a] ; bne 83dc  ← the next round&#x27;s entry returns directly</span><br></pre></td></tr></table></figure>
+<p><code>[0x9c]</code> must be left for the vendor to maintain itself. Measured: after setting <code>[0x1f0]=1</code>, <code>consume byte</code> changes from a constant 41 to the full byte count.</p>
+<h3 id="2-Manually-setting-0x1f0-works-but-must-be-reset-every-round"><a href="#2-Manually-setting-0x1f0-works-but-must-be-reset-every-round" class="headerlink" title="2. Manually setting [0x1f0] works, but must be reset every round"></a>2. Manually setting <code>[0x1f0]</code> works, but <strong>must be reset every round</strong></h3><ul>
+<li><code>0x7f04 ldrb [0x1dd] ; bne 7f24</code> → <code>7f10 tst r0,#0x80 ; bne 853c</code><br>submitting config with <code>OMX_BF_CODECONFIG(0x80)</code> ⇒ always takes 853c ⇒ cannot reach <code>7f18 → 86e4 → 8710</code> ⇒ the vendor never sets <code>[0x1f0]</code>.</li>
+<li>The fallback of setting it to 1 is equivalent to redoing 8710. <strong>Effect verified</strong>: <code>consume byte</code> 41 → 14527&#x2F;14482&#x2F;14474&#x2F;14465 (full amount).</li>
+<li>But after the <code>0x8314</code> check, <code>0x8324 strb r0,[0x1f0]</code> immediately clears it to 0 ⇒ the streaming loop <strong>must reset it every round</strong>.</li>
+</ul>
+<h3 id="3-Double-emptying-the-same-in-buffer-will-ASSERT"><a href="#3-Double-emptying-the-same-in-buffer-will-ASSERT" class="headerlink" title="3. Double-emptying the same in buffer will ASSERT"></a>3. Double-emptying the same in buffer will ASSERT</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">##### ASSERT #####</span><br><span class="line">[!(!buffer-&gt;mOwnedByUs)]  [SprdSimpleOMXComponent]</span><br></pre></td></tr></table></figure>
+<p><code>mOwnedByUs=1</code> means ownership has passed to the component; it is normally cleared to 0 by the EmptyBufferDone callback, but we have no looper ⇒ we must <code>set_owned(hdr, 0)</code> before every empty.</p>
+<h2 id="3-gralloc-handle-three-layer-layout-all-settled-by-measurement"><a href="#3-gralloc-handle-three-layer-layout-all-settled-by-measurement" class="headerlink" title="3. gralloc &#x2F; handle three-layer layout (all settled by measurement)"></a>3. gralloc &#x2F; handle three-layer layout (all settled by measurement)</h2><ul>
+<li><strong><code>alloc</code>‘s real signature has only 7 parameters</strong>: <code>int alloc(dev,w,h,format,usage,native_handle_t**,int*stride)</code><br>when called per AOSP’s 10 parameters, the 6th parameter’s literal 0 falls into <code>handle**</code> → <code>0x2192 cmp r9,#0; beq 0x244a</code> → <code>mvn r4,#21</code> &#x3D; <strong>-22</strong>. This is the real cause of the historical universal failure of gralloc alloc.</li>
+<li><strong>format whitelist</strong>: <code>1 2 3 4 5 / 17(YCbCr_420_SP) / 19 20 21 / 33 34 35</code> + the literal <code>0x32315659</code>(“YV12”).<br>measured: <code>fmt=17, usage=0x300(HW_TEXTURE|HW_RENDER)</code> succeeds in one try, <code>stride=1920</code>.<br>⚠ <code>usage &amp; 0x1000</code> with w,h&gt;1 detours to the framebuffer path (<code>0x22ba</code>), where the first call always fails.</li>
+<li><strong><code>hw_module_t</code></strong>: <code>+0x00</code>&#x3D;0x48574d54(“HMW”), <code>+0x04</code>&#x3D;1, <code>+0x08..0x18</code>&#x3D;register[0..4], <code>+0x80..0x8c</code>&#x3D;perform[0..3].</li>
+<li><strong><code>alloc_device_t</code></strong>: <code>+0x00</code>&#x3D;0x48574454(“HWAT”), <code>+0x08</code>&#x3D;module, <code>+0x3c</code>&#x3D;name, <code>+0x40</code>&#x3D;alloc, <code>+0x44</code>&#x3D;free, <code>+0xcc</code>&#x3D;ion_fd.<br>⚠ <code>+0x40</code> <strong>is directly the function pointer</strong> (not a pointer to a pointer; dereferencing one more level will certainly crash).</li>
+<li><strong><code>native_handle</code></strong> (measured dump <code>12 1 18 7 &lt;off&gt; 4 768 3133440 1920 1088 17 1920 &lt;pa&gt;</code>):<br><code>data[0]=ints[3]</code>&#x3D;<strong>dmabuf fd</strong>, <code>ints[7]</code>&#x3D;size, <code>ints[12]</code>&#x3D;physical address.</li>
+</ul>
+<h2 id="4-★-Frame-reading-path-three-level-fallback-level-①-is-verified-to-work"><a href="#4-★-Frame-reading-path-three-level-fallback-level-①-is-verified-to-work" class="headerlink" title="4. ★ Frame reading path (three-level fallback; level ① is verified to work)"></a>4. ★ Frame reading path (three-level fallback; level ① is verified to work)</h2><p>The device <strong>has no <code>/dev/mem</code></strong>, and gralloc uses <strong>dmabuf, not ion</strong> (<code>anon_inode:dmabuf</code> appears in <code>/proc/self/maps</code>),<br>so the integers in the handle cannot be treated as ion fds for mmap. But:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">out_fd = ((<span class="type">int</span>*)ghOut)[<span class="number">3</span>];                  <span class="comment">/* = dmabuf fd */</span></span><br><span class="line">pb = mmap(<span class="literal">NULL</span>, size, PROT_READ, MAP_SHARED, out_fd, <span class="number">0</span>);   <span class="comment">/* ★ verified to work */</span></span><br></pre></td></tr></table></figure>
+<p>Measured: <code>① mmap dmabuf fd=7 size=3133440 → 0xb3cc3000 ★</code></p>
+<p>Corroborating evidence that VSP output goes through a CPU pointer rather than a physical address: <code>0x8140 add r1, ip, r1</code> (ip &#x3D; the return address of mapper.lock).</p>
+<h2 id="5-★★★-0x92-IOMMU-switch-—-all-previous-experiments-ran-on-the-wrong-path"><a href="#5-★★★-0x92-IOMMU-switch-—-all-previous-experiments-ran-on-the-wrong-path" class="headerlink" title="5. ★★★ [0x92] &#x3D; IOMMU switch — all previous experiments ran on the wrong path"></a>5. ★★★ <code>[0x92]</code> &#x3D; IOMMU switch — all previous experiments ran on the wrong path</h2><p><strong>This is the most important discovery of this round.</strong> Log-measured: <code>decoder original value: [0x92]=1 [0x94]=1</code><br>— the decoder ships with <strong>IOMMU enabled</strong>, while historically we <code>force [0x92]=0</code> <strong>turned it off</strong>.</p>
+<p>The branch in <code>initDecoder@0x5808</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">5808 ldrb r3,[r4,#0x92]</span><br><span class="line">5810 cmp r3,#0</span><br><span class="line">5814 beq 5950                ← [0x92]==0 → skip get_iova!</span><br><span class="line">5818 ldr r1,[r4,#0x94]       ← the which parameter of get_iova</span><br><span class="line">5824 bl  get_iova</span><br><span class="line">5830 ldr r0,[r4,#0xa8] / 5834 bl MemoryHeapIon::getBase</span><br><span class="line">5840 str r6,[r4,#0xac]       ← scratch = ION&#x27;s base (not malloc)</span><br><span class="line">585c str r2,[r4,#0xb4] / 5860 str r5,[r4,#0xb0]</span><br></pre></td></tr></table></figure>
+<p>The same gate is in <code>VSP_malloc_cb@0x6d50</code> plus 3 other places (in total <strong>5</strong> <code>get_iova</code> calls:<br><code>0x4784</code>&#x2F;<code>0x4b24</code>&#x2F;<code>0x5824</code>&#x2F;<code>0x6d6c</code>&#x2F;<code>0x7050</code>).</p>
+<p>The <code>[0x92]==0</code> branch (<code>0x5950</code>), measured:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">5960 mov r0,#0x200000 ; bl malloc</span><br><span class="line">5968 str r0,[r4,#0xac]      ← scratch = ordinary heap memory</span><br><span class="line">5970 str r5,[r4,#0xb0] / 5974 str r1,[r4,#0xb4]=2MB</span><br></pre></td></tr></table></figure>
+<p>Log-measured <code>scratch[0xac]=0xb4a36000 [0xb0]=... [0xb4]=2097152</code>, matching exactly.</p>
+<h3 id="⚠-Directly-restoring-0x92-1-will-Segfault-in-the-useBuffer-segment"><a href="#⚠-Directly-restoring-0x92-1-will-Segfault-in-the-useBuffer-segment" class="headerlink" title="⚠ Directly restoring [0x92]=1 will Segfault in the useBuffer segment"></a>⚠ Directly restoring <code>[0x92]=1</code> will Segfault in the useBuffer segment</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">internalUseBuffer, header=0xb6d4ed70, pBuffer=0x0, size=18565 → Segmentation fault</span><br></pre></td></tr></table></figure>
+<p>⇒ Under the IOMMU path, <code>useBuffer</code> internally also needs the buffer’s IOVA (via gralloc →<br><code>MemoryHeapIon::Get_iova</code>), while the buffer our gralloc alloc produces is <strong>dmabuf</strong> (<code>ints[3]=fd</code>),<br>which has not gone through <code>ion_share</code>&#x2F;IOVA mapping ⇒ when it cannot be obtained, it crashes.</p>
+<p><strong>The next step must first solve</strong>: establish an IOVA mapping for the gralloc-allocated buffer,<br>and only then can <code>[0x92]</code> be switched back to 1. Available materials:</p>
+<ul>
+<li><code>libomxvpu.so</code> exports: <code>getIOMMUPhyAddr@0x33e0</code>, <code>lockAndroidBufferHandle@0x3700</code>,<br><code>getAndroidNativeBufferHandleInfo@0x3524</code>, <code>getAndroidNativeBufferInfo@0x3454</code>,<br><code>checkUseAndroidNativeBufferHeader@0x30e4</code>, <code>lockAndroidNativeBuffer@0x35c8</code>,<br><code>StoreMetaDataBuffer@0x3584</code>, <code>enableAndroidBuffer@0x3100</code></li>
+<li>h264dec undefined symbols (we have already mocked some):<br><code>MemoryHeapIon::Get_iova(int,int,unsigned long*,unsigned*)</code>,<br><code>get_iova(...)</code>, <code>free_iova(int,unsigned,unsigned)</code>,<br><code>IOMMU_is_enabled(int)</code>,<br><code>SprdSimpleOMXComponent::freeOutputBufferIOVA()</code></li>
+<li>Disassembly of <code>getIOMMUPhyAddr</code> in <code>libomxvpu.so</code> (Thumb):<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">33f0 ldr r4,[r0,#0x24]        ; MemoryHeapIon object</span><br><span class="line">33f4 movs r0,#1</span><br><span class="line">33f6 blx MemoryHeapIon::IOMMU_is_enabled(int)</span><br><span class="line">33fa cbz r0, 3442             ; ==0 → return</span><br><span class="line">33fc blx gettid</span><br><span class="line">3414 ldr r2,[r4,#0x8] / 341a ldr r0,[r4,#0x12]   ; size / fd</span><br><span class="line">3434 blx MemoryHeapIon::Free_iova(int,int,int,unsigned)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="6-★★-Two-mutually-exclusive-paths-deadlock-discovered-while-wrapping-up-on-2026-10-08"><a href="#6-★★-Two-mutually-exclusive-paths-deadlock-discovered-while-wrapping-up-on-2026-10-08" class="headerlink" title="6. ★★ Two mutually exclusive paths (deadlock discovered while wrapping up on 2026-10-08)"></a>6. ★★ Two mutually exclusive paths (deadlock discovered while wrapping up on 2026-10-08)</h2><p><code>0x7f04-0x7f24</code> and <code>0x84a8-0x84ec</code> are <strong>two mutually exclusive</strong> paths for feeding the VSP; only one can be taken:</p>
+<p><strong>Path A: feed the full bitstream</strong> (requires <code>[0x1dd]</code> to be set)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">7f04 ldrb r2,[r4,#0x1dd] ; cmp #0 ; bne 7f24   ← [0x1dd]!=0 jumps directly to 7f24</span><br><span class="line">7f24 vldr d0,[r5,#0x38]</span><br><span class="line">7f28 ldr r3,[r4,#0x9c]                          ← ★ [0x9c] must be non-zero</span><br><span class="line">7f68 beq 8518                                   ← [0x9c]==0 skips the entire copy section</span><br><span class="line">7fd4-7ffc strb writes &quot;00 00 00 01&quot; to [0xac]</span><br><span class="line">8020 bl memcpy(scratch+4, header-&gt;pBuffer, [0x9c]+4)</span><br></pre></td></tr></table></figure>
+<p>Measured: set <code>[0x1dd]=1</code> + <code>[0x9c]=n</code> → <strong><code>consume byte</code> &#x3D; full 14527</strong> ✓<br>⚠ But <code>[0x9c]!=0</code> triggers <code>0x83b0 strbne [0x9a]=1</code> → the next round’s entry at <code>7dbc</code> returns directly.</p>
+<p><strong>Path B: feed the SPS alone to establish the parameter set</strong> (requires <code>[0x1dd]==0</code> and <code>[0x9c]==0</code>)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">84a8 tst r0,#0x80 ; bne 853c          ← requires nFlags to not carry CODECONFIG</span><br><span class="line">84b0 ldr r3,[r4,#0x1e4] ; cmp #0 ; beq 7f24   ← SPS length==0 skips directly</span><br><span class="line">84dc ldr r8,[r4,#0x1e0]               ← SPS buffer</span><br><span class="line">84e4 strb r0,[r4,#0x1f0]              ★ the vendor sets [0x1f0]=1 here</span><br><span class="line">84ec b 7f24</span><br></pre></td></tr></table></figure>
+<p>Measured: without setting <code>[0x1dc]/[0x1dd]</code> → comes here → but <code>[0x9c]=0</code> blocks the copy at <code>7f68</code> → <strong><code>consume byte</code> stays 41</strong>.</p>
+<h3 id="Deadlock"><a href="#Deadlock" class="headerlink" title="Deadlock"></a>Deadlock</h3><ul>
+<li>Path A requires <code>[0x9c]!=0</code>, but that sets <code>[0x9a]=1</code>, making the next round return.</li>
+<li>Path B requires <code>[0x9c]==0</code>, but then the VSP cannot get the IDR bitstream.</li>
+<li><code>[0x1f0]=1</code> must be <strong>reset every round</strong> (<code>0x8314</code> check, then <code>0x8324</code> immediately clears it to 0).</li>
+</ul>
+<h3 id="Already-ruled-out-hypotheses-measured-by-A-B-experiments"><a href="#Already-ruled-out-hypotheses-measured-by-A-B-experiments" class="headerlink" title="Already-ruled-out hypotheses (measured by A&#x2F;B experiments)"></a>Already-ruled-out hypotheses (measured by A&#x2F;B experiments)</h3><ul>
+<li><strong><code>[0x228]</code> (IOVA switch) is not the key</strong>: after <code>SPRD_NO_IOVA=1</code> forces <code>[0x228]=0</code>,<br><code>consume byte</code> is likewise the full 14527, and <code>frameEffective</code> is likewise 0. No difference from <code>[0x228]=1</code>.</li>
+<li><strong>Advancing <code>nOffset</code> will fragment the bitstream</strong> (probe-verified): after advancing by consume byte, the scratch contents become<br><code>round 0=SPS / round 1=PPS bytes / round 2=IDR middle / round 3=slice</code> ⇒ the VSP can never see a complete SPS start.<br><strong>must always keep <code>nOffset=0</code> + feed the full amount every round</strong>.</li>
+<li><strong>The <code>mCropWidth</code>&#x2F;<code>picWidth</code> logs never appear even once</strong> ⇒ <code>handlePortSettingChangeEvent</code> has never been called.</li>
+</ul>
+<h3 id="The-structure-of-internalUseBuffer-0x4514-it-crashes-here-with-0x92-1"><a href="#The-structure-of-internalUseBuffer-0x4514-it-crashes-here-with-0x92-1" class="headerlink" title="The structure of internalUseBuffer@0x4514 (it crashes here with [0x92]=1)"></a>The structure of internalUseBuffer@0x4514 (it crashes here with <code>[0x92]=1</code>)</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">4654 mov r0,#0x18 ; bl operator new(24)     ; new BufferPrivateStruct(24)</span><br><span class="line">465c str r5,[r0,#4]                          ; [+4] = r5(port private data)</span><br><span class="line">4660 ldr r5,[r4] ; 4664 str r0,[r5,#0x24]    ; portInfo-&gt;[0x24] = the new object</span><br><span class="line">4668 ldr sl,[r4] ; 466c ldr r5,[sl,#0x24]     ; read back</span><br><span class="line">4670 cmp r5,#0 ; beq 4748                    ; → __android_log_assert</span><br><span class="line">4678 ldrb lr,[r9,#0x90]                      ; ★ yet another switch [0x90]</span><br><span class="line">467c ldr r0,[r9,#0x94] ; 4688 str r0,[r5,#0x20] ; merely stores a field, not a dereference</span><br><span class="line">4684 cmp lr,#0 ; beq 46f4                     ; [0x90]==0 goes to 46f4</span><br><span class="line">4690 ldr lr,[sp,#0x40] ; 4698 beq 47c0</span><br><span class="line">46a4-46c8 RefBase::incStrong/decStrong       ; we have already no-op&#x27;ed it</span><br></pre></td></tr></table></figure>
+<p>Measured with <code>SPRD_IOMMU=1</code>: the log stops at <code>internalUseBuffer, header=..., pBuffer=0x0, size=18565</code><br>(with <code>[0x92]=0</code>, the same position prints <strong>twice</strong>, once each for in&#x2F;out) ⇒ it crashes inside the first useBuffer,<br>and <strong>★ <code>Get_iova</code> is never printed even once</strong> ⇒ get_iova was never even called; an earlier branch exploded.</p>
+<p>Switch matrix (current default values &#x3D; the known-working baseline):</p>
+<ul>
+<li><code>SPRD_IOMMU=1</code> → <code>[0x92]=1 [0x94]=1</code> → Segfault in the useBuffer segment (not located)</li>
+<li>default (no env) → <code>[0x92]=0 [0x94]=0</code> → runs the whole process, <code>consume byte</code> full amount,<br><code>scratch non-zero=43/64</code>, but <code>frameEffective=0</code></li>
+</ul>
+<h2 id="7-Current-Sticking-Point-next-step"><a href="#7-Current-Sticking-Point-next-step" class="headerlink" title="7. Current Sticking Point (next step)"></a>7. Current Sticking Point (next step)</h2><p>The log is fixed at:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">dec_out.frameEffective: 0, consume byte: &lt;full 14527&gt;, SPS:0, PPS:0</span><br><span class="line">failed to get decoder information.        ← H264DecGetInfo returns empty</span><br><span class="line">[0x64]/[0x68]=1920/1088 ✓  spsLen=41 ppsLen=8 ✓</span><br><span class="line">[0x1e0]SPS=00 00 00 01 67 64 00 2a ...  [0x1e8]PPS=00 00 00 01 68 ee 3c b0   ✓</span><br><span class="line">scratch[0..15]=00 00 00 01 67 64 00 2a ...  ✓  scratch non-zero=43/64</span><br></pre></td></tr></table></figure>
+
+<p>Already ruled out: <code>nFlags</code>, <code>[0x9c]</code>(alone), <code>[0x8c]</code>, <code>[0x1f0]</code>, <code>[0x1dc]/[0x1dd]</code>, port1 size,<br><code>[0x84]/[0x9a]</code>, mOwnedByUs, gralloc handle, mapper.lock, <code>[0x228]</code>, nOffset advancement.</p>
+<p><strong>The <code>mCropWidth</code>&#x2F;<code>picWidth</code> logs never appear even once</strong> ⇒ <code>handlePortSettingChangeEvent</code> has never been called<br>⇒ the VSP has never written back dimensions ⇒ <code>H264DecGetInfo</code> returns empty.</p>
+<p><strong>Prime suspect (located, not fixed)</strong>: <code>[0x92]</code> was forced to 0 by us, turning off IOMMU.<br>The decoder’s original value is 1; when taking the IOMMU path the VSP wants <strong>IOVA</strong> (<code>MemoryHeapIon::Get_iova</code>),<br>while our <code>get_iova</code> mock returns a bare physical address <code>base + g_phys_bias</code>,<br>so the VSP using it to access memory will certainly fail → no frames output, <code>SPS:0/PPS:0</code>.</p>
+<p><strong>Secondary suspect</strong>: the dmabuf from gralloc has no IOVA mapping, causing a direct crash at useBuffer when <code>[0x92]=1</code>.</p>
+<h2 id="6-Build-Run"><a href="#6-Build-Run" class="headerlink" title="6. Build &#x2F; Run"></a>6. Build &#x2F; Run</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> DEV_IP=192.168.137.100 MSYS_NO_PATHCONV=1   <span class="comment"># ★ without it, SFTP reports &quot;not found&quot;</span></span><br><span class="line">python ssh_tools/dev.py --push outputs/sprd_msg.c /tmp/sprd_msg.c</span><br><span class="line">python ssh_tools/dev.py <span class="string">&quot;sh /tmp/smb.sh 2&gt;&amp;1 | grep -E &#x27;BUILD|error:&#x27;&quot;</span></span><br><span class="line">python ssh_tools/dev.py <span class="string">&quot;rm -f /tmp/run.log; timeout 150 /tmp/sprd_msg &gt; /tmp/run.log 2&gt;&amp;1&quot;</span></span><br><span class="line">python ssh_tools/dev.py --get /tmp/run.log outputs/run.log</span><br></pre></td></tr></table></figure>
+<p><code>smb.sh</code> runs itself once at the end; for a standalone run, manually redirect to save the log.<br>Disassembly: <code>python ssh_tools/dev.py &quot;objdump -d --start-address=0x7f00 --stop-address=0x8030 /mnt/android_sys/lib/libstagefright_sprd_h264dec.so&quot;</code></p>
+<h2 id="8-★★-IOVA-Chain-Breakthrough-Verdict-2026-10-08-afternoon-SPRD-IOMMU-1-path"><a href="#8-★★-IOVA-Chain-Breakthrough-Verdict-2026-10-08-afternoon-SPRD-IOMMU-1-path" class="headerlink" title="8. ★★ IOVA Chain Breakthrough Verdict (2026-10-08 afternoon, SPRD_IOMMU&#x3D;1 path)"></a>8. ★★ IOVA Chain Breakthrough Verdict (2026-10-08 afternoon, SPRD_IOMMU&#x3D;1 path)</h2><h3 id="Already-fixed-all-measured"><a href="#Already-fixed-all-measured" class="headerlink" title="Already fixed (all measured)"></a>Already fixed (all measured)</h3><ol>
+<li><strong>useBuffer parameter misalignment (the biggest bug of this round)</strong>: the real signature is<br><code>useBuffer(this, hdr**, port, priv, size, pBuf, out**)</code> — the old call put pInBuf<br>in the priv slot and passed 0 in the pBuf slot → internalUseBuffer’s header-&gt;pBuffer&#x3D;0 →<br>with <code>[0x92]=1</code>, <code>0x477c ldr r1,[pBuffer,#12]</code> dereferences 0xc → SEGV.<br>The old <code>[0x92]=0</code> path never touches pBuffer, so it luckily did not crash.</li>
+<li><strong>internalUseBuffer out-port branch 4 settled</strong> (starting at 0x4678):<br><code>[0x90]!=0</code> → treats arg6 as sp<GraphicBuffer>* and calls incStrong (passing a native_handle will certainly crash);<br><code>[0x90]==0 &amp;&amp; [0x92]!=0</code> → ION&#x2F;IOVA path 0x476c (safe): Get_iova([0x94], pBuffer[12])<br>→ priv-&gt;[8]&#x3D;fd, priv-&gt;[12]&#x3D;iova, priv-&gt;[16]&#x3D;size.<br><strong>pBuffer[12] &#x3D; native_handle data[3] &#x3D; dmabuf fd</strong>.</li>
+<li><strong>Get_iova parameter semantics</strong>: <code>Get_iova(fd1_unused, fd2_real, &amp;iova, &amp;size)</code> —<br><strong>the second parameter is the dmabuf fd</strong> (&#x3D;handle ints[3]&#x3D;7), and the first is [0x94] (original value 1).<br>The old mock looked up the first parameter → always failed → priv-&gt;[12] stack garbage.</li>
+<li><strong>map_add timing</strong>: must be registered immediately after gralloc alloc (internalUseBuffer calls Get_iova<br><strong>inside</strong> useBuffer; late registration &#x3D; inverted timing).</li>
+<li><strong>pBufCtrl (pointed to by this+0x48, 24B)</strong>: [0]&#x3D;phyAddr (filled by the VSP callback chain, <strong>the IOVA managed by the VSP itself</strong>,<br>changing each run: 0xb48x0000&#x2F;0xb49x0000 &#x3D; dynamically allocated by the driver);<br>onQueueFilled 0x805c: <code>[0x92]!=0 and priv-&gt;[12]==0 → fail</code> (0x8860 prints<br>“pBufCtrl-&gt;phyAddr&#x3D;&#x3D;0, fail”). <strong>fail&#x3D;0 has been achieved</strong>.</li>
+<li><strong>[0x8e]&#x3D;1 is the degradation flag after openDecoder fails</strong> (set by the vendor at 0x7d68):<br>initDecoder 0x5770 checks [0x8e]!&#x3D;0 → malloc scratch (skipping ION) →<br>the <code>[0x92]=0</code> old path is actually the degradation path, and the VSP getting malloc’d memory is not DMA-readable → the cause of no frames.<br>allocateBuffer 0x4a88 likewise checks [0x8e]&#x2F;[0x8f].</li>
+</ol>
+<h3 id="Current-status-run-iova3"><a href="#Current-status-run-iova3" class="headerlink" title="Current status (run_iova3)"></a>Current status (run_iova3)</h3><ul>
+<li><code>consume byte: 41→8→14469</code> (SPS&#x2F;PPS&#x2F;IDR three-stage full consumption), <code>decRet: 0</code>,<br><code>pBufCtrl fail=0</code>, scratch has a complete SPS ✓</li>
+<li><strong>Sticking point</strong>: <code>0ms</code> immediate return + <code>frameEffective:0</code> + <code>SPS:0,PPS:0</code> — the VSP did not really decode</li>
+<li><strong>Prime suspect</strong>: h264dec memcpy’s the bitstream to [0xac] (the ION getBase we allocated in C1),<br>but the VSP reads pBufCtrl-&gt;phyAddr (<strong>the IOVA of the bitstream<br>buffer allocated by VSP_malloc_cb@0x6ba0</strong>) — if VSP_malloc_cb allocates from <strong>another</strong> ION<br>(not the same block as [0xac]), then CPU write&#x2F;DMA read are misaligned → the VSP reads empty → 0 frames. Next step: verify the relationship between VSP_malloc_cb (0x6ba0,<br>via callbacks 0x20c&#x2F;0x214, writing [0x8c] at the end) return address and [0xac].</li>
+<li>ioctl 0xc0084906 (the truly implemented Get_phy_addr) is confirmed unsupported by the kernel; pagemap on ARM32<br>cannot read out page frames (scratch_pa&#x3D;0) — both paths to obtaining physical addresses are dead, but the VSP’s internal IOVA is usable.</li>
+</ul>
+<h3 id="Supplementary-verdict-0x8090-0x8190-VSP-DecodeFrame-parameters"><a href="#Supplementary-verdict-0x8090-0x8190-VSP-DecodeFrame-parameters" class="headerlink" title="Supplementary verdict (0x8090-0x8190 VSP DecodeFrame parameters)"></a>Supplementary verdict (0x8090-0x8190 VSP DecodeFrame parameters)</h3><ul>
+<li><code>0x8124 ldr r0,[r4,#0x48]</code> → <strong>the first parameter of VSP DecodeFrame([0x208]) &#x3D; pBufCtrl</strong><br>(the VSP reads the bitstream from pBufCtrl-&gt;phyAddr; the [0xac] scratch is the CPU-side memcpy target)</li>
+<li><code>r2 = [sp+0x54] = priv-&gt;[12] = gralloc out&#39;s iova(0xb4543000)</code> → the physical address where the VSP writes frames ✓</li>
+<li><code>0x815c [0xac]</code> only goes into dump_strm(log), not a VSP parameter</li>
+<li>Verdict: the h264dec upper layer (IOVA&#x2F;phyAddr&#x2F;consume) is <strong>fully connected</strong>, and the remaining <code>0ms no frames</code> problem<br>is <strong>inside libomx_avcdec_hw_sprd.so’s H264DecDecode_NALU</strong> (believed to have no decodable data).<br>Next step: disassemble H264DecDecode_NALU (or use ptrace to capture the VSP library’s input pointers), and verify<br>whether pBufCtrl-&gt;phyAddr truly corresponds to [0xac]’s physical (the VSP init callback chain [0x1f8] may<br>be the mapping made for [0xac] — if so, the data should be reachable, and the suspicion shifts to the VSP’s internal state machine).</li>
+</ul>
+<h2 id="9-★★★-2026-10-08-afternoon-hardware-decoding-produces-an-image-milestone"><a href="#9-★★★-2026-10-08-afternoon-hardware-decoding-produces-an-image-milestone" class="headerlink" title="9. ★★★ 2026-10-08 afternoon: hardware decoding produces an image (milestone)"></a>9. ★★★ 2026-10-08 afternoon: hardware decoding produces an image (milestone)</h2><blockquote>
+<p>Conclusion first: <strong>the VSP hardware has fully decoded a real 1920x1080 picture</strong> (outputs&#x2F;out_frame.png shows the TV station logo&#x2F;subtitles&#x2F;a face).</p>
+</blockquote>
+<h3 id="Root-cause-chain-all-empirically-verified-this-round"><a href="#Root-cause-chain-all-empirically-verified-this-round" class="headerlink" title="Root cause chain (all empirically verified this round)"></a>Root cause chain (all empirically verified this round)</h3><ol>
+<li><code>read_bits</code> is the <strong>VSP hardware register bitstream engine</strong> (triggered by writing 0x60908008, read back via 0x60908010),<br>not reading memory. The physical address the hardware uses to read the bitstream comes from the decoder region table.</li>
+<li><strong>region table</strong> &#x3D; <code>H264Dec_MemV2P@0xbf8c</code>: region struct ctx+id*16, <code>[0x88]=pbase, [0x8c]=vbase</code>,<br><code>phys = vaddr + (pbase - vbase)</code>. region0 &#x3D; the VSPDev internal work area (vbase&#x3D;0xef58).</li>
+<li><strong>ION real interface verdict (&#x2F;dev&#x2F;ion, the kernel has no IOMMU mapping interface)</strong>:<ul>
+<li>ALLOC  &#x3D; <code>0xc0144900</code> (20B struct {len,align,mask,flags,handle})</li>
+<li>fd export &#x3D; <code>0xc0084904</code> ({handle,fd}, <strong>not 03</strong>!)</li>
+<li>FREE   &#x3D; <code>0xc0044901</code></li>
+<li>PHYS   &#x3D; <code>ION_IOC_CUSTOM 0xc0084906</code>, arg&#x3D;{cmd&#x3D;0, arg&#x3D;&amp;{int fd; ulong phys; uint size}}<br>→ real physical address (e.g. 0x9f800000). <strong>Only allocations with heap mask&#x3D;8 can be queried</strong> (mask 2&#x2F;4 return EINVAL)</li>
+<li>cmd9(get_iova) <strong>does not exist in the kernel</strong> (all 1024 combinations scanned return EINVAL) → the IOMMU path is a dead end,<br><strong>we must use physical addresses</strong> (the VSP has no independent MMU; phys&#x3D;bus address)</li>
+<li>⚠ cmd&#x3D;1 will SEGV-kill the process; only ever call cmd&#x3D;0</li>
+</ul>
+</li>
+<li>Root cause of the historical failure: the mock Get_iova returned a CPU virtual address (0xb4xxxxxx) as the physical address →<br>the VSP DMA read garbage → NAL parsing failed (profile_idc INVALID) or a fake completion.<br>[0x92] default changed back to 1 (the factory value); combined with cmd0’s real query, the chain is fully connected.</li>
+<li><strong>Output buffers must be self-managed ION</strong> (heap 8): gralloc.sc8830 allocates from the IOMMU heap<br>(with no physically contiguous backing) → cmd0 cannot query it → only a fake address can be given → VSP frame writes fail.<br>Self-managed ION + fake gralloc handle (copying the real handle’s magic fields fh[0..2],[4..6],<br>replacing fd[3]&#x2F;size[7]&#x2F;base[12], otherwise mapper.lock reports “Locking invalid buffer”).<br><strong>4 output buffers</strong> (required for DPB reference frames; with 1, you get -9 missing frame buffer).</li>
+<li>Key register verdict: each round H264DecDecode writes 0x8000&#x3D;len|0x80000000, 0x8004&#x3D;acc|0xc0000000,<br>0x8008&#x3D;6, 0x1060&#x2F;0x1064&#x3D;dataLen&gt;&gt;3, and the sentinel f4 68 28 f1 is written to pStream[cap..cap+3];<br>0x8034&#x3D;this round’s hardware consumption, VSPDev+0x984&#x3D;cumulative. acc&gt;&#x3D;total → skip NALU and return directly<br>(after the real PA fix, the consumption pattern changes to 4-byte start code + read_bits software parsing).</li>
+<li><code>vsp_read_reg_poll@0x12a10</code> (inside libomx) returns 0&#x3D;success; the hook uses a <strong>GOT patch</strong><br>(lib_base+0x1de90); intercepting the same-named exported symbol does not work (bionic hits itself first).<br>⚠ reading registers inside the hook must be done within a VSP session (polling at 0x8018); reading after empty returns will certainly crash<br>(VSP_RELEASE_Dev has already released).</li>
+</ol>
+<h3 id="Behavior-when-producing-an-image"><a href="#Behavior-when-producing-an-image" class="headerlink" title="Behavior when producing an image"></a>Behavior when producing an image</h3><ul>
+<li>SPS round decRet&#x3D;-9 (2ms, SPS:1 PPS:0, reports PortSettingChange 1920x1088 ✓)</li>
+<li>IDR round decRet&#x3D;-7 (35-44ms of real decoding! “failed to decode video frame, hardware error”<br>is a <strong>non-fatal</strong> status bit, error_flag&#x3D;0x8; the frame has actually been written to the output buffer)</li>
+<li>Y plane 93.5% non-zero, U 97%, V 89%; the picture is completely correct</li>
+<li>The disk-write verdict does not rely on the OMX header’s echo (nFilledLen is unreliable); judge directly by the YUV non-zero ratio</li>
+<li>The probe’s trailing RC&#x3D;139 (Segfault) is a pre-existing bug in the wrap-up phase and does not affect image production</li>
+</ul>
+<h3 id="Remaining-work"><a href="#Remaining-work" class="headerlink" title="Remaining work"></a>Remaining work</h3><ul>
+<li>① Confirm rotation of frames landing in different out buffers each round (4 paths already registered)</li>
+<li>② Frame geometry green band: cut on disk by stride*1088 layout (currently cut by 1080, causing chroma misalignment)</li>
+<li>③ VPP&#x2F;FBIOPAN display integration + nettv_page</li>
+<li>④ Submit and push</li>
+</ul>
+<h2 id="10-★★★-2026-10-08-evening-continuous-multi-frame-decoding-connected"><a href="#10-★★★-2026-10-08-evening-continuous-multi-frame-decoding-connected" class="headerlink" title="10. ★★★ 2026-10-08 evening: continuous multi-frame decoding connected"></a>10. ★★★ 2026-10-08 evening: continuous multi-frame decoding connected</h2><ul>
+<li><strong>All 8&#x2F;8 rounds truly decoded</strong> (33-37ms&#x2F;frame ≈ 28fps capability), writing frames to disk one by one as &#x2F;tmp&#x2F;frame_NN.yuv (0x2FC000 raw NV12).</li>
+<li><strong>The component’s [this_d+0x92] default changed to 0</strong> (key): the fail branch (dec.asm 0x8064→0x8860 prints “pBufCtrl-&gt;phyAddr&#x3D;&#x3D;0,fail”)<br>only triggers when [0x92]!&#x3D;0 and priv[12]&#x3D;&#x3D;0; when &#x3D;0, onQueueFilled takes Get_phy_addr_from_ion(mock&#x3D;ion_phys cmd0)<br>→ the self-managed ION path gets the real PA, while the gralloc path has [12]&#x3D;0 but does not block the process. The VSPDev internal IOMMU switch is a different byte and is unaffected.</li>
+<li><strong>Memory budget verdict</strong>: the continuous pool is only ~2x3MB. Grabbing 2 paths or 1 path early (at the start of main) → the component’s internal DPB allocation fails<br>(decRet&#x3D;-3 “failed to allocate memory” → auto-switch to software decoding → total wipeout). <strong>The successful configuration &#x3D; no early grabbing at all,<br>the component takes memory first, out[0] is allocated after init with try_sz{0x320000,0x300000,0x400000}, out[1..3] uses gralloc</strong>.</li>
+<li>Pitfalls during rotation (all fixed in the probe):<ul>
+<li>The VSPDev ctx (pBufCtrl-&gt;[0]) is cleared to 0 after round 0’s VSP_RELEASE → restore it before each empty (g_vspdev0)</li>
+<li>The out header’s priv(+0x24)-&gt;[12] may be 0 → scan every round; fd is taken from header-&gt;pBuffer ints[3] (priv[8] is unreliable)</li>
+<li>The OMX out header never echoes nFilledLen (drain only sends empty frames) → the frame output verdict must be based on memory contents (Y sparsely-sampled non-zero)</li>
+<li>All 8 rounds FilledDone on the same h (the component always picks the first empty out) → the picture is continuously written into out[0]’s ION</li>
+</ul>
+</li>
+<li>Remaining: the error_flag&#x3D;0x8 status bit is non-fatal (decRet&#x3D;-7 but the frame is correct); the current test is repeated decoding of the same IDR slice,<br>continuous playback requires streaming per-AU feeding (to be done during nettv integration).</li>
+<li>Next step: VPP&#x2F;FBIOPAN display (YUV→RGB or direct NV12 tile? format needs checking) + nettv_page integration + submit and push.</li>
+</ul>
+<h2 id="11-★★★-2026-10-08-evening-real-stream-NAL-streaming-hardware-decoding-connected-about-95"><a href="#11-★★★-2026-10-08-evening-real-stream-NAL-streaming-hardware-decoding-connected-about-95" class="headerlink" title="11. ★★★ 2026-10-08 evening: real-stream NAL streaming hardware decoding connected (about 95%)"></a>11. ★★★ 2026-10-08 evening: real-stream NAL streaming hardware decoding connected (about 95%)</h2><blockquote>
+<p>es_fix.h264 (5.2MB live ES, 1016 AU &#x2F; 333 valid NAL) continuously streams-decoded 82-103 frames with decRet&#x3D;0.</p>
+</blockquote>
+<h3 id="Feeding-model-verdict"><a href="#Feeding-model-verdict" class="headerlink" title="Feeding model verdict"></a>Feeding model verdict</h3><ul>
+<li><strong>The VSP consumes only one NAL per empty</strong> (verified: when AU&#x3D;[AUD+slice], consume&#x3D;6 eats only the AUD;<br>the garbage NAL (type0) at the file head blocks in front of the first one → the IDR cannot get in → needIVOP&#x3D;1 → all frames are dropped).</li>
+<li><strong>The feeding unit &#x3D; a single NAL</strong> (type 1&#x2F;5&#x2F;6&#x2F;7&#x2F;8; skip type 0 garbage and type 9 AUD).<br>Consistent with the successful path of the config segment (one empty each for SPS&#x2F;PPS&#x2F;IDR).</li>
+<li>An in buffer of 32KB is sufficient (largest measured NAL is 23918B); 1MB would crowd out the CMA pool and trigger -3 early.</li>
+</ul>
+<h3 id="★-error-flag-Need-I-frame-deadlock-chain-disassembly-verdict-libomx-avcdec-hw-sprd-so"><a href="#★-error-flag-Need-I-frame-deadlock-chain-disassembly-verdict-libomx-avcdec-hw-sprd-so" class="headerlink" title="★ error_flag&#x2F;Need I frame deadlock chain (disassembly verdict, libomx_avcdec_hw_sprd.so)"></a>★ error_flag&#x2F;Need I frame deadlock chain (disassembly verdict, libomx_avcdec_hw_sprd.so)</h3><ol>
+<li>Inside a NALU, 0x11724 bl VSP_POLL_COMPLETE → return value int_ret</li>
+<li>0x11738 <code>ands r3,r0,#1</code>: <strong>bit0&#x3D;1 → [H264Dec ctx+0xc] |&#x3D; 8</strong> (0x11750)</li>
+<li>At the NALU tail, 0x11884 checks [0xc]!&#x3D;0 → 976 lines of “error_flag&#x3D;0x8” log + return (decRet&#x3D;-7)</li>
+<li><strong>The next NAL comes in; 0x10e38 checks [r4+0xc]!&#x3D;0 → 886 lines of “Need I frame!” → return -1</strong> (upper layer -5 stream error)<br>→ although the IDR produces an image, error_flag pollutes the ctx, and all subsequent P frames are blocked.</li>
+<li>IDR logs constantly show <code>VSP_POLL_COMPLETE int_ret: 1</code> (the hardware reports bit0 every round).</li>
+</ol>
+<ul>
+<li><strong>Fix</strong>: GOT patch VSP_POLL_COMPLETE (GOT 0x1dfa0, symbol@0x12800),<br>in the hook <code>r &amp;= ~1</code> suppresses bit0 → the process takes the 0x118cc “normal completion” path → error_flag is no longer set.</li>
+<li>Effect: IDR&#x2F;P frames decRet&#x3D;0, needIVOP&#x3D;0, 14-20ms&#x2F;frame (1080p ≈ 50-70fps capability).</li>
+</ul>
+<h3 id="Memory-ledger-CMA-pool-7MB-hid-0-area-starting-at-0x9fd20000-contiguous-linear-allocation"><a href="#Memory-ledger-CMA-pool-7MB-hid-0-area-starting-at-0x9fd20000-contiguous-linear-allocation" class="headerlink" title="Memory ledger (CMA pool ~7MB, hid&#x3D;0 area starting at 0x9fd20000, contiguous linear allocation)"></a>Memory ledger (CMA pool ~7MB, hid&#x3D;0 area starting at 0x9fd20000, contiguous linear allocation)</h3><ul>
+<li>out[0] self-managed ION 3.2MB (mask8 area 0x9fa00000) + in 32KB + mbinfo 5x653824&#x3D;3.2MB ≈ full</li>
+<li><strong>mbinfo idx 0,1,2,… allocates 653824B incrementally every ~2 frames and is never freed</strong> (component behavior)</li>
+<li>C1 LRU reuse (C1_REUSE_MAX&#x3D;5) is written but not yet triggered; when the pool fills → decRet&#x3D;-3 → the component switches to software decoding and total wipeout</li>
+<li>⚠ <strong>Taboo</strong>: allocating mbinfo with a bare mask8 (the same area as out[0]) → VSP DMA writes that area → <strong>kernel panic and device reboot</strong>.<br>C1 allocations can only use hid&#x3D;0.</li>
+</ul>
+<h3 id="Remaining-bad-frames-the-only-remaining-problem-about-1-3-of-frames"><a href="#Remaining-bad-frames-the-only-remaining-problem-about-1-3-of-frames" class="headerlink" title="Remaining bad frames (the only remaining problem, about 1&#x2F;3 of frames)"></a>Remaining bad frames (the only remaining problem, about 1&#x2F;3 of frames)</h3><ul>
+<li>Pattern: intermittent (7 good frames → 1 bad → 3 good → 2 bad → 9 good → 4 bad…), chroma all 0 (U-mean&#x3D;0) + scrambled Y macroblocks.</li>
+<li>Root cause: out[1..3] are gralloc (IOMMU heap) — cmd0(0xc0084906) and 0xc008602a both fail to find the real PA<br>→ the VSP DPB reference writes to an invalid address → P frame reference scrambling. When the reference happens to use out[0], the frame is perfect (frame_00&#x2F;05).</li>
+<li>Solution direction: replace out[1..3] with memory whose PA can be queried (the pool cannot fit 3x3.2MB) → mbinfo needs to leave the pool (bare mask8 crashes are not viable)<br>or lower the VSP output resolution (1280x720 → 1.4MB per out, 2 ION paths 2.8+mbinfo 3.2+in ≈ 6.5MB is viable, to be verified)</li>
+<li>Verification tool: U channel mean (starting at offset 1920*1088, &gt;40&#x3D;good frame); yuv2png.py (NV12 stride1088 image cutting)</li>
+</ul>
+<h3 id="Engineering-miscellany"><a href="#Engineering-miscellany" class="headerlink" title="Engineering miscellany"></a>Engineering miscellany</h3><ul>
+<li>Add to compilation <code>-Wl,-l:libion.so -Wl,-l:libhardware.so</code> (ion_open&#x2F;ion_alloc&#x2F;hw_get_module)</li>
+<li>musl headers redirect gettimeofday&#x2F;clock_gettime to __*_time64 (which bionic lacks) → bare <code>syscall(78,&amp;tv,0)</code> to get milliseconds</li>
+<li>Killing residual probes: match cmdline with <code>/tmp/sprd_msg*</code> — a loose match on “sprd_msg” will hit bash itself (stepped on before)</li>
+<li>Deduplication on disk-write: Y sparsely-sampled DJB2 signature; do not write to disk again if the picture has not changed</li>
+</ul>
+<h2 id="12-★★★-2026-10-08-evening-2-fb-direct-display-connected-about-97"><a href="#12-★★★-2026-10-08-evening-2-fb-direct-display-connected-about-97" class="headerlink" title="12. ★★★ 2026-10-08 evening 2: fb direct display connected (about 97%)"></a>12. ★★★ 2026-10-08 evening 2: fb direct display connected (about 97%)</h2><h3 id="Remaining-bad-frames-verdict-important-reversal"><a href="#Remaining-bad-frames-verdict-important-reversal" class="headerlink" title="Remaining bad frames verdict (important reversal)"></a>Remaining bad frames verdict (important reversal)</h3><ul>
+<li>Local ffmpeg(OpenCV) decoding the same es_fix.h264: <strong>likewise reports a bunch of “error while decoding MB … bytestream -5”</strong><ul>
+<li>“non-existing PPS 2” → <strong>the source stream itself has packet-loss damage</strong> (lost during network capture), not a VSP defect.<br>ffmpeg erroneously masks it (copying neighboring MBs), so no black chroma frames; the VSP’s concealment strategy is worse → garbled screen + chroma 0.<br>The bad frame positions are byte-for-byte identical across runs (deterministic) &#x3D; a stream-damage signature independent of memory configuration.<br>→ During live-stream integration this counts as normal network damage; the VSP pipeline needs no further fixing.</li>
+</ul>
+</li>
+<li>Also fixed: mbinfo PA — in C1, after 0xc008602a fails, append cmd0(0xc0084906) as a fallback; all 6 mbinfo get real PAs.</li>
+</ul>
+<h3 id="fb-direct-display-pipeline-fb-init-fb-render-fb-home-inside-sprd-msg-c"><a href="#fb-direct-display-pipeline-fb-init-fb-render-fb-home-inside-sprd-msg-c" class="headerlink" title="fb direct display pipeline (fb_init&#x2F;fb_render&#x2F;fb_home inside sprd_msg.c)"></a>fb direct display pipeline (fb_init&#x2F;fb_render&#x2F;fb_home inside sprd_msg.c)</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">out[0] NV12 1920x1088</span><br><span class="line">  → pass1: sequential NV12→ARGB (yuv2px BT.601, byte order [R,G,B,X])</span><br><span class="line">  → pass2a: 16x16 block transpose + horizontal mirror → targb[c*1080+(1079-r)] = argb[r*1920+c]</span><br><span class="line">  → pass2b: targb sequential rows, 3/2 NN sampling → fb page (720x1280)</span><br><span class="line">  → FBIOPAN double pages 1/2 alternating</span><br></pre></td></tr></table></figure>
+<ul>
+<li>★ CW rotation verdict: out[oy][ox] &#x3D; in[row&#x3D;1079-ox<em>3&#x2F;2, col&#x3D;oy</em>3&#x2F;2]<br>(the station logo lands top-right, text rotated 90° clockwise, consistent with the direction of LVGL rotation 900)</li>
+<li>★★ FBIOPAN must use the real fb_var_screeninfo: FBIOGET_VSCREENINFO → change yoffset → FBIOPAN_DISPLAY.<br><strong>A homemade 24-byte short struct &#x3D; copy_from_user half-copy → residual garbage yoffset on the kernel stack → the DPU DMA fetches an illegal address<br>→ kernel panic and device reboot (already stepped on; do not repeat)</strong></li>
+<li>fb0: 720x1280x4, yres_virtual&#x3D;3840(3 pages), stride 2880; argb&#x2F;targb each malloc 8.3MB (ordinary memory, not CMA)</li>
+<li>Performance: pass1 ~6ms + transpose ~5ms + pass2b ~3ms ≈ 15ms&#x2F;frame, parallel with the VSP decode’s 15ms, enough for 25fps</li>
+<li>Verification methodology: capturing the screen with grab_screen during continuous rendering showing stripes &#x3D; an artifact of slow capture (second-level) mixing frames with 30ms&#x2F;frame rendering;<br>freeze the first frame (render only 1 frame) then capture &#x3D; 0.821 non-black clean picture. Real-machine visual inspection is the gold standard.</li>
+<li>fbtest.c(direct mapping)&#x2F;fbtest2p.c(2-pass) independent verification tools; es_check.py local cv2 software decode comparison tool;<br>grab_screen.py has been changed to read the DEV_IP environment variable.</li>
+<li>Stop the desktop: kill $(pidof lvgl_watchdog) with comm prefix &#x2F;lvgl&#x2F; awk matching (comm truncated to 15 characters);<br>restore: sh &#x2F;etc&#x2F;local.d&#x2F;00_lvgl_demo.start</li>
+</ul>
+<h3 id="Remaining-work-1"><a href="#Remaining-work-1" class="headerlink" title="Remaining work"></a>Remaining work</h3><p>① Player binary: curl real-time stream → demux ES → loop this pipeline (replacing file reading)<br>② nettv_page.c integration: bring it up following the psp_game_page pattern of pausing LVGL+interceptor<br>③ Submit and push (device repo bundle relay)</p>
+<h2 id="13-★★★-2026-10-08-evening-3-player-binary-complete-about-98"><a href="#13-★★★-2026-10-08-evening-3-player-binary-complete-about-98" class="headerlink" title="13. ★★★ 2026-10-08 evening 3: player binary complete (about 98%)"></a>13. ★★★ 2026-10-08 evening 3: player binary complete (about 98%)</h2><h3 id="Player-usage-sprd-msg-is-now-player-ized"><a href="#Player-usage-sprd-msg-is-now-player-ized" class="headerlink" title="Player usage (sprd_msg is now player-ized)"></a>Player usage (sprd_msg is now player-ized)</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">/tmp/sprd_msg                    # probe mode (old behavior)</span><br><span class="line">/tmp/sprd_msg /path/es.h264      # loop-play a file, exit on SIGTERM</span><br><span class="line">/tmp/sprd_msg http://x/y.ts      # curl 25s download→play→download again (live continuation)</span><br><span class="line">/tmp/sprd_msg &lt;src&gt; &lt;N&gt;          # play N frames then exit automatically (0/missing=infinite)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>Parameters are passed via &#x2F;proc&#x2F;self&#x2F;cmdline (no crt0, so argc&#x2F;argv cannot be used)</li>
+<li>load_chunk(): URL→curl download &#x2F;tmp&#x2F;nettv.es→re-cut NAL table→chunk loop reentry (config is not redone)</li>
+</ul>
+<h3 id="Performance-localization-methodology-and-conclusions-ms-timestamp-step-by-step-elimination"><a href="#Performance-localization-methodology-and-conclusions-ms-timestamp-step-by-step-elimination" class="headerlink" title="Performance localization methodology and conclusions (@ms timestamp step-by-step elimination)"></a>Performance localization methodology and conclusions (@ms timestamp step-by-step elimination)</h3><table>
+<thead>
+<tr>
+<th>Experiment</th>
+<th>Frame Rate</th>
+<th>Conclusion</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>baseline</td>
+<td>2.8s&#x2F;frame</td>
+<td>slow</td>
+</tr>
+<tr>
+<td>no disk write</td>
+<td>3s&#x2F;frame</td>
+<td>disk write is not the bottleneck</td>
+</tr>
+<tr>
+<td>&#x2F;dev&#x2F;null</td>
+<td>-</td>
+<td>logging is not the bottleneck (500KB)</td>
+</tr>
+<tr>
+<td>DRIVE usleep 120ms→stepped</td>
+<td>1.3s&#x2F;frame</td>
+<td>per NAL x 120ms is one of the big ones</td>
+</tr>
+<tr>
+<td>no-pan</td>
+<td>unchanged</td>
+<td>pan is not the bottleneck</td>
+</tr>
+<tr>
+<td>no-fb_render</td>
+<td>30ms&#x2F;NAL ★</td>
+<td><strong>fb_render ~550ms&#x2F;frame</strong></td>
+</tr>
+</tbody></table>
+<ul>
+<li>fb_render hotspot &#x3D; pass2a transpose tb[c*1080+..] column-jump writes (one cache line per 4B, 128MB of traffic)<br>→ fix: read 16x16 tiles into a local array, write contiguously on fixed output rows → 75ms&#x2F;frame (13fps)</li>
+<li>DRIVE delay stepping: slice(t&#x3D;1&#x2F;5) 20ms &#x2F; SPS&#x2F;PPS&#x2F;SEI 2ms &#x2F; refill 1ms (global g_drive_ms)</li>
+<li>The front section’s 570ms every 2 frames &#x3D; mbinfo idx 0-4’s real allocation period (disappears after LRU), steady state 50-75ms&#x2F;frame</li>
+</ul>
+<h3 id="★★-Two-kernel-panics-same-root-cause"><a href="#★★-Two-kernel-panics-same-root-cause" class="headerlink" title="★★ Two kernel panics (same root cause)"></a>★★ Two kernel panics (same root cause)</h3><p>Running the fast version (75ms&#x2F;frame) to completion then <strong>exiting immediately</strong> → the VSP queue still has DMA → process exit → the kernel ion driver<br>reclaims the dmabuf → VSP DMA writes to freed pages → kernel panic and reboot. Fix &#x3D; usleep(800000) to drain before exit.<br>The -O3 -mfpu&#x3D;neon build likewise panics during exit (not NEON’s fault), <strong>disable -O3</strong> and keep -O2.<br>Also: the slow version (2.8s&#x2F;frame) never panicked — because the buffers naturally persisted.</p>
+<h3 id="★-mbinfo-OOM-forces-fallback-to-LRU"><a href="#★-mbinfo-OOM-forces-fallback-to-LRU" class="headerlink" title="★ mbinfo OOM forces fallback to LRU"></a>★ mbinfo OOM forces fallback to LRU</h3><p>C1 allocation fails (rc!&#x3D;0) &amp;&amp; size&#x3D;&#x3D;653824 &amp;&amp; g_c1r_n&gt;0 → directly reuse the earliest slot (the old condition<br>g_c1r_n&gt;&#x3D;MAX(5) could never be met — the 5th block already hits ENOMEM). Effect: the component no longer switches to software decoding with -3<br>(mDecoderSwFlag:1 disappears from then on), decRet:-9 drops from 137 to 12.</p>
+<h3 id="Accidents-and-lessons"><a href="#Accidents-and-lessons" class="headerlink" title="Accidents and lessons"></a>Accidents and lessons</h3><ul>
+<li>A local python script’s <code>open(p,&#39;w&#39;).write()</code> throws an exception before write → <strong>sprd_msg.c was emptied</strong>.<br>The device’s &#x2F;tmp&#x2F;sprd_msg.c is the latest backup source (every push uploads it in full) → –get pulls it back for recovery.<br>Lesson: batch replacement scripts should write to a temp file first and then rename, or use the Edit tool.</li>
+</ul>
+<h3 id="Remaining-user-participation-required"><a href="#Remaining-user-participation-required" class="headerlink" title="Remaining (user participation required)"></a>Remaining (user participation required)</h3><ul>
+<li>nettv_page.c integration (bring up &#x2F;tmp&#x2F;sprd_msg URL, following the psp_game_page pattern of pausing LVGL mode)</li>
+<li>Submit and push (device repo bundle relay, GITEE_TOKEN required)</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#SC8830-Hardware-Decoding-Effort-%E2%80%94-h264dec-Disassembly-Verdict-2026-10-08"><span class="toc-number">1.</span> <span class="toc-text">SC8830 Hardware Decoding Effort — h264dec Disassembly Verdict (2026-10-08)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-The-complete-gate-chain-of-the-real-body-of-onQueueFilled-starting-at-0x7cec"><span class="toc-number">1.1.</span> <span class="toc-text">1. The complete gate chain of the real body of onQueueFilled (starting at 0x7cec)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Field-semantics-master-table-%E2%98%85-all-settled-by-past-pitfalls"><span class="toc-number">1.1.1.</span> <span class="toc-text">Field semantics master table (★ all settled by past pitfalls)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E2%98%85-Three-counterproductive-manual-interventions-all-tried-and-rolled-back-do-not-repeat"><span class="toc-number">1.2.</span> <span class="toc-text">2. ★ Three counterproductive manual interventions (all tried and rolled back; do not repeat)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Manually-setting-0x9c-%E2%80%94-will-deadlock-the-loop"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. Manually setting [0x9c] — will deadlock the loop</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Manually-setting-0x1f0-works-but-must-be-reset-every-round"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. Manually setting [0x1f0] works, but must be reset every round</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Double-emptying-the-same-in-buffer-will-ASSERT"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. Double-emptying the same in buffer will ASSERT</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-gralloc-handle-three-layer-layout-all-settled-by-measurement"><span class="toc-number">1.3.</span> <span class="toc-text">3. gralloc &#x2F; handle three-layer layout (all settled by measurement)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E2%98%85-Frame-reading-path-three-level-fallback-level-%E2%91%A0-is-verified-to-work"><span class="toc-number">1.4.</span> <span class="toc-text">4. ★ Frame reading path (three-level fallback; level ① is verified to work)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E2%98%85%E2%98%85%E2%98%85-0x92-IOMMU-switch-%E2%80%94-all-previous-experiments-ran-on-the-wrong-path"><span class="toc-number">1.5.</span> <span class="toc-text">5. ★★★ [0x92] &#x3D; IOMMU switch — all previous experiments ran on the wrong path</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%9A%A0-Directly-restoring-0x92-1-will-Segfault-in-the-useBuffer-segment"><span class="toc-number">1.5.1.</span> <span class="toc-text">⚠ Directly restoring [0x92]&#x3D;1 will Segfault in the useBuffer segment</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E2%98%85%E2%98%85-Two-mutually-exclusive-paths-deadlock-discovered-while-wrapping-up-on-2026-10-08"><span class="toc-number">1.6.</span> <span class="toc-text">6. ★★ Two mutually exclusive paths (deadlock discovered while wrapping up on 2026-10-08)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Deadlock"><span class="toc-number">1.6.1.</span> <span class="toc-text">Deadlock</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Already-ruled-out-hypotheses-measured-by-A-B-experiments"><span class="toc-number">1.6.2.</span> <span class="toc-text">Already-ruled-out hypotheses (measured by A&#x2F;B experiments)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#The-structure-of-internalUseBuffer-0x4514-it-crashes-here-with-0x92-1"><span class="toc-number">1.6.3.</span> <span class="toc-text">The structure of internalUseBuffer@0x4514 (it crashes here with [0x92]&#x3D;1)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Current-Sticking-Point-next-step"><span class="toc-number">1.7.</span> <span class="toc-text">7. Current Sticking Point (next step)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Build-Run"><span class="toc-number">1.8.</span> <span class="toc-text">6. Build &#x2F; Run</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E2%98%85%E2%98%85-IOVA-Chain-Breakthrough-Verdict-2026-10-08-afternoon-SPRD-IOMMU-1-path"><span class="toc-number">1.9.</span> <span class="toc-text">8. ★★ IOVA Chain Breakthrough Verdict (2026-10-08 afternoon, SPRD_IOMMU&#x3D;1 path)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Already-fixed-all-measured"><span class="toc-number">1.9.1.</span> <span class="toc-text">Already fixed (all measured)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Current-status-run-iova3"><span class="toc-number">1.9.2.</span> <span class="toc-text">Current status (run_iova3)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Supplementary-verdict-0x8090-0x8190-VSP-DecodeFrame-parameters"><span class="toc-number">1.9.3.</span> <span class="toc-text">Supplementary verdict (0x8090-0x8190 VSP DecodeFrame parameters)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E2%98%85%E2%98%85%E2%98%85-2026-10-08-afternoon-hardware-decoding-produces-an-image-milestone"><span class="toc-number">1.10.</span> <span class="toc-text">9. ★★★ 2026-10-08 afternoon: hardware decoding produces an image (milestone)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-cause-chain-all-empirically-verified-this-round"><span class="toc-number">1.10.1.</span> <span class="toc-text">Root cause chain (all empirically verified this round)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Behavior-when-producing-an-image"><span class="toc-number">1.10.2.</span> <span class="toc-text">Behavior when producing an image</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Remaining-work"><span class="toc-number">1.10.3.</span> <span class="toc-text">Remaining work</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E2%98%85%E2%98%85%E2%98%85-2026-10-08-evening-continuous-multi-frame-decoding-connected"><span class="toc-number">1.11.</span> <span class="toc-text">10. ★★★ 2026-10-08 evening: continuous multi-frame decoding connected</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-%E2%98%85%E2%98%85%E2%98%85-2026-10-08-evening-real-stream-NAL-streaming-hardware-decoding-connected-about-95"><span class="toc-number">1.12.</span> <span class="toc-text">11. ★★★ 2026-10-08 evening: real-stream NAL streaming hardware decoding connected (about 95%)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Feeding-model-verdict"><span class="toc-number">1.12.1.</span> <span class="toc-text">Feeding model verdict</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85-error-flag-Need-I-frame-deadlock-chain-disassembly-verdict-libomx-avcdec-hw-sprd-so"><span class="toc-number">1.12.2.</span> <span class="toc-text">★ error_flag&#x2F;Need I frame deadlock chain (disassembly verdict, libomx_avcdec_hw_sprd.so)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Memory-ledger-CMA-pool-7MB-hid-0-area-starting-at-0x9fd20000-contiguous-linear-allocation"><span class="toc-number">1.12.3.</span> <span class="toc-text">Memory ledger (CMA pool ~7MB, hid&#x3D;0 area starting at 0x9fd20000, contiguous linear allocation)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Remaining-bad-frames-the-only-remaining-problem-about-1-3-of-frames"><span class="toc-number">1.12.4.</span> <span class="toc-text">Remaining bad frames (the only remaining problem, about 1&#x2F;3 of frames)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Engineering-miscellany"><span class="toc-number">1.12.5.</span> <span class="toc-text">Engineering miscellany</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-%E2%98%85%E2%98%85%E2%98%85-2026-10-08-evening-2-fb-direct-display-connected-about-97"><span class="toc-number">1.13.</span> <span class="toc-text">12. ★★★ 2026-10-08 evening 2: fb direct display connected (about 97%)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Remaining-bad-frames-verdict-important-reversal"><span class="toc-number">1.13.1.</span> <span class="toc-text">Remaining bad frames verdict (important reversal)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#fb-direct-display-pipeline-fb-init-fb-render-fb-home-inside-sprd-msg-c"><span class="toc-number">1.13.2.</span> <span class="toc-text">fb direct display pipeline (fb_init&#x2F;fb_render&#x2F;fb_home inside sprd_msg.c)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Remaining-work-1"><span class="toc-number">1.13.3.</span> <span class="toc-text">Remaining work</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#13-%E2%98%85%E2%98%85%E2%98%85-2026-10-08-evening-3-player-binary-complete-about-98"><span class="toc-number">1.14.</span> <span class="toc-text">13. ★★★ 2026-10-08 evening 3: player binary complete (about 98%)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Player-usage-sprd-msg-is-now-player-ized"><span class="toc-number">1.14.1.</span> <span class="toc-text">Player usage (sprd_msg is now player-ized)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Performance-localization-methodology-and-conclusions-ms-timestamp-step-by-step-elimination"><span class="toc-number">1.14.2.</span> <span class="toc-text">Performance localization methodology and conclusions (@ms timestamp step-by-step elimination)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85%E2%98%85-Two-kernel-panics-same-root-cause"><span class="toc-number">1.14.3.</span> <span class="toc-text">★★ Two kernel panics (same root cause)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%98%85-mbinfo-OOM-forces-fallback-to-LRU"><span class="toc-number">1.14.4.</span> <span class="toc-text">★ mbinfo OOM forces fallback to LRU</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Accidents-and-lessons"><span class="toc-number">1.14.5.</span> <span class="toc-text">Accidents and lessons</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Remaining-user-participation-required"><span class="toc-number">1.14.6.</span> <span class="toc-text">Remaining (user participation required)</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&text=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&title=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&is_video=false&description=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_h264 Hardware Decoding_h264dec Verdict&body=Check out this article: https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&title=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&title=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&title=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&title=ref_h264 Hardware Decoding_h264dec Verdict"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/10/08/ref-vsp-h264/&name=ref_h264 Hardware Decoding_h264dec Verdict&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

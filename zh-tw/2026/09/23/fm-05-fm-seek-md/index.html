@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="FM 收音 —— SEEK &#x2F; 場強 &#x2F; AT 文本直寫 實測結論 設備：展訊 SC9832A（Alpine Linux &#x2F; armv7l），FM 芯片 Unisoc Marlin2 combo，驅動 marlin_fm.ko，節點 &#x2F;dev&#x2F;fm，ioctl 統一 _IOWR(0xF5, nr, 4) &#x3D; 0xC004F500 | nr。實測時間：2026-09-2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM收音_SEEK與場強_實測結論">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="FM 收音 —— SEEK &#x2F; 場強 &#x2F; AT 文本直寫 實測結論 設備：展訊 SC9832A（Alpine Linux &#x2F; armv7l），FM 芯片 Unisoc Marlin2 combo，驅動 marlin_fm.ko，節點 &#x2F;dev&#x2F;fm，ioctl 統一 _IOWR(0xF5, nr, 4) &#x3D; 0xC004F500 | nr。實測時間：2026-09-2">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.255Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM收音_SEEK與場強_實測結論</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/fm-04-fm-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/fm-06-fm-ioctl-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&text=FM收音_SEEK與場強_實測結論"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&title=FM收音_SEEK與場強_實測結論"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&is_video=false&description=FM收音_SEEK與場強_實測結論"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音_SEEK與場強_實測結論&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&title=FM收音_SEEK與場強_實測結論"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&title=FM收音_SEEK與場強_實測結論"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&title=FM收音_SEEK與場強_實測結論"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&title=FM收音_SEEK與場強_實測結論"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&name=FM收音_SEEK與場強_實測結論&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#FM-%E6%94%B6%E9%9F%B3-%E2%80%94%E2%80%94-SEEK-%E5%A0%B4%E5%BC%B7-AT-%E6%96%87%E6%9C%AC%E7%9B%B4%E5%AF%AB-%E5%AF%A6%E6%B8%AC%E7%B5%90%E8%AB%96"><span class="toc-number">1.</span> <span class="toc-text">FM 收音 —— SEEK &#x2F; 場強 &#x2F; AT 文本直寫 實測結論</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B5%90%E8%AB%96"><span class="toc-number">1.1.</span> <span class="toc-text">0. 一句話結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-SEEK-0x03-%E2%80%94%E2%80%94-%E5%8F%83%E6%95%B8%E8%A2%AB%E6%88%AA%E6%96%B7%EF%BC%8C%E7%84%A1%E6%B3%95%E7%94%A8%E4%BE%86%E6%90%9C%E8%87%BA"><span class="toc-number">1.2.</span> <span class="toc-text">1. SEEK (0x03) —— 參數被截斷，無法用來搜臺</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-%E5%8F%83%E6%95%B8%E7%B5%90%E6%A7%8B%EF%BC%88%E8%88%87-TUNE-%E7%9B%B8%E5%90%8C%EF%BC%89"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.1 參數結構（與 TUNE 相同）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-%E9%A9%85%E5%8B%95%E5%AF%A6%E9%9A%9B%E7%99%BC%E5%87%BA%E7%9A%84-AT-%E5%B9%80"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2 驅動實際發出的 AT 幀</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3-%E8%A1%8C%E7%82%BA%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.2.3.</span> <span class="toc-text">1.3 行為模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4-%E6%8E%A2%E9%87%9D"><span class="toc-number">1.2.4.</span> <span class="toc-text">1.4 探針</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-write-dev-fm-%E5%AF%AB-AT-%E6%96%87%E6%9C%AC-%E2%80%94%E2%80%94-%E8%A2%AB%E5%85%A7%E6%A0%B8%E6%8B%92%E7%B5%95"><span class="toc-number">1.3.</span> <span class="toc-text">2. write(&#x2F;dev&#x2F;fm) 寫 AT 文本 —— 被內核拒絕</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%A0%B4%E5%BC%B7-%E4%BF%A1%E8%99%9F%E9%A1%9E%E5%91%BD%E4%BB%A4-%E2%80%94%E2%80%94-%E5%85%A8%E9%83%A8%E4%B8%8D%E5%8F%AF%E7%94%A8"><span class="toc-number">1.4.</span> <span class="toc-text">3. 場強 &#x2F; 信號類命令 —— 全部不可用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%9B%B8%E9%97%9C%EF%BC%9AFM-%E9%9F%B3%E9%A0%BB%E8%BC%B8%E5%87%BA%E4%B9%9F%E6%98%AF%E6%AD%BB%E7%9A%84"><span class="toc-number">1.5.</span> <span class="toc-text">4. 相關：FM 音頻輸出也是死的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%B0%8D%E6%87%89%E7%94%A8%E8%A8%AD%E8%A8%88%E7%9A%84%E7%B4%84%E6%9D%9F%EF%BC%88%E5%8F%AF%E7%9B%B4%E6%8E%A5%E6%8A%84%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">5. 對應用設計的約束（可直接抄）</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM收音_SEEK與場強_實測結論
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="FM-收音-——-SEEK-場強-AT-文本直寫-實測結論"><a href="#FM-收音-——-SEEK-場強-AT-文本直寫-實測結論" class="headerlink" title="FM 收音 —— SEEK &#x2F; 場強 &#x2F; AT 文本直寫 實測結論"></a>FM 收音 —— SEEK &#x2F; 場強 &#x2F; AT 文本直寫 實測結論</h1><blockquote>
+<p>設備：展訊 SC9832A（Alpine Linux &#x2F; armv7l），FM 芯片 Unisoc Marlin2 combo，<br>驅動 <code>marlin_fm.ko</code>，節點 <code>/dev/fm</code>，ioctl 統一 <code>_IOWR(0xF5, nr, 4) = 0xC004F500 | nr</code>。<br>實測時間：2026-09-22。<strong>全部結論均為設備實測，判真器是驅動自己的 dmesg（<code>fm_write_buf</code> &#x2F; <code>parse_at_fm_cmd</code>）。</strong></p>
+</blockquote>
+<hr>
+<h2 id="0-一句話結論"><a href="#0-一句話結論" class="headerlink" title="0. 一句話結論"></a>0. 一句話結論</h2><table>
+<thead>
+<tr>
+<th>想做的事</th>
+<th>能不能</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>上電 &#x2F; 調臺 &#x2F; 音量 &#x2F; 靜音</td>
+<td>✅</td>
+<td><code>POWER_UP(0x00)</code> &#x2F; <code>TUNE(0x02)</code> &#x2F; <code>SETVOL(0x04)</code> &#x2F; <code>MUTE(0x06)</code> 真發 SDIO</td>
+</tr>
+<tr>
+<td><strong>搜臺（下一個電臺）</strong></td>
+<td>❌</td>
+<td><code>SEEK(0x03)</code> 的起點頻率被驅動截斷成 1 字節，帶內頻點傳不進去；實測只有 2 個固定回值</td>
+</tr>
+<tr>
+<td><strong>讀信號場強</strong></td>
+<td>❌</td>
+<td>唯一真發 SDIO 的 <code>GETRSSI(0x07)</code> 恆超時 4.2s 且回值幾乎不變；其餘信號類命令全是空殼</td>
+</tr>
+<tr>
+<td><strong>寫 AT 文本繞開 ioctl</strong></td>
+<td>❌</td>
+<td><code>write(/dev/fm)</code> 恆定 <code>-1 / EINVAL(22)</code>，驅動不接收用戶態 AT 文本</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="1-SEEK-0x03-——-參數被截斷，無法用來搜臺"><a href="#1-SEEK-0x03-——-參數被截斷，無法用來搜臺" class="headerlink" title="1. SEEK (0x03) —— 參數被截斷，無法用來搜臺"></a>1. <code>SEEK (0x03)</code> —— 參數被截斷，無法用來搜臺</h2><h3 id="1-1-參數結構（與-TUNE-相同）"><a href="#1-1-參數結構（與-TUNE-相同）" class="headerlink" title="1.1 參數結構（與 TUNE 相同）"></a>1.1 參數結構（與 TUNE 相同）</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span>  zero;   <span class="comment">/* offset 0 */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span>  band;   <span class="comment">/* offset 1 */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span>  one;    <span class="comment">/* offset 2 */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span>  pad;    <span class="comment">/* offset 3 */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">short</span> freq;   <span class="comment">/* offset 4-5  —— 單位 0.1MHz（974 = 97.4MHz） */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span>  tail[<span class="number">26</span>]; <span class="comment">/* offset 6 起 */</span></span><br><span class="line">&#125; <span class="type">fm_arg_t</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-2-驅動實際發出的-AT-幀"><a href="#1-2-驅動實際發出的-AT-幀" class="headerlink" title="1.2 驅動實際發出的 AT 幀"></a>1.2 驅動實際發出的 AT 幀</h3><p>驅動把 <code>freq</code>（u16）<strong>只取低字節</strong>拼進 AT 幀（這是驅動的 bug）：</p>
+<table>
+<thead>
+<tr>
+<th>我們傳 freq</th>
+<th>驅動實際發出</th>
+<th>芯片回幀</th>
+<th>驅動回寫到 <code>tail[0..1]</code> 的”找到頻點”</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>974 (97.4MHz)</td>
+<td><code>at+fm=4,0,206</code></td>
+<td><code>3,139,0,9250</code></td>
+<td><strong>925 &#x3D; 92.5MHz</strong></td>
+</tr>
+<tr>
+<td>875 (87.5MHz)</td>
+<td><code>at+fm=4,0,107</code></td>
+<td><code>3,139,0,9250</code></td>
+<td><strong>925</strong></td>
+</tr>
+<tr>
+<td>1080 (108.0MHz)</td>
+<td><code>at+fm=4,0,56</code></td>
+<td><code>3,139,0,9250</code></td>
+<td><strong>925</strong></td>
+</tr>
+<tr>
+<td>900、1000</td>
+<td><code>at+fm=4,0,132</code> &#x2F; <code>,232</code></td>
+<td><code>3,139,0,9250</code></td>
+<td><strong>925</strong></td>
+</tr>
+<tr>
+<td><strong>0</strong></td>
+<td><code>at+fm=4,0,0</code></td>
+<td><code>3,139,0,10310</code></td>
+<td><strong>1031 &#x3D; 103.1MHz</strong></td>
+</tr>
+</tbody></table>
+<ul>
+<li><code>at+fm=4,&lt;p2&gt;,&lt;p3&gt;</code> 的 <strong>p2 恆為 0</strong>：把 <code>zero/band/one/pad</code> 都改成 1&#x2F;2 也不變。</li>
+<li>**p3 &#x3D; <code>freq &amp; 0xFF</code>**，所以帶內頻點（875~1080）永遠傳不進去。</li>
+<li>結果與”當前頻點”<strong>無關</strong>：先 <code>TUNE</code> 到 87.5 &#x2F; 97.4 &#x2F; 100.0 &#x2F; 103.1，再 <code>SEEK(0)</code>，<br>四次都回 <strong>103.1</strong>。</li>
+</ul>
+<h3 id="1-3-行為模型"><a href="#1-3-行為模型" class="headerlink" title="1.3 行為模型"></a>1.3 行為模型</h3><ul>
+<li><code>p3 == 0</code>  → 恆返回 <strong>92.5MHz 區間的另一極</strong>（103.1MHz）</li>
+<li><code>p3 != 0</code>  → 恆返回 <strong>92.5MHz</strong></li>
+</ul>
+<p>也就是說 SEEK 退化成”兩個固定值二選一”，<strong>不是”從當前頻點向上&#x2F;向下找下一個電臺”<strong>。<br>UI 上</strong>不要</strong>把它做成”搜臺”按鈕。</p>
+<ul>
+<li>耗時：每次約 <strong>1.43 s</strong>（<code>at+fm=4</code> 發出 → <code>parse_at_fm_cmd: fm seek event have come freq=...</code>）。</li>
+<li>驅動日誌裡那句 <code>FM seek freq =0</code> 裡的值<strong>恆為 0</strong>，與傳入的 freq 無關 → 別拿它當判據。</li>
+<li><code>SEEK_NEW(0x3d)</code> 只打日誌後發 <code>at+fm=12</code>（通用查詢幀），<code>SCAN(0x08)</code> &#x2F; <code>SCAN_NEW(0x3c)</code><br>返回 0 且<strong>零 SDIO 流量</strong> → 都是空殼&#x2F;佔位。</li>
+<li><code>STOP_SCAN(0x09)</code> 恆 <code>-1 / EINVAL(22)</code>。</li>
+</ul>
+<h3 id="1-4-探針"><a href="#1-4-探針" class="headerlink" title="1.4 探針"></a>1.4 探針</h3><ul>
+<li><code>ssh_tools/fm_seek_probe.c</code> + <code>fm_seek_probe_run.py</code> —— 參數變體矩陣 + 回寫結構體 dump</li>
+<li><code>ssh_tools/fm_seek_probe2.c</code> + <code>fm_seek_probe2_run.py</code> —— 起點&#x2F;方向語義驗證（配合 TUNE）</li>
+</ul>
+<hr>
+<h2 id="2-write-dev-fm-寫-AT-文本-——-被內核拒絕"><a href="#2-write-dev-fm-寫-AT-文本-——-被內核拒絕" class="headerlink" title="2. write(/dev/fm) 寫 AT 文本 —— 被內核拒絕"></a>2. <code>write(/dev/fm)</code> 寫 AT 文本 —— 被內核拒絕</h2><p>驅動裡有 <code>parse_at_fm_cmd</code> &#x2F; <code>parse_at_fm_num</code>，Android 側 <code>libengfm.so</code> 也只導出<br>一個 <code>fm_runcommand</code>，看起來像”可以直接寫 AT 文本繞開 ioctl”。<strong>實測不行</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">write(fd, &quot;at+fm=1,9250&quot;, 12)  -&gt; rc=-1 errno=22 (EINVAL)</span><br><span class="line">write(fd, &quot;at+fm=4,0,9740&quot;, 15)-&gt; rc=-1 errno=22 (EINVAL)</span><br><span class="line">write(fd, &quot;at+fm=4,1,9740&quot;, 15)-&gt; rc=-1 errno=22 (EINVAL)</span><br><span class="line">write(fd, &quot;at+fm=12&quot;, 8)       -&gt; rc=-1 errno=22 (EINVAL)</span><br></pre></td></tr></table></figure>
+<p>dmesg 中<strong>沒有任何 <code>fm_write_buf</code> 記錄</strong> → 請求在進入驅動前就被拒了，沒有 SDIO 流量。<br><strong>結論：此路不通，不要在這上面花時間。</strong> 探針：<code>ssh_tools/fm_at_probe.c</code> + <code>fm_at_probe_run.py</code>。</p>
+<hr>
+<h2 id="3-場強-信號類命令-——-全部不可用"><a href="#3-場強-信號類命令-——-全部不可用" class="headerlink" title="3. 場強 &#x2F; 信號類命令 —— 全部不可用"></a>3. 場強 &#x2F; 信號類命令 —— 全部不可用</h2><table>
+<thead>
+<tr>
+<th>命令</th>
+<th>命令號</th>
+<th>實測判定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GETRSSI</code></td>
+<td>0x07</td>
+<td><strong>唯一真發 SDIO</strong>（<code>at+fm=13</code>），芯片回 123~125，但 ioctl <strong>恆 <code>-1 / ETIMEDOUT(110)</code>，耗時恆 4.2s</strong>；10 個頻點上回值幾乎不變 → 不能當場強表</td>
+</tr>
+<tr>
+<td><code>SCAN_GETRSSI</code></td>
+<td>0x24</td>
+<td>空殼（只 printk）</td>
+</tr>
+<tr>
+<td><code>CQI_GET</code></td>
+<td>0x27</td>
+<td>空殼</td>
+</tr>
+<tr>
+<td><code>GETMONOSTERO</code></td>
+<td>0x0d</td>
+<td>空殼</td>
+</tr>
+<tr>
+<td><code>GETGOODBCNT</code> &#x2F; <code>GETBADBNT</code></td>
+<td>0x0f &#x2F; 0x10</td>
+<td>空殼</td>
+</tr>
+<tr>
+<td><code>GETBLERRATIO</code></td>
+<td>0x11</td>
+<td>空殼</td>
+</tr>
+<tr>
+<td><code>IS_DESE_CHAN</code></td>
+<td>0x2a</td>
+<td>空殼</td>
+</tr>
+<tr>
+<td><code>SOFT_MUTE_TUNE</code></td>
+<td>0x3f</td>
+<td>有作用（換臺消爆音），但<strong>不回寫可用場強</strong></td>
+</tr>
+</tbody></table>
+<p><strong><code>TUNE</code> 應答裡的第 2 個字段不是場強</strong>：<code>at+fm=1,9740</code> → <code>0,164,0,9740</code>；<br>同一頻點連調會得到 164 與 139 兩個不同值；不同頻點都在 139~140 附近；<br><strong>且驅動根本不把這個應答回寫給用戶態</strong>（ioctl 返回後 arg 結構體沒變化）。<br>→ 判定：不是穩定的場強指標，不能當信號表。</p>
+<p><strong>下游影響</strong>：收音機頁<strong>不應</strong>再畫”信號柱”。<br>現版本已改為固定文案「本機不提供場強查詢」，並<strong>移除</strong>了每次調臺後的<br><code>rssi</code> 輪詢（原來每次白等 4.2s）。</p>
+<hr>
+<h2 id="4-相關：FM-音頻輸出也是死的"><a href="#4-相關：FM-音頻輸出也是死的" class="headerlink" title="4. 相關：FM 音頻輸出也是死的"></a>4. 相關：FM 音頻輸出也是死的</h2><p>見 <code>FM收音ioctl命令表_逆向還原.md</code> 與 <code>outputs/FM收音機_進度快照_20260922.md</code>：</p>
+<ul>
+<li>FM 音頻類 ioctl（<code>OVER_BT_ENABLE 0x1d</code> &#x2F; <code>ANA_SWITCH 0x1e</code> &#x2F; <code>I2S_SETTING 0x21</code> …）<br>在 <code>marlin_fm.ko</code> 裡<strong>只 printk 就返回</strong>（反彙編 <code>fm_ioctl</code> 的 <code>R_ARM_CALL</code> 只調 7 個函數，無音頻通路函數）。</li>
+<li>整機 codec（<code>sprdphone</code> card1）DAPM <strong>路由表缺 HPL&#x2F;HPR&#x2F;SPKL&#x2F;SPKR</strong>，<br>唯一可達終點是 <code>EAR</code>，且從不給 <code>Analog/Digital Power</code> 上電（<code>bias_level=Off</code> 恆 Off）。</li>
+<li>8 個 capture 設備**全部 <code>readi -5 (EIO)</code>**；<code>read(/dev/fm)</code> 只返回 688B RDS 數據塊。<br>→ <strong>FM 音頻既不能出聲，也不能數字化進主機</strong>。用戶態無解。</li>
+</ul>
+<hr>
+<h2 id="5-對應用設計的約束（可直接抄）"><a href="#5-對應用設計的約束（可直接抄）" class="headerlink" title="5. 對應用設計的約束（可直接抄）"></a>5. 對應用設計的約束（可直接抄）</h2><ol>
+<li><strong>UI 不要提供”搜臺”按鈕</strong> —— SEEK 不可控，會讓人以為搜到了電臺。</li>
+<li><strong>UI 不要畫信號強度</strong> —— 硬件不提供；畫了就是說謊。</li>
+<li><strong>不要輪詢 <code>rssi</code></strong> —— 每次白等 4.2s。</li>
+<li><strong>不要嘗試寫 AT 文本</strong> —— EINVAL。</li>
+<li>可用且已驗證的功能集：<code>state / on / off / tune &lt;kHz&gt; / vol &lt;0-15&gt; / mute &lt;0|1&gt; / chipid / rds</code>。</li>
+<li>任何”要不要為此改內核”的決策，都先看本文第 4 節 —— 出聲的瓶頸在 codec 的 DAPM 路由，<br>不在 FM 驅動。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#FM-%E6%94%B6%E9%9F%B3-%E2%80%94%E2%80%94-SEEK-%E5%A0%B4%E5%BC%B7-AT-%E6%96%87%E6%9C%AC%E7%9B%B4%E5%AF%AB-%E5%AF%A6%E6%B8%AC%E7%B5%90%E8%AB%96"><span class="toc-number">1.</span> <span class="toc-text">FM 收音 —— SEEK &#x2F; 場強 &#x2F; AT 文本直寫 實測結論</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B5%90%E8%AB%96"><span class="toc-number">1.1.</span> <span class="toc-text">0. 一句話結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-SEEK-0x03-%E2%80%94%E2%80%94-%E5%8F%83%E6%95%B8%E8%A2%AB%E6%88%AA%E6%96%B7%EF%BC%8C%E7%84%A1%E6%B3%95%E7%94%A8%E4%BE%86%E6%90%9C%E8%87%BA"><span class="toc-number">1.2.</span> <span class="toc-text">1. SEEK (0x03) —— 參數被截斷，無法用來搜臺</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-%E5%8F%83%E6%95%B8%E7%B5%90%E6%A7%8B%EF%BC%88%E8%88%87-TUNE-%E7%9B%B8%E5%90%8C%EF%BC%89"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.1 參數結構（與 TUNE 相同）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-%E9%A9%85%E5%8B%95%E5%AF%A6%E9%9A%9B%E7%99%BC%E5%87%BA%E7%9A%84-AT-%E5%B9%80"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2 驅動實際發出的 AT 幀</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3-%E8%A1%8C%E7%82%BA%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.2.3.</span> <span class="toc-text">1.3 行為模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4-%E6%8E%A2%E9%87%9D"><span class="toc-number">1.2.4.</span> <span class="toc-text">1.4 探針</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-write-dev-fm-%E5%AF%AB-AT-%E6%96%87%E6%9C%AC-%E2%80%94%E2%80%94-%E8%A2%AB%E5%85%A7%E6%A0%B8%E6%8B%92%E7%B5%95"><span class="toc-number">1.3.</span> <span class="toc-text">2. write(&#x2F;dev&#x2F;fm) 寫 AT 文本 —— 被內核拒絕</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%A0%B4%E5%BC%B7-%E4%BF%A1%E8%99%9F%E9%A1%9E%E5%91%BD%E4%BB%A4-%E2%80%94%E2%80%94-%E5%85%A8%E9%83%A8%E4%B8%8D%E5%8F%AF%E7%94%A8"><span class="toc-number">1.4.</span> <span class="toc-text">3. 場強 &#x2F; 信號類命令 —— 全部不可用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%9B%B8%E9%97%9C%EF%BC%9AFM-%E9%9F%B3%E9%A0%BB%E8%BC%B8%E5%87%BA%E4%B9%9F%E6%98%AF%E6%AD%BB%E7%9A%84"><span class="toc-number">1.5.</span> <span class="toc-text">4. 相關：FM 音頻輸出也是死的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%B0%8D%E6%87%89%E7%94%A8%E8%A8%AD%E8%A8%88%E7%9A%84%E7%B4%84%E6%9D%9F%EF%BC%88%E5%8F%AF%E7%9B%B4%E6%8E%A5%E6%8A%84%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">5. 對應用設計的約束（可直接抄）</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&text=FM收音_SEEK與場強_實測結論"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&title=FM收音_SEEK與場強_實測結論"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&is_video=false&description=FM收音_SEEK與場強_實測結論"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音_SEEK與場強_實測結論&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&title=FM收音_SEEK與場強_實測結論"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&title=FM收音_SEEK與場強_實測結論"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&title=FM收音_SEEK與場強_實測結論"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&title=FM收音_SEEK與場強_實測結論"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-05-fm-seek-md/&name=FM收音_SEEK與場強_實測結論&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

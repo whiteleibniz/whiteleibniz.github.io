@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="PSP Emulator (starting 2026-09-24) The top-level MEMORY.md §12 only keeps conclusions; this article is the detail.  A. Approach and Feasibility Reuse the GBA architecture: the miniretro frontend write">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ref_PSP Emulator">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/24/ref-psp/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="PSP Emulator (starting 2026-09-24) The top-level MEMORY.md §12 only keeps conclusions; this article is the detail.  A. Approach and Feasibility Reuse the GBA architecture: the miniretro frontend write">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-24T06:18:10.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.980Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="模拟器">
+<meta property="article:tag" content="PPSSPP">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>ref_PSP Emulator</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/24/ref-psp/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/24/ref-psp/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&text=ref_PSP Emulator"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&title=ref_PSP Emulator"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&is_video=false&description=ref_PSP Emulator"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_PSP Emulator&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/24/ref-psp/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&title=ref_PSP Emulator"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&title=ref_PSP Emulator"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&title=ref_PSP Emulator"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&title=ref_PSP Emulator"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&name=ref_PSP Emulator&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#PSP-Emulator-starting-2026-09-24"><span class="toc-number">1.</span> <span class="toc-text">PSP Emulator (starting 2026-09-24)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-Approach-and-Feasibility"><span class="toc-number">1.1.</span> <span class="toc-text">A. Approach and Feasibility</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-Source-Acquisition-and-Compilation"><span class="toc-number">1.2.</span> <span class="toc-text">B. Source Acquisition and Compilation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-Derivation-writing-a-second-copy-by-hand-is-forbidden"><span class="toc-number">1.3.</span> <span class="toc-text">C. Derivation (writing a second copy by hand is forbidden)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#D-ROM"><span class="toc-number">1.4.</span> <span class="toc-text">D. ROM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#E-Keyboard-Input"><span class="toc-number">1.5.</span> <span class="toc-text">E. Keyboard &#x2F; Input</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#F-Build-Wrangling"><span class="toc-number">1.6.</span> <span class="toc-text">F. Build Wrangling</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-core-build-concurrency-limit-j2-OOM-confirmed"><span class="toc-number">1.7.</span> <span class="toc-text">★ core build: concurrency limit -j2 (OOM confirmed)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-Pitfall-of-trimming-source-android-jni-headers-must-be-kept-at-least-2"><span class="toc-number">1.8.</span> <span class="toc-text">★ Pitfall of trimming source: android&#x2F;jni headers must be kept (at least 2)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85%E2%98%85-Smoke-test-iron-rule-must-use-setsid"><span class="toc-number">1.9.</span> <span class="toc-text">★★ Smoke test iron rule: must use setsid</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-4-Requirements-for-the-PPSSPP-Core-to-Run"><span class="toc-number">1.10.</span> <span class="toc-text">★ 4 Requirements for the PPSSPP Core to Run</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        ref_PSP Emulator
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-24T06:18:10.000Z" itemprop="datePublished">2026-09-24</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/PPSSPP/" rel="tag">PPSSPP</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="PSP-Emulator-starting-2026-09-24"><a href="#PSP-Emulator-starting-2026-09-24" class="headerlink" title="PSP Emulator (starting 2026-09-24)"></a>PSP Emulator (starting 2026-09-24)</h1><blockquote>
+<p>The top-level MEMORY.md §12 only keeps conclusions; this article is the detail.</p>
+</blockquote>
+<h2 id="A-Approach-and-Feasibility"><a href="#A-Approach-and-Feasibility" class="headerlink" title="A. Approach and Feasibility"></a>A. Approach and Feasibility</h2><ul>
+<li><strong>Reuse the GBA architecture</strong>: the miniretro frontend writes directly to <code>/dev/fb0</code> + a libretro core. core &#x3D; <strong>PPSSPP</strong> (v1.18.x, <code>-DLIBRETRO=ON</code>)</li>
+<li><strong>★ Key point: this machine has no GL&#x2F;Vulkan</strong>, so PPSSPP must be made to use pure CPU software rendering.<br>The frontend actively answers <strong><code>ppsspp_backend=none</code></strong> in <code>env_cb(RETRO_ENVIRONMENT_GET_VARIABLE)</code><br>→ it lands on <code>LibretroSoftwareContext</code> (the software rendering fallback branch in the source code <code>libretro/LibretroGraphicsContext.cpp</code>).<br>If you do not actively provide it, it will try GLCore→GL→Vulkan in sequence and all three will fail; worse, once the .so links against libGL,<br><strong>it cannot even get past the dlopen stage</strong>, losing even the fallback chance</li>
+<li>Other injected core options: <code>cpu_core=JIT</code> (ARM32 dynarec, an order of magnitude slower without it),<br><code>internal_resolution=480x272</code>, <code>frameskip=1</code>, <code>auto_frameskip=disabled</code>,<br><code>gpu_hardware_transform=disabled</code>, <code>memstick_inserted=enabled</code> (without it some games refuse to save),<br><code>io_timing_method=Fast</code>, <code>cache_iso=disabled</code> (only 916MB of memory; do not cache the entire ISO)</li>
+<li><code>RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY</code> → <code>/home/PSPgame/saves</code></li>
+</ul>
+<h2 id="B-Source-Acquisition-and-Compilation"><a href="#B-Source-Acquisition-and-Compilation" class="headerlink" title="B. Source Acquisition and Compilation"></a>B. Source Acquisition and Compilation</h2><ul>
+<li><strong>On this machine</strong> <code>git clone --depth 1 --recurse-submodules -j 8 https://github.com/hrydgard/ppsspp.git</code><br>(the Makefile route hard-depends on ffmpeg headers → must use CMake)</li>
+<li>Trimmed packaging: exclude <code>.git / ffmpeg / ext/vulkan / assets / android / Qt / SDL / Windows / UWP / ios / macOS / headless / unittest / Tools / pspautotests / source_assets / icons / dx9sdk / gradle</code> → 55MB</li>
+<li><code>assets</code> was later found to be <strong>required in full</strong> (flash0 + font atlas + meta); uploaded separately</li>
+<li>CMake: <code>-DLIBRETRO=ON -DUSE_FFMPEG=OFF -DVULKAN=OFF -DOPENGL=OFF -DUSE_SYSTEM_ZLIB=ON -DUSE_SYSTEM_LIBPNG=ON -DMOBILE_DEVICE=ON -DCMAKE_BUILD_TYPE=Release</code></li>
+<li><strong>★ Compilation flags must be given explicitly</strong>: <code>-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard</code><br>(without them, gcc compiles for armv6 by default → <strong>no ARM32 dynamic recompilation, an order of magnitude slower</strong>)</li>
+<li><strong>★ Pitfall: <code>-DVULKAN=OFF</code> does not stop the <code>ext/vma</code> target</strong>, which still needs <code>ext/vulkan/vulkan.h</code>;<br>and when trimming packages in China&#x2F;on this machine, it is easiest to exclude that entire directory → error <code>fatal error: ext/vulkan/vulkan.h</code>.<br>Solution: only transfer the <strong>header files</strong> (just 177KB after excluding iOS 26MB &#x2F; macOS 12MB &#x2F; libvulkan.so 3.3MB)</li>
+<li>Run compilation in the background <code>setsid nohup make -j4 &gt; /tmp/ppsspp_build3.log</code> (incremental; all already-compiled .o files are kept)</li>
+</ul>
+<h2 id="C-Derivation-writing-a-second-copy-by-hand-is-forbidden"><a href="#C-Derivation-writing-a-second-copy-by-hand-is-forbidden" class="headerlink" title="C. Derivation (writing a second copy by hand is forbidden)"></a>C. Derivation (writing a second copy by hand is forbidden)</h2><p><code>ssh_tools/make_psp_from_gba.py</code> produces 4 files in one pass, <code>ssh_tools/deploy_psp.py</code> deploys and rebuilds,<br><code>ssh_tools/finish_psp.py</code> wraps up (verifies dependencies → installs the .so → optional load self-test).</p>
+<ul>
+<li>Derive <code>miniretro_psp.c</code> from <code>miniretro_gba.c</code>, changing only 5 places:<br><code>PSP_SRC_W/H=480x272</code>, <code>SR_ROT_MAX 256²→512²</code> (a 272x480 rotated canvas does not fit in 256², otherwise black screen),<br><code>temp32</code> capacity, <strong>the whitelist changed from “enumerate machine sizes” to “upper-bound check”</strong> (only reject <code>width&gt;PSP_SRC_W</code>),<br>env_cb adds GET_VARIABLE + GET_SAVE_DIRECTORY. Everything else (double-buffered page flipping&#x2F;exit strategy v3&#x2F;audio adaptive resampling) is fully inherited</li>
+<li>The page is derived from <code>gba_game_page.c</code>: suffixes <code>.iso/.cso/.pbp/.elf</code>; <strong>the Makefile uses <code>wildcard lv_pages/*.c</code></strong>,<br>so a new page dropped in is automatically included in the build</li>
+<li><strong>★ replacement order landmine</strong>: compound identifiers (<code>mgba_libretro.so</code>, <code>miniretro_gba</code>) must be replaced <strong>before</strong> the general rule<br><code>gba_-&gt;psp_</code>, otherwise <code>mgba_libretro.so</code> would first be written as <code>mpsp_libretro.so</code>,<br>and the later exact replacements could never match again (the page cannot find the core)</li>
+<li><strong>★ Chinese font landmine</strong>: the derived source’s labels never set a font → Chinese ROM names are all tofu blocks.<br>The script has already added <code>lv_obj_set_style_text_font(x, &amp;lv_font_cn_16, 0)</code> for all <code>lv_label_create</code><ul>
+<li><code>LV_FONT_DECLARE</code>, and wraps the list container as a fallback</li>
+</ul>
+</li>
+</ul>
+<h2 id="D-ROM"><a href="#D-ROM" class="headerlink" title="D. ROM"></a>D. ROM</h2><p>Directory <code>/home/lvgl_demo/lvgl_demo/sdcard/game/psp/</code> (5 already placed)</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Size</th>
+<th>Source</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Tetris 俄罗斯方块.pbp</code></td>
+<td>16KB</td>
+<td>github.com&#x2F;zPSP-Dev&#x2F;tetris-psp release v1.0</td>
+<td><strong>First choice</strong>: a real game, extremely light, software rendering can handle it</td>
+</tr>
+<tr>
+<td><code>Beatbox.pbp</code></td>
+<td>1.0MB</td>
+<td>EBOOT.PBP inside the github.com&#x2F;Babkock&#x2F;Beatbox repository</td>
+<td>Drum machine: verifies multi-key input + audio</td>
+</tr>
+<tr>
+<td><code>Cube 旋转立方体.pbp</code> &#x2F; <code>Controller 按键测试.pbp</code> &#x2F; <code>HelloWorld.pbp</code></td>
+<td>40~76KB</td>
+<td>PPSSPP’s bundled <code>pspautotests/demos/</code></td>
+<td>Frame rate&#x2F;key&#x2F;basic rendering probes</td>
+</tr>
+</tbody></table>
+<p><strong>★ Download availability (measured in China)</strong>: <code>dlhb.gamebrew.org</code> returns <strong>403</strong>, <code>archive.org</code> and <code>raw.githubusercontent.com</code><br>are <strong>unreachable with HTTP 000</strong>, and the GitHub API&#x2F;search easily hits 403 rate limiting.<br>→ <strong>The only reliable option is <code>github.com</code> itself</strong>: <code>git clone --depth 1</code> or <code>github.com/&lt;repo&gt;/releases/download/&lt;tag&gt;/&lt;file&gt;</code>.<br>The GameBrew web pages are only used to WebFetch-extract direct links.</p>
+<h2 id="E-Keyboard-Input"><a href="#E-Keyboard-Input" class="headerlink" title="E. Keyboard &#x2F; Input"></a>E. Keyboard &#x2F; Input</h2><ul>
+<li>On the device, <code>/dev/input/event0/1/2</code> has only the 3 onboard ones; <strong>after plugging in a USB keyboard, hotplug works automatically</strong> —<br><code>input_poll_cb()</code> calls <code>input_scan()</code> on every poll to rescan <code>/dev/input/eventN</code></li>
+<li><code>extern/miniretro/keymap_psp.conf</code> mapping (derived from the same source as GBA):<br>WASD&#x2F;arrow keys &#x3D; directions; <code>Z</code>&#x2F;<code>J</code>&#x2F;Space &#x3D; B(○); <code>X</code>&#x2F;<code>K</code>&#x2F;LeftCtrl &#x3D; A(×); <code>Q</code>&#x2F;<code>E</code> &#x3D; Y(□)&#x2F;X(△);<br><code>1</code>&#x2F;<code>2</code> &#x3D; L&#x2F;R; Enter &#x3D; START; LeftShift&#x2F;Backspace &#x3D; SELECT; <strong>ESC &#x3D; exit</strong><br>the 4 onboard physical keys are retained (点餐114&#x3D;left, 服务102&#x3D;right, 福利115&#x3D;A, 买单116&#x3D;exit)</li>
+<li>Keys not mapped as expected print <code>未映射按键 code=xxx</code> on stderr; add them to the conf as prompted</li>
+</ul>
+<h2 id="F-Build-Wrangling"><a href="#F-Build-Wrangling" class="headerlink" title="F. Build Wrangling"></a>F. Build Wrangling</h2><table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Command Essentials</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Check build status</td>
+<td><code>tail -1 /tmp/ppsspp_build3.log</code>; <code>grep -c &#39;error:&#39;</code></td>
+</tr>
+<tr>
+<td>Change parallelism (keep completed targets)</td>
+<td>Send <strong>SIGTERM</strong> to the PIDs from <code>ps -o pid,comm | awk &#39;$2==&quot;make&quot;&#39;</code> (<strong><code>pkill -f</code> is forbidden</strong>), wait for cc1 to exit, then continue with <code>make -jN</code></td>
+</tr>
+<tr>
+<td>Observe actual parallelism</td>
+<td><code>ps -o pid,comm | awk &#39;$2==&quot;cc1&quot;||$2==&quot;cc1plus&quot;&#39; | wc -l</code></td>
+</tr>
+</tbody></table>
+<ul>
+<li>At 4-way concurrency, memory used 224~294MB &#x2F; 916MB total, <strong>no OOM</strong></li>
+<li>After an interruption there may be half-built <code>.o</code> files (timestamp newer than the source → make thinks no rebuild is needed → it explodes only at link time).<br><strong>★ BusyBox <code>find</code> has no <code>-newermt</code></strong>; use <code>-mmin N</code> &#x2F; <code>-newer FILE</code></li>
+<li><strong>Do not write to <code>/sys/devices/system/cpu/cpuN/online</code></strong> (see MEMORY §10 hotplug landmine);<br>measured: under build load, <code>sprd_hotplug</code> automatically brings all 4 cores up (<code>online=0-3</code>)</li>
+</ul>
+<h2 id="★-core-build-concurrency-limit-j2-OOM-confirmed"><a href="#★-core-build-concurrency-limit-j2-OOM-confirmed" class="headerlink" title="★ core build: concurrency limit -j2 (OOM confirmed)"></a>★ core build: concurrency limit -j2 (OOM confirmed)</h2><ul>
+<li><code>-j4</code> gets OOM-killed at 50% (<code>glslang_tab.cpp</code> single-file peak), and the entire make silently stops dead with Error 2</li>
+<li>Correct startup method (only build the needed target, not <code>all</code>):<br><code>cd /home/PSPgame/ppsspp_git/build &amp;&amp; nohup setsid make -j2 ppsspp_libretro &gt; /tmp/ppsspp_build4.log 2&gt;&amp;1 &amp;</code></li>
+<li>To judge liveness you must grep the log for <code>Killed</code> &#x2F; <code>make.*Error 2</code>; <strong>looking at processes alone can mislead</strong></li>
+</ul>
+<h2 id="★-Pitfall-of-trimming-source-android-jni-headers-must-be-kept-at-least-2"><a href="#★-Pitfall-of-trimming-source-android-jni-headers-must-be-kept-at-least-2" class="headerlink" title="★ Pitfall of trimming source: android&#x2F;jni headers must be kept (at least 2)"></a>★ Pitfall of trimming source: android&#x2F;jni headers must be kept (at least 2)</h2><ul>
+<li><code>Common/File/AndroidStorage.cpp</code> and others <strong>unconditionally</strong> <code>#include &quot;android/jni/app-android.h&quot;</code>; deleting the entire <code>android/</code> directory will explode at 52%</li>
+<li>Fix: put back the real <code>app-android.h</code> as-is (under libretro <code>PPSSPP_PLATFORM(ANDROID)</code> is false, and <code>&lt;jni.h&gt;</code> is still wrapped inside<br><code>!defined(__LIBRETRO__)</code> → no NDK needed) + the real <code>AndroidAudio.h</code>; <strong><code>OpenSLContext.h</code> depends on <code>SLES/*.h</code>; leave placeholder headers</strong></li>
+<li>General lesson: before trimming, first <code>grep -rn &#39;#include &quot;&lt;directory&gt;&#39;</code> to find non-conditional includes; when patching files, prefer “putting back the real file as-is” over hand-written placeholders</li>
+</ul>
+<h2 id="★★-Smoke-test-iron-rule-must-use-setsid"><a href="#★★-Smoke-test-iron-rule-must-use-setsid" class="headerlink" title="★★ Smoke test iron rule: must use setsid"></a>★★ Smoke test iron rule: must use setsid</h2><p>When <code>./miniretro_psp ... &amp;</code> is hung under a script’s sh, <strong>busybox sh immediately sends SIGTERM to the background job</strong> (confirmed by si_pid&#x3D;ppid),<br>manifesting as “exits 100ms after startup”, which is very easily misjudged as a core crash. Correct approach:<br><code>setsid ./miniretro_psp &lt;absolute path to core&gt; &lt;rom&gt; keymap_psp.conf &gt; /tmp/x.log 2&gt;&amp;1 &amp;</code><br>(Also: musl’s dlopen <strong>does not search the current directory</strong> for names without slashes → the core must be passed an absolute path)</p>
+<h2 id="★-4-Requirements-for-the-PPSSPP-Core-to-Run"><a href="#★-4-Requirements-for-the-PPSSPP-Core-to-Run" class="headerlink" title="★ 4 Requirements for the PPSSPP Core to Run"></a>★ 4 Requirements for the PPSSPP Core to Run</h2><ol>
+<li>Implement <code>RETRO_ENVIRONMENT_GET_LOG_INTERFACE</code>(cmd 27) — otherwise all core errors are invisible; the pass level is limited to WARN and above</li>
+<li>assets go in <code>&lt;system_dir&gt;/PPSSPP/</code> (22MB), not the system root directory</li>
+<li>system dir cannot be NULL (the frontend’s original default was NULL; changed to <code>/home/PSPgame/system</code>)</li>
+<li><code>ppsspp_backend=none</code> → <code>Using Software backend</code>, <a href="mailto:&#x34;&#x38;&#x30;&#x78;&#x32;&#55;&#48;&#64;&#x35;&#x39;&#46;&#x39;&#52;&#102;&#112;&#115;">&#x34;&#x38;&#x30;&#x78;&#x32;&#55;&#48;&#64;&#x35;&#x39;&#46;&#x39;&#52;&#102;&#112;&#115;</a>, JIT uses ARM32</li>
+</ol>
+<p>Remaining: <code>terminate called without an active exception</code> at the end of exit (occurs after fb reset, unrelated to dlclose; left as-is for now)</p>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#PSP-Emulator-starting-2026-09-24"><span class="toc-number">1.</span> <span class="toc-text">PSP Emulator (starting 2026-09-24)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-Approach-and-Feasibility"><span class="toc-number">1.1.</span> <span class="toc-text">A. Approach and Feasibility</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-Source-Acquisition-and-Compilation"><span class="toc-number">1.2.</span> <span class="toc-text">B. Source Acquisition and Compilation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-Derivation-writing-a-second-copy-by-hand-is-forbidden"><span class="toc-number">1.3.</span> <span class="toc-text">C. Derivation (writing a second copy by hand is forbidden)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#D-ROM"><span class="toc-number">1.4.</span> <span class="toc-text">D. ROM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#E-Keyboard-Input"><span class="toc-number">1.5.</span> <span class="toc-text">E. Keyboard &#x2F; Input</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#F-Build-Wrangling"><span class="toc-number">1.6.</span> <span class="toc-text">F. Build Wrangling</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-core-build-concurrency-limit-j2-OOM-confirmed"><span class="toc-number">1.7.</span> <span class="toc-text">★ core build: concurrency limit -j2 (OOM confirmed)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-Pitfall-of-trimming-source-android-jni-headers-must-be-kept-at-least-2"><span class="toc-number">1.8.</span> <span class="toc-text">★ Pitfall of trimming source: android&#x2F;jni headers must be kept (at least 2)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85%E2%98%85-Smoke-test-iron-rule-must-use-setsid"><span class="toc-number">1.9.</span> <span class="toc-text">★★ Smoke test iron rule: must use setsid</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%98%85-4-Requirements-for-the-PPSSPP-Core-to-Run"><span class="toc-number">1.10.</span> <span class="toc-text">★ 4 Requirements for the PPSSPP Core to Run</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&text=ref_PSP Emulator"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&title=ref_PSP Emulator"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&is_video=false&description=ref_PSP Emulator"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_PSP Emulator&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/24/ref-psp/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&title=ref_PSP Emulator"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&title=ref_PSP Emulator"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&title=ref_PSP Emulator"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&title=ref_PSP Emulator"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/24/ref-psp/&name=ref_PSP Emulator&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

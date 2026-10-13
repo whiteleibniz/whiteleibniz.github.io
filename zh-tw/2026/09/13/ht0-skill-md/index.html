@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="name: ht0-wcn-radiodescription: “展訊 SC9832A 設備（HT0，安卓內核 + Alpine 用戶態）WiFi&#x2F;藍牙 combo 芯片（Marlin WCN）的運維排障與打通。當用戶報告這類設備 WiFi 起不來、連不上網、藍牙無響應、需要重新拉起 WiFi&#x2F;藍牙、需要診斷 download 固件下載&#x2F;SDIO 枚舉&#x2F;驅">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ht0-wcn-radio Skill 說明">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="name: ht0-wcn-radiodescription: “展訊 SC9832A 設備（HT0，安卓內核 + Alpine 用戶態）WiFi&#x2F;藍牙 combo 芯片（Marlin WCN）的運維排障與打通。當用戶報告這類設備 WiFi 起不來、連不上網、藍牙無響應、需要重新拉起 WiFi&#x2F;藍牙、需要診斷 download 固件下載&#x2F;SDIO 枚舉&#x2F;驅">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-13T08:05:17.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.762Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="WCN">
+<meta property="article:tag" content="HT0">
+<meta property="article:tag" content="技能">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>ht0-wcn-radio Skill 說明</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/13/ht0-skill-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/13/bt-07-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&text=ht0-wcn-radio Skill 說明"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&title=ht0-wcn-radio Skill 說明"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&is_video=false&description=ht0-wcn-radio Skill 說明"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ht0-wcn-radio Skill 說明&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&title=ht0-wcn-radio Skill 說明"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&title=ht0-wcn-radio Skill 說明"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&title=ht0-wcn-radio Skill 說明"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&title=ht0-wcn-radio Skill 說明"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&name=ht0-wcn-radio Skill 說明&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#name-ht0-wcn-radiodescription-%E2%80%9C%E5%B1%95%E8%A8%8A-SC9832A-%E8%A8%AD%E5%82%99%EF%BC%88HT0%EF%BC%8C%E5%AE%89%E5%8D%93%E5%85%A7%E6%A0%B8-Alpine-%E7%94%A8%E6%88%B6%E6%85%8B%EF%BC%89WiFi-%E8%97%8D%E7%89%99-combo-%E8%8A%AF%E7%89%87%EF%BC%88Marlin-WCN%EF%BC%89%E7%9A%84%E9%81%8B%E7%B6%AD%E6%8E%92%E9%9A%9C%E8%88%87%E6%89%93%E9%80%9A%E3%80%82%E7%95%B6%E7%94%A8%E6%88%B6%E5%A0%B1%E5%91%8A%E9%80%99%E9%A1%9E%E8%A8%AD%E5%82%99-WiFi-%E8%B5%B7%E4%B8%8D%E4%BE%86%E3%80%81%E9%80%A3%E4%B8%8D%E4%B8%8A%E7%B6%B2%E3%80%81%E8%97%8D%E7%89%99%E7%84%A1%E9%9F%BF%E6%87%89%E3%80%81%E9%9C%80%E8%A6%81%E9%87%8D%E6%96%B0%E6%8B%89%E8%B5%B7-WiFi-%E8%97%8D%E7%89%99%E3%80%81%E9%9C%80%E8%A6%81%E8%A8%BA%E6%96%B7-download-%E5%9B%BA%E4%BB%B6%E4%B8%8B%E8%BC%89-SDIO-%E6%9E%9A%E8%88%89-%E9%A9%85%E5%8B%95%E5%8A%A0%E8%BC%89-HCI-%E9%80%9A%E9%81%93%E5%95%8F%E9%A1%8C%E6%99%82%E4%BD%BF%E7%94%A8%E3%80%82%E5%8C%85%E5%90%AB%E4%B8%80%E9%8D%B5%E6%8B%89%E8%B5%B7%E8%85%B3%E6%9C%AC%E3%80%81%E5%88%86%E5%B1%A4%E9%A9%97%E8%AD%89%E6%B8%85%E5%96%AE%E3%80%81%E6%95%85%E9%9A%9C%E6%B1%BA%E7%AD%96%E8%A1%A8%E8%88%87%E5%AE%8C%E6%95%B4%E5%8F%83%E8%80%83%E6%89%8B%E5%86%8A%E3%80%82%E8%A7%B8%E7%99%BC%E5%A0%B4%E6%99%AF%EF%BC%9AWiFi-%E6%8E%83%E6%8F%8F%E7%82%BA%E7%A9%BA%E3%80%81IP-%E4%B8%80%E7%9B%B4%E7%8D%B2%E5%8F%96%E4%B8%AD%E3%80%81%E8%97%8D%E7%89%99%E6%90%9C%E4%B8%8D%E5%88%B0%E8%A8%AD%E5%82%99%E3%80%81BT-OPEN-%E5%A4%B1%E6%95%97%E3%80%81SDIO-not-enumerated%E3%80%81hci-%E7%84%A1%E9%9F%BF%E6%87%89%E3%80%81%E9%96%8B%E6%A9%9F%E5%BE%8C%E7%84%A1%E7%B7%9A%E4%B8%8D%E7%94%9F%E6%95%88%E3%80%81HT0-H709-SC9832A-Marlin-sprdwl-%E7%9B%B8%E9%97%9C%E4%BB%BB%E5%8B%99%E3%80%82%E2%80%9D"><span class="toc-number">1.</span> <span class="toc-text">name: ht0-wcn-radiodescription: “展訊 SC9832A 設備（HT0，安卓內核 + Alpine 用戶態）WiFi&#x2F;藍牙 combo 芯片（Marlin WCN）的運維排障與打通。當用戶報告這類設備 WiFi 起不來、連不上網、藍牙無響應、需要重新拉起 WiFi&#x2F;藍牙、需要診斷 download 固件下載&#x2F;SDIO 枚舉&#x2F;驅動加載&#x2F;HCI 通道問題時使用。包含一鍵拉起腳本、分層驗證清單、故障決策表與完整參考手冊。觸發場景：WiFi 掃描為空、IP 一直獲取中、藍牙搜不到設備、BT-OPEN 失敗、SDIO not enumerated、hci 無響應、開機後無線不生效、HT0&#x2F;H709&#x2F;SC9832A&#x2F;Marlin&#x2F;sprdwl 相關任務。”</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-WCN-Radio-%E2%80%94-%E5%B1%95%E8%A8%8A-SC9832A-WiFi-%E8%97%8D%E7%89%99-combo-%E8%8A%AF%E7%89%87%E9%81%8B%E7%B6%AD"><span class="toc-number"></span> <span class="toc-text">HT0 WCN Radio — 展訊 SC9832A WiFi&#x2F;藍牙 combo 芯片運維</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%95%E6%99%82%E4%BD%BF%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">何時使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A8%AD%E5%82%99%E9%80%9F%E8%A6%BD%EF%BC%8830-%E7%A7%92%E4%B8%8A%E4%B8%8B%E6%96%87%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">設備速覽（30 秒上下文）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B4%85%E7%B7%9A%EF%BC%88%E9%81%95%E5%8F%8D-%E9%9C%80%E6%95%B4%E6%A9%9F%E9%87%8D%E5%95%9F%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">紅線（違反 &#x3D; 需整機重啟）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E6%B5%81"><span class="toc-number">4.</span> <span class="toc-text">工作流</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#A-%E4%B8%80%E9%8D%B5%E6%8B%89%E8%B5%B7-WiFi"><span class="toc-number">4.1.</span> <span class="toc-text">A. 一鍵拉起 WiFi</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-%E4%B8%80%E9%8D%B5%E6%AA%A2%E6%9F%A5%E8%97%8D%E7%89%99%E5%85%A8%E9%8F%88%E8%B7%AF"><span class="toc-number">4.2.</span> <span class="toc-text">B. 一鍵檢查藍牙全鏈路</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#C-SSH-%E8%BC%AA%E8%A9%A2%E6%81%A2%E5%BE%A9"><span class="toc-number">4.3.</span> <span class="toc-text">C. SSH 輪詢恢復</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E5%B1%A4%E9%A9%97%E8%AD%89%EF%BC%88%E5%93%AA%E5%B1%A4%E4%B8%8D%E9%81%8E%EF%BC%8C%E6%9F%A5%E5%93%AA%E5%B1%A4%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">分層驗證（哪層不過，查哪層）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%85%E9%9A%9C%E6%B1%BA%E7%AD%96%EF%BC%88%E9%80%9F%E6%9F%A5%EF%BC%8C%E8%A9%B3%E8%A6%8B-references%EF%BC%89"><span class="toc-number">6.</span> <span class="toc-text">故障決策（速查，詳見 references）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%83%E8%80%83%E6%96%87%E6%AA%94%EF%BC%88%E6%8C%89%E9%9C%80%E8%AE%80%E5%8F%96%EF%BC%8C%E5%8B%BF%E5%85%A8%E9%87%8F%E5%8A%A0%E8%BC%89%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">參考文檔（按需讀取，勿全量加載）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%85%B3%E6%9C%AC%EF%BC%88%E6%9C%AC%E6%A9%9F%E9%81%8B%E8%A1%8C%EF%BC%8Cparamiko-%E7%9B%B4%E9%80%A3%E8%A8%AD%E5%82%99%EF%BC%89"><span class="toc-number">8.</span> <span class="toc-text">腳本（本機運行，paramiko 直連設備）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%87%E6%AA%94%E5%90%8C%E6%AD%A5%E8%A6%8F%E5%89%87%EF%BC%88%E7%89%88%E6%9C%AC%E5%8C%96%EF%BC%8C%E6%89%93-tag-%E6%99%82%E5%90%8C%E6%AD%A5%EF%BC%89"><span class="toc-number">9.</span> <span class="toc-text">文檔同步規則（版本化，打 tag 時同步）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9A%B1%E7%A7%81%E7%B4%85%E7%B7%9A%EF%BC%88%E5%BC%B7%E5%88%B6%EF%BC%89"><span class="toc-number">10.</span> <span class="toc-text">隱私紅線（強制）</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        ht0-wcn-radio Skill 說明
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-13T08:05:17.000Z" itemprop="datePublished">2026-09-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/HT0/" rel="tag">HT0</a>, <a class="tag-link-link" href="/tags/WCN/" rel="tag">WCN</a>, <a class="tag-link-link" href="/tags/%E6%8A%80%E8%83%BD/" rel="tag">技能</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <hr>
+<h2 id="name-ht0-wcn-radiodescription-“展訊-SC9832A-設備（HT0，安卓內核-Alpine-用戶態）WiFi-藍牙-combo-芯片（Marlin-WCN）的運維排障與打通。當用戶報告這類設備-WiFi-起不來、連不上網、藍牙無響應、需要重新拉起-WiFi-藍牙、需要診斷-download-固件下載-SDIO-枚舉-驅動加載-HCI-通道問題時使用。包含一鍵拉起腳本、分層驗證清單、故障決策表與完整參考手冊。觸發場景：WiFi-掃描為空、IP-一直獲取中、藍牙搜不到設備、BT-OPEN-失敗、SDIO-not-enumerated、hci-無響應、開機後無線不生效、HT0-H709-SC9832A-Marlin-sprdwl-相關任務。”"><a href="#name-ht0-wcn-radiodescription-“展訊-SC9832A-設備（HT0，安卓內核-Alpine-用戶態）WiFi-藍牙-combo-芯片（Marlin-WCN）的運維排障與打通。當用戶報告這類設備-WiFi-起不來、連不上網、藍牙無響應、需要重新拉起-WiFi-藍牙、需要診斷-download-固件下載-SDIO-枚舉-驅動加載-HCI-通道問題時使用。包含一鍵拉起腳本、分層驗證清單、故障決策表與完整參考手冊。觸發場景：WiFi-掃描為空、IP-一直獲取中、藍牙搜不到設備、BT-OPEN-失敗、SDIO-not-enumerated、hci-無響應、開機後無線不生效、HT0-H709-SC9832A-Marlin-sprdwl-相關任務。”" class="headerlink" title="name: ht0-wcn-radiodescription: “展訊 SC9832A 設備（HT0，安卓內核 + Alpine 用戶態）WiFi&#x2F;藍牙 combo 芯片（Marlin WCN）的運維排障與打通。當用戶報告這類設備 WiFi 起不來、連不上網、藍牙無響應、需要重新拉起 WiFi&#x2F;藍牙、需要診斷 download 固件下載&#x2F;SDIO 枚舉&#x2F;驅動加載&#x2F;HCI 通道問題時使用。包含一鍵拉起腳本、分層驗證清單、故障決策表與完整參考手冊。觸發場景：WiFi 掃描為空、IP 一直獲取中、藍牙搜不到設備、BT-OPEN 失敗、SDIO not enumerated、hci 無響應、開機後無線不生效、HT0&#x2F;H709&#x2F;SC9832A&#x2F;Marlin&#x2F;sprdwl 相關任務。”"></a>name: ht0-wcn-radio<br>description: “展訊 SC9832A 設備（HT0，安卓內核 + Alpine 用戶態）WiFi&#x2F;藍牙 combo 芯片（Marlin WCN）的運維排障與打通。當用戶報告這類設備 WiFi 起不來、連不上網、藍牙無響應、需要重新拉起 WiFi&#x2F;藍牙、需要診斷 download 固件下載&#x2F;SDIO 枚舉&#x2F;驅動加載&#x2F;HCI 通道問題時使用。包含一鍵拉起腳本、分層驗證清單、故障決策表與完整參考手冊。觸發場景：WiFi 掃描為空、IP 一直獲取中、藍牙搜不到設備、BT-OPEN 失敗、SDIO not enumerated、hci 無響應、開機後無線不生效、HT0&#x2F;H709&#x2F;SC9832A&#x2F;Marlin&#x2F;sprdwl 相關任務。”</h2><h1 id="HT0-WCN-Radio-—-展訊-SC9832A-WiFi-藍牙-combo-芯片運維"><a href="#HT0-WCN-Radio-—-展訊-SC9832A-WiFi-藍牙-combo-芯片運維" class="headerlink" title="HT0 WCN Radio — 展訊 SC9832A WiFi&#x2F;藍牙 combo 芯片運維"></a>HT0 WCN Radio — 展訊 SC9832A WiFi&#x2F;藍牙 combo 芯片運維</h1><h2 id="何時使用"><a href="#何時使用" class="headerlink" title="何時使用"></a>何時使用</h2><p>用戶提到 HT0 &#x2F; H709 &#x2F; SC9832A &#x2F; spd-box &#x2F; Alpine + 安卓內核 &#x2F; Marlin &#x2F; sprdwl &#x2F; download 固件 &#x2F; WiFi 拉不起 &#x2F; 藍牙搜不到，或要求”拉起 WiFi &#x2F; 藍牙”、”開機自動啟動 WiFi&#x2F;藍牙”、”無線不生效”時，使用本 Skill。</p>
+<h2 id="設備速覽（30-秒上下文）"><a href="#設備速覽（30-秒上下文）" class="headerlink" title="設備速覽（30 秒上下文）"></a>設備速覽（30 秒上下文）</h2><table>
+<thead>
+<tr>
+<th>項</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>設備</td>
+<td>HT0（對照機 H709 跑安卓 6.0，可作信息源）</td>
+</tr>
+<tr>
+<td>內核&#x2F;系統</td>
+<td>Linux 3.10.65（安卓定製內核）+ Alpine 用戶態，<strong>保留安卓內核 switchroot</strong></td>
+</tr>
+<tr>
+<td>SSH</td>
+<td><code>root@&lt;設備IP&gt;</code>（RNDIS 調試口）&#x2F; WiFi 聯網後 <code>&lt;WiFi-IP&gt;</code>，密碼見環境記錄</td>
+</tr>
+<tr>
+<td>芯片</td>
+<td>展訊 Marlin combo WCN（WiFi+藍牙同芯片，SDIO 數據 + ttyS0 UART HCI）</td>
+</tr>
+<tr>
+<td>WiFi</td>
+<td>wlan0（sprdwl.ko + marlin_fm.ko），固件由 chroot 安卓 download 燒錄</td>
+</tr>
+<tr>
+<td>藍牙</td>
+<td>&#x2F;dev&#x2F;ttyS0 3M+CRTSCTS H4，btwrite 喚醒，用戶態 daemon 提供 unix socket <code>/tmp/bt_ctl.sock</code></td>
+</tr>
+</tbody></table>
+<h2 id="紅線（違反-需整機重啟）"><a href="#紅線（違反-需整機重啟）" class="headerlink" title="紅線（違反 &#x3D; 需整機重啟）"></a>紅線（違反 &#x3D; 需整機重啟）</h2><ol>
+<li><strong>download&#x2F;logdw 常駐勿殺</strong> —— 全殺破壞芯片固件狀態，只能整機重啟。</li>
+<li><strong>驅動順序</strong>：<code>marlin_fm.ko</code> 先、<code>sprdwl.ko</code> 後（符號依賴 fm_read）。</li>
+<li><strong>藍牙 BT-OPEN 前置</strong>：重啟後必 <code>chmod 666 /tmp/aand/proc/mdbg/*</code>。</li>
+<li><strong>藍牙掃描前置</strong>：必須先 <code>Write Scan Enable (0x0c1a,0x03)</code> 再 Inquiry，否則無 Inquiry Result。</li>
+<li>殺進程用 <code>pkill -9 -x &lt;名&gt;</code>，勿用 <code>ps | grep</code> 內嵌模式（誤殺自身 shell）。</li>
+<li>勿改 USB OTG &#x2F; 網絡模式；勿換主線內核（展訊專屬定製依賴安卓內核）。</li>
+</ol>
+<h2 id="工作流"><a href="#工作流" class="headerlink" title="工作流"></a>工作流</h2><h3 id="A-一鍵拉起-WiFi"><a href="#A-一鍵拉起-WiFi" class="headerlink" title="A. 一鍵拉起 WiFi"></a>A. 一鍵拉起 WiFi</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python scripts/wifi_bringup.py --host &lt;設備IP&gt; --password <span class="string">&#x27;&lt;pwd&gt;&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>或手動（冪等，安全）：<code>sh /etc/local.d/wifi.start</code>，日誌 <code>/var/log/wifi_boot.log</code>。</p>
+<h3 id="B-一鍵檢查藍牙全鏈路"><a href="#B-一鍵檢查藍牙全鏈路" class="headerlink" title="B. 一鍵檢查藍牙全鏈路"></a>B. 一鍵檢查藍牙全鏈路</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python scripts/bt_status.py --host &lt;設備IP&gt; --password <span class="string">&#x27;&lt;pwd&gt;&#x27;</span> [--scan 8]</span><br></pre></td></tr></table></figure>
+
+<h3 id="C-SSH-輪詢恢復"><a href="#C-SSH-輪詢恢復" class="headerlink" title="C. SSH 輪詢恢復"></a>C. SSH 輪詢恢復</h3><p>設備重啟後 USB 口切換導致 22 端口短暫不通：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python scripts/ssh_wait.py --hosts &lt;設備IP&gt;,&lt;WiFi-IP&gt; --password <span class="string">&#x27;&lt;pwd&gt;&#x27;</span> --<span class="built_in">timeout</span> 180</span><br></pre></td></tr></table></figure>
+
+<h2 id="分層驗證（哪層不過，查哪層）"><a href="#分層驗證（哪層不過，查哪層）" class="headerlink" title="分層驗證（哪層不過，查哪層）"></a>分層驗證（哪層不過，查哪層）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">① 固件/物理層   download 燒錄 → SDIO 枚舉 0x2331</span><br><span class="line">                cat /sys/bus/sdio/devices/mmc2:8800:1/device  → 0x2331</span><br><span class="line">② 上電層(藍牙)  wcnd + bt_once → /tmp/bt_once.log 含 &quot;WCNBTWIFI-CMD OK&quot;</span><br><span class="line">③ 驅動/接口層   lsmod | grep sprdwl; ip -br link show wlan0 → UP</span><br><span class="line">④ 協議層        pgrep wpa_supplicant; wpa_cli -i wlan0 status → wpa_state=COMPLETED</span><br><span class="line">⑤ 網絡層        ip addr show wlan0 | grep &#x27;inet &#x27; → 有 IPv4</span><br><span class="line">⑥ 引擎層(藍牙)  /tmp/bt_probe_full 六步全通（Reset/Ver/BD_ADDR/Buffer/Features/Scan Enable）</span><br><span class="line">⑦ 應用層(藍牙)  socket state → OK ON; scan N → OK &lt;count&gt; + 設備行</span><br></pre></td></tr></table></figure>
+
+<h2 id="故障決策（速查，詳見-references）"><a href="#故障決策（速查，詳見-references）" class="headerlink" title="故障決策（速查，詳見 references）"></a>故障決策（速查，詳見 references）</h2><table>
+<thead>
+<tr>
+<th>症狀</th>
+<th>根因</th>
+<th>修復</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>BT-OPEN FAIL</td>
+<td>mdbg 權限 600</td>
+<td><code>chmod 666 /tmp/aand/proc/mdbg/*</code></td>
+</tr>
+<tr>
+<td>HCI 無響應 &#x2F; 只回一次 SPRD3</td>
+<td>缺 btwrite 喚醒</td>
+<td>起 <code>/tmp/bt_wake.sh</code></td>
+</tr>
+<tr>
+<td>藍牙掃描無結果</td>
+<td>未先 Write Scan Enable</td>
+<td>用 daemon scan（內部已處理）</td>
+</tr>
+<tr>
+<td>WiFi SDIO not enumerated</td>
+<td>固件下載失敗</td>
+<td>看 &#x2F;tmp&#x2F;logdw.log；確認 by-name 軟鏈；重跑 wifi.start</td>
+</tr>
+<tr>
+<td>bind logdw failed</td>
+<td>&#x2F;tmp&#x2F;logdw 缺失</td>
+<td>從 &#x2F;mnt&#x2F;android_sys&#x2F;bin&#x2F; 重拷</td>
+</tr>
+<tr>
+<td>WiFi 連上但 IP 獲取中</td>
+<td>DHCP 未跑 &#x2F; wpa 未 COMPLETED</td>
+<td><code>wpa_cli status</code> 檢查；<code>udhcpc -i wlan0 -q</code></td>
+</tr>
+<tr>
+<td>socket connect 失敗</td>
+<td>daemon 多實例</td>
+<td><code>pkill -9 -x bt_user_daemon</code> 後單實例</td>
+</tr>
+<tr>
+<td>daemon “Not a tty”</td>
+<td>ldisc 被佔</td>
+<td>python <code>fcntl.ioctl(fd,0x5421,b&#39;\0&#39;*4)</code> 恢復 N_TTY</td>
+</tr>
+<tr>
+<td>重啟後 SSH 不通</td>
+<td>USB 口切換</td>
+<td>ssh_wait.py 輪詢雙 IP</td>
+</tr>
+</tbody></table>
+<h2 id="參考文檔（按需讀取，勿全量加載）"><a href="#參考文檔（按需讀取，勿全量加載）" class="headerlink" title="參考文檔（按需讀取，勿全量加載）"></a>參考文檔（按需讀取，勿全量加載）</h2><ul>
+<li><strong>WiFi 完整手冊</strong>：<code>references/wifi.md</code> —— WiFi 全流程、wifi.start 腳本結構、wpa_cli 交互、驗證清單、故障表</li>
+<li><strong>藍牙完整手冊</strong>：<code>references/bluetooth.md</code> —— 藍牙全流程、daemon 架構&#x2F;socket 協議、HCI 要點、驗證清單、故障表</li>
+<li><strong>快速驗收</strong>：兩手冊第 12 節（5 分鐘驗收路徑），各兩條命令確認鏈路</li>
+</ul>
+<h2 id="腳本（本機運行，paramiko-直連設備）"><a href="#腳本（本機運行，paramiko-直連設備）" class="headerlink" title="腳本（本機運行，paramiko 直連設備）"></a>腳本（本機運行，paramiko 直連設備）</h2><table>
+<thead>
+<tr>
+<th>腳本</th>
+<th>用途</th>
+<th>關鍵輸出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>scripts/wifi_bringup.py</code></td>
+<td>一鍵拉起 WiFi 並驗證</td>
+<td>SDIO 0x2331 &#x2F; wlan0 UP &#x2F; wpa 狀態</td>
+</tr>
+<tr>
+<td><code>scripts/bt_status.py</code></td>
+<td>一鍵檢查藍牙全鏈路（可帶掃描）</td>
+<td>各層狀態 + socket 結果</td>
+</tr>
+<tr>
+<td><code>scripts/ssh_wait.py</code></td>
+<td>輪詢等待 SSH 恢復</td>
+<td>可用主機 + 連接成功標誌</td>
+</tr>
+</tbody></table>
+<p>腳本依賴本機 <code>paramiko</code>；密碼等憑據走 <code>--password</code> 參數或環境變量，勿硬編碼。</p>
+<h2 id="文檔同步規則（版本化，打-tag-時同步）"><a href="#文檔同步規則（版本化，打-tag-時同步）" class="headerlink" title="文檔同步規則（版本化，打 tag 時同步）"></a>文檔同步規則（版本化，打 tag 時同步）</h2><p>文檔<strong>不隨每次迭代提交更新</strong>（避免小改動消耗），按<strong>版本定版（打 tag）</strong>統一同步：</p>
+<ol>
+<li>日常迭代：只提交代碼&#x2F;腳本&#x2F;配置改動，commit 備註寫清改動內容；<strong>不動文檔</strong>。</li>
+<li>打 tag 定版（用戶確認功能完善&#x2F;穩定）時，一次性完成：<ul>
+<li>同步更新受影響文檔族：docs 文檔（操作手冊&#x2F;故障排查手冊&#x2F;AI指導手冊&#x2F;部署交付文檔&#x2F;流程對比&#x2F;工作總結）+ references&#x2F;*.md + 本 SKILL.md（工作流&#x2F;紅線&#x2F;決策表，如涉及）</li>
+<li>新增&#x2F;改名&#x2F;刪除文件時同步更新 AI工作流&#x2F;README.md 目錄規範</li>
+<li><strong>校驗</strong>：文檔中的命令、路徑、產物與實際設備運行狀態一致（改過的層必須實測過）</li>
+<li>打 tag：git tag &lt;vX.Y.Z&gt;，備註中文，寫明「定版範圍 + 同步更新的文檔清單」</li>
+</ul>
+</li>
+<li>tag 提交應包含或緊隨文檔更新，保證「一個 tag &#x3D; 一份完整文檔快照」可回溯。</li>
+</ol>
+<h2 id="隱私紅線（強制）"><a href="#隱私紅線（強制）" class="headerlink" title="隱私紅線（強制）"></a>隱私紅線（強制）</h2><ul>
+<li>項目公開：<strong>任何文檔、git 備註、歸檔文件中禁止出現真實 SSH 密碼、賬號、真實 IP</strong>。</li>
+<li>一律用佔位符：<code>&lt;設備IP&gt;</code> &#x2F; <code>&lt;WiFi-IP&gt;</code> &#x2F; <code>&lt;密碼&gt;</code>；憑據只在運行參數或環境變量中提供。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#name-ht0-wcn-radiodescription-%E2%80%9C%E5%B1%95%E8%A8%8A-SC9832A-%E8%A8%AD%E5%82%99%EF%BC%88HT0%EF%BC%8C%E5%AE%89%E5%8D%93%E5%85%A7%E6%A0%B8-Alpine-%E7%94%A8%E6%88%B6%E6%85%8B%EF%BC%89WiFi-%E8%97%8D%E7%89%99-combo-%E8%8A%AF%E7%89%87%EF%BC%88Marlin-WCN%EF%BC%89%E7%9A%84%E9%81%8B%E7%B6%AD%E6%8E%92%E9%9A%9C%E8%88%87%E6%89%93%E9%80%9A%E3%80%82%E7%95%B6%E7%94%A8%E6%88%B6%E5%A0%B1%E5%91%8A%E9%80%99%E9%A1%9E%E8%A8%AD%E5%82%99-WiFi-%E8%B5%B7%E4%B8%8D%E4%BE%86%E3%80%81%E9%80%A3%E4%B8%8D%E4%B8%8A%E7%B6%B2%E3%80%81%E8%97%8D%E7%89%99%E7%84%A1%E9%9F%BF%E6%87%89%E3%80%81%E9%9C%80%E8%A6%81%E9%87%8D%E6%96%B0%E6%8B%89%E8%B5%B7-WiFi-%E8%97%8D%E7%89%99%E3%80%81%E9%9C%80%E8%A6%81%E8%A8%BA%E6%96%B7-download-%E5%9B%BA%E4%BB%B6%E4%B8%8B%E8%BC%89-SDIO-%E6%9E%9A%E8%88%89-%E9%A9%85%E5%8B%95%E5%8A%A0%E8%BC%89-HCI-%E9%80%9A%E9%81%93%E5%95%8F%E9%A1%8C%E6%99%82%E4%BD%BF%E7%94%A8%E3%80%82%E5%8C%85%E5%90%AB%E4%B8%80%E9%8D%B5%E6%8B%89%E8%B5%B7%E8%85%B3%E6%9C%AC%E3%80%81%E5%88%86%E5%B1%A4%E9%A9%97%E8%AD%89%E6%B8%85%E5%96%AE%E3%80%81%E6%95%85%E9%9A%9C%E6%B1%BA%E7%AD%96%E8%A1%A8%E8%88%87%E5%AE%8C%E6%95%B4%E5%8F%83%E8%80%83%E6%89%8B%E5%86%8A%E3%80%82%E8%A7%B8%E7%99%BC%E5%A0%B4%E6%99%AF%EF%BC%9AWiFi-%E6%8E%83%E6%8F%8F%E7%82%BA%E7%A9%BA%E3%80%81IP-%E4%B8%80%E7%9B%B4%E7%8D%B2%E5%8F%96%E4%B8%AD%E3%80%81%E8%97%8D%E7%89%99%E6%90%9C%E4%B8%8D%E5%88%B0%E8%A8%AD%E5%82%99%E3%80%81BT-OPEN-%E5%A4%B1%E6%95%97%E3%80%81SDIO-not-enumerated%E3%80%81hci-%E7%84%A1%E9%9F%BF%E6%87%89%E3%80%81%E9%96%8B%E6%A9%9F%E5%BE%8C%E7%84%A1%E7%B7%9A%E4%B8%8D%E7%94%9F%E6%95%88%E3%80%81HT0-H709-SC9832A-Marlin-sprdwl-%E7%9B%B8%E9%97%9C%E4%BB%BB%E5%8B%99%E3%80%82%E2%80%9D"><span class="toc-number">1.</span> <span class="toc-text">name: ht0-wcn-radiodescription: “展訊 SC9832A 設備（HT0，安卓內核 + Alpine 用戶態）WiFi&#x2F;藍牙 combo 芯片（Marlin WCN）的運維排障與打通。當用戶報告這類設備 WiFi 起不來、連不上網、藍牙無響應、需要重新拉起 WiFi&#x2F;藍牙、需要診斷 download 固件下載&#x2F;SDIO 枚舉&#x2F;驅動加載&#x2F;HCI 通道問題時使用。包含一鍵拉起腳本、分層驗證清單、故障決策表與完整參考手冊。觸發場景：WiFi 掃描為空、IP 一直獲取中、藍牙搜不到設備、BT-OPEN 失敗、SDIO not enumerated、hci 無響應、開機後無線不生效、HT0&#x2F;H709&#x2F;SC9832A&#x2F;Marlin&#x2F;sprdwl 相關任務。”</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-WCN-Radio-%E2%80%94-%E5%B1%95%E8%A8%8A-SC9832A-WiFi-%E8%97%8D%E7%89%99-combo-%E8%8A%AF%E7%89%87%E9%81%8B%E7%B6%AD"><span class="toc-number"></span> <span class="toc-text">HT0 WCN Radio — 展訊 SC9832A WiFi&#x2F;藍牙 combo 芯片運維</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%95%E6%99%82%E4%BD%BF%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">何時使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A8%AD%E5%82%99%E9%80%9F%E8%A6%BD%EF%BC%8830-%E7%A7%92%E4%B8%8A%E4%B8%8B%E6%96%87%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">設備速覽（30 秒上下文）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B4%85%E7%B7%9A%EF%BC%88%E9%81%95%E5%8F%8D-%E9%9C%80%E6%95%B4%E6%A9%9F%E9%87%8D%E5%95%9F%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">紅線（違反 &#x3D; 需整機重啟）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E6%B5%81"><span class="toc-number">4.</span> <span class="toc-text">工作流</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#A-%E4%B8%80%E9%8D%B5%E6%8B%89%E8%B5%B7-WiFi"><span class="toc-number">4.1.</span> <span class="toc-text">A. 一鍵拉起 WiFi</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-%E4%B8%80%E9%8D%B5%E6%AA%A2%E6%9F%A5%E8%97%8D%E7%89%99%E5%85%A8%E9%8F%88%E8%B7%AF"><span class="toc-number">4.2.</span> <span class="toc-text">B. 一鍵檢查藍牙全鏈路</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#C-SSH-%E8%BC%AA%E8%A9%A2%E6%81%A2%E5%BE%A9"><span class="toc-number">4.3.</span> <span class="toc-text">C. SSH 輪詢恢復</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E5%B1%A4%E9%A9%97%E8%AD%89%EF%BC%88%E5%93%AA%E5%B1%A4%E4%B8%8D%E9%81%8E%EF%BC%8C%E6%9F%A5%E5%93%AA%E5%B1%A4%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">分層驗證（哪層不過，查哪層）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%85%E9%9A%9C%E6%B1%BA%E7%AD%96%EF%BC%88%E9%80%9F%E6%9F%A5%EF%BC%8C%E8%A9%B3%E8%A6%8B-references%EF%BC%89"><span class="toc-number">6.</span> <span class="toc-text">故障決策（速查，詳見 references）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%83%E8%80%83%E6%96%87%E6%AA%94%EF%BC%88%E6%8C%89%E9%9C%80%E8%AE%80%E5%8F%96%EF%BC%8C%E5%8B%BF%E5%85%A8%E9%87%8F%E5%8A%A0%E8%BC%89%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">參考文檔（按需讀取，勿全量加載）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%85%B3%E6%9C%AC%EF%BC%88%E6%9C%AC%E6%A9%9F%E9%81%8B%E8%A1%8C%EF%BC%8Cparamiko-%E7%9B%B4%E9%80%A3%E8%A8%AD%E5%82%99%EF%BC%89"><span class="toc-number">8.</span> <span class="toc-text">腳本（本機運行，paramiko 直連設備）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%87%E6%AA%94%E5%90%8C%E6%AD%A5%E8%A6%8F%E5%89%87%EF%BC%88%E7%89%88%E6%9C%AC%E5%8C%96%EF%BC%8C%E6%89%93-tag-%E6%99%82%E5%90%8C%E6%AD%A5%EF%BC%89"><span class="toc-number">9.</span> <span class="toc-text">文檔同步規則（版本化，打 tag 時同步）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9A%B1%E7%A7%81%E7%B4%85%E7%B7%9A%EF%BC%88%E5%BC%B7%E5%88%B6%EF%BC%89"><span class="toc-number">10.</span> <span class="toc-text">隱私紅線（強制）</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&text=ht0-wcn-radio Skill 說明"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&title=ht0-wcn-radio Skill 說明"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&is_video=false&description=ht0-wcn-radio Skill 說明"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ht0-wcn-radio Skill 說明&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&title=ht0-wcn-radio Skill 說明"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&title=ht0-wcn-radio Skill 說明"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&title=ht0-wcn-radio Skill 說明"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&title=ht0-wcn-radio Skill 說明"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/13/ht0-skill-md/&name=ht0-wcn-radio Skill 說明&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

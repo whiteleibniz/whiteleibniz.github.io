@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="參考（細節）— 遊戲模擬器：渲染管線與退出策略 由 MEMORY.md §11 拆出，避免主筆記超限。結論級摘要仍在 MEMORY.md。原始證據：AI工作流&#x2F;bugfix&#x2F;bugfix_20260923_09~14*.md、outputs&#x2F;bugfix_20260923&#x2F;、Skill child-exit-hang-diagnosis  A. 渲染管線五坑（已實證；改 video_cb &amp;#x2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ref_模擬器_渲染與退出">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="參考（細節）— 遊戲模擬器：渲染管線與退出策略 由 MEMORY.md §11 拆出，避免主筆記超限。結論級摘要仍在 MEMORY.md。原始證據：AI工作流&#x2F;bugfix&#x2F;bugfix_20260923_09~14*.md、outputs&#x2F;bugfix_20260923&#x2F;、Skill child-exit-hang-diagnosis  A. 渲染管線五坑（已實證；改 video_cb &amp;#x2">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-29T10:05:26.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:47.015Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="模拟器">
+<meta property="article:tag" content="渲染">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>ref_模擬器_渲染與退出</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/29/ref-emulator-render/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/24/device-report/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&text=ref_模擬器_渲染與退出"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&title=ref_模擬器_渲染與退出"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&is_video=false&description=ref_模擬器_渲染與退出"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_模擬器_渲染與退出&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&title=ref_模擬器_渲染與退出"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&title=ref_模擬器_渲染與退出"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&title=ref_模擬器_渲染與退出"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&title=ref_模擬器_渲染與退出"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&name=ref_模擬器_渲染與退出&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%83%E8%80%83%EF%BC%88%E7%B4%B0%E7%AF%80%EF%BC%89%E2%80%94-%E9%81%8A%E6%88%B2%E6%A8%A1%E6%93%AC%E5%99%A8%EF%BC%9A%E6%B8%B2%E6%9F%93%E7%AE%A1%E7%B7%9A%E8%88%87%E9%80%80%E5%87%BA%E7%AD%96%E7%95%A5"><span class="toc-number">1.</span> <span class="toc-text">參考（細節）— 遊戲模擬器：渲染管線與退出策略</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-%E6%B8%B2%E6%9F%93%E7%AE%A1%E7%B7%9A%E4%BA%94%E5%9D%91%EF%BC%88%E5%B7%B2%E5%AF%A6%E8%AD%89%EF%BC%9B%E6%94%B9-video-cb-scale-rotate90-%E5%89%8D%E5%BF%85%E8%AE%80%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">A. 渲染管線五坑（已實證；改 video_cb &#x2F; scale_rotate90 前必讀）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-%E9%80%80%E5%87%BA%E7%AD%96%E7%95%A5%EF%BC%88%E5%AE%9A%E7%89%88-v3-%E7%84%A1%E6%A2%9D%E4%BB%B6%E7%BF%BB%E9%A0%81-bugfix-16-18%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">B. 退出策略（定版 v3 + 無條件翻頁 &#x3D; bugfix 16 &#x2F; 18）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-%E5%B7%B2%E8%A2%AB%E8%AD%89%E5%81%BD%E7%9A%84%E8%B7%AF%EF%BC%8C%E5%88%A5%E5%86%8D%E8%B5%B0"><span class="toc-number">1.3.</span> <span class="toc-text">C. 已被證偽的路，別再走</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#D-%E5%B7%A5%E5%85%B7%E8%88%87%E6%8E%A2%E9%87%9D"><span class="toc-number">1.4.</span> <span class="toc-text">D. 工具與探針</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#E-%E5%B9%80%E7%8E%87%E9%A0%90%E7%AE%97%E8%88%87%E6%8F%90%E9%80%9F%EF%BC%882026-09-29%EF%BC%8CGBA%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">E. 幀率預算與提速（2026-09-29，GBA）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#E-1-%E4%B8%89%E5%80%8B%E5%BF%85%E7%9F%A5%E6%95%B8%E5%AD%97"><span class="toc-number">1.5.1.</span> <span class="toc-text">E.1 三個必知數字</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-2-%E5%88%86%E6%AE%B5%E6%8E%A2%E9%87%9D%EF%BC%88%E6%80%8E%E9%BA%BC%E9%87%8F%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">E.2 分段探針（怎麼量）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-3-%E5%B7%B2%E5%81%9A%E7%9A%84%E5%85%A9%E8%99%95%E6%8F%90%E9%80%9F"><span class="toc-number">1.5.3.</span> <span class="toc-text">E.3 已做的兩處提速</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-4-%E5%B9%80%E7%8E%87%E9%A1%AF%E7%A4%BA"><span class="toc-number">1.5.4.</span> <span class="toc-text">E.4 幀率顯示</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-5-PSP-%E6%80%A7%E8%83%BD%E5%A4%A9%E8%8A%B1%E6%9D%BF-10fps%EF%BC%882026-09-29-%E5%AF%A6%E6%B8%AC%E5%AE%9A%E8%AB%96%EF%BC%89"><span class="toc-number">1.5.5.</span> <span class="toc-text">E.5 PSP 性能天花板 &#x3D; 10fps（2026-09-29 實測定論）</span></a></li></ol></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        ref_模擬器_渲染與退出
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-29T10:05:26.000Z" itemprop="datePublished">2026-09-29</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>, <a class="tag-link-link" href="/tags/%E6%B8%B2%E6%9F%93/" rel="tag">渲染</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="參考（細節）—-遊戲模擬器：渲染管線與退出策略"><a href="#參考（細節）—-遊戲模擬器：渲染管線與退出策略" class="headerlink" title="參考（細節）— 遊戲模擬器：渲染管線與退出策略"></a>參考（細節）— 遊戲模擬器：渲染管線與退出策略</h1><blockquote>
+<p>由 <code>MEMORY.md §11</code> 拆出，避免主筆記超限。結論級摘要仍在 MEMORY.md。<br>原始證據：<code>AI工作流/bugfix/bugfix_20260923_09~14*.md</code>、<code>outputs/bugfix_20260923/</code>、Skill <code>child-exit-hang-diagnosis</code></p>
+</blockquote>
+<h2 id="A-渲染管線五坑（已實證；改-video-cb-scale-rotate90-前必讀）"><a href="#A-渲染管線五坑（已實證；改-video-cb-scale-rotate90-前必讀）" class="headerlink" title="A. 渲染管線五坑（已實證；改 video_cb &#x2F; scale_rotate90 前必讀）"></a>A. 渲染管線五坑（已實證；改 <code>video_cb</code> &#x2F; <code>scale_rotate90</code> 前必讀）</h2><ol>
+<li><strong>必須放行 240×160</strong>（原硬編碼 256×240 過濾 → GBA 幀全丟 &#x3D; 黑屏）；<br><strong>必須按 pitch 逐行讀</strong>（mGBA pitch&#x3D;512&#x3D;256px&#x2F;行，寬只 240，線性讀 → 縱向條紋）</li>
+<li><strong>雙緩衝頁翻轉治撕裂</strong>：整幀渲染到後臺頁再 <code>FBIOPAN_DISPLAY</code>；<code>FBIO_WAITFORVSYNC</code> 本機 EPERM 不可用<br>→ <strong>這條正是”頁翻轉地雷”的來源</strong>（見 MEMORY.md §3）</li>
+<li><strong>★ R&#x2F;B 交換全鏈路只能做一次</strong>（內部 <code>0xAARRGGBB</code>，寫前換一次）→ 換兩次 &#x3D; 紅藍反轉</li>
+<li><strong>音頻真實速率 ≠ 核心上報</strong>：mGBA 報 32768，實測每 <code>retro_run</code> 交付 1097 幀（≈65536Hz）→ 按上報換算超產一倍<br>被截斷 &#x3D; 持續滋滋。正解 <code>s_fpc × s_fps_meas</code>；緩衝 ≥8192 int16；<strong>開局 300ms 不發聲</strong>（首幀只 82 幀會算錯比率灌爆 fifo）</li>
+<li><strong>★ CPU 100% 打滿，miniretro 上限 ≈56fps</strong>（&lt;59.73）→ 只能按實測幀率把音頻拉伸到實時，音高低 ~6%</li>
+</ol>
+<h2 id="B-退出策略（定版-v3-無條件翻頁-bugfix-16-18）"><a href="#B-退出策略（定版-v3-無條件翻頁-bugfix-16-18）" class="headerlink" title="B. 退出策略（定版 v3 + 無條件翻頁 &#x3D; bugfix 16 &#x2F; 18）"></a>B. 退出策略（定版 v3 + 無條件翻頁 &#x3D; bugfix 16 &#x2F; 18）</h2><ul>
+<li><strong>判據只有一個硬事件：子進程真的消失</strong>。兩頁一律<strong>阻塞 <code>waitpid</code>，無上限、無標誌位、無超時</strong><br>（FC 的 <code>fc_wait_thread</code> 一直這麼寫，從沒出過故障 —— 這才是基準）</li>
+<li><strong>順序</strong>：輸入攔截器收到退出鍵 → <code>kill(SIGTERM)</code>（<strong>立刻返回，絕不 sleep</strong>）→ 創建<strong>專職補刀線程</strong><br><code>gba_kill_later</code>（600ms 後仍在才 <code>SIGKILL</code>）→ 收屍線程阻塞 <code>waitpid</code> → <code>gba_reset_fb_page()</code> →<br><code>hardware_keys_set_grab(true)</code> → <code>app_runtime_set_lvgl_paused(false)</code> → <code>lv_async_call(整屏重繪)</code><br>→ <strong>最後</strong>摘攔截器。<code>gba_on_destroy</code> 另走 <code>SIGTERM</code> + 300ms 保護 <code>.sav</code></li>
+<li><strong>前端側</strong>：<code>on_quit_signal</code>(SIGTERM→quit&#x3D;1) + <code>fb_restore()</code> + 正常 <code>return 0</code>。<br><strong><code>fb_restore()</code> 無條件 pan 回第 0 頁，絕不清屏</strong>（清屏 &#x3D; 那 ~1s 變純黑 &#x3D; “卡黑屏”）；<br>**也不再整頁 <code>memcpy</code>**（bugfix 16 去掉：那等於把內容寫進 LVGL 永遠繪製的那頁）</li>
+<li><strong>★★ 翻頁一律【無條件】</strong>（bugfix 18，頁面側 5 個調用點全部）：<code>FBIOPAN_DISPLAY(yoffset=0)</code> 冪等<br>→ <strong>絕不加前置判斷</strong>；發完回讀校驗一次、不對就重發。且<strong>翻頁與整屏重繪必須同拍</strong><br>（主線程重繪回調裡緊挨著重繪再翻一次）→ 見 §C-7</li>
+<li><strong>實測</strong>：發信號 → 子進程”真正消失”<strong>兩前端都 <del>1015</del>1020ms</strong>（內核回收 evdev&#x2F;fb 的固有開銷，前端無法影響；<br>刻意接受的代價，別再想優化）；退出後<strong>兩前端都定格遊戲最後一幀</strong> &#x3D; <strong>黑屏窗口 0</strong></li>
+<li><strong>★ <code>yoffset</code> 回讀的定位（三版結論，最終版）</strong>：它<strong>能反映</strong>前端在不在翻頁（當觀測手段可用），<br>但<strong>不能當”要不要翻頁”的門禁</strong> —— 記賬值不保證等於掃描輸出(LCDC)正在讀的那一頁；<br>兩者一旦不一致，<code>if(yoffset != 0)</code> 就跳過翻頁 &#x3D; <strong>偶發殘留上一畫面</strong>（bugfix 18 的真兇）</li>
+</ul>
+<h2 id="C-已被證偽的路，別再走"><a href="#C-已被證偽的路，別再走" class="headerlink" title="C. 已被證偽的路，別再走"></a>C. 已被證偽的路，別再走</h2><ol>
+<li><strong>給等待循環設”跑滿 N 秒就算退出”的上限</strong> ← “卡黑屏”真兇：遊戲正常跑滿即被誤判 → 摘掉按鍵攔截器<br>（<strong>退出鍵失效</strong>）+ LVGL 搶回 fb0 與遊戲互相覆蓋。<strong>FC 用無上限阻塞 waitpid，這是”FC 好&#x2F;GBA 壞”的分水嶺</strong></li>
+<li><code>_exit(0)</code> <strong>省不掉</strong>內核時間（只跳過用戶態 close，進程<strong>更久</strong>不消失）</li>
+<li>把”等收屍”循環放在<strong>互斥鎖內</strong> → UI 恢復被拖滿</li>
+<li>用 <code>setenv</code> 做單子進程開關（<strong>主進程級</strong>，會跨頁面殘留）→ <strong>一律在 <code>fork()</code> 後 <code>execl()</code> 前的子進程裡設</strong></li>
+<li><strong>前端退出時清屏</strong>（”黑”由清屏造成、”卡”是兩前端共有的 ~1s 開銷 —— 別當同一個問題查）</li>
+<li><strong>只歸位自己那一層</strong>：父進程補 SIGKILL 打斷子進程”落存檔 + 翻頁” → <strong>必須父子雙層兜底</strong></li>
+<li><strong>★「冪等操作 + 前置判斷」</strong>（bugfix 18）：<code>if(yoffset!=0) pan()</code> 這類寫法把”<strong>一定做</strong>“變成<br>“<strong>偶發不做</strong>“ —— 因果鏈是「回讀值 ≠ 真實狀態 → 判斷為假 → 後端復位整段被跳過」。<br>冪等且成本可忽略的操作<strong>直接做，不要問</strong>。<br><strong>偶發故障的第一偵查方向是”判斷條件”，而不是時序</strong>：先問”這段代碼有沒有可能在輸入正確時選擇不做”</li>
+<li><strong>把”翻頁”和”重繪”分處兩個執行流</strong>：它們是同一個視覺事務的兩半，分開就留中間態（bugfix 18）</li>
+</ol>
+<h2 id="D-工具與探針"><a href="#D-工具與探針" class="headerlink" title="D. 工具與探針"></a>D. 工具與探針</h2><ul>
+<li>頁翻轉診斷 <code>fbpan</code>：<code>/tmp/fbpan [頁號]</code>（源碼 <code>ssh_tools/_tmp/fbpan.c</code>，設備 gcc 編）</li>
+<li>抓當前可見頁 <code>ssh_tools/grab_screen.py</code>；端到端復現 <code>ssh_tools/gba_repro.py</code>；<br>凍住前端驗證兜底 <code>verify_gba_guard.py</code>；完整流程 <code>verify_gba_final.py</code></li>
+<li>音頻探針 <code>MINIRETRO_AUDIO_DEBUG=1 miniretro ...</code> 每秒打<br><code>peak/samples/out/drop/fps/calls/fpc/in_rate/out_rate/busy_ms</code></li>
+<li>已知限制：本機僅 4 物理鍵（左&#x2F;右&#x2F;A&#x2F;退出），GBA 的 L&#x2F;R&#x2F;START&#x2F;SELECT 需 USB 手柄或改 keymap</li>
+</ul>
+<hr>
+<h2 id="E-幀率預算與提速（2026-09-29，GBA）"><a href="#E-幀率預算與提速（2026-09-29，GBA）" class="headerlink" title="E. 幀率預算與提速（2026-09-29，GBA）"></a>E. 幀率預算與提速（2026-09-29，GBA）</h2><h3 id="E-1-三個必知數字"><a href="#E-1-三個必知數字" class="headerlink" title="E.1 三個必知數字"></a>E.1 三個必知數字</h3><ol>
+<li><strong><code>FBIOPAN_DISPLAY</code> 阻塞 17.46ms&#x2F;次（裸測 100 次）⇒ 面板刷新 57.3Hz</strong>。<br>它等下一個 vsync 才返回 ⇒ <strong>只要每幀都翻頁，幀率上限就是 57.3Hz</strong>（GBA 標稱 59.73 永遠達不到）。<br>別再去”優化到 60fps”——物理上限就在這。</li>
+<li><strong>每幀真正做事 ≈ 10ms</strong>：mGBA core_run 自身 ~5ms + conv 0.4ms + scale_rotate90 4.85ms；<br>剩下 7ms 是 pan 在等 vsync（無事可做，但單線程下串行佔用主循環）。</li>
+<li><strong>掉幀機制</strong>：”頓一下”&#x3D; 某幀做事超過當前 vsync 相位剩餘預算 → 錯過一班車 → 該幀 34.9ms（半速）。<br>所以提速的正確目標是<strong>加大餘量</strong>，不是提高峰值幀率。</li>
+</ol>
+<h3 id="E-2-分段探針（怎麼量）"><a href="#E-2-分段探針（怎麼量）" class="headerlink" title="E.2 分段探針（怎麼量）"></a>E.2 分段探針（怎麼量）</h3><p><code>MINIRETRO_PERF=1 miniretro_gba &lt;core&gt; &lt;rom&gt; &lt;keymap&gt;</code> 每秒打印<br><code>fps / core / conv / scale / pan (ms/幀) / 總 busy</code>；<code>vf</code> &#x3D; 每秒 video_cb 次數。<br>（<code>MINIRETRO_AUDIO_DEBUG=1</code> 是音頻那路的探針，兩者獨立。）</p>
+<h3 id="E-3-已做的兩處提速"><a href="#E-3-已做的兩處提速" class="headerlink" title="E.3 已做的兩處提速"></a>E.3 已做的兩處提速</h3><ul>
+<li><strong>scale_rotate90</strong>：① 目標列 gather 查表 → <strong>源列區間表 <code>sr_xstart[]</code> + 連續鋪寫</strong>；<br>② 78 萬次 4B uncached 寫 → <strong>cached 行緩衝 <code>sr_rowbuf</code> + <code>fb_store_row()</code> NEON 16B 寬寫</strong>（19.4 萬次）。<br>實測 6.7ms → 4.85ms。寫顯存是 uncached，<strong>減少總線訪問次數</strong>才是關鍵（不是減少像素數）。</li>
+<li><strong>governor</strong>：運行期 <code>performance</code>（768~900MHz → 1.3GHz），退出還原 <code>interactive</code>。</li>
+<li><strong>★ 編譯</strong>：GBA 必須 <code>-O2 -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard</code>；<br>本機 gcc <code>-dumpmachine</code> &#x3D; <code>armv6-alpine-linux-musleabihf</code>、默認 <code>-mfpu=vfpv2</code><br>→ 不顯式指定時 <code>arm_neon.h</code> 報 <code>inlining failed ... target specific option mismatch</code>。<br>SC9832A &#x3D; Cortex-A7，顯式開 armv7-a+NEON 實測可編譯可運行。</li>
+<li><strong>未做（可選）</strong>：關雙緩衝（省掉 pan 的 4~7ms，但會撕裂）；mGBA 跳幀；GSP 硬件縮放&#x2F;旋轉。</li>
+</ul>
+<h3 id="E-4-幀率顯示"><a href="#E-4-幀率顯示" class="headerlink" title="E.4 幀率顯示"></a>E.4 幀率顯示</h3><ul>
+<li>開關：設置頁”遊戲幀率” → <code>lv_conf/settings.conf</code> 的 <code>show_fps=1</code>；<br>前端直接解析該文件（<strong>不能 setenv</strong>，見 §”setenv 汙染”教訓），<br>環境變量 <code>MINIRETRO_SHOW_FPS=1/0</code> 可臨時覆蓋。</li>
+<li>畫法：5x7 點陣（0-9&#x2F;F&#x2F;P&#x2F;S&#x2F;:）放大 3 倍，<strong>必須畫在 <code>FBIOPAN_DISPLAY</code> 之前的後臺頁</strong>，<br>否則下一幀翻頁就被頂掉；顏色用 <code>FBPIX(r,g,b)</code> 宏（fb 物理 [R,G,B,X]）。</li>
+<li>位置：<code>x=12, y=fb_h-7*3-14</code>（左下角），帶黑底襯。</li>
+</ul>
+<h3 id="E-5-PSP-性能天花板-10fps（2026-09-29-實測定論）"><a href="#E-5-PSP-性能天花板-10fps（2026-09-29-實測定論）" class="headerlink" title="E.5 PSP 性能天花板 &#x3D; 10fps（2026-09-29 實測定論）"></a>E.5 PSP 性能天花板 &#x3D; 10fps（2026-09-29 實測定論）</h3><ul>
+<li>分段（<code>MINIRETRO_PERF=1</code>）：core_run 96ms（其中我們出圖 9.7ms）&#x2F; 10.2fps。<br><strong>出圖只佔 10%<strong>，其餘是 PPSSPP 每幀固定成本；</strong>與 ROM 負載無關</strong>（Tetris 同速）。</li>
+<li>已排除：分辨率（PPSSPP 只收 ≥480x272）、音頻（MUTE 無差異）、CPU 限頻（1.3GHz 實測 214M iter&#x2F;s）、<br>JIT vs IR（同速）。<code>frameskip=2</code> 最優，**&#x3D;8 反而更慢**。</li>
+<li>★ <strong>core option 名&#x2F;值必須用 GET_VARIABLE 回執實證</strong>（寫錯的變量 core 靜默忽略）；<br><strong>同一 key 在表裡寫兩條 → lookup 只回第一條</strong>。</li>
+<li>★ <strong>絕不要 <code>MINIRETRO_NOAUDIO=1</code>（不註冊音頻回調）→ PPSSPP 段錯誤</strong>。</li>
+<li>幀率疊加&#x2F;分段打印&#x2F;調參環境變量：見 <code>2026-09-29.md</code>“PSP 卡頓定位與優化”。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%83%E8%80%83%EF%BC%88%E7%B4%B0%E7%AF%80%EF%BC%89%E2%80%94-%E9%81%8A%E6%88%B2%E6%A8%A1%E6%93%AC%E5%99%A8%EF%BC%9A%E6%B8%B2%E6%9F%93%E7%AE%A1%E7%B7%9A%E8%88%87%E9%80%80%E5%87%BA%E7%AD%96%E7%95%A5"><span class="toc-number">1.</span> <span class="toc-text">參考（細節）— 遊戲模擬器：渲染管線與退出策略</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-%E6%B8%B2%E6%9F%93%E7%AE%A1%E7%B7%9A%E4%BA%94%E5%9D%91%EF%BC%88%E5%B7%B2%E5%AF%A6%E8%AD%89%EF%BC%9B%E6%94%B9-video-cb-scale-rotate90-%E5%89%8D%E5%BF%85%E8%AE%80%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">A. 渲染管線五坑（已實證；改 video_cb &#x2F; scale_rotate90 前必讀）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-%E9%80%80%E5%87%BA%E7%AD%96%E7%95%A5%EF%BC%88%E5%AE%9A%E7%89%88-v3-%E7%84%A1%E6%A2%9D%E4%BB%B6%E7%BF%BB%E9%A0%81-bugfix-16-18%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">B. 退出策略（定版 v3 + 無條件翻頁 &#x3D; bugfix 16 &#x2F; 18）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-%E5%B7%B2%E8%A2%AB%E8%AD%89%E5%81%BD%E7%9A%84%E8%B7%AF%EF%BC%8C%E5%88%A5%E5%86%8D%E8%B5%B0"><span class="toc-number">1.3.</span> <span class="toc-text">C. 已被證偽的路，別再走</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#D-%E5%B7%A5%E5%85%B7%E8%88%87%E6%8E%A2%E9%87%9D"><span class="toc-number">1.4.</span> <span class="toc-text">D. 工具與探針</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#E-%E5%B9%80%E7%8E%87%E9%A0%90%E7%AE%97%E8%88%87%E6%8F%90%E9%80%9F%EF%BC%882026-09-29%EF%BC%8CGBA%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">E. 幀率預算與提速（2026-09-29，GBA）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#E-1-%E4%B8%89%E5%80%8B%E5%BF%85%E7%9F%A5%E6%95%B8%E5%AD%97"><span class="toc-number">1.5.1.</span> <span class="toc-text">E.1 三個必知數字</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-2-%E5%88%86%E6%AE%B5%E6%8E%A2%E9%87%9D%EF%BC%88%E6%80%8E%E9%BA%BC%E9%87%8F%EF%BC%89"><span class="toc-number">1.5.2.</span> <span class="toc-text">E.2 分段探針（怎麼量）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-3-%E5%B7%B2%E5%81%9A%E7%9A%84%E5%85%A9%E8%99%95%E6%8F%90%E9%80%9F"><span class="toc-number">1.5.3.</span> <span class="toc-text">E.3 已做的兩處提速</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-4-%E5%B9%80%E7%8E%87%E9%A1%AF%E7%A4%BA"><span class="toc-number">1.5.4.</span> <span class="toc-text">E.4 幀率顯示</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-5-PSP-%E6%80%A7%E8%83%BD%E5%A4%A9%E8%8A%B1%E6%9D%BF-10fps%EF%BC%882026-09-29-%E5%AF%A6%E6%B8%AC%E5%AE%9A%E8%AB%96%EF%BC%89"><span class="toc-number">1.5.5.</span> <span class="toc-text">E.5 PSP 性能天花板 &#x3D; 10fps（2026-09-29 實測定論）</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&text=ref_模擬器_渲染與退出"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&title=ref_模擬器_渲染與退出"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&is_video=false&description=ref_模擬器_渲染與退出"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_模擬器_渲染與退出&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&title=ref_模擬器_渲染與退出"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&title=ref_模擬器_渲染與退出"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&title=ref_模擬器_渲染與退出"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&title=ref_模擬器_渲染與退出"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/29/ref-emulator-render/&name=ref_模擬器_渲染與退出&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

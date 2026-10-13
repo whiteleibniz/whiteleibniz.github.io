@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_18 — GBA 退出後偶發殘留遊戲畫面（強制翻頁） 日期：2026-09-23 現象：退出 GBA 遊戲後，屏幕有時仍顯示”退出那一刻的遊戲畫面”，界面沒回來；不是必然發生 —— 同樣的操作，有時正常回到遊戲列表，有時就定格在遊戲畫面上。 影響面：lv_pages&#x2F;gba_game_page.c（只改這一個文件，前端不動） 是否影響 FC：不影響（FC 前端不翻頁">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA退出偶發殘留遊戲畫面_強制翻頁">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_18 — GBA 退出後偶發殘留遊戲畫面（強制翻頁） 日期：2026-09-23 現象：退出 GBA 遊戲後，屏幕有時仍顯示”退出那一刻的遊戲畫面”，界面沒回來；不是必然發生 —— 同樣的操作，有時正常回到遊戲列表，有時就定格在遊戲畫面上。 影響面：lv_pages&#x2F;gba_game_page.c（只改這一個文件，前端不動） 是否影響 FC：不影響（FC 前端不翻頁">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.017Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA退出偶發殘留遊戲畫面_強制翻頁</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/bugfix-20260923-17/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/23/mali-survey/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&text=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&title=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&is_video=false&description=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出偶發殘留遊戲畫面_強制翻頁&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&title=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&title=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&title=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&title=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&name=GBA退出偶發殘留遊戲畫面_強制翻頁&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-18-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E5%BE%8C%E5%81%B6%E7%99%BC%E6%AE%98%E7%95%99%E9%81%8A%E6%88%B2%E7%95%AB%E9%9D%A2%EF%BC%88%E5%BC%B7%E5%88%B6%E7%BF%BB%E9%A0%81%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_18 — GBA 退出後偶發殘留遊戲畫面（強制翻頁）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%83%8C%E6%99%AF%EF%BC%9A%E8%AA%B0%E5%9C%A8%E7%95%AB%E5%93%AA%E4%B8%80%E9%A0%81"><span class="toc-number">1.1.</span> <span class="toc-text">1. 背景：誰在畫哪一頁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%A0%B9%E5%9B%A0%EF%BC%9A%E5%85%9C%E5%BA%95%E8%A3%A1%E9%82%A3%E5%80%8B%E2%80%9D%E7%9C%8B%E8%B5%B7%E4%BE%86%E7%84%A1%E5%AE%B3%E2%80%9D%E7%9A%84%E5%89%8D%E7%BD%AE%E5%88%A4%E6%96%B7"><span class="toc-number">1.2.</span> <span class="toc-text">2. 根因：兜底裡那個”看起來無害”的前置判斷</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%BF%AE%E5%BE%A9%EF%BC%88%E4%B8%80%E5%80%8B%E6%96%87%E4%BB%B6%EF%BC%8C4-%E8%99%95%E6%94%B9%E5%8B%95%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 修復（一個文件，4 處改動）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-gba-reset-fb-page-%E2%80%94-%E5%8E%BB%E6%8E%89%E5%88%A4%E6%96%B7%EF%BC%8C%E7%84%A1%E6%A2%9D%E4%BB%B6%E7%BF%BB%E9%A0%81%EF%BC%88%E6%A0%B8%E5%BF%83%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 gba_reset_fb_page() — 去掉判斷，無條件翻頁（核心）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-gba-repaint-async-%E2%80%94-%E7%BF%BB%E9%A0%81%E8%88%87%E9%87%8D%E7%B9%AA%E5%90%8C%E6%8B%8D"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 gba_repaint_async() — 翻頁與重繪同拍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-gba-timer-cb-%E2%80%94-%E4%B8%BB%E7%B7%9A%E7%A8%8B%E5%81%B4%E9%9B%99%E4%BF%9D%E9%9A%AA"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 gba_timer_cb() — 主線程側雙保險</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E5%89%8D%E7%AB%AF-miniretro-gba-c-%E2%80%94-%E4%B8%8D%E5%8B%95"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4 前端 miniretro_gba.c — 不動</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%82%BA%E4%BB%80%E9%BA%BC%E2%80%9D%E7%84%A1%E6%A2%9D%E4%BB%B6%E2%80%9D%E6%98%AF%E5%AE%89%E5%85%A8%E7%9A%84"><span class="toc-number">1.3.5.</span> <span class="toc-text">為什麼”無條件”是安全的</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%A9%97%E8%AD%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 驗證</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%8F%8D%E6%A8%A1%E5%BC%8F%E8%A8%98%E9%8C%84%EF%BC%88%E5%B7%B2%E4%BD%B5%E5%85%A5-skill%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 反模式記錄（已併入 skill）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%81%BA%E7%95%99"><span class="toc-number">1.6.</span> <span class="toc-text">6. 遺留</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA退出偶發殘留遊戲畫面_強制翻頁
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-18-—-GBA-退出後偶發殘留遊戲畫面（強制翻頁）"><a href="#bugfix-20260923-18-—-GBA-退出後偶發殘留遊戲畫面（強制翻頁）" class="headerlink" title="bugfix_20260923_18 — GBA 退出後偶發殘留遊戲畫面（強制翻頁）"></a>bugfix_20260923_18 — GBA 退出後<strong>偶發</strong>殘留遊戲畫面（強制翻頁）</h1><ul>
+<li><strong>日期</strong>：2026-09-23</li>
+<li><strong>現象</strong>：退出 GBA 遊戲後，屏幕<strong>有時</strong>仍顯示”退出那一刻的遊戲畫面”，界面沒回來；<br><strong>不是必然發生</strong> —— 同樣的操作，有時正常回到遊戲列表，有時就定格在遊戲畫面上。</li>
+<li><strong>影響面</strong>：<code>lv_pages/gba_game_page.c</code>（<strong>只改這一個文件</strong>，前端不動）</li>
+<li><strong>是否影響 FC</strong>：不影響（FC 前端不翻頁，無頁概念）</li>
+<li><strong>與第 14 篇的關係</strong>：14 篇治的是”退出後<strong>必卡</strong>“（加 <code>gba_reset_fb_page()</code> 兜底），<br><strong>本次 18 篇治的是那個兜底自己帶來的偶發性</strong> —— 它帶了一個不該有的前置判斷。</li>
+</ul>
+<hr>
+<h2 id="1-背景：誰在畫哪一頁"><a href="#1-背景：誰在畫哪一頁" class="headerlink" title="1. 背景：誰在畫哪一頁"></a>1. 背景：誰在畫哪一頁</h2><p>設備 framebuffer 有 3 個虛擬頁（<code>yres_virtual = 3840 = 3 × 1280</code>）。</p>
+<table>
+<thead>
+<tr>
+<th>誰</th>
+<th>怎麼用 fb0</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>LVGL</strong>（<code>lv_linux_fbdev</code>）</td>
+<td>只用 mmap 基址繪製 &#x3D; <strong>永遠寫第 0 頁</strong>；<code>yoffset</code> 初始化後不再改，源碼裡 <code>FBIOPAN_DISPLAY</code> 零命中</td>
+</tr>
+<tr>
+<td><strong>GBA 前端</strong>（<code>miniretro_gba</code>）</td>
+<td>用 <code>FBIOPAN_DISPLAY</code> 雙緩衝頁翻轉消撕裂 → 前臺在<strong>第 0&#x2F;1 頁之間來回切</strong></td>
+</tr>
+</tbody></table>
+<p><strong>推論</strong>：退出時若前臺停在第 1 頁，LVGL 畫什麼都看不見 → 屏幕定格遊戲畫面。<br>第 14 篇就是靠這個推論定位的，父進程側加了 <code>gba_reset_fb_page()</code> 兜底。</p>
+<h2 id="2-根因：兜底裡那個”看起來無害”的前置判斷"><a href="#2-根因：兜底裡那個”看起來無害”的前置判斷" class="headerlink" title="2. 根因：兜底裡那個”看起來無害”的前置判斷"></a>2. 根因：兜底裡那個”看起來無害”的前置判斷</h2><p>第 14 篇加的兜底實現是<strong>帶條件</strong>的：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(ioctl(fd, FBIOGET_VSCREENINFO, &amp;v) == <span class="number">0</span> &amp;&amp; v.yoffset != <span class="number">0</span>) &#123;</span><br><span class="line">    v.yoffset = <span class="number">0</span>;  v.activate = <span class="number">0</span>;</span><br><span class="line">    ioctl(fd, FBIOPAN_DISPLAY, &amp;v);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>當時的判斷依據是”實測這個驅動的 yoffset 回讀是可靠的”。<strong>這次的問題是：這句話即使成立，<br>也不足以支撐這個判斷</strong> —— 因為它還隱含假設了：</p>
+<blockquote>
+<p>「回讀 <code>yoffset == 0</code>」等價於「掃描輸出正在讀第 0 頁」</p>
+</blockquote>
+<p><code>yoffset</code> 只是驅動內部的<strong>記賬值</strong>（下一次 pan 的請求參數），它<strong>不保證等於</strong>掃描輸出<br>（scanner &#x2F; LCDC）當前正在讀的那一頁。兩者一旦不一致：</p>
+<ul>
+<li>屏幕實際顯示第 1 頁（遊戲畫面）；</li>
+<li>回讀 <code>yoffset</code> 卻是 0；</li>
+<li>判斷為假 → <strong>整段翻頁被跳過</strong> → 殘留。</li>
+</ul>
+<p>而”兩者是否一致”取決於退出那一刻驅動內部狀態（上一幀提交方式、SIGKILL 落在哪一拍），<br><strong>與代碼路徑無關</strong> —— 這正好解釋了用戶說的”<strong>不是必然發生</strong>“。</p>
+<blockquote>
+<p>換句話說：第 14 篇的兜底，把”一定會卡”變成了”<strong>偶爾</strong>會卡”。<br>它只在”回讀恰好不可信”時失效，所以看起來像隨機。</p>
+</blockquote>
+<p><strong>第二處隱患</strong>：翻頁與整屏重繪分處<strong>兩個執行流</strong>（前者在收屍線程、後者被<br><code>lv_async_call</code> 排給主線程）。這是同一個視覺事務的兩半，中間任何打斷<br>（回調被吞、頁面先被銷燬、主循環那一拍沒跑到）都會留下”翻回去了但沒重繪”<br>或”重繪了但前臺還在第 1 頁”的中間態，單獨看都表現為<strong>畫面沒回來</strong>。</p>
+<h2 id="3-修復（一個文件，4-處改動）"><a href="#3-修復（一個文件，4-處改動）" class="headerlink" title="3. 修復（一個文件，4 處改動）"></a>3. 修復（一個文件，4 處改動）</h2><p>全部在 <code>lv_pages/gba_game_page.c</code>。</p>
+<h3 id="3-1-gba-reset-fb-page-—-去掉判斷，無條件翻頁（核心）"><a href="#3-1-gba-reset-fb-page-—-去掉判斷，無條件翻頁（核心）" class="headerlink" title="3.1 gba_reset_fb_page() — 去掉判斷，無條件翻頁（核心）"></a>3.1 <code>gba_reset_fb_page()</code> — 去掉判斷，<strong>無條件</strong>翻頁（核心）</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">gba_reset_fb_page</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> fd = open(<span class="string">&quot;/dev/fb0&quot;</span>, O_RDWR);</span><br><span class="line">    <span class="keyword">if</span>(fd &lt; <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">fb_var_screeninfo</span> <span class="title">v</span>;</span></span><br><span class="line">    <span class="built_in">memset</span>(&amp;v, <span class="number">0</span>, <span class="keyword">sizeof</span>(v));</span><br><span class="line">    <span class="keyword">if</span>(ioctl(fd, FBIOGET_VSCREENINFO, &amp;v) &lt; <span class="number">0</span>) &#123; close(fd); <span class="keyword">return</span>; &#125;  <span class="comment">/* 只為拿到一份完整參數 */</span></span><br><span class="line"></span><br><span class="line">    <span class="type">unsigned</span> was = v.yoffset;          <span class="comment">/* 只用於打日誌 */</span></span><br><span class="line">    v.yoffset  = <span class="number">0</span>;</span><br><span class="line">    v.activate = <span class="number">0</span>;                    <span class="comment">/* 與前端 fb_restore() 用同一組參數 */</span></span><br><span class="line">    <span class="keyword">if</span>(ioctl(fd, FBIOPAN_DISPLAY, &amp;v) &lt; <span class="number">0</span>) &#123; ...留日誌; <span class="keyword">return</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* 讀回校驗 + 失敗重發一次(個別驅動要兩拍才落定) */</span></span><br><span class="line">    ...GET 若仍非 <span class="number">0</span> → 再發一次...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>關鍵差別</strong>：GET 只用一次——為了拿到一份完整合法的 <code>fb_var_screeninfo</code> 當底稿；<br><strong>它絕不參與”要不要翻頁”的決策</strong>。翻頁請求每次都發。</p>
+<h3 id="3-2-gba-repaint-async-—-翻頁與重繪同拍"><a href="#3-2-gba-repaint-async-—-翻頁與重繪同拍" class="headerlink" title="3.2 gba_repaint_async() — 翻頁與重繪同拍"></a>3.2 <code>gba_repaint_async()</code> — 翻頁與重繪<strong>同拍</strong></h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">gba_repaint_async</span><span class="params">(<span class="type">void</span> *unused)</span></span><br><span class="line">&#123;</span><br><span class="line">    (<span class="type">void</span>)unused;</span><br><span class="line">    gba_reset_fb_page();                 <span class="comment">/* ★ 緊挨著重繪再翻一次 */</span></span><br><span class="line">    lv_obj_invalidate(lv_screen_active());</span><br><span class="line">    lv_refr_now(<span class="literal">NULL</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>兩件事放進同一個主線程回調、中間不插任何操作 → 必然同拍完成，不留中間態。</p>
+<h3 id="3-3-gba-timer-cb-—-主線程側雙保險"><a href="#3-3-gba-timer-cb-—-主線程側雙保險" class="headerlink" title="3.3 gba_timer_cb() — 主線程側雙保險"></a>3.3 <code>gba_timer_cb()</code> — 主線程側雙保險</h3><p>主線程恢復路徑（<code>finished</code> 標誌那條）在重繪前同樣補一次翻頁。與 3.2 誰先跑到都行，<br>翻頁冪等。</p>
+<h3 id="3-4-前端-miniretro-gba-c-—-不動"><a href="#3-4-前端-miniretro-gba-c-—-不動" class="headerlink" title="3.4 前端 miniretro_gba.c — 不動"></a>3.4 前端 <code>miniretro_gba.c</code> — <strong>不動</strong></h3><p>它的 <code>fb_restore()</code> 早在第 14 篇就已經是”<strong>無條件</strong>翻回第 0 頁”，<br>本次要修的正是頁面側漏掉的那半邊對稱性。</p>
+<p><strong>共 5 個調用點</strong>（<code>grep -c &#39;gba_reset_fb_page();&#39;</code> &#x3D; 5）：<br><code>gba_repaint_async</code> &#x2F; <code>gba_wait_thread</code> &#x2F; <code>gba_timer_cb</code> &#x2F; <code>gba_on_create</code> &#x2F; <code>gba_on_destroy</code>。</p>
+<h3 id="為什麼”無條件”是安全的"><a href="#為什麼”無條件”是安全的" class="headerlink" title="為什麼”無條件”是安全的"></a>為什麼”無條件”是安全的</h3><p>所有調用點都在<strong>子進程已經消失之後</strong>（或頁面剛創建、根本沒有子進程時），<br>不存在併發寫 fb0 的對手；<code>FBIOPAN_DISPLAY</code> 本身冪等，已經在第 0 頁時多發一次零副作用。</p>
+<h2 id="4-驗證"><a href="#4-驗證" class="headerlink" title="4. 驗證"></a>4. 驗證</h2><table>
+<thead>
+<tr>
+<th>項</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>編譯</td>
+<td><code>MAKE_RC=0 / ERR=0</code> ✓</td>
+</tr>
+<tr>
+<td>靜態：舊條件判斷殘留</td>
+<td><strong>0</strong> 處（<code>FBIOGET_VSCREENINFO,&amp;v) == 0 &amp;&amp; v.yoffset != 0</code>）✓</td>
+</tr>
+<tr>
+<td>靜態：無條件翻頁調用點</td>
+<td><strong>5</strong> 處 ✓</td>
+</tr>
+<tr>
+<td>靜態：讀回重試代碼</td>
+<td>1 處 ✓</td>
+</tr>
+<tr>
+<td>行尾</td>
+<td>改動後 855 CRLF &#x2F; 0 純 LF，與改前一致，無行尾漂移 ✓</td>
+</tr>
+<tr>
+<td>部署</td>
+<td>原子替換 <code>BIN_OK</code>（6764556 B），<code>lvgl_demo</code> 已拉起 ✓</td>
+</tr>
+<tr>
+<td>實機複測</td>
+<td><strong>待用戶手按買單鍵連續複測</strong>（買單鍵是板載鍵，無法用 uinput 注入復現）</td>
+</tr>
+</tbody></table>
+<h2 id="5-反模式記錄（已併入-skill）"><a href="#5-反模式記錄（已併入-skill）" class="headerlink" title="5. 反模式記錄（已併入 skill）"></a>5. 反模式記錄（已併入 skill）</h2><ul>
+<li><strong>★ 「冪等操作 + 前置判斷」是自找分支</strong>。判斷所依賴的那個值（這裡是驅動回讀）<br>只要存在”與真實狀態不一致”的可能，判斷就會把<strong>零成本的冪等操作</strong>變成<br>“<strong>偶發不執行</strong>“，而症狀看起來像隨機故障。<strong>對冪等且成本可忽略的操作：直接做，不要問。</strong></li>
+<li><strong>★ 同一個視覺事務的兩半不要分處兩個執行流</strong>。”讓前臺頁歸位”和”把新畫面畫上去”<br>是同一件事，拆到兩個線程&#x2F;兩個回調就會留下人人都看不懂的中間態。</li>
+<li><strong>★ 「實測 X 可靠」這類結論必須帶上它支撐的推論範圍</strong>。<br>“回讀可靠”≠”回讀值等於掃描輸出”，後者才是代碼真正依賴的假設。</li>
+<li>**偶發故障的第一偵查方向是”判斷條件”而不是”時序”**：先問”這段代碼有沒有可能<br>在正確輸入下選擇不做” —— 收益遠高於先懷疑競態。</li>
+</ul>
+<h2 id="6-遺留"><a href="#6-遺留" class="headerlink" title="6. 遺留"></a>6. 遺留</h2><ul>
+<li>用戶實機連續複測：多次”進遊戲 → 買單退出”，每次都應立即回到遊戲列表。</li>
+<li>回滾點：設備上 <code>lv_pages/gba_game_page.c.bak_fbpan</code> &#x3D; 本次改動前。</li>
+<li>若將來把這條退出邏輯複製到別的”外部程序接管 fb”的應用（如視頻播放頁），<br><strong>必須連”無條件翻頁”一起搬</strong>，不要只搬 <code>gba_reset_fb_page()</code> 的名字。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-18-%E2%80%94-GBA-%E9%80%80%E5%87%BA%E5%BE%8C%E5%81%B6%E7%99%BC%E6%AE%98%E7%95%99%E9%81%8A%E6%88%B2%E7%95%AB%E9%9D%A2%EF%BC%88%E5%BC%B7%E5%88%B6%E7%BF%BB%E9%A0%81%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_18 — GBA 退出後偶發殘留遊戲畫面（強制翻頁）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%83%8C%E6%99%AF%EF%BC%9A%E8%AA%B0%E5%9C%A8%E7%95%AB%E5%93%AA%E4%B8%80%E9%A0%81"><span class="toc-number">1.1.</span> <span class="toc-text">1. 背景：誰在畫哪一頁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%A0%B9%E5%9B%A0%EF%BC%9A%E5%85%9C%E5%BA%95%E8%A3%A1%E9%82%A3%E5%80%8B%E2%80%9D%E7%9C%8B%E8%B5%B7%E4%BE%86%E7%84%A1%E5%AE%B3%E2%80%9D%E7%9A%84%E5%89%8D%E7%BD%AE%E5%88%A4%E6%96%B7"><span class="toc-number">1.2.</span> <span class="toc-text">2. 根因：兜底裡那個”看起來無害”的前置判斷</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%BF%AE%E5%BE%A9%EF%BC%88%E4%B8%80%E5%80%8B%E6%96%87%E4%BB%B6%EF%BC%8C4-%E8%99%95%E6%94%B9%E5%8B%95%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 修復（一個文件，4 處改動）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-gba-reset-fb-page-%E2%80%94-%E5%8E%BB%E6%8E%89%E5%88%A4%E6%96%B7%EF%BC%8C%E7%84%A1%E6%A2%9D%E4%BB%B6%E7%BF%BB%E9%A0%81%EF%BC%88%E6%A0%B8%E5%BF%83%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 gba_reset_fb_page() — 去掉判斷，無條件翻頁（核心）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-gba-repaint-async-%E2%80%94-%E7%BF%BB%E9%A0%81%E8%88%87%E9%87%8D%E7%B9%AA%E5%90%8C%E6%8B%8D"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 gba_repaint_async() — 翻頁與重繪同拍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-gba-timer-cb-%E2%80%94-%E4%B8%BB%E7%B7%9A%E7%A8%8B%E5%81%B4%E9%9B%99%E4%BF%9D%E9%9A%AA"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 gba_timer_cb() — 主線程側雙保險</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E5%89%8D%E7%AB%AF-miniretro-gba-c-%E2%80%94-%E4%B8%8D%E5%8B%95"><span class="toc-number">1.3.4.</span> <span class="toc-text">3.4 前端 miniretro_gba.c — 不動</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%82%BA%E4%BB%80%E9%BA%BC%E2%80%9D%E7%84%A1%E6%A2%9D%E4%BB%B6%E2%80%9D%E6%98%AF%E5%AE%89%E5%85%A8%E7%9A%84"><span class="toc-number">1.3.5.</span> <span class="toc-text">為什麼”無條件”是安全的</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%A9%97%E8%AD%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 驗證</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%8F%8D%E6%A8%A1%E5%BC%8F%E8%A8%98%E9%8C%84%EF%BC%88%E5%B7%B2%E4%BD%B5%E5%85%A5-skill%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 反模式記錄（已併入 skill）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%81%BA%E7%95%99"><span class="toc-number">1.6.</span> <span class="toc-text">6. 遺留</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&text=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&title=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&is_video=false&description=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA退出偶發殘留遊戲畫面_強制翻頁&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&title=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&title=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&title=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&title=GBA退出偶發殘留遊戲畫面_強制翻頁"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/bugfix-20260923-18/&name=GBA退出偶發殘留遊戲畫面_強制翻頁&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

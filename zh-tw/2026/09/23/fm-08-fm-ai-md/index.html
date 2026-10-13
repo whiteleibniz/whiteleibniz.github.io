@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="展訊 SC9832A（spd-box）FM 收音打通 —— AI 執行指導手冊 讀者對象：AI 助手 &#x2F; 工程師，需在同類設備（展訊 SC9832A + Marlin2 combo 芯片，安卓內核 + Alpine 用戶態）上把 FM 收音機做起來使用方式：先讀 §1–§3 建立上下文 → 按 §5 分層驗證 → 按 §6 執行 → 遇故障查 §7 決策表核心價值：本文所有硬件事實均已在">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM收音打通_AI指導手冊">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="展訊 SC9832A（spd-box）FM 收音打通 —— AI 執行指導手冊 讀者對象：AI 助手 &#x2F; 工程師，需在同類設備（展訊 SC9832A + Marlin2 combo 芯片，安卓內核 + Alpine 用戶態）上把 FM 收音機做起來使用方式：先讀 §1–§3 建立上下文 → 按 §5 分層驗證 → 按 §6 執行 → 遇故障查 §7 決策表核心價值：本文所有硬件事實均已在">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.383Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM收音打通_AI指導手冊</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/fm-09-fm-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&text=FM收音打通_AI指導手冊"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&title=FM收音打通_AI指導手冊"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&is_video=false&description=FM收音打通_AI指導手冊"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音打通_AI指導手冊&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&title=FM收音打通_AI指導手冊"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&title=FM收音打通_AI指導手冊"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&title=FM收音打通_AI指導手冊"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&title=FM收音打通_AI指導手冊"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&name=FM收音打通_AI指導手冊&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%A8%8A-SC9832A%EF%BC%88spd-box%EF%BC%89FM-%E6%94%B6%E9%9F%B3%E6%89%93%E9%80%9A-%E2%80%94%E2%80%94-AI-%E5%9F%B7%E8%A1%8C%E6%8C%87%E5%B0%8E%E6%89%8B%E5%86%8A"><span class="toc-number">1.</span> <span class="toc-text">展訊 SC9832A（spd-box）FM 收音打通 —— AI 執行指導手冊</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%A8%AD%E5%82%99%E8%88%87%E7%92%B0%E5%A2%83%E9%80%9F%E8%A6%BD"><span class="toc-number">1.1.</span> <span class="toc-text">1. 設備與環境速覽</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B7%B2%E7%A2%BA%E8%AA%8D%E7%9A%84%E7%A1%AC%E4%BA%8B%E5%AF%A6%EF%BC%88%E7%84%A1%E9%9C%80%E9%87%8D%E6%96%B0%E6%8E%A2%E6%9F%A5%EF%BC%8C%E7%9B%B4%E6%8E%A5%E4%BF%A1%E4%BB%BB%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. 已確認的硬事實（無需重新探查，直接信任）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E8%8A%AF%E7%89%87%E8%88%87%E8%B3%87%E6%BA%90%E5%85%B1%E4%BA%AB%EF%BC%88%E6%9C%80%E9%97%9C%E9%8D%B5%E7%9A%84%E4%B8%80%E6%A2%9D%EF%BC%89"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 芯片與資源共享（最關鍵的一條）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E9%A9%85%E5%8B%95%E8%83%BD%E5%8A%9B%E6%B8%85%E5%96%AE%EF%BC%88%E4%BE%86%E8%87%AA-strings-marlin-fm-ko-%E7%9A%84%E8%AA%BF%E8%A9%A6%E8%BC%B8%E5%87%BA%EF%BC%89"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 驅動能力清單（來自 strings marlin_fm.ko 的調試輸出）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-RDS-%E8%83%BD%E5%8A%9B%EF%BC%88%E4%BE%86%E8%87%AA-nm-marlin-fm-ko-%E7%9A%84%E5%87%BD%E6%95%B8%E7%AC%A6%E8%99%9F%EF%BC%89"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 RDS 能力（來自 nm marlin_fm.ko 的函數符號）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-%E9%9F%B3%E9%A0%BB%E7%8F%BE%E7%8B%80%EF%BC%88%E6%B1%BA%E5%AE%9A%E4%BA%86%E8%81%B2%E9%81%93%E4%BB%B2%E8%A3%81%E7%9A%84%E8%A8%AD%E8%A8%88%EF%BC%89"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4 音頻現狀（決定了聲道仲裁的設計）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-%E6%97%A2%E6%9C%89%E4%B8%8A%E9%9B%BB%E9%8F%88%EF%BC%88FM-%E5%BF%85%E9%A0%88%E6%8E%9B%E9%9D%A0%E5%85%B6%E4%B8%8A%EF%BC%89"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5 既有上電鏈（FM 必須掛靠其上）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%B7%B2%E9%A9%97%E8%AD%89%E6%AD%BB%E8%B7%AF%EF%BC%88%E4%B8%8D%E8%A6%81%E9%87%8D%E8%A9%A6%EF%BC%8C%E6%B5%AA%E8%B2%BB%E8%BC%AA%E6%AC%A1%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 已驗證死路（不要重試，浪費輪次）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%B3%BB%E7%B5%B1%E6%A8%A1%E5%9E%8B%EF%BC%9A%E4%BA%94%E5%B1%A4-%E6%AF%8F%E5%B1%A4%E9%A9%97%E8%AD%89%E6%A8%99%E6%BA%96"><span class="toc-number">1.4.</span> <span class="toc-text">4. 系統模型：五層 + 每層驗證標準</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%88%86%E5%B1%A4%E9%A9%97%E8%AD%89%E5%91%BD%E4%BB%A4%EF%BC%88%E5%8F%AF%E7%9B%B4%E6%8E%A5%E8%A4%87%E8%A3%BD%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 分層驗證命令（可直接複製）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%9F%B7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.6.</span> <span class="toc-text">6. 執行流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E6%95%85%E9%9A%9C-%E2%86%92-%E6%A0%B9%E5%9B%A0-%E2%86%92-%E4%BF%AE%E5%BE%A9-%E6%B1%BA%E7%AD%96%E8%A1%A8"><span class="toc-number">1.7.</span> <span class="toc-text">7. 故障 → 根因 → 修復 決策表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-ioctl-%E5%91%BD%E4%BB%A4%E8%99%9F%EF%BC%9A%E5%B7%B2%E8%A7%A3%E6%B1%BA%EF%BC%88%E5%8E%9F%E9%A0%AD%E8%99%9F%E9%98%BB%E5%A1%9E%E9%A0%85%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">8. ioctl 命令號：已解決（原頭號阻塞項）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E7%B4%85%E7%B7%9A%E8%88%87%E9%81%8B%E7%B6%AD%E7%B4%80%E5%BE%8B"><span class="toc-number">1.9.</span> <span class="toc-text">9. 紅線與運維紀律</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E8%A8%AD%E5%82%99%E4%B8%8A%E5%B7%B2%E6%9C%89%E5%B7%A5%E5%85%B7%E6%B8%85%E5%96%AE%EF%BC%88%E8%A4%87%E7%94%A8%EF%BC%8C%E5%8B%BF%E9%87%8D%E9%80%A0%EF%BC%89"><span class="toc-number">1.10.</span> <span class="toc-text">10. 設備上已有工具清單（複用，勿重造）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-%E5%BE%8C%E7%BA%8C%E5%A2%9E%E5%BC%B7%E6%96%B9%E5%90%91%EF%BC%88%E7%95%B6%E5%89%8D%E6%9C%AA%E5%AE%8C%E6%88%90%EF%BC%89"><span class="toc-number">1.11.</span> <span class="toc-text">11. 後續增強方向（當前未完成）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B8%BD%E7%B5%90"><span class="toc-number">1.12.</span> <span class="toc-text">12. 一句話總結</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM收音打通_AI指導手冊
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="展訊-SC9832A（spd-box）FM-收音打通-——-AI-執行指導手冊"><a href="#展訊-SC9832A（spd-box）FM-收音打通-——-AI-執行指導手冊" class="headerlink" title="展訊 SC9832A（spd-box）FM 收音打通 —— AI 執行指導手冊"></a>展訊 SC9832A（spd-box）FM 收音打通 —— AI 執行指導手冊</h1><blockquote>
+<p><strong>讀者對象</strong>：AI 助手 &#x2F; 工程師，需在同類設備（展訊 SC9832A + Marlin2 combo 芯片，安卓內核 + Alpine 用戶態）上把 FM 收音機做起來<br><strong>使用方式</strong>：先讀 §1–§3 建立上下文 → 按 §5 分層驗證 → 按 §6 執行 → 遇故障查 §7 決策表<br><strong>核心價值</strong>：本文所有硬件事實均已在設備上實測取得；照著做可<strong>跳過全部底層探查</strong>，直接進入”寫 daemon + 畫 UI”階段；§3 明確標註了不要再走的死路</p>
+</blockquote>
+<hr>
+<h2 id="1-設備與環境速覽"><a href="#1-設備與環境速覽" class="headerlink" title="1. 設備與環境速覽"></a>1. 設備與環境速覽</h2><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>主機名 &#x2F; 內核</td>
+<td><code>spd-box</code> &#x2F; <code>Linux 3.10.65</code> armv7l</td>
+</tr>
+<tr>
+<td>系統組合</td>
+<td>保留安卓 6.0 內核 + switchroot 到 <strong>Alpine Linux</strong> 用戶態</td>
+</tr>
+<tr>
+<td>無線芯片</td>
+<td><strong>展訊 Marlin2 combo WCN</strong> —— WiFi + 藍牙 + FM <strong>同一顆芯片，共享 SDIO</strong></td>
+</tr>
+<tr>
+<td>SDIO 枚舉</td>
+<td><code>sdio:c00v0000d2331</code>，<code>/sys/bus/sdio/devices/mmc2:8800:1</code> 的 <code>device=0x2331</code></td>
+</tr>
+<tr>
+<td>FM 內核驅動</td>
+<td><strong><code>marlin_fm</code>（已加載）</strong>，&#x2F;lib&#x2F;modules&#x2F;marlin_fm.ko，17554 字節</td>
+</tr>
+<tr>
+<td>FM 設備節點</td>
+<td>**<code>/dev/fm</code>**（misc，<code>/proc/misc</code> 中登記為 <code>23 fm</code>）、<code>/dev/log_radio</code>（<code>35</code>）</td>
+</tr>
+<tr>
+<td>顯示</td>
+<td>720×1280 豎屏 framebuffer，LVGL 9.6.0</td>
+</tr>
+<tr>
+<td>SSH</td>
+<td><code>root@&lt;設備IP&gt;</code>（密碼與 IP 見環境記錄，勿寫入文檔）</td>
+</tr>
+<tr>
+<td>Android 原廠分區</td>
+<td>已掛載在 <code>/mnt/android_sys</code>（可作為信息源與對照樣本）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ 隱私紅線：所有交付物中<strong>禁止</strong>出現 SSH 密碼、賬號、真實 IP，一律寫 <code>&lt;設備IP&gt;</code> &#x2F; <code>&lt;密碼&gt;</code> 佔位符。</p>
+</blockquote>
+<hr>
+<h2 id="2-已確認的硬事實（無需重新探查，直接信任）"><a href="#2-已確認的硬事實（無需重新探查，直接信任）" class="headerlink" title="2. 已確認的硬事實（無需重新探查，直接信任）"></a>2. 已確認的硬事實（無需重新探查，直接信任）</h2><blockquote>
+<p>以下每一條都註明了獲取方式，<strong>標 ✅ 的是實測結論，可直接當作設計依據</strong>。</p>
+</blockquote>
+<h3 id="2-1-芯片與資源共享（最關鍵的一條）"><a href="#2-1-芯片與資源共享（最關鍵的一條）" class="headerlink" title="2.1 芯片與資源共享（最關鍵的一條）"></a>2.1 芯片與資源共享（最關鍵的一條）</h3><ol>
+<li><p>✅ <strong>FM 與 WiFi&#x2F;藍牙共享 SDIO，同屬一顆 Marlin2 芯片</strong>。<br>證據一：SDIO 總線上只有<strong>一個</strong>設備，modalias 為 <code>sdio:c00v0000d2331</code>。<br>證據二：驅動模塊描述原文（取自 <code>strings /lib/modules/marlin_fm.ko</code>）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">description=SDIO radio driver for marlin2 FM Radio Receivers, share SDIO with BT/WIFI</span><br></pre></td></tr></table></figure>
+<p><strong>這條直接決定了 FM 的可用性依賴 WiFi 上電鏈</strong>（詳見 §4）。</p>
+</li>
+<li><p>✅ <strong>FM 驅動已經加載，且 <code>marlin_fm</code> 被 <code>sprdwl</code> 依賴</strong>（<code>lsmod</code> 顯示 <code>marlin_fm 17554 1 sprdwl</code>）。<br>說明它不是孤立模塊，卸載&#x2F;重載要注意 WiFi 的依賴關係。</p>
+</li>
+<li><p>✅ <strong><code>/dev/fm</code> 已經存在且已註冊</strong>（<code>/proc/misc</code> 第 23 項），<strong>不需要重新 insmod 或 mknod</strong>。</p>
+</li>
+</ol>
+<h3 id="2-2-驅動能力清單（來自-strings-marlin-fm-ko-的調試輸出）"><a href="#2-2-驅動能力清單（來自-strings-marlin-fm-ko-的調試輸出）" class="headerlink" title="2.2 驅動能力清單（來自 strings marlin_fm.ko 的調試輸出）"></a>2.2 驅動能力清單（來自 <code>strings marlin_fm.ko</code> 的調試輸出）</h3><p>驅動為每個 ioctl 命令打印 <code>----&lt;命令名&gt;----</code>，據此還原出完整命令集：</p>
+<table>
+<thead>
+<tr>
+<th>類別</th>
+<th>命令</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>基礎控制</strong></td>
+<td><code>TUNE</code>、<code>TUNE_NEW</code>、<code>SEEK</code>、<code>SEEK_NEW</code>、<code>MUTE</code>、<code>SETVOL</code>、<code>GETVOL</code>、<code>IS_FM_POWERED_UP</code></td>
+</tr>
+<tr>
+<td><strong>掃描</strong></td>
+<td><code>SCAN</code>、<code>SCAN_NEW</code>、<code>STOP_SCAN</code>、<code>SCAN_GETRSSI</code>、<code>PRE_SEARCH</code>、<code>RESTORE_SEARCH</code></td>
+</tr>
+<tr>
+<td><strong>信號</strong></td>
+<td><code>GETRSSI</code>、<code>GETMONOSTERO</code>、<code>SETMONOSTERO</code>、<code>SOFT_MUTE_TUNE</code>、<code>DESENSE_CHECK</code>、<code>IS_DESE_CHAN</code>、<code>CQI_GET</code>、<code>FULL_CQI_LOG</code></td>
+</tr>
+<tr>
+<td><strong>音頻路徑</strong></td>
+<td><code>ANA_SWITCH</code>、<code>I2S_SETTING</code>、<code>GET_I2S_INFO</code>、<code>GET_AUDIO_INFO</code>、<code>OVER_BT_ENABLE</code></td>
+</tr>
+<tr>
+<td><strong>RDS</strong></td>
+<td><code>RDS_SUPPORT</code>、<code>RDS_ONOFF</code>、<code>RDS_GROUPCNT</code>、<code>RDS_BC_RST</code></td>
+</tr>
+<tr>
+<td><strong>芯片信息</strong></td>
+<td><code>GETCHIPID</code>、<code>GET_HW_INFO</code>、<code>GETCAPARRAY</code>、<code>GETCURPAMD</code>、<code>GETGOODBCNT</code>、<code>GETBADBNT</code>、<code>GETBLERRATIO</code></td>
+</tr>
+<tr>
+<td><strong>調試&#x2F;量產</strong></td>
+<td><code>RW_REG</code>、<code>TOP_RDWR</code>、<code>HOST_RDWR</code>、<code>DUMP_REG</code>、<code>EM_TEST</code>、<code>SIM_DATA</code>、<code>GET_LOG</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ <strong>誠實標註</strong>：上表命令<strong>名</strong>來自驅動內部的調試打印字符串，可確信這些命令分支真實存在；<br><strong>命令號已於 2026-09-22 全部逆向還原並實測確認</strong>，見 <a href="FM%E6%94%B6%E9%9F%B3ioctl%E5%91%BD%E4%BB%A4%E8%A1%A8_%E9%80%86%E5%90%91%E9%82%84%E5%8E%9F.md"><code>FM收音ioctl命令表_逆向還原.md</code></a>：<br>統一編碼 <code>_IOWR(0xF5, nr, 4)</code> &#x3D; <code>0xC004F500 | nr</code>，47 條中 45 條已由設備實測確認。<br>本節的分類表保留作功能視角，<strong>具體數字一律查那份文檔</strong>，不要憑猜。</p>
+</blockquote>
+<h3 id="2-3-RDS-能力（來自-nm-marlin-fm-ko-的函數符號）"><a href="#2-3-RDS-能力（來自-nm-marlin-fm-ko-的函數符號）" class="headerlink" title="2.3 RDS 能力（來自 nm marlin_fm.ko 的函數符號）"></a>2.3 RDS 能力（來自 <code>nm marlin_fm.ko</code> 的函數符號）</h3><p>驅動內含完整 RDS 解析器，<strong>這是本項目 FM 功能的最大價值點</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>函數</th>
+<th>含義</th>
+<th>UI 用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>rds_get_ps</code></td>
+<td>Program Service，<strong>電臺名 8 字符</strong></td>
+<td>主頻點下顯示臺名</td>
+</tr>
+<tr>
+<td><code>rds_get_rt</code></td>
+<td>Radio Text，<strong>電臺文本 64 字符</strong></td>
+<td>滾動字幕</td>
+</tr>
+<tr>
+<td><code>rds_get_pty</code></td>
+<td>Program Type 節目類型</td>
+<td>小標籤（新聞&#x2F;音樂&#x2F;交通）</td>
+</tr>
+<tr>
+<td><code>rds_get_af</code> &#x2F; <code>rds_get_af_method</code></td>
+<td>Alternative Frequency 備用頻率</td>
+<td>自動切強信號同臺頻率</td>
+</tr>
+<tr>
+<td><code>rds_get_pi_code</code></td>
+<td>Programme Identification</td>
+<td>臺標識</td>
+</tr>
+<tr>
+<td><code>rds_get_tp_ta</code></td>
+<td>Traffic Program &#x2F; Announcement</td>
+<td>交通廣播標</td>
+</tr>
+<tr>
+<td><code>rds_get_ct</code></td>
+<td>Clock Time 電臺時鐘</td>
+<td>狀態欄時間可選源</td>
+</tr>
+<tr>
+<td><code>rds_get_di_ms</code></td>
+<td>Decoder ID &#x2F; Music-Speech</td>
+<td>立體聲&#x2F;語音標</td>
+</tr>
+<tr>
+<td><code>rds_get_ews</code></td>
+<td>Emergency Warning System</td>
+<td>緊急廣播（有合規意義）</td>
+</tr>
+<tr>
+<td><code>rds_get_ptyn</code> &#x2F; <code>rds_get_pin</code> &#x2F; <code>rds_get_slc</code></td>
+<td>節目類型名 &#x2F; 條目號 &#x2F; SLC</td>
+<td>擴展字段</td>
+</tr>
+<tr>
+<td><code>rds_get_oda</code> &#x2F; <code>rds_get_oda_aid</code> &#x2F; <code>rds_get_tdc</code></td>
+<td>開放數據應用</td>
+<td>擴展字段</td>
+</tr>
+<tr>
+<td><code>rds_get_eon</code> &#x2F; <code>rds_get_eon_ta</code></td>
+<td>Enhanced Other Networks</td>
+<td>跨臺信息</td>
+</tr>
+<tr>
+<td><code>rds_parser</code> &#x2F; <code>rds_parser_init</code> &#x2F; <code>fm_read_rds_data</code></td>
+<td>解析器主體</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>其他確認存在的函數符號：<code>fm_open</code>、<code>fm_ioctl</code>、<code>fm_read</code>、<code>fm_write</code>、<code>fm_tune</code>、<code>fm_seek</code>、<code>fm_getrssi</code>、<code>fm_mute</code>、<code>fm_powerup</code>、<code>fm_powerdown</code>、<code>fm_rds_onoff</code>、<code>fm_sdio_read</code>、<code>fm_sdio_write</code>、<code>receive_tasklet</code>、<code>fm_suspend</code>、<code>fm_resume</code>、<code>parse_at_fm_cmd</code>、<code>parse_at_fm_num</code>。</p>
+<h3 id="2-4-音頻現狀（決定了聲道仲裁的設計）"><a href="#2-4-音頻現狀（決定了聲道仲裁的設計）" class="headerlink" title="2.4 音頻現狀（決定了聲道仲裁的設計）"></a>2.4 音頻現狀（決定了聲道仲裁的設計）</h3><table>
+<thead>
+<tr>
+<th>事實</th>
+<th>現狀</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ALSA 聲卡</td>
+<td><code>0 [alli2s]</code> &#x2F; <code>1 [sprdphone]</code> &#x2F; <code>2 [saudiovoip]</code> &#x2F; <code>3 [saudiolte]</code></td>
+</tr>
+<tr>
+<td><strong>FM 專用 PCM</strong></td>
+<td><strong><code>01-04: Dfm sprd-codec-fm-4</code>，僅 playback</strong>（無對應 capture 節點）</td>
+</tr>
+<tr>
+<td>其他 PCM</td>
+<td>card 0 有四路 <code>i2s.x null-codec-dai-x</code>，<strong>均同時支持 playback + capture</strong></td>
+</tr>
+<tr>
+<td>ALSA 用戶態庫</td>
+<td>✅ 有 <code>libasound.so.2</code>（可寫 C 直接操作 PCM 與 mixer）</td>
+</tr>
+<tr>
+<td>ALSA <strong>命令行工具</strong></td>
+<td>❌ 無 <code>amixer</code> &#x2F; <code>tinymix</code> &#x2F; <code>aplay</code> &#x2F; <code>alsamixer</code> —— <strong>必須寫代碼，不能用 shell 調 mixer</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>推論：FM 音頻既有可能走內部 codec 直通（對應 <code>01-04</code>），也有可能經某路 I2S 進入 codec。<br><strong><code>ANA_SWITCH</code> 與 <code>I2S_SETTING</code> 二選一的取捨，必須實測後才能定</strong>（見 §8 待辦第 2 條）。</p>
+</blockquote>
+<h3 id="2-5-既有上電鏈（FM-必須掛靠其上）"><a href="#2-5-既有上電鏈（FM-必須掛靠其上）" class="headerlink" title="2.5 既有上電鏈（FM 必須掛靠其上）"></a>2.5 既有上電鏈（FM 必須掛靠其上）</h3><p>藍牙&#x2F;WiFi 已固化的鏈路（<code>01_WiFi打通</code> &#x2F; <code>02_藍牙打通</code> 文檔記錄）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">logdw → download(常駐) → wcnd → bt_once(BT-OPEN) → bt_wake.sh(btwrite) → bt_user_daemon(socket)</span><br></pre></td></tr></table></figure>
+
+<p>其中 <code>download</code> 一次把 combo 固件（含 FM 部分）燒入芯片。</p>
+<hr>
+<h2 id="3-已驗證死路（不要重試，浪費輪次）"><a href="#3-已驗證死路（不要重試，浪費輪次）" class="headerlink" title="3. 已驗證死路（不要重試，浪費輪次）"></a>3. 已驗證死路（不要重試，浪費輪次）</h2><table>
+<thead>
+<tr>
+<th>路線</th>
+<th>結果</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>在設備上找 <code>marlin_fm</code> 的<strong>驅動源碼</strong></td>
+<td>❌ 沒有</td>
+<td><code>/tmp/linux-3.10.65</code> 是 <strong>vanilla 內核樹</strong>，只有 <code>wl128x</code>、<code>sf16fmr2</code> 等通用 radio 驅動，<strong>沒有</strong>展訊私有 FM 源碼；不要指望在設備上讀到 <code>fm.h</code></td>
+</tr>
+<tr>
+<td>找現成的 FM 用戶態守護進程&#x2F;命令行工具</td>
+<td>❌ 沒有</td>
+<td><code>ls /usr/bin /usr/sbin /bin /sbin | grep fm</code> 無輸出，全盤也沒找到 FM 可執行文件。<strong>必須自己寫 daemon</strong></td>
+</tr>
+<tr>
+<td>用 <code>amixer</code>&#x2F;<code>tinymix</code> 切音頻通路</td>
+<td>❌ 裝都沒裝</td>
+<td>見 §2.4，只能寫代碼走 ALSA lib 或直接 ioctl</td>
+</tr>
+<tr>
+<td>指望 Android 層的 FM 庫直接複用</td>
+<td>❌ 不能直接跑</td>
+<td><code>/mnt/android_sys/lib/</code> 下有 <code>libFMHalSource.so</code>、<code>libengfm.so</code>、<code>libfmjni.so</code>、<code>libradio*.so</code>，但它們依賴 Android 運行時（binder&#x2F;ALooper&#x2F;<code>sp&lt;&gt;</code> 等），<strong>在 Alpine 上無法直接動態加載</strong></td>
+</tr>
+<tr>
+<td>誤以為 RDS 不存在</td>
+<td>❌ 恰恰相反</td>
+<td>驅動裡 RDS 解析函數很完整（§2.3），是本項目 FM 的差異化價值點，別丟掉</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong><code>libengfm.so</code> 值得單獨說一句</strong>：它只導出一個符號 <code>fm_runcommand</code>。這暗示原廠工程模式就是以”跑命令”的方式操作 FM<br>（與驅動裡的 <code>parse_at_fm_cmd</code> &#x2F; <code>parse_at_fm_num</code> 呼應）→ 提示 FM 控制很可能走 <strong>AT 命令風格</strong>，這是探查 ioctl 數字之外的第二條可行路線。</p>
+</blockquote>
+<hr>
+<h2 id="4-系統模型：五層-每層驗證標準"><a href="#4-系統模型：五層-每層驗證標準" class="headerlink" title="4. 系統模型：五層 + 每層驗證標準"></a>4. 系統模型：五層 + 每層驗證標準</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">┌─ ① 固件層    download 已把 combo 固件燒入 Marlin2</span><br><span class="line">│      驗證：WiFi 可用 ⇒ FM 固件就緒</span><br><span class="line">├─ ② 上電層    wcnd / BT-OPEN 使芯片整體帶電；FM 共享 SDIO，無獨立上電步驟</span><br><span class="line">│      驗證：/sys/bus/sdio/devices/mmc2:8800:1 存在，device=0x2331</span><br><span class="line">├─ ③ 驅動層    marlin_fm.ko 已加載並註冊 misc 設備</span><br><span class="line">│      驗證：lsmod | grep marlin_fm   且   ls /dev/fm   且   grep fm /proc/misc</span><br><span class="line">├─ ④ daemon 層 FM daemon 獨佔 /dev/fm，對外暴露 unix socket（★ 本任務要新建的唯一後臺組件）</span><br><span class="line">│      驗證：socket 收發 command 返回 OK</span><br><span class="line">└─ ⑤ UI 層     LVGL 收音機頁，經 socket 與 daemon 通信（★ 本任務主體）</span><br><span class="line">       驗證：點擊可調臺、可出聲、返回後臺不停臺</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>分層排障鐵律</strong>：任意一層不通，<strong>不要往上層猜</strong>。先按 §5 自上而下逐層確認，再動手改 UI。</p>
+</blockquote>
+<hr>
+<h2 id="5-分層驗證命令（可直接複製）"><a href="#5-分層驗證命令（可直接複製）" class="headerlink" title="5. 分層驗證命令（可直接複製）"></a>5. 分層驗證命令（可直接複製）</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ==== ①+②+③ 一次性確認 ====</span></span><br><span class="line"><span class="built_in">ls</span> /dev/fm &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;設備節點 OK&quot;</span></span><br><span class="line">grep -w fm /proc/misc &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;misc 註冊 OK&quot;</span></span><br><span class="line">lsmod | grep marlin_fm &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;驅動已加載 OK&quot;</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/*/device &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;SDIO 枚舉 OK (應為 0x2331)&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ==== ③ 驅動描述（確認共享 SDIO 的依據）====</span></span><br><span class="line">modinfo marlin_fm 2&gt;/dev/null || strings /lib/modules/marlin_fm.ko | grep description=</span><br><span class="line"></span><br><span class="line"><span class="comment"># ==== ② WiFi 作為 FM 的前置 ====</span></span><br><span class="line">ip <span class="built_in">link</span> show wlan0 | grep -o <span class="string">&#x27;state [A-Z]*&#x27;</span>     <span class="comment"># 期望 UP / DORMANT，不是 DOWN</span></span><br><span class="line">ps | grep -c <span class="string">&#x27;[d]ownload&#x27;</span>                        <span class="comment"># 期望 &gt;=1，download 常駐</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ==== ③ 驅動能力清單複核（無需再看 .ko）====</span></span><br><span class="line"><span class="comment"># 見 §2.2 / §2.3 兩張表，已固化在本文中</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ==== ④/⑤ socket 層的設備端自測（Alpine 有 python3，無 socat）====</span></span><br><span class="line"><span class="keyword">import</span> socket, time</span><br><span class="line">s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)</span><br><span class="line">s.settimeout(<span class="number">5.0</span>)                 <span class="comment"># ★ 必須設超時，否則 daemon 無響應會掛死</span></span><br><span class="line">s.connect(<span class="string">&quot;/tmp/fm_ctl.sock&quot;</span>)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">cmd</span>(<span class="params">c</span>):</span><br><span class="line">    s.sendall((c + <span class="string">&quot;\n&quot;</span>).encode())</span><br><span class="line">    time.sleep(<span class="number">0.2</span>)</span><br><span class="line">    <span class="keyword">return</span> s.recv(<span class="number">4096</span>).decode()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;state  -&gt;&quot;</span>, cmd(<span class="string">&quot;state&quot;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;open   -&gt;&quot;</span>, cmd(<span class="string">&quot;open&quot;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;tune   -&gt;&quot;</span>, cmd(<span class="string">&quot;tune 97400&quot;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;rssi   -&gt;&quot;</span>, cmd(<span class="string">&quot;rssi&quot;</span>))</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ 上述 socket 路徑 <code>/tmp/fm_ctl.sock</code> 是<strong>本手冊規定的設計目標</strong>，當前尚未實現。</p>
+</blockquote>
+<hr>
+<h2 id="6-執行流程"><a href="#6-執行流程" class="headerlink" title="6. 執行流程"></a>6. 執行流程</h2><table>
+<thead>
+<tr>
+<th>步驟</th>
+<th>動作</th>
+<th>產出</th>
+<th>完成判據</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Step 0</strong></td>
+<td>跑 §5 全部命令，確認 ①–③ 層狀態</td>
+<td>探查記錄</td>
+<td><code>/dev/fm</code> 存在、驅動已加載、WiFi 已拉起</td>
+</tr>
+<tr>
+<td><strong>Step 1</strong></td>
+<td><del>探明 ioctl 命令號</del> <strong>已完成</strong></td>
+<td><a href="FM%E6%94%B6%E9%9F%B3ioctl%E5%91%BD%E4%BB%A4%E8%A1%A8_%E9%80%86%E5%90%91%E9%82%84%E5%8E%9F.md"><code>FM收音ioctl命令表_逆向還原.md</code></a></td>
+<td>能對 <code>/dev/fm</code> 發起一次成功的 <code>TUNE</code>（命令號：<code>0xC004F502</code>）</td>
+</tr>
+<tr>
+<td><strong>Step 2</strong></td>
+<td>寫 <strong>FM daemon</strong>：獨佔 <code>/dev/fm</code>，封裝 ioctl → socket</td>
+<td><code>fm_radio_daemon.c</code></td>
+<td><code>state</code> &#x2F; <code>open</code> &#x2F; <code>tune</code> &#x2F; <code>rssi</code> 四條命令可用</td>
+</tr>
+<tr>
+<td><strong>Step 3</strong></td>
+<td>寫<strong>最小探針</strong>驗證 <code>SCAN</code> 與 RSSI，標定信號強度閾值</td>
+<td>標定記錄</td>
+<td>能拿到 ≥3 個本地電臺頻點及場強值</td>
+</tr>
+<tr>
+<td><strong>Step 4</strong></td>
+<td><strong>確認音頻路徑</strong>（<code>ANA_SWITCH</code> vs <code>I2S_SETTING</code> vs <code>OVER_BT_ENABLE</code>）</td>
+<td>路徑決策</td>
+<td>揚聲器確實出聲（<strong>必須人耳確認</strong>）</td>
+</tr>
+<tr>
+<td><strong>Step 5</strong></td>
+<td>實現<strong>聲道仲裁</strong>（FM &#x2F; A2DP &#x2F; 本地播放互斥）</td>
+<td>仲裁模塊</td>
+<td>三者兩兩切換無串音</td>
+</tr>
+<tr>
+<td><strong>Step 6</strong></td>
+<td>畫 <strong>LVGL 收音機頁</strong></td>
+<td><code>radio_page.c</code></td>
+<td>見 <code>FM收音機_LVGL界面設計與交互規格.md</code></td>
+</tr>
+<tr>
+<td><strong>Step 7</strong></td>
+<td>RDS 顯示 + 收藏 + 持久化 + 後臺播放</td>
+<td>完整 App</td>
+<td>見同文檔 §5 功能清單</td>
+</tr>
+<tr>
+<td><strong>Step 8</strong></td>
+<td>openrc 自啟（<code>depends on WiFi</code>）</td>
+<td>service 文件</td>
+<td>重啟後自動可用</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-故障-→-根因-→-修復-決策表"><a href="#7-故障-→-根因-→-修復-決策表" class="headerlink" title="7. 故障 → 根因 → 修復 決策表"></a>7. 故障 → 根因 → 修復 決策表</h2><table>
+<thead>
+<tr>
+<th>現象</th>
+<th>最可能根因</th>
+<th>修復</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>open /dev/fm</code> 失敗 ENOENT</td>
+<td><code>marlin_fm</code> 未加載</td>
+<td><code>insmod /lib/modules/marlin_fm.ko</code>，確認 <code>lsmod</code></td>
+</tr>
+<tr>
+<td><code>SDIO not enumerated</code> &#x2F; <code>device</code> 讀不到</td>
+<td>download 沒跑或固件未下成功</td>
+<td>先修 WiFi：重啟 <code>logdw → download</code> 鏈</td>
+</tr>
+<tr>
+<td>WiFi 好但 FM 無響應</td>
+<td>缺 <code>wcnd</code> 上電或芯片整體未帶電</td>
+<td>檢查 <code>ps | grep wcnd</code>，重跑 BT-OPEN</td>
+</tr>
+<tr>
+<td>ioctl 返回 <code>-EINVAL</code></td>
+<td>命令號寫錯，或落進了<strong>未定義區間</strong>（<code>0x14~0x16</code>&#x2F;<code>0x19~0x1c</code>&#x2F;<code>0x31~0x3b</code> 等）</td>
+<td>查 <a href="FM%E6%94%B6%E9%9F%B3ioctl%E5%91%BD%E4%BB%A4%E8%A1%A8_%E9%80%86%E5%90%91%E9%82%84%E5%8E%9F.md"><code>FM收音ioctl命令表_逆向還原.md</code></a> 的結論表核對 <code>nr</code>；再用 <code>dmesg | grep FM_DRV</code> 看是否打出了<strong>別的</strong>命令名</td>
+</tr>
+<tr>
+<td>ioctl 成功但<strong>沒有聲音</strong></td>
+<td>音頻通路未打開</td>
+<td>Step 4：分別在三條路徑上試，用 <code>GET_AUDIO_INFO</code> &#x2F; <code>GET_I2S_INFO</code> 查當前狀態</td>
+</tr>
+<tr>
+<td>有雜音&#x2F;聲音極小</td>
+<td>音量鏈路不對或 <code>SETVOL</code> 非主音量</td>
+<td>檢查是否還需通過 ALSA mixer 單獨提主輸出音量</td>
+</tr>
+<tr>
+<td>RSSI 一直為 0 &#x2F; 極值</td>
+<td>未真正 TUNE 成功，或耳機天線未接（若設計依賴耳機）</td>
+<td>先核實能否正常收到單個強信號電臺；再排查天線依賴</td>
+</tr>
+<tr>
+<td>seek 卡住不返回</td>
+<td>驅動有 seek 超時（日誌 <code>(fmdrv) seek Timeout(%d sec), fm seek end !</code>）</td>
+<td>上層也要設超時兜底，並給出”未找到電臺”UI</td>
+</tr>
+<tr>
+<td>LVGL 頁面卡死</td>
+<td>socket I&#x2F;O 阻塞了 UI 線程</td>
+<td><strong>必須</strong>設 <code>SO_RCVTIMEO</code>&#x2F;<code>SO_SNDTIMEO</code>（200ms）——本項目藍牙頁踩過的坑</td>
+</tr>
+<tr>
+<td>重啟後 FM 失效</td>
+<td>自啟順序早於 WiFi&#x2F;上電鏈</td>
+<td>service 裡聲明依賴，Step 8 依序啟動</td>
+</tr>
+<tr>
+<td>FM 與藍牙 A2DP <strong>同時出聲</strong></td>
+<td>沒有做聲道仲裁</td>
+<td>Step 5，參考 UI 規格文檔 §5.4</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-ioctl-命令號：已解決（原頭號阻塞項）"><a href="#8-ioctl-命令號：已解決（原頭號阻塞項）" class="headerlink" title="8. ioctl 命令號：已解決（原頭號阻塞項）"></a>8. ioctl 命令號：已解決（原頭號阻塞項）</h2><p><strong>2026-09-22 已完結。</strong> 具體結果見 <a href="FM%E6%94%B6%E9%9F%B3ioctl%E5%91%BD%E4%BB%A4%E8%A1%A8_%E9%80%86%E5%90%91%E9%82%84%E5%8E%9F.md"><code>FM收音ioctl命令表_逆向還原.md</code></a>。</p>
+<p>做法概括：<code>marlin_fm.ko</code> <strong>未 strip</strong> → 反彙編 <code>fm_ioctl()</code> 二分查找樹讀出常量候選，<br>再用「全零參數單步調用 + <code>dmesg -c</code> 清空取日誌」逐條實測確認命令名。<br>下面三條<strong>歷史路線</strong>保留作方法論備忘：</p>
+<table>
+<thead>
+<tr>
+<th>路線</th>
+<th>做法</th>
+<th>評價</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>A. 要原廠頭文件</strong>（最省事）</td>
+<td>向芯片原廠&#x2F;方案商索取 Marlin2 平臺的 FM 用戶態頭文件（通常叫 <code>fm.h</code> &#x2F; <code>sprd_fm.h</code>）與 libfm 庫</td>
+<td>✅ <strong>首選</strong>。有它一切明確</td>
+</tr>
+<tr>
+<td><strong>B. 複用 Android 側二進制反推</strong></td>
+<td>Android 分區裡有 <code>libengfm.so</code>（導出 <code>fm_runcommand</code>）與 <code>libFMHalSource.so</code>。用 <code>nm</code>&#x2F;<code>readelf</code> 交叉看它們調用 open&#x2F;ioctl 的方式，或在 Android chroot 內 <strong>strace</strong> 一次原生 FM APK 的操作序列</td>
+<td>⚠️ 可行但要動 chroot 環境；注意這條路是<strong>推斷</strong>，得到數字後仍要上機驗證</td>
+</tr>
+<tr>
+<td><strong>C. 直接 ioctl 暴力試探</strong></td>
+<td>遍歷候選命令號，觀察 <code>/dev/fm</code> 的返回值與 <code>dmesg</code> 裡 <code>----&lt;命令名&gt;----</code> 的打印，看哪個號打出了哪個命令名</td>
+<td>⚠️ 可行但有風險：亂髮 ioctl 可能讓固件狀態異常。<strong>必須在 WiFi&#x2F;藍牙不承載業務時做，且有復位手段</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>🔒 <strong>紀律</strong>：無論走哪條路線，都<strong>先在本機&#x2F;Android 側確認，不要把錯誤的命令號寫進 daemon 再上模擬器盲調</strong>。</p>
+</blockquote>
+<p>其他待辦：</p>
+<ol>
+<li><strong>確認是否需要耳機當天線</strong>：本機 ALSA 有獨立的 FM PCM（<code>01-04</code>），暗示可以內部直通，但<strong>沒有實測</strong>。<br>判斷依據：不插耳機時 TUNE 到強信號電臺，看能否出聲。</li>
+<li><strong>確認 <code>OVER_BT_ENABLE</code> 的確切語義</strong>：是”FM 音頻送給已連接藍牙設備”，還是”允許 FM 與 BT 共存”？</li>
+<li><strong>確認 <code>SETVOL</code> 與實際輸出音量的關係</strong>：它可能只是 FM 模塊內部增益。</li>
+<li><strong>確認系統 suspend 時 FM 是否掉臺</strong>（驅動有 <code>fm_suspend</code>&#x2F;<code>fm_resume</code>）——決定”息屏續聽”能否實現。</li>
+</ol>
+<hr>
+<h2 id="9-紅線與運維紀律"><a href="#9-紅線與運維紀律" class="headerlink" title="9. 紅線與運維紀律"></a>9. 紅線與運維紀律</h2><ol>
+<li><strong>禁止</strong>SFTP 回寫 <code>main.c</code> 後不核對行尾直接提交：<code>main.c</code> 是本倉庫<strong>唯一</strong>的 CRLF 文件，回寫會被轉成 LF，<br>導致提交裡出現 1618 行”整文件重寫”的假改動。提交前必查：<br><code>git diff --stat</code> 與 <code>git diff --ignore-cr-at-eol --stat</code> 兩個數字應一致。</li>
+<li><strong>禁止</strong>在文檔中寫入 SSH 密碼&#x2F;賬號&#x2F;真實 IP。</li>
+<li><strong>禁止</strong>“看起來對就算通過”：顯示&#x2F;顏色&#x2F;音頻類結論<strong>必須人眼&#x2F;人耳在實機上確認</strong>，不能用”截圖&#x2F;解碼結果自洽”自證。</li>
+<li><strong>禁止</strong>在沒有超時的情況下讓 LVGL 定時器回調做 socket I&#x2F;O。</li>
+<li><strong>禁止</strong> pkill -f 匹配會命中自身命令行的字符串（會殺掉自己的 SSH 會話），一律按 PID 殺。</li>
+<li>修改 <code>/dev/fm</code> 相關邏輯前，確認 watchdog（<code>lvgl_watchdog.sh</code>）已按規程處理，避免干擾實驗。</li>
+</ol>
+<hr>
+<h2 id="10-設備上已有工具清單（複用，勿重造）"><a href="#10-設備上已有工具清單（複用，勿重造）" class="headerlink" title="10. 設備上已有工具清單（複用，勿重造）"></a>10. 設備上已有工具清單（複用，勿重造）</h2><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>python3</code></td>
+<td>socket 自測、寫探查腳本</td>
+</tr>
+<tr>
+<td><code>nm</code> &#x2F; <code>readelf</code></td>
+<td>分析 <code>.ko</code> 與 <code>.so</code> 符號（§2 全部事實由此取得）</td>
+</tr>
+<tr>
+<td><code>strings</code></td>
+<td>從 <code>.ko</code> 提取調試串（命令名由此取得）</td>
+</tr>
+<tr>
+<td><code>libasound.so.2</code></td>
+<td>寫 C 操作 PCM &#x2F; mixer（沒有 amixer，只能寫代碼）</td>
+</tr>
+<tr>
+<td><code>/mnt/android_sys</code></td>
+<td>Android 原廠分區，<code>lib/</code> 下有 FM 相關庫可作為對照樣本</td>
+</tr>
+<tr>
+<td><code>/tmp/linux-3.10.65</code></td>
+<td>vanilla 內核樹，<strong>不含</strong>展訊私有 FM 源碼（見 §3 死路）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="11-後續增強方向（當前未完成）"><a href="#11-後續增強方向（當前未完成）" class="headerlink" title="11. 後續增強方向（當前未完成）"></a>11. 後續增強方向（當前未完成）</h2><table>
+<thead>
+<tr>
+<th>方向</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RDS 深度利用</td>
+<td>PTY 標籤、AF 自動切頻、CT 電臺時鐘、EWS 緊急廣播（驅動能力已在 §2.3）</td>
+</tr>
+<tr>
+<td>網絡電臺聯動</td>
+<td>FM + WiFi 雙模，WiFi 在線時可拉取電臺增強信息</td>
+</tr>
+<tr>
+<td>錄音&#x2F;回放</td>
+<td>FM 音頻經 PCM capture 落盤（需先確認有可用 capture 節點）</td>
+</tr>
+<tr>
+<td>多地區頻段</td>
+<td>中國 87.5–108.0 &#x2F; 日本 76–90 &#x2F; 歐規 50 kHz 步進</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="12-一句話總結"><a href="#12-一句話總結" class="headerlink" title="12. 一句話總結"></a>12. 一句話總結</h2><blockquote>
+<p><strong>本機 FM 的硬件、驅動、RDS 解析能力全部已經現成在跑</strong>（<code>marlin_fm.ko</code> 已加載、<code>/dev/fm</code> 已註冊、<br>且與 WiFi&#x2F;藍牙共享同一顆 Marlin2 芯片），缺的只有”中間那一層”：<br><strong>一個把 <code>/dev/fm</code> 的 ioctl 包裝成 unix socket 的 FM daemon</strong>，以及<strong>一個畫得下的收音機頁</strong>。<br>原先卡住動手的<strong>唯一一件事</strong>（ioctl 命令號）已經解除（§8），<br>現在剩下的全都是按部就班的工程活：寫 daemon、定音頻通路、做聲道仲裁、畫 UI。</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B1%95%E8%A8%8A-SC9832A%EF%BC%88spd-box%EF%BC%89FM-%E6%94%B6%E9%9F%B3%E6%89%93%E9%80%9A-%E2%80%94%E2%80%94-AI-%E5%9F%B7%E8%A1%8C%E6%8C%87%E5%B0%8E%E6%89%8B%E5%86%8A"><span class="toc-number">1.</span> <span class="toc-text">展訊 SC9832A（spd-box）FM 收音打通 —— AI 執行指導手冊</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%A8%AD%E5%82%99%E8%88%87%E7%92%B0%E5%A2%83%E9%80%9F%E8%A6%BD"><span class="toc-number">1.1.</span> <span class="toc-text">1. 設備與環境速覽</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B7%B2%E7%A2%BA%E8%AA%8D%E7%9A%84%E7%A1%AC%E4%BA%8B%E5%AF%A6%EF%BC%88%E7%84%A1%E9%9C%80%E9%87%8D%E6%96%B0%E6%8E%A2%E6%9F%A5%EF%BC%8C%E7%9B%B4%E6%8E%A5%E4%BF%A1%E4%BB%BB%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. 已確認的硬事實（無需重新探查，直接信任）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E8%8A%AF%E7%89%87%E8%88%87%E8%B3%87%E6%BA%90%E5%85%B1%E4%BA%AB%EF%BC%88%E6%9C%80%E9%97%9C%E9%8D%B5%E7%9A%84%E4%B8%80%E6%A2%9D%EF%BC%89"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 芯片與資源共享（最關鍵的一條）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E9%A9%85%E5%8B%95%E8%83%BD%E5%8A%9B%E6%B8%85%E5%96%AE%EF%BC%88%E4%BE%86%E8%87%AA-strings-marlin-fm-ko-%E7%9A%84%E8%AA%BF%E8%A9%A6%E8%BC%B8%E5%87%BA%EF%BC%89"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 驅動能力清單（來自 strings marlin_fm.ko 的調試輸出）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-RDS-%E8%83%BD%E5%8A%9B%EF%BC%88%E4%BE%86%E8%87%AA-nm-marlin-fm-ko-%E7%9A%84%E5%87%BD%E6%95%B8%E7%AC%A6%E8%99%9F%EF%BC%89"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 RDS 能力（來自 nm marlin_fm.ko 的函數符號）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-%E9%9F%B3%E9%A0%BB%E7%8F%BE%E7%8B%80%EF%BC%88%E6%B1%BA%E5%AE%9A%E4%BA%86%E8%81%B2%E9%81%93%E4%BB%B2%E8%A3%81%E7%9A%84%E8%A8%AD%E8%A8%88%EF%BC%89"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4 音頻現狀（決定了聲道仲裁的設計）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-%E6%97%A2%E6%9C%89%E4%B8%8A%E9%9B%BB%E9%8F%88%EF%BC%88FM-%E5%BF%85%E9%A0%88%E6%8E%9B%E9%9D%A0%E5%85%B6%E4%B8%8A%EF%BC%89"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5 既有上電鏈（FM 必須掛靠其上）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%B7%B2%E9%A9%97%E8%AD%89%E6%AD%BB%E8%B7%AF%EF%BC%88%E4%B8%8D%E8%A6%81%E9%87%8D%E8%A9%A6%EF%BC%8C%E6%B5%AA%E8%B2%BB%E8%BC%AA%E6%AC%A1%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">3. 已驗證死路（不要重試，浪費輪次）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%B3%BB%E7%B5%B1%E6%A8%A1%E5%9E%8B%EF%BC%9A%E4%BA%94%E5%B1%A4-%E6%AF%8F%E5%B1%A4%E9%A9%97%E8%AD%89%E6%A8%99%E6%BA%96"><span class="toc-number">1.4.</span> <span class="toc-text">4. 系統模型：五層 + 每層驗證標準</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%88%86%E5%B1%A4%E9%A9%97%E8%AD%89%E5%91%BD%E4%BB%A4%EF%BC%88%E5%8F%AF%E7%9B%B4%E6%8E%A5%E8%A4%87%E8%A3%BD%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 分層驗證命令（可直接複製）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%9F%B7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.6.</span> <span class="toc-text">6. 執行流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E6%95%85%E9%9A%9C-%E2%86%92-%E6%A0%B9%E5%9B%A0-%E2%86%92-%E4%BF%AE%E5%BE%A9-%E6%B1%BA%E7%AD%96%E8%A1%A8"><span class="toc-number">1.7.</span> <span class="toc-text">7. 故障 → 根因 → 修復 決策表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-ioctl-%E5%91%BD%E4%BB%A4%E8%99%9F%EF%BC%9A%E5%B7%B2%E8%A7%A3%E6%B1%BA%EF%BC%88%E5%8E%9F%E9%A0%AD%E8%99%9F%E9%98%BB%E5%A1%9E%E9%A0%85%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">8. ioctl 命令號：已解決（原頭號阻塞項）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E7%B4%85%E7%B7%9A%E8%88%87%E9%81%8B%E7%B6%AD%E7%B4%80%E5%BE%8B"><span class="toc-number">1.9.</span> <span class="toc-text">9. 紅線與運維紀律</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E8%A8%AD%E5%82%99%E4%B8%8A%E5%B7%B2%E6%9C%89%E5%B7%A5%E5%85%B7%E6%B8%85%E5%96%AE%EF%BC%88%E8%A4%87%E7%94%A8%EF%BC%8C%E5%8B%BF%E9%87%8D%E9%80%A0%EF%BC%89"><span class="toc-number">1.10.</span> <span class="toc-text">10. 設備上已有工具清單（複用，勿重造）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-%E5%BE%8C%E7%BA%8C%E5%A2%9E%E5%BC%B7%E6%96%B9%E5%90%91%EF%BC%88%E7%95%B6%E5%89%8D%E6%9C%AA%E5%AE%8C%E6%88%90%EF%BC%89"><span class="toc-number">1.11.</span> <span class="toc-text">11. 後續增強方向（當前未完成）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B8%BD%E7%B5%90"><span class="toc-number">1.12.</span> <span class="toc-text">12. 一句話總結</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&text=FM收音打通_AI指導手冊"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&title=FM收音打通_AI指導手冊"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&is_video=false&description=FM收音打通_AI指導手冊"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM收音打通_AI指導手冊&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&title=FM收音打通_AI指導手冊"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&title=FM收音打通_AI指導手冊"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&title=FM收音打通_AI指導手冊"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&title=FM收音打通_AI指導手冊"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/23/fm-08-fm-ai-md/&name=FM收音打通_AI指導手冊&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

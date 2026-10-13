@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Reference (Details) — Game Emulator: Rendering Pipeline and Exit Strategy Split out from MEMORY.md §11 to avoid exceeding the main note’s size limit. The conclusion-level summary remains in MEMORY.md.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ref_Emulator_Rendering and Exit">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Reference (Details) — Game Emulator: Rendering Pipeline and Exit Strategy Split out from MEMORY.md §11 to avoid exceeding the main note’s size limit. The conclusion-level summary remains in MEMORY.md.">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-29T10:05:26.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.978Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="模拟器">
+<meta property="article:tag" content="渲染">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>ref_Emulator_Rendering and Exit</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/29/ref-emulator-render/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/29/ref-emulator-render/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&text=ref_Emulator_Rendering and Exit"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&title=ref_Emulator_Rendering and Exit"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&is_video=false&description=ref_Emulator_Rendering and Exit"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_Emulator_Rendering and Exit&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&title=ref_Emulator_Rendering and Exit"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&title=ref_Emulator_Rendering and Exit"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&title=ref_Emulator_Rendering and Exit"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&title=ref_Emulator_Rendering and Exit"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&name=ref_Emulator_Rendering and Exit&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Reference-Details-%E2%80%94-Game-Emulator-Rendering-Pipeline-and-Exit-Strategy"><span class="toc-number">1.</span> <span class="toc-text">Reference (Details) — Game Emulator: Rendering Pipeline and Exit Strategy</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-Five-Pitfalls-of-the-Rendering-Pipeline-empirically-verified-read-before-changing-video-cb-scale-rotate90"><span class="toc-number">1.1.</span> <span class="toc-text">A. Five Pitfalls of the Rendering Pipeline (empirically verified; read before changing video_cb &#x2F; scale_rotate90)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-Exit-Strategy-finalized-v3-unconditional-page-flip-bugfix-16-18"><span class="toc-number">1.2.</span> <span class="toc-text">B. Exit Strategy (finalized v3 + unconditional page flip &#x3D; bugfix 16 &#x2F; 18)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-Paths-Already-Disproved-%E2%80%94-Do-Not-Take-Them-Again"><span class="toc-number">1.3.</span> <span class="toc-text">C. Paths Already Disproved — Do Not Take Them Again</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#D-Tools-and-Probes"><span class="toc-number">1.4.</span> <span class="toc-text">D. Tools and Probes</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#E-Frame-Rate-Budget-and-Speedup-2026-09-29-GBA"><span class="toc-number">1.5.</span> <span class="toc-text">E. Frame Rate Budget and Speedup (2026-09-29, GBA)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#E-1-Three-Numbers-You-Must-Know"><span class="toc-number">1.5.1.</span> <span class="toc-text">E.1 Three Numbers You Must Know</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-2-Segmented-Probes-how-to-measure"><span class="toc-number">1.5.2.</span> <span class="toc-text">E.2 Segmented Probes (how to measure)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-3-Two-Speedups-Already-Done"><span class="toc-number">1.5.3.</span> <span class="toc-text">E.3 Two Speedups Already Done</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-4-Frame-Rate-Display"><span class="toc-number">1.5.4.</span> <span class="toc-text">E.4 Frame Rate Display</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-5-PSP-Performance-Ceiling-10fps-conclusion-measured-on-2026-09-29"><span class="toc-number">1.5.5.</span> <span class="toc-text">E.5 PSP Performance Ceiling &#x3D; 10fps (conclusion measured on 2026-09-29)</span></a></li></ol></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        ref_Emulator_Rendering and Exit
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-29T10:05:26.000Z" itemprop="datePublished">2026-09-29</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>, <a class="tag-link-link" href="/tags/%E6%B8%B2%E6%9F%93/" rel="tag">渲染</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Reference-Details-—-Game-Emulator-Rendering-Pipeline-and-Exit-Strategy"><a href="#Reference-Details-—-Game-Emulator-Rendering-Pipeline-and-Exit-Strategy" class="headerlink" title="Reference (Details) — Game Emulator: Rendering Pipeline and Exit Strategy"></a>Reference (Details) — Game Emulator: Rendering Pipeline and Exit Strategy</h1><blockquote>
+<p>Split out from <code>MEMORY.md §11</code> to avoid exceeding the main note’s size limit. The conclusion-level summary remains in MEMORY.md.<br>Original evidence: <code>AI工作流/bugfix/bugfix_20260923_09~14*.md</code>, <code>outputs/bugfix_20260923/</code>, Skill <code>child-exit-hang-diagnosis</code></p>
+</blockquote>
+<h2 id="A-Five-Pitfalls-of-the-Rendering-Pipeline-empirically-verified-read-before-changing-video-cb-scale-rotate90"><a href="#A-Five-Pitfalls-of-the-Rendering-Pipeline-empirically-verified-read-before-changing-video-cb-scale-rotate90" class="headerlink" title="A. Five Pitfalls of the Rendering Pipeline (empirically verified; read before changing video_cb &#x2F; scale_rotate90)"></a>A. Five Pitfalls of the Rendering Pipeline (empirically verified; read before changing <code>video_cb</code> &#x2F; <code>scale_rotate90</code>)</h2><ol>
+<li><strong>240x160 must be allowed through</strong> (the original hardcoded 256x240 filter causes all GBA frames to be dropped &#x3D; black screen);<br><strong>must read line by line according to pitch</strong> (mGBA pitch&#x3D;512&#x3D;256px&#x2F;line, width only 240; linear reads produce vertical stripes)</li>
+<li><strong>Double-buffered page flipping fixes tearing</strong>: render the entire frame to the back page, then <code>FBIOPAN_DISPLAY</code>; <code>FBIO_WAITFORVSYNC</code> returns EPERM on this machine and is unusable<br>→ <strong>this is exactly the source of the “page flip landmine”</strong> (see MEMORY.md §3)</li>
+<li><strong>★ R&#x2F;B swapping may only happen once across the whole chain</strong> (internal <code>0xAARRGGBB</code>, swap once before writing) → swapping twice &#x3D; red and blue inverted</li>
+<li><strong>The real audio rate ≠ the rate reported by the core</strong>: mGBA reports 32768, but each <code>retro_run</code> actually delivers 1097 frames (≈65536Hz) → converting by the reported value overproduces by a factor of two<br>truncation &#x3D; continuous crackling. The correct solution is <code>s_fpc × s_fps_meas</code>; buffer ≥8192 int16; <strong>stay silent for the first 300ms</strong> (the first frame has only 82 frames, which would miscompute the ratio and flood the fifo)</li>
+<li><strong>★ CPU is pegged at 100%, the miniretro ceiling is ≈56fps</strong> (&lt;59.73) → audio can only be stretched to real time according to the measured frame rate, with the pitch about 6% lower</li>
+</ol>
+<h2 id="B-Exit-Strategy-finalized-v3-unconditional-page-flip-bugfix-16-18"><a href="#B-Exit-Strategy-finalized-v3-unconditional-page-flip-bugfix-16-18" class="headerlink" title="B. Exit Strategy (finalized v3 + unconditional page flip &#x3D; bugfix 16 &#x2F; 18)"></a>B. Exit Strategy (finalized v3 + unconditional page flip &#x3D; bugfix 16 &#x2F; 18)</h2><ul>
+<li><strong>The only hard criterion: the child process has truly disappeared</strong>. Both pages always <strong>block on <code>waitpid</code>, with no upper limit, no flag, and no timeout</strong><br>(FC’s <code>fc_wait_thread</code> has always been written this way and has never had a failure — this is the baseline)</li>
+<li><strong>Order</strong>: the input interceptor receives the exit key → <code>kill(SIGTERM)</code> (<strong>return immediately, never sleep</strong>) → create a <strong>dedicated coup de grâce thread</strong><br><code>gba_kill_later</code> (<code>SIGKILL</code> only if still alive after 600ms) → the reaper thread blocks on <code>waitpid</code> → <code>gba_reset_fb_page()</code> →<br><code>hardware_keys_set_grab(true)</code> → <code>app_runtime_set_lvgl_paused(false)</code> → <code>lv_async_call(full-screen redraw)</code><br>→ <strong>finally</strong> remove the interceptor. <code>gba_on_destroy</code> additionally uses <code>SIGTERM</code> plus a 300ms grace period to protect <code>.sav</code></li>
+<li><strong>Frontend side</strong>: <code>on_quit_signal</code>(SIGTERM→quit&#x3D;1) + <code>fb_restore()</code> + normal <code>return 0</code>.<br><strong><code>fb_restore()</code> unconditionally pans back to page 0 and never clears the screen</strong> (clearing the screen would turn that ~1s pure black &#x3D; “frozen black screen”);<br><strong>it also no longer memcpy’s the whole page</strong> (removed in bugfix 16: that was equivalent to writing content into the page LVGL always draws)</li>
+<li><strong>★★ page flips are always 【unconditional】</strong> (bugfix 18, all 5 call sites on the page side): <code>FBIOPAN_DISPLAY(yoffset=0)</code> is idempotent<br>→ <strong>never add a pre-check</strong>; after sending, read back and verify once, and resend if incorrect. Moreover, <strong>the page flip and the full-screen redraw must be in the same beat</strong><br>(flip again immediately after the redraw inside the main thread’s redraw callback) → see §C-7</li>
+<li><strong>Measured</strong>: after sending the signal, the child process “truly disappears” in <strong><del>1015</del>1020ms on both frontends</strong> (inherent overhead of the kernel reclaiming evdev&#x2F;fb, which the frontend cannot influence;<br>a deliberately accepted cost; stop trying to optimize it); after exit, <strong>both frontends freeze on the game’s last frame</strong> &#x3D; <strong>0 black-screen windows</strong></li>
+<li><strong>★ locating <code>yoffset</code> readback (three-version conclusion, final version)</strong>: it <strong>can</strong> reflect whether the frontend is flipping pages (when the observation method is available),<br>but it <strong>cannot</strong> serve as the gate for “whether to flip a page” — the bookkeeping value is not guaranteed to equal the page the scan output (LCDC) is currently reading;<br>once the two disagree, <code>if(yoffset != 0)</code> skips the page flip &#x3D; <strong>occasional leftover of the previous image</strong> (the true culprit of bugfix 18)</li>
+</ul>
+<h2 id="C-Paths-Already-Disproved-—-Do-Not-Take-Them-Again"><a href="#C-Paths-Already-Disproved-—-Do-Not-Take-Them-Again" class="headerlink" title="C. Paths Already Disproved — Do Not Take Them Again"></a>C. Paths Already Disproved — Do Not Take Them Again</h2><ol>
+<li><strong>Setting a “running out N seconds counts as exit” upper bound on the wait loop</strong> ← the true culprit of the “frozen black screen”: the game is judged to have exited as soon as it runs to completion normally → the key interceptor is removed<br>(<strong>the exit key stops working</strong>) + LVGL grabs fb0 back and overwrites the game. <strong>FC uses unbounded blocking waitpid; this is the watershed of “FC works &#x2F; GBA breaks”</strong></li>
+<li><code>_exit(0)</code> <strong>cannot</strong> save kernel time (it only skips the user-space close; the process disappears <strong>even later</strong>)</li>
+<li>Putting the “wait for the reaper” loop <strong>inside a mutex</strong> → UI recovery is dragged out to the full duration</li>
+<li>Using <code>setenv</code> as a single-child-process switch (<strong>main-process level</strong>, which leaks across pages) → <strong>always set it in the child process after <code>fork()</code> and before <code>execl()</code></strong></li>
+<li><strong>Clearing the screen when the frontend exits</strong> (the “black” is caused by clearing the screen; the “freeze” is the ~1s overhead common to both frontends — do not investigate them as the same problem)</li>
+<li><strong>Only restoring your own layer</strong>: the parent process’s backup SIGKILL interrupts the child process’s “saving the game + flipping the page” → <strong>parent and child layers must both provide a fallback</strong></li>
+<li><strong>★ “idempotent operation + pre-check”</strong> (bugfix 18): writing <code>if(yoffset!=0) pan()</code> turns “<strong>always do</strong>“ into<br>“<strong>occasionally don’t</strong>“ — the causal chain is “the readback value ≠ the real state → judged false → the entire backend reset section is skipped”.<br>For idempotent operations with negligible cost, <strong>just do it, don’t ask</strong>.<br><strong>The first line of investigation for intermittent failures is the “conditional check”, not the timing</strong>: first ask “is there any way this code chooses not to act when the input is correct”</li>
+<li><strong>Putting “page flipping” and “redrawing” in two separate execution flows</strong>: they are two halves of the same visual transaction; splitting them leaves an intermediate state (bugfix 18)</li>
+</ol>
+<h2 id="D-Tools-and-Probes"><a href="#D-Tools-and-Probes" class="headerlink" title="D. Tools and Probes"></a>D. Tools and Probes</h2><ul>
+<li>Page flip diagnostic <code>fbpan</code>: <code>/tmp/fbpan [page number]</code> (source code <code>ssh_tools/_tmp/fbpan.c</code>, compiled with the device’s gcc)</li>
+<li>Grab the current visible page <code>ssh_tools/grab_screen.py</code>; end-to-end reproduction <code>ssh_tools/gba_repro.py</code>;<br>freeze the frontend to verify the fallback <code>verify_gba_guard.py</code>; full process <code>verify_gba_final.py</code></li>
+<li>Audio probe <code>MINIRETRO_AUDIO_DEBUG=1 miniretro ...</code>, printing once per second<br><code>peak/samples/out/drop/fps/calls/fpc/in_rate/out_rate/busy_ms</code></li>
+<li>Known limitation: this machine has only 4 physical keys (left&#x2F;right&#x2F;A&#x2F;exit); the GBA’s L&#x2F;R&#x2F;START&#x2F;SELECT require a USB gamepad or a modified keymap</li>
+</ul>
+<hr>
+<h2 id="E-Frame-Rate-Budget-and-Speedup-2026-09-29-GBA"><a href="#E-Frame-Rate-Budget-and-Speedup-2026-09-29-GBA" class="headerlink" title="E. Frame Rate Budget and Speedup (2026-09-29, GBA)"></a>E. Frame Rate Budget and Speedup (2026-09-29, GBA)</h2><h3 id="E-1-Three-Numbers-You-Must-Know"><a href="#E-1-Three-Numbers-You-Must-Know" class="headerlink" title="E.1 Three Numbers You Must Know"></a>E.1 Three Numbers You Must Know</h3><ol>
+<li><strong><code>FBIOPAN_DISPLAY</code> blocks 17.46ms per call (bare test of 100 calls) ⇒ panel refresh 57.3Hz</strong>.<br>It waits for the next vsync before returning ⇒ <strong>as long as every frame flips a page, the frame rate ceiling is 57.3Hz</strong> (the GBA’s nominal 59.73 can never be reached).<br>Stop trying to “optimize to 60fps” — the physical ceiling is right here.</li>
+<li><strong>The actual work per frame is ≈10ms</strong>: mGBA core_run itself ~5ms + conv 0.4ms + scale_rotate90 4.85ms;<br>the remaining 7ms is pan waiting for vsync (nothing to do, but in single-threaded mode it serially occupies the main loop).</li>
+<li><strong>Frame drop mechanism</strong>: a “stutter” &#x3D; a frame’s work exceeds the remaining budget of the current vsync phase → misses that bus → that frame takes 34.9ms (half speed).<br>Therefore the correct goal for speedup is <strong>increasing the margin</strong>, not raising the peak frame rate.</li>
+</ol>
+<h3 id="E-2-Segmented-Probes-how-to-measure"><a href="#E-2-Segmented-Probes-how-to-measure" class="headerlink" title="E.2 Segmented Probes (how to measure)"></a>E.2 Segmented Probes (how to measure)</h3><p><code>MINIRETRO_PERF=1 miniretro_gba &lt;core&gt; &lt;rom&gt; &lt;keymap&gt;</code>, printing once per second<br><code>fps / core / conv / scale / pan (ms/frame) / total busy</code>; <code>vf</code> &#x3D; number of video_cb calls per second.<br>(<code>MINIRETRO_AUDIO_DEBUG=1</code> is the probe for the audio path; the two are independent.)</p>
+<h3 id="E-3-Two-Speedups-Already-Done"><a href="#E-3-Two-Speedups-Already-Done" class="headerlink" title="E.3 Two Speedups Already Done"></a>E.3 Two Speedups Already Done</h3><ul>
+<li><strong>scale_rotate90</strong>: ① target-column gather lookup table → <strong>source-column range table <code>sr_xstart[]</code> + contiguous filling</strong>;<br>② 780,000 4B uncached writes → <strong>cached row buffer <code>sr_rowbuf</code> + <code>fb_store_row()</code> NEON 16B wide writes</strong> (194,000 writes).<br>Measured 6.7ms → 4.85ms. Writing video memory is uncached; <strong>reducing the number of bus accesses is the key</strong> (not reducing the pixel count).</li>
+<li><strong>governor</strong>: <code>performance</code> at runtime (768~900MHz → 1.3GHz), restored to <code>interactive</code> on exit.</li>
+<li><strong>★ Compilation</strong>: GBA must use <code>-O2 -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard</code>;<br>this machine’s gcc <code>-dumpmachine</code> &#x3D; <code>armv6-alpine-linux-musleabihf</code>, with default <code>-mfpu=vfpv2</code><br>→ when not explicitly specified, <code>arm_neon.h</code> reports <code>inlining failed ... target specific option mismatch</code>.<br>SC9832A &#x3D; Cortex-A7; explicitly enabling armv7-a+NEON is measured to compile and run correctly.</li>
+<li><strong>Not done (optional)</strong>: disabling double buffering (saves pan’s 4~7ms, but causes tearing); mGBA frame skipping; GSP hardware scaling&#x2F;rotation.</li>
+</ul>
+<h3 id="E-4-Frame-Rate-Display"><a href="#E-4-Frame-Rate-Display" class="headerlink" title="E.4 Frame Rate Display"></a>E.4 Frame Rate Display</h3><ul>
+<li>Switch: “Game Frame Rate” on the settings page → <code>show_fps=1</code> in <code>lv_conf/settings.conf</code>;<br>the frontend parses that file directly (<strong>setenv is not allowed</strong>, see the §”setenv pollution” lesson),<br>the environment variable <code>MINIRETRO_SHOW_FPS=1/0</code> can temporarily override it.</li>
+<li>Drawing method: 5x7 dot matrix (0-9&#x2F;F&#x2F;P&#x2F;S&#x2F;:) enlarged 3x, <strong>must be drawn on the back page before <code>FBIOPAN_DISPLAY</code></strong>,<br>otherwise it gets knocked off by the next frame’s page flip; colors use the <code>FBPIX(r,g,b)</code> macro (fb physical [R,G,B,X]).</li>
+<li>Position: <code>x=12, y=fb_h-7*3-14</code> (bottom left), with a black background backing.</li>
+</ul>
+<h3 id="E-5-PSP-Performance-Ceiling-10fps-conclusion-measured-on-2026-09-29"><a href="#E-5-PSP-Performance-Ceiling-10fps-conclusion-measured-on-2026-09-29" class="headerlink" title="E.5 PSP Performance Ceiling &#x3D; 10fps (conclusion measured on 2026-09-29)"></a>E.5 PSP Performance Ceiling &#x3D; 10fps (conclusion measured on 2026-09-29)</h3><ul>
+<li>Segmentation (<code>MINIRETRO_PERF=1</code>): core_run 96ms (of which our image production is 9.7ms) &#x2F; 10.2fps.<br><strong>Image production accounts for only 10%</strong>; the rest is PPSSPP’s fixed per-frame cost; <strong>independent of ROM load</strong> (Tetris runs at the same speed).</li>
+<li>Already ruled out: resolution (PPSSPP only accepts ≥480x272), audio (no difference when MUTEd), CPU frequency limiting (1.3GHz measured at 214M iter&#x2F;s),<br>JIT vs IR (same speed). <code>frameskip=2</code> is optimal; <strong>&#x3D;8 is instead slower</strong>.</li>
+<li>★ <strong>core option names&#x2F;values must be verified with GET_VARIABLE receipts</strong> (a wrongly written variable is silently ignored by the core);<br><strong>writing the same key as two entries in the table → lookup only returns the first one</strong>.</li>
+<li>★ <strong>Never use <code>MINIRETRO_NOAUDIO=1</code> (not registering the audio callback) → PPSSPP segfaults</strong>.</li>
+<li>Frame rate overlay&#x2F;segmented printing&#x2F;tuning environment variables: see <code>2026-09-29.md</code> “PSP Stutter Localization and Optimization”.</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Reference-Details-%E2%80%94-Game-Emulator-Rendering-Pipeline-and-Exit-Strategy"><span class="toc-number">1.</span> <span class="toc-text">Reference (Details) — Game Emulator: Rendering Pipeline and Exit Strategy</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#A-Five-Pitfalls-of-the-Rendering-Pipeline-empirically-verified-read-before-changing-video-cb-scale-rotate90"><span class="toc-number">1.1.</span> <span class="toc-text">A. Five Pitfalls of the Rendering Pipeline (empirically verified; read before changing video_cb &#x2F; scale_rotate90)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#B-Exit-Strategy-finalized-v3-unconditional-page-flip-bugfix-16-18"><span class="toc-number">1.2.</span> <span class="toc-text">B. Exit Strategy (finalized v3 + unconditional page flip &#x3D; bugfix 16 &#x2F; 18)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#C-Paths-Already-Disproved-%E2%80%94-Do-Not-Take-Them-Again"><span class="toc-number">1.3.</span> <span class="toc-text">C. Paths Already Disproved — Do Not Take Them Again</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#D-Tools-and-Probes"><span class="toc-number">1.4.</span> <span class="toc-text">D. Tools and Probes</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#E-Frame-Rate-Budget-and-Speedup-2026-09-29-GBA"><span class="toc-number">1.5.</span> <span class="toc-text">E. Frame Rate Budget and Speedup (2026-09-29, GBA)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#E-1-Three-Numbers-You-Must-Know"><span class="toc-number">1.5.1.</span> <span class="toc-text">E.1 Three Numbers You Must Know</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-2-Segmented-Probes-how-to-measure"><span class="toc-number">1.5.2.</span> <span class="toc-text">E.2 Segmented Probes (how to measure)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-3-Two-Speedups-Already-Done"><span class="toc-number">1.5.3.</span> <span class="toc-text">E.3 Two Speedups Already Done</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-4-Frame-Rate-Display"><span class="toc-number">1.5.4.</span> <span class="toc-text">E.4 Frame Rate Display</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#E-5-PSP-Performance-Ceiling-10fps-conclusion-measured-on-2026-09-29"><span class="toc-number">1.5.5.</span> <span class="toc-text">E.5 PSP Performance Ceiling &#x3D; 10fps (conclusion measured on 2026-09-29)</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&text=ref_Emulator_Rendering and Exit"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&title=ref_Emulator_Rendering and Exit"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&is_video=false&description=ref_Emulator_Rendering and Exit"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ref_Emulator_Rendering and Exit&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&title=ref_Emulator_Rendering and Exit"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&title=ref_Emulator_Rendering and Exit"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&title=ref_Emulator_Rendering and Exit"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&title=ref_Emulator_Rendering and Exit"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/29/ref-emulator-render/&name=ref_Emulator_Rendering and Exit&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

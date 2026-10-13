@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Spreadtrum SC9832A (spd-box) FM radio bring-up — AI execution guide Audience: AI assistants &#x2F; engineers who need to build an FM radio on similar devices (Spreadtrum SC9832A + Marlin2 combo chip,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM radio bring-up: AI execution guide">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Spreadtrum SC9832A (spd-box) FM radio bring-up — AI execution guide Audience: AI assistants &#x2F; engineers who need to build an FM radio on similar devices (Spreadtrum SC9832A + Marlin2 combo chip,">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.956Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM radio bring-up: AI execution guide</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/23/fm-09-fm-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&text=FM radio bring-up: AI execution guide"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&title=FM radio bring-up: AI execution guide"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&is_video=false&description=FM radio bring-up: AI execution guide"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM radio bring-up: AI execution guide&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&title=FM radio bring-up: AI execution guide"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&title=FM radio bring-up: AI execution guide"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&title=FM radio bring-up: AI execution guide"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&title=FM radio bring-up: AI execution guide"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&name=FM radio bring-up: AI execution guide&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-spd-box-FM-radio-bring-up-%E2%80%94-AI-execution-guide"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A (spd-box) FM radio bring-up — AI execution guide</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Device-and-environment-at-a-glance"><span class="toc-number">1.1.</span> <span class="toc-text">1. Device and environment at a glance</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Confirmed-hard-facts-no-need-to-re-investigate-trust-directly"><span class="toc-number">1.2.</span> <span class="toc-text">2. Confirmed hard facts (no need to re-investigate; trust directly)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-Chip-and-resource-sharing-the-most-critical-item"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 Chip and resource sharing (the most critical item)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Driver-capability-inventory-from-the-debug-output-of-strings-marlin-fm-ko"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 Driver capability inventory (from the debug output of strings marlin_fm.ko)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-RDS-capability-from-the-function-symbols-of-nm-marlin-fm-ko"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 RDS capability (from the function symbols of nm marlin_fm.ko)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-Current-audio-state-determines-the-channel-arbitration-design"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4 Current audio state (determines the channel arbitration design)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-The-existing-power-up-chain-FM-must-attach-to-it"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5 The existing power-up chain (FM must attach to it)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Verified-dead-ends-do-not-retry-it-wastes-rounds"><span class="toc-number">1.3.</span> <span class="toc-text">3. Verified dead ends (do not retry; it wastes rounds)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-System-model-five-layers-per-layer-verification-criteria"><span class="toc-number">1.4.</span> <span class="toc-text">4. System model: five layers + per-layer verification criteria</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Layer-by-layer-verification-commands-copy-directly"><span class="toc-number">1.5.</span> <span class="toc-text">5. Layer-by-layer verification commands (copy directly)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Execution-flow"><span class="toc-number">1.6.</span> <span class="toc-text">6. Execution flow</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Failure-%E2%86%92-root-cause-%E2%86%92-fix-decision-table"><span class="toc-number">1.7.</span> <span class="toc-text">7. Failure → root cause → fix decision table</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-ioctl-command-numbers-solved-the-former-number-one-blocker"><span class="toc-number">1.8.</span> <span class="toc-text">8. ioctl command numbers: solved (the former number one blocker)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-Red-lines-and-operations-discipline"><span class="toc-number">1.9.</span> <span class="toc-text">9. Red lines and operations discipline</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-Inventory-of-tools-already-on-the-device-reuse-do-not-rebuild"><span class="toc-number">1.10.</span> <span class="toc-text">10. Inventory of tools already on the device (reuse; do not rebuild)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-Future-enhancement-directions-currently-incomplete"><span class="toc-number">1.11.</span> <span class="toc-text">11. Future enhancement directions (currently incomplete)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-One-line-summary"><span class="toc-number">1.12.</span> <span class="toc-text">12. One-line summary</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM radio bring-up: AI execution guide
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Spreadtrum-SC9832A-spd-box-FM-radio-bring-up-—-AI-execution-guide"><a href="#Spreadtrum-SC9832A-spd-box-FM-radio-bring-up-—-AI-execution-guide" class="headerlink" title="Spreadtrum SC9832A (spd-box) FM radio bring-up — AI execution guide"></a>Spreadtrum SC9832A (spd-box) FM radio bring-up — AI execution guide</h1><blockquote>
+<p><strong>Audience</strong>: AI assistants &#x2F; engineers who need to build an FM radio on similar devices (Spreadtrum SC9832A + Marlin2 combo chip, Android kernel + Alpine user space)<br><strong>How to use</strong>: read §1–§3 first to build context → verify layer by layer per §5 → execute per §6 → on failure, consult the decision table in §7<br><strong>Core value</strong>: all hardware facts in this article have been obtained by on-device measurement; following it lets you <strong>skip all low-level investigation</strong> and go straight to the “write the daemon + draw the UI” stage; §3 explicitly marks the dead ends not to be walked again</p>
+</blockquote>
+<hr>
+<h2 id="1-Device-and-environment-at-a-glance"><a href="#1-Device-and-environment-at-a-glance" class="headerlink" title="1. Device and environment at a glance"></a>1. Device and environment at a glance</h2><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Hostname &#x2F; kernel</td>
+<td><code>spd-box</code> &#x2F; <code>Linux 3.10.65</code> armv7l</td>
+</tr>
+<tr>
+<td>System combination</td>
+<td>keeps the Android 6.0 kernel + switchroot to <strong>Alpine Linux</strong> user space</td>
+</tr>
+<tr>
+<td>Wireless chip</td>
+<td><strong>Spreadtrum Marlin2 combo WCN</strong> — WiFi + Bluetooth + FM <strong>one single chip, sharing SDIO</strong></td>
+</tr>
+<tr>
+<td>SDIO enumeration</td>
+<td><code>sdio:c00v0000d2331</code>, <code>device=0x2331</code> at <code>/sys/bus/sdio/devices/mmc2:8800:1</code></td>
+</tr>
+<tr>
+<td>FM kernel driver</td>
+<td><strong><code>marlin_fm</code> (loaded)</strong>, &#x2F;lib&#x2F;modules&#x2F;marlin_fm.ko, 17554 bytes</td>
+</tr>
+<tr>
+<td>FM device nodes</td>
+<td><strong><code>/dev/fm</code></strong> (misc, registered as <code>23 fm</code> in <code>/proc/misc</code>), <code>/dev/log_radio</code> (<code>35</code>)</td>
+</tr>
+<tr>
+<td>Display</td>
+<td>720×1280 portrait framebuffer, LVGL 9.6.0</td>
+</tr>
+<tr>
+<td>SSH</td>
+<td><code>root@&lt;设备IP&gt;</code> (the password and IP are in the environment records; do not write them into documents)</td>
+</tr>
+<tr>
+<td>Android vendor partition</td>
+<td>mounted at <code>/mnt/android_sys</code> (usable as an information source and reference sample)</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ Privacy red line: in all deliverables it is <strong>forbidden</strong> to include the SSH password, account, or real IP; always use the <code>&lt;设备IP&gt;</code> &#x2F; <code>&lt;密码&gt;</code> placeholders.</p>
+</blockquote>
+<hr>
+<h2 id="2-Confirmed-hard-facts-no-need-to-re-investigate-trust-directly"><a href="#2-Confirmed-hard-facts-no-need-to-re-investigate-trust-directly" class="headerlink" title="2. Confirmed hard facts (no need to re-investigate; trust directly)"></a>2. Confirmed hard facts (no need to re-investigate; trust directly)</h2><blockquote>
+<p>Each entry below notes how it was obtained; <strong>entries marked ✅ are measured conclusions that can be used directly as design basis</strong>.</p>
+</blockquote>
+<h3 id="2-1-Chip-and-resource-sharing-the-most-critical-item"><a href="#2-1-Chip-and-resource-sharing-the-most-critical-item" class="headerlink" title="2.1 Chip and resource sharing (the most critical item)"></a>2.1 Chip and resource sharing (the most critical item)</h3><ol>
+<li><p>✅ <strong>FM shares SDIO with WiFi&#x2F;Bluetooth and belongs to the same Marlin2 chip</strong>.<br>Evidence 1: there is only <strong>one</strong> device on the SDIO bus, with modalias <code>sdio:c00v0000d2331</code>.<br>Evidence 2: the verbatim driver module description (from <code>strings /lib/modules/marlin_fm.ko</code>):</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">description=SDIO radio driver for marlin2 FM Radio Receivers, share SDIO with BT/WIFI</span><br></pre></td></tr></table></figure>
+<p><strong>This directly determines that FM’s availability depends on the WiFi power-up chain</strong> (see §4 for details).</p>
+</li>
+<li><p>✅ <strong>The FM driver is already loaded, and <code>marlin_fm</code> is depended on by <code>sprdwl</code></strong> (<code>lsmod</code> shows <code>marlin_fm 17554 1 sprdwl</code>).<br>It is not an isolated module, so note WiFi’s dependency when unloading&#x2F;reloading it.</p>
+</li>
+<li><p>✅ <strong><code>/dev/fm</code> already exists and is registered</strong> (item 23 in <code>/proc/misc</code>); <strong>no need to insmod or mknod again</strong>.</p>
+</li>
+</ol>
+<h3 id="2-2-Driver-capability-inventory-from-the-debug-output-of-strings-marlin-fm-ko"><a href="#2-2-Driver-capability-inventory-from-the-debug-output-of-strings-marlin-fm-ko" class="headerlink" title="2.2 Driver capability inventory (from the debug output of strings marlin_fm.ko)"></a>2.2 Driver capability inventory (from the debug output of <code>strings marlin_fm.ko</code>)</h3><p>The driver prints <code>----&lt;命令名&gt;----</code> for each ioctl command, from which the complete command set was reconstructed:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Commands</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Basic control</strong></td>
+<td><code>TUNE</code>、<code>TUNE_NEW</code>、<code>SEEK</code>、<code>SEEK_NEW</code>、<code>MUTE</code>、<code>SETVOL</code>、<code>GETVOL</code>、<code>IS_FM_POWERED_UP</code></td>
+</tr>
+<tr>
+<td><strong>Scan</strong></td>
+<td><code>SCAN</code>、<code>SCAN_NEW</code>、<code>STOP_SCAN</code>、<code>SCAN_GETRSSI</code>、<code>PRE_SEARCH</code>、<code>RESTORE_SEARCH</code></td>
+</tr>
+<tr>
+<td><strong>Signal</strong></td>
+<td><code>GETRSSI</code>、<code>GETMONOSTERO</code>、<code>SETMONOSTERO</code>、<code>SOFT_MUTE_TUNE</code>、<code>DESENSE_CHECK</code>、<code>IS_DESE_CHAN</code>、<code>CQI_GET</code>、<code>FULL_CQI_LOG</code></td>
+</tr>
+<tr>
+<td><strong>Audio path</strong></td>
+<td><code>ANA_SWITCH</code>、<code>I2S_SETTING</code>、<code>GET_I2S_INFO</code>、<code>GET_AUDIO_INFO</code>、<code>OVER_BT_ENABLE</code></td>
+</tr>
+<tr>
+<td><strong>RDS</strong></td>
+<td><code>RDS_SUPPORT</code>、<code>RDS_ONOFF</code>、<code>RDS_GROUPCNT</code>、<code>RDS_BC_RST</code></td>
+</tr>
+<tr>
+<td><strong>Chip info</strong></td>
+<td><code>GETCHIPID</code>、<code>GET_HW_INFO</code>、<code>GETCAPARRAY</code>、<code>GETCURPAMD</code>、<code>GETGOODBCNT</code>、<code>GETBADBNT</code>、<code>GETBLERRATIO</code></td>
+</tr>
+<tr>
+<td><strong>Debug&#x2F;mass production</strong></td>
+<td><code>RW_REG</code>、<code>TOP_RDWR</code>、<code>HOST_RDWR</code>、<code>DUMP_REG</code>、<code>EM_TEST</code>、<code>SIM_DATA</code>、<code>GET_LOG</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ <strong>Honest labeling</strong>: the command <strong>names</strong> in the table above come from debug print strings inside the driver, so you can be confident these command branches really exist;<br><strong>the command numbers were fully reverse-engineered and confirmed by measurement on 2026-09-22</strong>, see <a href="FM%E6%94%B6%E9%9F%B3ioctl%E5%91%BD%E4%BB%A4%E8%A1%A8_%E9%80%86%E5%90%91%E8%BF%98%E5%8E%9F.md"><code>FM收音ioctl命令表_逆向还原.md</code></a>:<br>uniform encoding <code>_IOWR(0xF5, nr, 4)</code> &#x3D; <code>0xC004F500 | nr</code>, with 45 of the 47 confirmed by on-device measurement.<br>The classification table in this section is kept as a functional view; <strong>for the actual numbers, always consult that document</strong> — do not guess.</p>
+</blockquote>
+<h3 id="2-3-RDS-capability-from-the-function-symbols-of-nm-marlin-fm-ko"><a href="#2-3-RDS-capability-from-the-function-symbols-of-nm-marlin-fm-ko" class="headerlink" title="2.3 RDS capability (from the function symbols of nm marlin_fm.ko)"></a>2.3 RDS capability (from the function symbols of <code>nm marlin_fm.ko</code>)</h3><p>The driver contains a complete RDS parser, <strong>the biggest value point of this project’s FM feature</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Meaning</th>
+<th>UI use</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>rds_get_ps</code></td>
+<td>Program Service, <strong>station name, 8 characters</strong></td>
+<td>display the station name below the main frequency</td>
+</tr>
+<tr>
+<td><code>rds_get_rt</code></td>
+<td>Radio Text, <strong>station text, 64 characters</strong></td>
+<td>scrolling subtitle</td>
+</tr>
+<tr>
+<td><code>rds_get_pty</code></td>
+<td>Program Type</td>
+<td>small label (news&#x2F;music&#x2F;traffic)</td>
+</tr>
+<tr>
+<td><code>rds_get_af</code> &#x2F; <code>rds_get_af_method</code></td>
+<td>Alternative Frequency</td>
+<td>automatically switch to the same station on a stronger-signal frequency</td>
+</tr>
+<tr>
+<td><code>rds_get_pi_code</code></td>
+<td>Programme Identification</td>
+<td>station identifier</td>
+</tr>
+<tr>
+<td><code>rds_get_tp_ta</code></td>
+<td>Traffic Program &#x2F; Announcement</td>
+<td>traffic broadcast flag</td>
+</tr>
+<tr>
+<td><code>rds_get_ct</code></td>
+<td>Clock Time</td>
+<td>optional source for the status bar time</td>
+</tr>
+<tr>
+<td><code>rds_get_di_ms</code></td>
+<td>Decoder ID &#x2F; Music-Speech</td>
+<td>stereo&#x2F;speech flag</td>
+</tr>
+<tr>
+<td><code>rds_get_ews</code></td>
+<td>Emergency Warning System</td>
+<td>emergency broadcast (has compliance significance)</td>
+</tr>
+<tr>
+<td><code>rds_get_ptyn</code> &#x2F; <code>rds_get_pin</code> &#x2F; <code>rds_get_slc</code></td>
+<td>program type name &#x2F; item number &#x2F; SLC</td>
+<td>extended field</td>
+</tr>
+<tr>
+<td><code>rds_get_oda</code> &#x2F; <code>rds_get_oda_aid</code> &#x2F; <code>rds_get_tdc</code></td>
+<td>Open Data Application</td>
+<td>extended field</td>
+</tr>
+<tr>
+<td><code>rds_get_eon</code> &#x2F; <code>rds_get_eon_ta</code></td>
+<td>Enhanced Other Networks</td>
+<td>cross-station information</td>
+</tr>
+<tr>
+<td><code>rds_parser</code> &#x2F; <code>rds_parser_init</code> &#x2F; <code>fm_read_rds_data</code></td>
+<td>parser body</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>Other function symbols confirmed to exist: <code>fm_open</code>、<code>fm_ioctl</code>、<code>fm_read</code>、<code>fm_write</code>、<code>fm_tune</code>、<code>fm_seek</code>、<code>fm_getrssi</code>、<code>fm_mute</code>、<code>fm_powerup</code>、<code>fm_powerdown</code>、<code>fm_rds_onoff</code>、<code>fm_sdio_read</code>、<code>fm_sdio_write</code>、<code>receive_tasklet</code>、<code>fm_suspend</code>、<code>fm_resume</code>、<code>parse_at_fm_cmd</code>、<code>parse_at_fm_num</code>。</p>
+<h3 id="2-4-Current-audio-state-determines-the-channel-arbitration-design"><a href="#2-4-Current-audio-state-determines-the-channel-arbitration-design" class="headerlink" title="2.4 Current audio state (determines the channel arbitration design)"></a>2.4 Current audio state (determines the channel arbitration design)</h3><table>
+<thead>
+<tr>
+<th>Fact</th>
+<th>Current state</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ALSA sound cards</td>
+<td><code>0 [alli2s]</code> &#x2F; <code>1 [sprdphone]</code> &#x2F; <code>2 [saudiovoip]</code> &#x2F; <code>3 [saudiolte]</code></td>
+</tr>
+<tr>
+<td><strong>FM-dedicated PCM</strong></td>
+<td><strong><code>01-04: Dfm sprd-codec-fm-4</code>, playback only</strong> (no corresponding capture node)</td>
+</tr>
+<tr>
+<td>Other PCMs</td>
+<td>card 0 has four <code>i2s.x null-codec-dai-x</code>, <strong>all supporting both playback + capture</strong></td>
+</tr>
+<tr>
+<td>ALSA user-space library</td>
+<td>✅ <code>libasound.so.2</code> is present (you can write C to operate PCM and the mixer directly)</td>
+</tr>
+<tr>
+<td>ALSA <strong>command-line tools</strong></td>
+<td>❌ no <code>amixer</code> &#x2F; <code>tinymix</code> &#x2F; <code>aplay</code> &#x2F; <code>alsamixer</code> — <strong>you must write code; you cannot drive the mixer from the shell</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Inference: FM audio may go through the internal codec directly (corresponding to <code>01-04</code>), or it may enter the codec via some I2S path.<br><strong>The choice between <code>ANA_SWITCH</code> and <code>I2S_SETTING</code> can only be settled after measurement</strong> (see item 2 of the to-do list in §8).</p>
+</blockquote>
+<h3 id="2-5-The-existing-power-up-chain-FM-must-attach-to-it"><a href="#2-5-The-existing-power-up-chain-FM-must-attach-to-it" class="headerlink" title="2.5 The existing power-up chain (FM must attach to it)"></a>2.5 The existing power-up chain (FM must attach to it)</h3><p>The chain already established for Bluetooth&#x2F;WiFi (recorded in the <code>01_WiFi打通</code> &#x2F; <code>02_蓝牙打通</code> documents):</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">logdw → download(常驻) → wcnd → bt_once(BT-OPEN) → bt_wake.sh(btwrite) → bt_user_daemon(socket)</span><br></pre></td></tr></table></figure>
+
+<p>Here <code>download</code> burns the combo firmware (including the FM part) into the chip in one go.</p>
+<hr>
+<h2 id="3-Verified-dead-ends-do-not-retry-it-wastes-rounds"><a href="#3-Verified-dead-ends-do-not-retry-it-wastes-rounds" class="headerlink" title="3. Verified dead ends (do not retry; it wastes rounds)"></a>3. Verified dead ends (do not retry; it wastes rounds)</h2><table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Result</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Looking for the <strong>driver source</strong> of <code>marlin_fm</code> on the device</td>
+<td>❌ None</td>
+<td><code>/tmp/linux-3.10.65</code> is a <strong>vanilla kernel tree</strong> with only generic radio drivers such as <code>wl128x</code> and <code>sf16fmr2</code>, <strong>and no</strong> Spreadtrum private FM source; do not expect to read <code>fm.h</code> on the device</td>
+</tr>
+<tr>
+<td>Looking for a ready-made FM user-space daemon&#x2F;command-line tool</td>
+<td>❌ None</td>
+<td><code>ls /usr/bin /usr/sbin /bin /sbin | grep fm</code> produces no output, and no FM executable was found on the whole disk. <strong>You must write the daemon yourself</strong></td>
+</tr>
+<tr>
+<td>Using <code>amixer</code>&#x2F;<code>tinymix</code> to switch the audio path</td>
+<td>❌ Not even installed</td>
+<td>see §2.4; you can only write code against the ALSA lib or issue ioctls directly</td>
+</tr>
+<tr>
+<td>Hoping to reuse the Android-layer FM libraries directly</td>
+<td>❌ Cannot run directly</td>
+<td><code>/mnt/android_sys/lib/</code> has <code>libFMHalSource.so</code>, <code>libengfm.so</code>, <code>libfmjni.so</code>, <code>libradio*.so</code>, but they depend on the Android runtime (binder&#x2F;ALooper&#x2F;<code>sp&lt;&gt;</code> etc.) and <strong>cannot be dynamically loaded directly on Alpine</strong></td>
+</tr>
+<tr>
+<td>Mistakenly thinking RDS does not exist</td>
+<td>❌ The opposite is true</td>
+<td>the RDS parsing functions in the driver are quite complete (§2.3) and are this project’s FM differentiator; do not lose them</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong><code>libengfm.so</code> deserves a separate mention</strong>: it exports only one symbol, <code>fm_runcommand</code>. This hints that the vendor’s engineering mode operates FM by “running commands”<br>(echoing <code>parse_at_fm_cmd</code> &#x2F; <code>parse_at_fm_num</code> in the driver) → suggesting FM control very likely follows the <strong>AT command style</strong>, which is the second viable route besides probing the ioctl numbers.</p>
+</blockquote>
+<hr>
+<h2 id="4-System-model-five-layers-per-layer-verification-criteria"><a href="#4-System-model-five-layers-per-layer-verification-criteria" class="headerlink" title="4. System model: five layers + per-layer verification criteria"></a>4. System model: five layers + per-layer verification criteria</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">┌─ ① 固件层    download 已把 combo 固件烧入 Marlin2</span><br><span class="line">│      验证：WiFi 可用 ⇒ FM 固件就绪</span><br><span class="line">├─ ② 上电层    wcnd / BT-OPEN 使芯片整体带电；FM 共享 SDIO，无独立上电步骤</span><br><span class="line">│      验证：/sys/bus/sdio/devices/mmc2:8800:1 存在，device=0x2331</span><br><span class="line">├─ ③ 驱动层    marlin_fm.ko 已加载并注册 misc 设备</span><br><span class="line">│      验证：lsmod | grep marlin_fm   且   ls /dev/fm   且   grep fm /proc/misc</span><br><span class="line">├─ ④ daemon 层 FM daemon 独占 /dev/fm，对外暴露 unix socket（★ 本任务要新建的唯一后台组件）</span><br><span class="line">│      验证：socket 收发 command 返回 OK</span><br><span class="line">└─ ⑤ UI 层     LVGL 收音机页，经 socket 与 daemon 通信（★ 本任务主体）</span><br><span class="line">       验证：点击可调台、可出声、返回后台不停台</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>Iron rule of layered troubleshooting</strong>: if any layer is not working, <strong>do not guess at the layer above</strong>. First confirm layer by layer top-down per §5, and only then start changing the UI.</p>
+</blockquote>
+<hr>
+<h2 id="5-Layer-by-layer-verification-commands-copy-directly"><a href="#5-Layer-by-layer-verification-commands-copy-directly" class="headerlink" title="5. Layer-by-layer verification commands (copy directly)"></a>5. Layer-by-layer verification commands (copy directly)</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ==== ①+②+③ 一次性确认 ====</span></span><br><span class="line"><span class="built_in">ls</span> /dev/fm &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;设备节点 OK&quot;</span></span><br><span class="line">grep -w fm /proc/misc &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;misc 注册 OK&quot;</span></span><br><span class="line">lsmod | grep marlin_fm &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;驱动已加载 OK&quot;</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/*/device &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;SDIO 枚举 OK (应为 0x2331)&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ==== ③ 驱动描述（确认共享 SDIO 的依据）====</span></span><br><span class="line">modinfo marlin_fm 2&gt;/dev/null || strings /lib/modules/marlin_fm.ko | grep description=</span><br><span class="line"></span><br><span class="line"><span class="comment"># ==== ② WiFi 作为 FM 的前置 ====</span></span><br><span class="line">ip <span class="built_in">link</span> show wlan0 | grep -o <span class="string">&#x27;state [A-Z]*&#x27;</span>     <span class="comment"># 期望 UP / DORMANT，不是 DOWN</span></span><br><span class="line">ps | grep -c <span class="string">&#x27;[d]ownload&#x27;</span>                        <span class="comment"># 期望 &gt;=1，download 常驻</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ==== ③ 驱动能力清单复核（无需再看 .ko）====</span></span><br><span class="line"><span class="comment"># 见 §2.2 / §2.3 两张表，已固化在本文中</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ==== ④/⑤ socket 层的设备端自测（Alpine 有 python3，无 socat）====</span></span><br><span class="line"><span class="keyword">import</span> socket, time</span><br><span class="line">s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)</span><br><span class="line">s.settimeout(<span class="number">5.0</span>)                 <span class="comment"># ★ 必须设超时，否则 daemon 无响应会挂死</span></span><br><span class="line">s.connect(<span class="string">&quot;/tmp/fm_ctl.sock&quot;</span>)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">cmd</span>(<span class="params">c</span>):</span><br><span class="line">    s.sendall((c + <span class="string">&quot;\n&quot;</span>).encode())</span><br><span class="line">    time.sleep(<span class="number">0.2</span>)</span><br><span class="line">    <span class="keyword">return</span> s.recv(<span class="number">4096</span>).decode()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;state  -&gt;&quot;</span>, cmd(<span class="string">&quot;state&quot;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;open   -&gt;&quot;</span>, cmd(<span class="string">&quot;open&quot;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;tune   -&gt;&quot;</span>, cmd(<span class="string">&quot;tune 97400&quot;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;rssi   -&gt;&quot;</span>, cmd(<span class="string">&quot;rssi&quot;</span>))</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ The socket path <code>/tmp/fm_ctl.sock</code> above is <strong>the design goal mandated by this manual</strong>; it is not implemented yet.</p>
+</blockquote>
+<hr>
+<h2 id="6-Execution-flow"><a href="#6-Execution-flow" class="headerlink" title="6. Execution flow"></a>6. Execution flow</h2><table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Action</th>
+<th>Output</th>
+<th>Completion criterion</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Step 0</strong></td>
+<td>run all commands in §5 and confirm the state of layers ①–③</td>
+<td>exploration record</td>
+<td><code>/dev/fm</code> exists, the driver is loaded, WiFi is up</td>
+</tr>
+<tr>
+<td><strong>Step 1</strong></td>
+<td><del>Determine the ioctl command numbers</del> <strong>Completed</strong></td>
+<td><a href="FM%E6%94%B6%E9%9F%B3ioctl%E5%91%BD%E4%BB%A4%E8%A1%A8_%E9%80%86%E5%90%91%E8%BF%98%E5%8E%9F.md"><code>FM收音ioctl命令表_逆向还原.md</code></a></td>
+<td>can issue a successful <code>TUNE</code> against <code>/dev/fm</code> (command number: <code>0xC004F502</code>)</td>
+</tr>
+<tr>
+<td><strong>Step 2</strong></td>
+<td>write the <strong>FM daemon</strong>: exclusively own <code>/dev/fm</code>, wrap ioctl → socket</td>
+<td><code>fm_radio_daemon.c</code></td>
+<td>the four commands <code>state</code> &#x2F; <code>open</code> &#x2F; <code>tune</code> &#x2F; <code>rssi</code> work</td>
+</tr>
+<tr>
+<td><strong>Step 3</strong></td>
+<td>write a <strong>minimal probe</strong> to verify <code>SCAN</code> and RSSI, and calibrate the signal strength thresholds</td>
+<td>calibration record</td>
+<td>can obtain ≥3 local station frequencies and their strength values</td>
+</tr>
+<tr>
+<td><strong>Step 4</strong></td>
+<td><strong>Confirm the audio path</strong> (<code>ANA_SWITCH</code> vs <code>I2S_SETTING</code> vs <code>OVER_BT_ENABLE</code>)</td>
+<td>path decision</td>
+<td>the speaker really produces sound (<strong>must be confirmed by human ear</strong>)</td>
+</tr>
+<tr>
+<td><strong>Step 5</strong></td>
+<td>implement <strong>channel arbitration</strong> (mutual exclusion among FM &#x2F; A2DP &#x2F; local playback)</td>
+<td>arbitration module</td>
+<td>switching between any two of the three has no cross-talk</td>
+</tr>
+<tr>
+<td><strong>Step 6</strong></td>
+<td>draw the <strong>LVGL radio page</strong></td>
+<td><code>radio_page.c</code></td>
+<td>see <code>FM收音机_LVGL界面设计与交互规格.md</code></td>
+</tr>
+<tr>
+<td><strong>Step 7</strong></td>
+<td>RDS display + favorites + persistence + background playback</td>
+<td>complete app</td>
+<td>see the feature list in §5 of the same document</td>
+</tr>
+<tr>
+<td><strong>Step 8</strong></td>
+<td>openrc auto-start (<code>depends on WiFi</code>)</td>
+<td>service file</td>
+<td>automatically available after reboot</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-Failure-→-root-cause-→-fix-decision-table"><a href="#7-Failure-→-root-cause-→-fix-decision-table" class="headerlink" title="7. Failure → root cause → fix decision table"></a>7. Failure → root cause → fix decision table</h2><table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Most likely root cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>open /dev/fm</code> fails with ENOENT</td>
+<td><code>marlin_fm</code> is not loaded</td>
+<td><code>insmod /lib/modules/marlin_fm.ko</code>, then confirm with <code>lsmod</code></td>
+</tr>
+<tr>
+<td><code>SDIO not enumerated</code> &#x2F; <code>device</code> cannot be read</td>
+<td>download did not run or the firmware download failed</td>
+<td>fix WiFi first: restart the <code>logdw → download</code> chain</td>
+</tr>
+<tr>
+<td>WiFi is fine but FM does not respond</td>
+<td>missing <code>wcnd</code> power-up or the chip as a whole is not powered</td>
+<td>check <code>ps | grep wcnd</code> and rerun BT-OPEN</td>
+</tr>
+<tr>
+<td>the ioctl returns <code>-EINVAL</code></td>
+<td>the command number is wrong, or it fell into an <strong>undefined range</strong> (<code>0x14~0x16</code>&#x2F;<code>0x19~0x1c</code>&#x2F;<code>0x31~0x3b</code> etc.)</td>
+<td>check the <code>nr</code> against the conclusion table in <a href="FM%E6%94%B6%E9%9F%B3ioctl%E5%91%BD%E4%BB%A4%E8%A1%A8_%E9%80%86%E5%90%91%E8%BF%98%E5%8E%9F.md"><code>FM收音ioctl命令表_逆向还原.md</code></a>; then use <code>dmesg | grep FM_DRV</code> to see whether a <strong>different</strong> command name was printed</td>
+</tr>
+<tr>
+<td>the ioctl succeeds but there is <strong>no sound</strong></td>
+<td>the audio path is not open</td>
+<td>Step 4: try each of the three paths, and use <code>GET_AUDIO_INFO</code> &#x2F; <code>GET_I2S_INFO</code> to check the current state</td>
+</tr>
+<tr>
+<td>there is noise &#x2F; the sound is very quiet</td>
+<td>the volume chain is wrong or <code>SETVOL</code> is not the master volume</td>
+<td>check whether the main output volume still needs to be raised separately via the ALSA mixer</td>
+</tr>
+<tr>
+<td>RSSI is always 0 &#x2F; at an extreme</td>
+<td>the TUNE did not really succeed, or the headphone antenna is not connected (if the design depends on headphones)</td>
+<td>first verify that a single strong-signal station can be received normally; then investigate the antenna dependency</td>
+</tr>
+<tr>
+<td>seek hangs without returning</td>
+<td>the driver has a seek timeout (log <code>(fmdrv) seek Timeout(%d sec), fm seek end !</code>)</td>
+<td>the upper layer must also set a timeout fallback and provide a “no station found” UI</td>
+</tr>
+<tr>
+<td>the LVGL page freezes</td>
+<td>socket I&#x2F;O blocked the UI thread</td>
+<td><strong>you must</strong> set <code>SO_RCVTIMEO</code>&#x2F;<code>SO_SNDTIMEO</code> (200ms) — a pitfall hit on this project’s Bluetooth page</td>
+</tr>
+<tr>
+<td>FM stops working after reboot</td>
+<td>the auto-start order runs before the WiFi&#x2F;power-up chain</td>
+<td>declare the dependency in the service and start in order per Step 8</td>
+</tr>
+<tr>
+<td>FM and Bluetooth A2DP <strong>make sound at the same time</strong></td>
+<td>no channel arbitration was done</td>
+<td>Step 5; refer to §5.4 of the UI specification document</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-ioctl-command-numbers-solved-the-former-number-one-blocker"><a href="#8-ioctl-command-numbers-solved-the-former-number-one-blocker" class="headerlink" title="8. ioctl command numbers: solved (the former number one blocker)"></a>8. ioctl command numbers: solved (the former number one blocker)</h2><p><strong>Completed on 2026-09-22.</strong> For the specific results, see <a href="FM%E6%94%B6%E9%9F%B3ioctl%E5%91%BD%E4%BB%A4%E8%A1%A8_%E9%80%86%E5%90%91%E8%BF%98%E5%8E%9F.md"><code>FM收音ioctl命令表_逆向还原.md</code></a>.</p>
+<p>Approach in brief: <code>marlin_fm.ko</code> is <strong>not stripped</strong> → disassemble the binary search tree of <code>fm_ioctl()</code> to read the constant candidates,<br>then use “single-step calls with all-zero parameters + <code>dmesg -c</code> clearing to capture logs” to confirm the command names one by one by measurement.<br>The three <strong>historical routes</strong> below are kept as a methodology memo:</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Approach</th>
+<th>Assessment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>A. Ask the vendor for header files</strong> (least effort)</td>
+<td>request the Marlin2 platform’s FM user-space header files (usually called <code>fm.h</code> &#x2F; <code>sprd_fm.h</code>) and the libfm library from the chip vendor&#x2F;solution provider</td>
+<td>✅ <strong>first choice</strong>. With it, everything is clear</td>
+</tr>
+<tr>
+<td><strong>B. Reverse-engineer from the Android-side binaries</strong></td>
+<td>the Android partition has <code>libengfm.so</code> (exporting <code>fm_runcommand</code>) and <code>libFMHalSource.so</code>. Use <code>nm</code>&#x2F;<code>readelf</code> to cross-examine how they call open&#x2F;ioctl, or <strong>strace</strong> a native FM APK’s operation sequence once inside the Android chroot</td>
+<td>⚠️ feasible but requires touching the chroot environment; note this route is <strong>inference</strong>, and after getting the numbers you still must verify on the device</td>
+</tr>
+<tr>
+<td><strong>C. Brute-force the ioctls directly</strong></td>
+<td>iterate over the candidate command numbers, observe <code>/dev/fm</code>‘s return values and the <code>----&lt;命令名&gt;----</code> prints in <code>dmesg</code>, and see which number printed which command name</td>
+<td>⚠️ feasible but risky: sending ioctls indiscriminately may put the firmware in an abnormal state. <strong>It must be done when WiFi&#x2F;Bluetooth are not carrying business traffic, and with a reset method available</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>🔒 <strong>Discipline</strong>: whichever route you take, <strong>confirm first on this machine&#x2F;the Android side; do not write wrong command numbers into the daemon and then blindly tune on the emulator</strong>.</p>
+</blockquote>
+<p>Other to-do items:</p>
+<ol>
+<li><strong>Confirm whether headphones are needed as the antenna</strong>: this device’s ALSA has a dedicated FM PCM (<code>01-04</code>), hinting that internal passthrough may be possible, but it has <strong>not been measured</strong>.<br>Criterion: tune to a strong-signal station without headphones plugged in and see whether sound comes out.</li>
+<li><strong>Confirm the exact semantics of <code>OVER_BT_ENABLE</code></strong>: does it mean “send FM audio to a connected Bluetooth device”, or “allow FM and BT to coexist”?</li>
+<li><strong>Confirm the relationship between <code>SETVOL</code> and the actual output volume</strong>: it may only be the FM module’s internal gain.</li>
+<li><strong>Confirm whether FM drops the station when the system suspends</strong> (the driver has <code>fm_suspend</code>&#x2F;<code>fm_resume</code>) — this determines whether “keep listening with the screen off” can be implemented.</li>
+</ol>
+<hr>
+<h2 id="9-Red-lines-and-operations-discipline"><a href="#9-Red-lines-and-operations-discipline" class="headerlink" title="9. Red lines and operations discipline"></a>9. Red lines and operations discipline</h2><ol>
+<li><strong>Forbidden</strong>: writing <code>main.c</code> back over SFTP and committing without checking the line endings: <code>main.c</code> is this repository’s <strong>only</strong> CRLF file, and writing it back converts it to LF,<br>producing a fake change of 1618 “whole-file rewrite” lines in the commit. Before committing, always check that the two numbers from <code>git diff --stat</code> and <code>git diff --ignore-cr-at-eol --stat</code> agree.</li>
+<li><strong>Forbidden</strong>: writing the SSH password&#x2F;account&#x2F;real IP into documents.</li>
+<li><strong>Forbidden</strong>: “if it looks right, it passes”: display&#x2F;color&#x2F;audio conclusions <strong>must be confirmed by human eyes&#x2F;ears on the real device</strong>; they cannot be self-certified by “screenshots&#x2F;decoding results being self-consistent”.</li>
+<li><strong>Forbidden</strong>: doing socket I&#x2F;O in an LVGL timer callback without a timeout.</li>
+<li><strong>Forbidden</strong>: <code>pkill -f</code> with a string that would match its own command line (it would kill your own SSH session); always kill by PID.</li>
+<li>Before modifying <code>/dev/fm</code>-related logic, confirm the watchdog (<code>lvgl_watchdog.sh</code>) has been handled per procedure, to avoid interfering with experiments.</li>
+</ol>
+<hr>
+<h2 id="10-Inventory-of-tools-already-on-the-device-reuse-do-not-rebuild"><a href="#10-Inventory-of-tools-already-on-the-device-reuse-do-not-rebuild" class="headerlink" title="10. Inventory of tools already on the device (reuse; do not rebuild)"></a>10. Inventory of tools already on the device (reuse; do not rebuild)</h2><table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>python3</code></td>
+<td>socket self-tests, writing probe scripts</td>
+</tr>
+<tr>
+<td><code>nm</code> &#x2F; <code>readelf</code></td>
+<td>analyzing <code>.ko</code> and <code>.so</code> symbols (all facts in §2 were obtained this way)</td>
+</tr>
+<tr>
+<td><code>strings</code></td>
+<td>extracting debug strings from <code>.ko</code> (the command names were obtained this way)</td>
+</tr>
+<tr>
+<td><code>libasound.so.2</code></td>
+<td>writing C to operate PCM &#x2F; mixer (no amixer, so code is the only way)</td>
+</tr>
+<tr>
+<td><code>/mnt/android_sys</code></td>
+<td>Android vendor partition; FM-related libraries under <code>lib/</code> can serve as reference samples</td>
+</tr>
+<tr>
+<td><code>/tmp/linux-3.10.65</code></td>
+<td>vanilla kernel tree, <strong>without</strong> Spreadtrum private FM source (see the dead ends in §3)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="11-Future-enhancement-directions-currently-incomplete"><a href="#11-Future-enhancement-directions-currently-incomplete" class="headerlink" title="11. Future enhancement directions (currently incomplete)"></a>11. Future enhancement directions (currently incomplete)</h2><table>
+<thead>
+<tr>
+<th>Direction</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Deep use of RDS</td>
+<td>PTY labels, AF automatic frequency switching, CT station clock, EWS emergency broadcast (the driver capabilities are in §2.3)</td>
+</tr>
+<tr>
+<td>Internet radio integration</td>
+<td>FM + WiFi dual mode; when WiFi is online, enhanced station information can be fetched</td>
+</tr>
+<tr>
+<td>Recording&#x2F;playback</td>
+<td>FM audio to disk via PCM capture (must first confirm a usable capture node exists)</td>
+</tr>
+<tr>
+<td>Multi-region bands</td>
+<td>China 87.5–108.0 &#x2F; Japan 76–90 &#x2F; European 50 kHz step</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="12-One-line-summary"><a href="#12-One-line-summary" class="headerlink" title="12. One-line summary"></a>12. One-line summary</h2><blockquote>
+<p><strong>This device’s FM hardware, driver, and RDS parsing capability are all already in place and running</strong> (<code>marlin_fm.ko</code> is loaded, <code>/dev/fm</code> is registered,<br>and it shares the same Marlin2 chip with WiFi&#x2F;Bluetooth); the only thing missing is “the middle layer”:<br><strong>an FM daemon that wraps <code>/dev/fm</code>‘s ioctls into a unix socket</strong>, plus <strong>a radio page that can actually be drawn</strong>.<br>The <strong>only thing</strong> that used to block starting work (the ioctl command numbers) has been removed (§8);<br>everything that remains is routine engineering work: write the daemon, settle the audio path, do the channel arbitration, draw the UI.</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-spd-box-FM-radio-bring-up-%E2%80%94-AI-execution-guide"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A (spd-box) FM radio bring-up — AI execution guide</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Device-and-environment-at-a-glance"><span class="toc-number">1.1.</span> <span class="toc-text">1. Device and environment at a glance</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Confirmed-hard-facts-no-need-to-re-investigate-trust-directly"><span class="toc-number">1.2.</span> <span class="toc-text">2. Confirmed hard facts (no need to re-investigate; trust directly)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-Chip-and-resource-sharing-the-most-critical-item"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 Chip and resource sharing (the most critical item)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Driver-capability-inventory-from-the-debug-output-of-strings-marlin-fm-ko"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 Driver capability inventory (from the debug output of strings marlin_fm.ko)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-RDS-capability-from-the-function-symbols-of-nm-marlin-fm-ko"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 RDS capability (from the function symbols of nm marlin_fm.ko)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-Current-audio-state-determines-the-channel-arbitration-design"><span class="toc-number">1.2.4.</span> <span class="toc-text">2.4 Current audio state (determines the channel arbitration design)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-The-existing-power-up-chain-FM-must-attach-to-it"><span class="toc-number">1.2.5.</span> <span class="toc-text">2.5 The existing power-up chain (FM must attach to it)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Verified-dead-ends-do-not-retry-it-wastes-rounds"><span class="toc-number">1.3.</span> <span class="toc-text">3. Verified dead ends (do not retry; it wastes rounds)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-System-model-five-layers-per-layer-verification-criteria"><span class="toc-number">1.4.</span> <span class="toc-text">4. System model: five layers + per-layer verification criteria</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Layer-by-layer-verification-commands-copy-directly"><span class="toc-number">1.5.</span> <span class="toc-text">5. Layer-by-layer verification commands (copy directly)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Execution-flow"><span class="toc-number">1.6.</span> <span class="toc-text">6. Execution flow</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Failure-%E2%86%92-root-cause-%E2%86%92-fix-decision-table"><span class="toc-number">1.7.</span> <span class="toc-text">7. Failure → root cause → fix decision table</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-ioctl-command-numbers-solved-the-former-number-one-blocker"><span class="toc-number">1.8.</span> <span class="toc-text">8. ioctl command numbers: solved (the former number one blocker)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-Red-lines-and-operations-discipline"><span class="toc-number">1.9.</span> <span class="toc-text">9. Red lines and operations discipline</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-Inventory-of-tools-already-on-the-device-reuse-do-not-rebuild"><span class="toc-number">1.10.</span> <span class="toc-text">10. Inventory of tools already on the device (reuse; do not rebuild)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-Future-enhancement-directions-currently-incomplete"><span class="toc-number">1.11.</span> <span class="toc-text">11. Future enhancement directions (currently incomplete)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-One-line-summary"><span class="toc-number">1.12.</span> <span class="toc-text">12. One-line summary</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&text=FM radio bring-up: AI execution guide"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&title=FM radio bring-up: AI execution guide"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&is_video=false&description=FM radio bring-up: AI execution guide"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM radio bring-up: AI execution guide&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&title=FM radio bring-up: AI execution guide"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&title=FM radio bring-up: AI execution guide"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&title=FM radio bring-up: AI execution guide"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&title=FM radio bring-up: AI execution guide"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-08-fm-ai-md/&name=FM radio bring-up: AI execution guide&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

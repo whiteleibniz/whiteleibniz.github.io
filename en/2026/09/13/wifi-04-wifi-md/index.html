@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="WiFi Chip Bring-up — Manual Operation Manual Applicable devices: spd-box (SC9832A quad-core, armv7l, Android 6 kernel 3.10.65 + switchroot Alpine Linux 3.21 armhf)WiFi chip: Marlin SC2331 (SDIO interf">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WiFi Chip Bring-up Operation Manual">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="WiFi Chip Bring-up — Manual Operation Manual Applicable devices: spd-box (SC9832A quad-core, armv7l, Android 6 kernel 3.10.65 + switchroot Alpine Linux 3.21 armhf)WiFi chip: Marlin SC2331 (SDIO interf">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-13T07:27:33.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.984Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="WiFi">
+<meta property="article:tag" content="SC2331">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>WiFi Chip Bring-up Operation Manual</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/13/wifi-02-wifi-android-vs-alpine-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/13/wifi-05-wifi-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&text=WiFi Chip Bring-up Operation Manual"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&title=WiFi Chip Bring-up Operation Manual"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&is_video=false&description=WiFi Chip Bring-up Operation Manual"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=WiFi Chip Bring-up Operation Manual&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&title=WiFi Chip Bring-up Operation Manual"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&title=WiFi Chip Bring-up Operation Manual"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&title=WiFi Chip Bring-up Operation Manual"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&title=WiFi Chip Bring-up Operation Manual"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&name=WiFi Chip Bring-up Operation Manual&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#WiFi-Chip-Bring-up-%E2%80%94-Manual-Operation-Manual"><span class="toc-number">1.</span> <span class="toc-text">WiFi Chip Bring-up — Manual Operation Manual</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Table-of-Contents"><span class="toc-number">1.1.</span> <span class="toc-text">Table of Contents</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Background-and-Problem-Definition"><span class="toc-number">1.2.</span> <span class="toc-text">1. Background and Problem Definition</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Tools-and-Materials-List"><span class="toc-number">1.3.</span> <span class="toc-text">2. Tools and Materials List</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Overall-Approach"><span class="toc-number">1.4.</span> <span class="toc-text">3. Overall Approach</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Operation-Procedure"><span class="toc-number">1.5.</span> <span class="toc-text">4. Operation Procedure</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-Device-and-System-Confirmation"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 Device and System Confirmation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Forensics-from-the-Android-Reference-Machine"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 Forensics from the Android Reference Machine</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Extracting-and-Replacing-the-Stock-Android-Device-Tree-DTB"><span class="toc-number">1.5.3.</span> <span class="toc-text">4.3 Extracting and Replacing the Stock Android Device Tree (DTB)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-Building-the-Android-User-Space-chroot-Environment"><span class="toc-number">1.5.4.</span> <span class="toc-text">4.4 Building the Android User-Space chroot Environment</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-Performing-Firmware-Download-the-download-power-up-sequence"><span class="toc-number">1.5.5.</span> <span class="toc-text">4.5 Performing Firmware Download (the download power-up sequence)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-6-Verifying-SDIO-Enumeration"><span class="toc-number">1.5.6.</span> <span class="toc-text">4.6 Verifying SDIO Enumeration</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-7-Loading-the-WiFi-Driver"><span class="toc-number">1.5.7.</span> <span class="toc-text">4.7 Loading the WiFi Driver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-8-Installing-and-Configuring-wpa-supplicant"><span class="toc-number">1.5.8.</span> <span class="toc-text">4.8 Installing and Configuring wpa_supplicant</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-9-Scan-Verification"><span class="toc-number">1.5.9.</span> <span class="toc-text">4.9 Scan Verification</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-10-Fixing-Boot-Auto-start-in-Place"><span class="toc-number">1.5.10.</span> <span class="toc-text">4.10 Fixing Boot Auto-start in Place</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Troubleshooting-Quick-Reference-Table"><span class="toc-number">1.6.</span> <span class="toc-text">5. Troubleshooting Quick-Reference Table</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Notes-and-Risks"><span class="toc-number">1.7.</span> <span class="toc-text">6. Notes and Risks</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#This-manual-is-compiled-based-on-the-actual-bring-up-process-the-operation-order-must-not-be-reversed-and-the-key-steps-DTB-%E2%86%92-power-up-%E2%86%92-driver-%E2%86%92-supplicant-are-all-indispensable"><span class="toc-number">1.8.</span> <span class="toc-text">This manual is compiled based on the actual bring-up process; the operation order must not be reversed, and the key steps (DTB → power-up → driver → supplicant) are all indispensable.</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        WiFi Chip Bring-up Operation Manual
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-13T07:27:33.000Z" itemprop="datePublished">2026-09-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/SC2331/" rel="tag">SC2331</a>, <a class="tag-link-link" href="/tags/WiFi/" rel="tag">WiFi</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="WiFi-Chip-Bring-up-—-Manual-Operation-Manual"><a href="#WiFi-Chip-Bring-up-—-Manual-Operation-Manual" class="headerlink" title="WiFi Chip Bring-up — Manual Operation Manual"></a>WiFi Chip Bring-up — Manual Operation Manual</h1><blockquote>
+<p><strong>Applicable devices</strong>: spd-box (SC9832A quad-core, armv7l, Android 6 kernel 3.10.65 + switchroot Alpine Linux 3.21 armhf)<br><strong>WiFi chip</strong>: Marlin SC2331 (SDIO interface, <code>mmc2:8800:1</code>, device 0x2331)<br><strong>Document goal</strong>: without relying on any AI assistance, a human can follow this manual to bring the device’s onboard WiFi from scratch to a “scannable, connectable” state.<br><strong>Document version</strong>: v1.0　|　2026-09</p>
+</blockquote>
+<hr>
+<h2 id="Table-of-Contents"><a href="#Table-of-Contents" class="headerlink" title="Table of Contents"></a>Table of Contents</h2><ol>
+<li><a href="#1-background-and-problem-definition">Background and Problem Definition</a></li>
+<li><a href="#2-tools-and-materials-list">Tools and Materials List</a></li>
+<li><a href="#3-overall-approach">Overall Approach</a></li>
+<li><a href="#4-operation-procedure">Operation Procedure</a><ul>
+<li>4.1 Device and System Confirmation</li>
+<li>4.2 Forensics from the Android Reference Machine</li>
+<li>4.3 Extracting and Replacing the Stock Android Device Tree (DTB)</li>
+<li>4.4 Building the Android User-Space chroot Environment</li>
+<li>4.5 Performing Firmware Download (the download power-up sequence)</li>
+<li>4.6 Verifying SDIO Enumeration</li>
+<li>4.7 Loading the WiFi Driver</li>
+<li>4.8 Installing and Configuring wpa_supplicant</li>
+<li>4.9 Scan Verification</li>
+<li>4.10 Fixing Boot Auto-start in Place</li>
+</ul>
+</li>
+<li><a href="#5-troubleshooting-quick-reference-table">Troubleshooting Quick-Reference Table</a></li>
+<li><a href="#6-notes-and-risks">Notes and Risks</a></li>
+</ol>
+<hr>
+<h2 id="1-Background-and-Problem-Definition"><a href="#1-Background-and-Problem-Definition" class="headerlink" title="1. Background and Problem Definition"></a>1. Background and Problem Definition</h2><ul>
+<li>The device ships with Android 6.0, where WiFi&#x2F;Bluetooth work <strong>completely</strong> (no hardware fault).</li>
+<li>The user <strong>switchroot</strong>ed the device to Alpine Linux (keeping the Android kernel 3.10.65, replacing only the root filesystem).</li>
+<li>After switching to Alpine, <strong>WiFi does not work at all</strong>, with typical symptoms:<ul>
+<li><code>dmesg</code> repeatedly shows <code>SDIO dev not ready</code>;</li>
+<li>GPIO94 (the chip’s READY pin) stays at 0;</li>
+<li>the kernel has never enumerated an SDIO WiFi device (<code>/sys/bus/sdio/devices/</code> is empty).</li>
+</ul>
+</li>
+<li><strong>Root cause</strong>: the SC2331 chip’s <strong>power-up timing + firmware download</strong> is completed by the resident <code>download</code> service in the Android system (writing <code>/dev/power_ctl</code>, <code>/dev/download</code>, and flashing the firmware from the <code>wcnfdl</code>&#x2F;<code>wcnmodem</code> partitions into the chip). Alpine does not have this set of services, so the chip has never been “activated”.</li>
+</ul>
+<hr>
+<h2 id="2-Tools-and-Materials-List"><a href="#2-Tools-and-Materials-List" class="headerlink" title="2. Tools and Materials List"></a>2. Tools and Materials List</h2><table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Tool&#x2F;Material</th>
+<th>Purpose</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Remote operation</td>
+<td>SSH client (paramiko &#x2F; PuTTY &#x2F; OpenSSH)</td>
+<td>connect to the Alpine device</td>
+<td><code>root@&lt;device IP&gt;</code></td>
+</tr>
+<tr>
+<td>Reference forensics</td>
+<td>WatchTools adb (<code>AndroidWatch_ADB_ToolBox\adb\adb.exe</code>)</td>
+<td>connect to the same-model Android machine H709</td>
+<td>root required (Magisk)</td>
+</tr>
+<tr>
+<td>Partition read&#x2F;write</td>
+<td><code>dd</code>, <code>cat</code>, <code>ls</code></td>
+<td>extract&#x2F;write partitions, device nodes</td>
+<td>built into the device (BusyBox&#x2F;coreutils)</td>
+</tr>
+<tr>
+<td>System tracing</td>
+<td><code>strace</code></td>
+<td>locate the cause of the download service’s failure</td>
+<td>on Alpine use <code>apk add strace</code></td>
+</tr>
+<tr>
+<td>Firmware files</td>
+<td><code>download</code> (Android binary), <code>libiwnpi.so</code>, <code>wcnfdl</code>&#x2F;<code>wcnmodem</code> partition images</td>
+<td>power-up + firmware download</td>
+<td>extracted from the Android system</td>
+</tr>
+<tr>
+<td>Device tree</td>
+<td><code>android_orig.dtb</code> (about 53,967 bytes)</td>
+<td>replace the dtb in the p16 partition</td>
+<td>extracted from the Android boot image</td>
+</tr>
+<tr>
+<td>Kernel modules</td>
+<td><code>marlin_fm.ko</code>, <code>sprdwl.ko</code></td>
+<td>WiFi driver</td>
+<td>placed in <code>/lib/modules/</code></td>
+</tr>
+<tr>
+<td>User space</td>
+<td><code>wpa_supplicant</code> + <code>wpa_cli</code> (v2.10-r11)</td>
+<td>scan&#x2F;connect</td>
+<td>Alpine armhf package</td>
+</tr>
+<tr>
+<td>Dependency libraries</td>
+<td><code>libnl3</code>, <code>pcsc-lite-libs</code></td>
+<td>wpa_supplicant dependencies</td>
+<td>Alpine armhf package</td>
+</tr>
+<tr>
+<td>Auxiliary</td>
+<td><code>chroot</code>, <code>mount --bind</code></td>
+<td>run Android binaries</td>
+<td>built into the device</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="3-Overall-Approach"><a href="#3-Overall-Approach" class="headerlink" title="3. Overall Approach"></a>3. Overall Approach</h2><blockquote>
+<p><strong>In one sentence</strong>: the chip’s power-up and firmware download logic lives in Android’s user space (the <code>download</code> service), and Alpine lacks it → move the stock Android <code>download</code> binary + firmware + device nodes into a chroot, “borrow a shell” in Alpine to run the power-up sequence, let the kernel enumerate the SDIO chip, then load the driver and configure wpa_supplicant.</p>
+</blockquote>
+<p>The chain has four segments, and none can be missing:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[1] The correct DTB (stock Android)</span><br><span class="line">        ↓</span><br><span class="line">[2] download power-up + firmware download (running the Android binary via chroot)</span><br><span class="line">        ↓</span><br><span class="line">[3] the kernel enumerates the SDIO device + insmod driver → wlan0 appears</span><br><span class="line">        ↓</span><br><span class="line">[4] wpa_supplicant configuration → scan / connect</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="4-Operation-Procedure"><a href="#4-Operation-Procedure" class="headerlink" title="4. Operation Procedure"></a>4. Operation Procedure</h2><h3 id="4-1-Device-and-System-Confirmation"><a href="#4-1-Device-and-System-Confirmation" class="headerlink" title="4.1 Device and System Confirmation"></a>4.1 Device and System Confirmation</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Connect to the device</span></span><br><span class="line">ssh root@&lt;device IP&gt;          <span class="comment"># password &lt;password&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Confirm the system</span></span><br><span class="line"><span class="built_in">uname</span> -a                          <span class="comment"># should show 3.10.65 Android kernel + armv7l</span></span><br><span class="line"><span class="built_in">cat</span> /etc/os-release               <span class="comment"># Alpine 3.21 armhf</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Confirm the partition mapping (by-name)</span></span><br><span class="line"><span class="built_in">ls</span> -l /dev/block/platform/sdio_emmc/by-name/</span><br><span class="line"><span class="comment"># Key partitions:</span></span><br><span class="line"><span class="comment">#   boot    -&gt; p16   (contains the kernel + device tree)</span></span><br><span class="line"><span class="comment">#   wcnfdl  -&gt; p14   (WiFi/Bluetooth firmware A)</span></span><br><span class="line"><span class="comment">#   wcnmodem-&gt; p15   (WiFi/Bluetooth firmware B)</span></span><br><span class="line"><span class="comment">#   system  -&gt; p17   (Android system, read-only mount to extract files)</span></span><br><span class="line"><span class="comment">#   recovery-&gt; p21</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Confirm the chip&#x27;s current state (typical of a not-yet-brought-up device)</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/mmc2:*/device 2&gt;/dev/null   <span class="comment"># empty = not enumerated</span></span><br><span class="line">dmesg | grep -i -E <span class="string">&quot;sdio|mmc2|wlan|2331&quot;</span>              <span class="comment"># SDIO dev not ready may be visible</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-Forensics-from-the-Android-Reference-Machine"><a href="#4-2-Forensics-from-the-Android-Reference-Machine" class="headerlink" title="4.2 Forensics from the Android Reference Machine"></a>4.2 Forensics from the Android Reference Machine</h3><blockquote>
+<p>A <strong>same-model device with a working Android system</strong> (H709) is needed, the one with both WiFi and Bluetooth working.</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># PC-side adb connection (WatchTools&#x27; adb)</span></span><br><span class="line">D:\Program Files (x86)\watchTools\AndroidWatch_ADB_ToolBox\adb\adb.exe devices</span><br><span class="line">adb shell <span class="built_in">id</span>                          <span class="comment"># confirm root (Magisk)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># View the partition table (get the by-name to partition number mapping)</span></span><br><span class="line">adb shell <span class="built_in">ls</span> -l /dev/block/platform/sdio_emmc/by-name/</span><br><span class="line"><span class="comment">#   record: boot=p16  wcnfdl=p14  wcnmodem=p15  system=p17  recovery=p21</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract the boot image (contains the dtb)</span></span><br><span class="line">adb shell <span class="built_in">dd</span> <span class="keyword">if</span>=/dev/block/mmcblk0p16 of=/sdcard/boot_p16_android.img bs=4096</span><br><span class="line">adb pull /sdcard/boot_p16_android.img ./</span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract the WiFi/Bluetooth firmware (two partitions)</span></span><br><span class="line">adb shell <span class="built_in">dd</span> <span class="keyword">if</span>=/dev/block/mmcblk0p14 of=/sdcard/wcnfdl.img bs=4096</span><br><span class="line">adb shell <span class="built_in">dd</span> <span class="keyword">if</span>=/dev/block/mmcblk0p15 of=/sdcard/wcnmodem.img bs=4096</span><br><span class="line">adb pull /sdcard/wcnfdl.img ./</span><br><span class="line">adb pull /sdcard/wcnmodem.img ./</span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract the download service and its dependencies (the Android user-space power-up program)</span></span><br><span class="line">adb shell <span class="built_in">cp</span> /system/bin/download /sdcard/download</span><br><span class="line">adb shell <span class="built_in">cp</span> /system/lib/libiwnpi.so /sdcard/libiwnpi.so</span><br><span class="line">adb pull /sdcard/download ./</span><br><span class="line">adb pull /sdcard/libiwnpi.so ./</span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract the Android kernel modules (sprdwl etc., a fallback option, usually already present in Alpine)</span></span><br><span class="line">adb shell <span class="built_in">ls</span> /system/lib/modules/ | grep -i -E <span class="string">&quot;sprdwl|marlin|fm&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-3-Extracting-and-Replacing-the-Stock-Android-Device-Tree-DTB"><a href="#4-3-Extracting-and-Replacing-the-Stock-Android-Device-Tree-DTB" class="headerlink" title="4.3 Extracting and Replacing the Stock Android Device Tree (DTB)"></a>4.3 Extracting and Replacing the Stock Android Device Tree (DTB)</h3><blockquote>
+<p>The stock Android DTB contains the correct descriptions of WiFi power&#x2F;clocks. This is one of the prerequisites for download to work properly later.</p>
+</blockquote>
+<p><strong>4.3.1 PC side: extract the DTB from the boot image</strong></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># The boot image header is ANDROID!; after the kernel and before the ramdisk is the dtb section</span></span><br><span class="line"><span class="comment"># Use unpack_bootimg (or manually):</span></span><br><span class="line"><span class="comment"># The Android 6 kernel image embeds the dtb at an offset of about 0xB71800 (subject to actual parsing)</span></span><br><span class="line"><span class="comment"># Tools: abootimg / unpack_bootimg / dtbTool</span></span><br><span class="line"></span><br><span class="line">unpack_bootimg --boot_img boot_p16_android.img --out boot_extract/</span><br><span class="line"><span class="comment"># Get the dtb file (about 53,967 bytes) → name it android_orig.dtb</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Verify</span></span><br><span class="line">file android_orig.dtb        <span class="comment"># Device Tree Blob version 17</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>4.3.2 Device side: write to the p16 partition</strong></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Upload android_orig.dtb to the device&#x27;s /tmp/</span></span><br><span class="line"><span class="comment"># Write to the dtb offset in p16:</span></span><br><span class="line"><span class="comment">#   dtb&#x27;s offset within boot = 0x9C5000 (bytes) = 20008 blocks of 512 bytes</span></span><br><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/tmp/android_orig.dtb of=/dev/block/mmcblk0p16 bs=512 seek=20008 conv=notrunc</span><br><span class="line"></span><br><span class="line"><span class="comment"># Back up the current boot just in case</span></span><br><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/dev/block/mmcblk0p16 of=/root/p16_boot_backup.img bs=4096</span><br><span class="line"></span><br><span class="line"><span class="comment"># Verify after reboot</span></span><br><span class="line">reboot</span><br><span class="line">dmesg | grep -i -E <span class="string">&quot;sdio|mmc2|2331&quot;</span>   <span class="comment"># observe enumeration</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ Writing the boot partition carries risk; be sure to back up first. If flashed incorrectly, <code>dd</code> back from the backup.</p>
+</blockquote>
+<h3 id="4-4-Building-the-Android-User-Space-chroot-Environment"><a href="#4-4-Building-the-Android-User-Space-chroot-Environment" class="headerlink" title="4.4 Building the Android User-Space chroot Environment"></a>4.4 Building the Android User-Space chroot Environment</h3><blockquote>
+<p>Purpose: let the stock Android <code>download</code> binary run in Alpine (it depends on Android’s libraries, device nodes, and partition links).</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1) Create the directory and lay down Android user-space files</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /tmp/aand/&#123;bin,lib,etc,dev&#125;</span><br><span class="line"><span class="built_in">cp</span> /tmp/download          /tmp/aand/bin/download</span><br><span class="line"><span class="built_in">cp</span> /tmp/libiwnpi.so       /tmp/aand/lib/</span><br><span class="line"><span class="built_in">cp</span> -r /mnt/android_sys/lib/*.so  /tmp/aand/lib/   <span class="comment"># copy the full set of so from the Android system mounted on p17</span></span><br><span class="line"><span class="built_in">chmod</span> +x /tmp/aand/bin/download</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) Firmware and configuration</span></span><br><span class="line"><span class="comment">#    Android&#x27;s download reads /etc/marlinba/*.ini (WiFi/Bluetooth firmware path configuration)</span></span><br><span class="line"><span class="built_in">cp</span> -r /mnt/android_sys/etc/marlinba /tmp/aand/etc/</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) Key device nodes (download needs /dev/power_ctl and /dev/download)</span></span><br><span class="line">mount --<span class="built_in">bind</span> /dev /tmp/aand/dev</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4) Firmware partition links (download finds partitions by by-name)</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /tmp/aand/dev/block/platform/sdio_emmc/by-name</span><br><span class="line"><span class="built_in">ln</span> -sf /dev/block/mmcblk0p14 /tmp/aand/dev/block/platform/sdio_emmc/by-name/wcnfdl</span><br><span class="line"><span class="built_in">ln</span> -sf /dev/block/mmcblk0p15 /tmp/aand/dev/block/platform/sdio_emmc/by-name/wcnmodem</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5) Verify it runs inside the chroot</span></span><br><span class="line"><span class="built_in">chroot</span> /tmp/aand /bin/download --<span class="built_in">help</span> 2&gt;&amp;1 | <span class="built_in">head</span> -20</span><br><span class="line"><span class="comment"># If it reports missing libraries/not found, use strace to locate:</span></span><br><span class="line"><span class="built_in">chroot</span> /tmp/aand strace /bin/download 2&gt;&amp;1 | grep -E <span class="string">&quot;open|ENOENT&quot;</span> | <span class="built_in">head</span> -30</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Debugging essentials: if <code>strace</code> shows <code>open(&quot;/dev/power_ctl&quot;)</code> failing → confirm <code>mount --bind /dev</code>; if it shows <code>open(...wcnfdl)</code> failing → confirm the by-name links.</p>
+</blockquote>
+<h3 id="4-5-Performing-Firmware-Download-the-download-power-up-sequence"><a href="#4-5-Performing-Firmware-Download-the-download-power-up-sequence" class="headerlink" title="4.5 Performing Firmware Download (the download power-up sequence)"></a>4.5 Performing Firmware Download (the download power-up sequence)</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Run the stock Android download in the chroot (with parameters, referring to Android&#x27;s calling convention)</span></span><br><span class="line"><span class="built_in">chroot</span> /tmp/aand /bin/download -i wlan0 2&gt;&amp;1 | <span class="built_in">tee</span> /tmp/dl_run.log</span><br><span class="line"></span><br><span class="line"><span class="comment"># Expected actions (performed internally by download):</span></span><br><span class="line"><span class="comment">#   1) Open /dev/power_ctl and write the SLEEP → POWER_ON → POWER_RST power-up sequence</span></span><br><span class="line"><span class="comment">#   2) Open ttyS0 (115200) to handshake with the chip</span></span><br><span class="line"><span class="comment">#   3) Write the wcnfdl / wcnmodem partition firmware into the chip in SDIO bulk writes</span></span><br><span class="line"><span class="comment">#   4) The chip completes boot and the SDIO slave device becomes ready</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Observe the kernel log; the following should appear:</span></span><br><span class="line">dmesg | <span class="built_in">tail</span> -30</span><br><span class="line"><span class="comment">#   mmc2: new high speed SDIO card at address 8800</span></span><br><span class="line"><span class="comment">#   mmc2:8800:1  (device 0x2331)</span></span><br><span class="line"><span class="comment">#   sprd_download_sdio_write ... 131080 ...   (bulk firmware write)</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>If firmware download fails (stuck at the handshake&#x2F;write errors), check: whether the DTB is correct (back to 4.3), whether <code>/dev/power_ctl</code> is writable, and whether the firmware partitions are the stock ones.</p>
+</blockquote>
+<h3 id="4-6-Verifying-SDIO-Enumeration"><a href="#4-6-Verifying-SDIO-Enumeration" class="headerlink" title="4.6 Verifying SDIO Enumeration"></a>4.6 Verifying SDIO Enumeration</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># The chip has been enumerated (at this point GPIO94 READY should be 1)</span></span><br><span class="line"><span class="built_in">cat</span> /sys/bus/sdio/devices/mmc2:8800:1/device</span><br><span class="line"><span class="comment"># Expected output: 0x2331</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">ls</span> /sys/bus/sdio/devices/</span><br><span class="line"><span class="comment"># mmc2:8800:1 should appear</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-7-Loading-the-WiFi-Driver"><a href="#4-7-Loading-the-WiFi-Driver" class="headerlink" title="4.7 Loading the WiFi Driver"></a>4.7 Loading the WiFi Driver</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1) Load the FM auxiliary module first (provides fm_read and other symbols)</span></span><br><span class="line">insmod /lib/modules/marlin_fm.ko</span><br><span class="line"><span class="comment"># 2) Then load the main WiFi driver</span></span><br><span class="line">insmod /lib/modules/sprdwl.ko</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) Verify the interface appears</span></span><br><span class="line">ip <span class="built_in">link</span> show wlan0</span><br><span class="line"><span class="comment">#   wlan0 appearing with MAC a2:d2:f3:bf:8c:10 means success</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4) Open the interface</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> wlan0 up</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ The load order cannot be reversed: <code>sprdwl.ko</code> depends on the symbols exported by <code>marlin_fm.ko</code> (<code>fm_read</code>); reversing it reports <code>Unknown symbol</code>.</p>
+</blockquote>
+<h3 id="4-8-Installing-and-Configuring-wpa-supplicant"><a href="#4-8-Installing-and-Configuring-wpa-supplicant" class="headerlink" title="4.8 Installing and Configuring wpa_supplicant"></a>4.8 Installing and Configuring wpa_supplicant</h3><blockquote>
+<p>If Alpine’s official repositories are unavailable, directly download the armhf apk and install it manually.</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1) Prepare the apk packages (armhf):</span></span><br><span class="line"><span class="comment">#    wpa_supplicant-2.10-r11.apk</span></span><br><span class="line"><span class="comment">#    libnl3.apk</span></span><br><span class="line"><span class="comment">#    pcsc-lite-libs-2.2.3-r1.apk</span></span><br><span class="line">apk add --allow-untrusted /tmp/wpa_supplicant.apk /tmp/libnl3.apk /tmp/pcsc.apk</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) Write the configuration</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /etc/wpa_supplicant/wpa_supplicant.conf &lt;&lt;<span class="string">&#x27;EOF&#x27;</span></span><br><span class="line">ctrl_interface=/run/wpa_supplicant</span><br><span class="line">update_config=1</span><br><span class="line">country=CN</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) Start</span></span><br><span class="line">/sbin/wpa_supplicant -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf -B</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4) Confirm the status</span></span><br><span class="line">wpa_cli -i wlan0 status</span><br><span class="line"><span class="comment">#   wpa_state=INACTIVE is normal (not connected to any network)</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-9-Scan-Verification"><a href="#4-9-Scan-Verification" class="headerlink" title="4.9 Scan Verification"></a>4.9 Scan Verification</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">wpa_cli -i wlan0 scan</span><br><span class="line"><span class="built_in">sleep</span> 5</span><br><span class="line">wpa_cli -i wlan0 scan_results</span><br><span class="line"><span class="comment"># Multiple hotspots (CMCC-*, ChinaNet-*, etc.) appearing means bring-up succeeded</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Connection example (open network direct connection)</span></span><br><span class="line">wpa_cli -i wlan0 add_network</span><br><span class="line">wpa_cli -i wlan0 set_network 0 ssid <span class="string">&#x27;&quot;CMCC-dtGM&quot;&#x27;</span></span><br><span class="line">wpa_cli -i wlan0 set_network 0 key_mgmt NONE</span><br><span class="line">wpa_cli -i wlan0 enable_network 0</span><br><span class="line">wpa_cli -i wlan0 save_config</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-10-Fixing-Boot-Auto-start-in-Place"><a href="#4-10-Fixing-Boot-Auto-start-in-Place" class="headerlink" title="4.10 Fixing Boot Auto-start in Place"></a>4.10 Fixing Boot Auto-start in Place</h3><blockquote>
+<p>After a device reboot, kernel enumeration, firmware, drivers, and wpa_supplicant must all recover automatically.</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1) Boot-time driver loading: write to /etc/modules-load.d/wifi.conf</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /etc/modules-load.d/wifi.conf &lt;&lt;<span class="string">&#x27;EOF&#x27;</span></span><br><span class="line">marlin_fm</span><br><span class="line">sprdwl</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2) Firmware download + wpa_supplicant boot script: /etc/local.d/wifi_setup.start</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /etc/local.d/wifi_setup.start &lt;&lt;<span class="string">&#x27;EOF&#x27;</span></span><br><span class="line"><span class="comment">#!/bin/sh</span></span><br><span class="line"><span class="comment"># 1. chroot to run download to complete power-up + firmware download</span></span><br><span class="line">mount --<span class="built_in">bind</span> /dev /tmp/aand/dev</span><br><span class="line"><span class="built_in">chroot</span> /tmp/aand /bin/download -i wlan0 &amp;</span><br><span class="line"><span class="built_in">sleep</span> 8</span><br><span class="line"><span class="comment"># 2. Confirm the interface and bring it up</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> wlan0 up</span><br><span class="line"><span class="comment"># 3. Start wpa_supplicant</span></span><br><span class="line">/sbin/wpa_supplicant -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf -B</span><br><span class="line">EOF</span><br><span class="line"><span class="built_in">chmod</span> +x /etc/local.d/wifi_setup.start</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3) Enable the local service (Alpine openrc)</span></span><br><span class="line">rc-update add <span class="built_in">local</span> default</span><br><span class="line">rc-service <span class="built_in">local</span> start</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="5-Troubleshooting-Quick-Reference-Table"><a href="#5-Troubleshooting-Quick-Reference-Table" class="headerlink" title="5. Troubleshooting Quick-Reference Table"></a>5. Troubleshooting Quick-Reference Table</h2><table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Possible Cause</th>
+<th>Investigation&#x2F;Fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dmesg</code> constantly <code>SDIO dev not ready</code></td>
+<td>the chip is not powered &#x2F; firmware not downloaded</td>
+<td>confirm download has run (4.5); check whether <code>/dev/power_ctl</code> is writable</td>
+</tr>
+<tr>
+<td>GPIO94 READY stays 0</td>
+<td>the power-up sequence was not executed</td>
+<td>use <code>strace</code> to trace whether download’s ioctl&#x2F;write report errors</td>
+</tr>
+<tr>
+<td><code>download</code> reports open device failure</td>
+<td>the chroot is missing device nodes</td>
+<td><code>mount --bind /dev /tmp/aand/dev</code></td>
+</tr>
+<tr>
+<td><code>download</code> reports wcnfdl&#x2F;wcnmodem not found</td>
+<td>missing by-name links</td>
+<td><code>ln -sf /dev/block/mmcblk0p14 .../wcnfdl</code></td>
+</tr>
+<tr>
+<td><code>download</code> finishes but SDIO has no enumeration</td>
+<td>wrong DTB</td>
+<td>confirm p16 already has the stock Android dtb (4.3)</td>
+</tr>
+<tr>
+<td><code>insmod sprdwl.ko</code> reports Unknown symbol</td>
+<td>wrong module load order</td>
+<td><code>insmod marlin_fm.ko</code> first</td>
+</tr>
+<tr>
+<td>wlan0 does not appear</td>
+<td>the driver was loaded before firmware download completed</td>
+<td>wait for <code>mmc2:8800:1</code> to appear in dmesg before insmod</td>
+</tr>
+<tr>
+<td><code>wpa_cli scan</code> fails</td>
+<td>wpa_supplicant not running &#x2F; interface not up</td>
+<td><code>ip link set wlan0 up</code> + confirm the supplicant process</td>
+</tr>
+<tr>
+<td><code>wpa_cli</code> not found</td>
+<td>PATH missing &#x2F;sbin</td>
+<td><code>export PATH=$PATH:/sbin</code></td>
+</tr>
+<tr>
+<td>WiFi lost after reboot</td>
+<td>boot auto-start not done</td>
+<td>fix in place per 4.10</td>
+</tr>
+<tr>
+<td>SSH drops after plugging&#x2F;unplugging USB peripherals</td>
+<td>the device’s USB port multiplexing (network port&#x2F;keyboard)</td>
+<td>re-plug the PC’s USB and reboot the device to recover</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-Notes-and-Risks"><a href="#6-Notes-and-Risks" class="headerlink" title="6. Notes and Risks"></a>6. Notes and Risks</h2><ol>
+<li><strong>Flashing the p16 (boot) partition carries a bricking risk</strong> — you must back up first (<code>/root/p16_boot_backup.img</code>); if flashed incorrectly, you can roll back.</li>
+<li><strong>USB port multiplexing</strong>: the device’s USB port serves as both an SSH network port and a peripheral port. Plugging in a keyboard&#x2F;mouse will disconnect SSH; you need to unplug the peripheral, plug the PC’s USB back in, and reboot the device.</li>
+<li><strong>Firmware version matching</strong>: after download powers up successfully, the driver and firmware must come from the same Android version, otherwise wlan0 may have an interface but scanning fails.</li>
+<li><strong>Module path</strong>: confirm <code>marlin_fm.ko</code> &#x2F; <code>sprdwl.ko</code> are in <code>/lib/modules/</code> and match kernel 3.10.65 (mismatch causes <code>invalid module format</code>).</li>
+<li><strong>wpa_supplicant version</strong>: the device is armhf; be sure to use the armhf package; an x86_64 package reports Exec format error.</li>
+<li><strong>dtb offset</strong>: when writing p16, <code>seek=20008</code> (512-byte blocks) corresponds to byte offset <code>0x9C5000</code>; different firmware may differ, so parse the boot image first to confirm.</li>
+</ol>
+<hr>
+<h2 id="This-manual-is-compiled-based-on-the-actual-bring-up-process-the-operation-order-must-not-be-reversed-and-the-key-steps-DTB-→-power-up-→-driver-→-supplicant-are-all-indispensable"><a href="#This-manual-is-compiled-based-on-the-actual-bring-up-process-the-operation-order-must-not-be-reversed-and-the-key-steps-DTB-→-power-up-→-driver-→-supplicant-are-all-indispensable" class="headerlink" title="This manual is compiled based on the actual bring-up process; the operation order must not be reversed, and the key steps (DTB → power-up → driver → supplicant) are all indispensable."></a><em>This manual is compiled based on the actual bring-up process; the operation order must not be reversed, and the key steps (DTB → power-up → driver → supplicant) are all indispensable.</em></h2><blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#WiFi-Chip-Bring-up-%E2%80%94-Manual-Operation-Manual"><span class="toc-number">1.</span> <span class="toc-text">WiFi Chip Bring-up — Manual Operation Manual</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Table-of-Contents"><span class="toc-number">1.1.</span> <span class="toc-text">Table of Contents</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Background-and-Problem-Definition"><span class="toc-number">1.2.</span> <span class="toc-text">1. Background and Problem Definition</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Tools-and-Materials-List"><span class="toc-number">1.3.</span> <span class="toc-text">2. Tools and Materials List</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Overall-Approach"><span class="toc-number">1.4.</span> <span class="toc-text">3. Overall Approach</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Operation-Procedure"><span class="toc-number">1.5.</span> <span class="toc-text">4. Operation Procedure</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-Device-and-System-Confirmation"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 Device and System Confirmation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Forensics-from-the-Android-Reference-Machine"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 Forensics from the Android Reference Machine</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Extracting-and-Replacing-the-Stock-Android-Device-Tree-DTB"><span class="toc-number">1.5.3.</span> <span class="toc-text">4.3 Extracting and Replacing the Stock Android Device Tree (DTB)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-Building-the-Android-User-Space-chroot-Environment"><span class="toc-number">1.5.4.</span> <span class="toc-text">4.4 Building the Android User-Space chroot Environment</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-Performing-Firmware-Download-the-download-power-up-sequence"><span class="toc-number">1.5.5.</span> <span class="toc-text">4.5 Performing Firmware Download (the download power-up sequence)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-6-Verifying-SDIO-Enumeration"><span class="toc-number">1.5.6.</span> <span class="toc-text">4.6 Verifying SDIO Enumeration</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-7-Loading-the-WiFi-Driver"><span class="toc-number">1.5.7.</span> <span class="toc-text">4.7 Loading the WiFi Driver</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-8-Installing-and-Configuring-wpa-supplicant"><span class="toc-number">1.5.8.</span> <span class="toc-text">4.8 Installing and Configuring wpa_supplicant</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-9-Scan-Verification"><span class="toc-number">1.5.9.</span> <span class="toc-text">4.9 Scan Verification</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-10-Fixing-Boot-Auto-start-in-Place"><span class="toc-number">1.5.10.</span> <span class="toc-text">4.10 Fixing Boot Auto-start in Place</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Troubleshooting-Quick-Reference-Table"><span class="toc-number">1.6.</span> <span class="toc-text">5. Troubleshooting Quick-Reference Table</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Notes-and-Risks"><span class="toc-number">1.7.</span> <span class="toc-text">6. Notes and Risks</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#This-manual-is-compiled-based-on-the-actual-bring-up-process-the-operation-order-must-not-be-reversed-and-the-key-steps-DTB-%E2%86%92-power-up-%E2%86%92-driver-%E2%86%92-supplicant-are-all-indispensable"><span class="toc-number">1.8.</span> <span class="toc-text">This manual is compiled based on the actual bring-up process; the operation order must not be reversed, and the key steps (DTB → power-up → driver → supplicant) are all indispensable.</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&text=WiFi Chip Bring-up Operation Manual"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&title=WiFi Chip Bring-up Operation Manual"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&is_video=false&description=WiFi Chip Bring-up Operation Manual"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=WiFi Chip Bring-up Operation Manual&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&title=WiFi Chip Bring-up Operation Manual"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&title=WiFi Chip Bring-up Operation Manual"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&title=WiFi Chip Bring-up Operation Manual"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&title=WiFi Chip Bring-up Operation Manual"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-04-wifi-md/&name=WiFi Chip Bring-up Operation Manual&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

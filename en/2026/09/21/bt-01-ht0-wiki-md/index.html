@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="HT0 Bluetooth Principles and Porting Learning Wiki This document is not an operation manual, but a principles lesson: it explains why this Bluetooth chip boots the way it does, how Android originally">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HT0 Bluetooth Principles and Porting Learning Wiki">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="HT0 Bluetooth Principles and Porting Learning Wiki This document is not an operation manual, but a principles lesson: it explains why this Bluetooth chip boots the way it does, how Android originally">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-21T03:57:09.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.928Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="蓝牙">
+<meta property="article:tag" content="WCN">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>HT0 Bluetooth Principles and Porting Learning Wiki</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&text=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&title=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&is_video=false&description=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=HT0 Bluetooth Principles and Porting Learning Wiki&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&title=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&title=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&title=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&title=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&name=HT0 Bluetooth Principles and Porting Learning Wiki&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-Bluetooth-Principles-and-Porting-Learning-Wiki"><span class="toc-number">1.</span> <span class="toc-text">HT0 Bluetooth Principles and Porting Learning Wiki</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-Building-Intuition-in-One-Sentence"><span class="toc-number">1.1.</span> <span class="toc-text">0. Building Intuition in One Sentence</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-What-the-Hardware-Looks-Like"><span class="toc-number">1.2.</span> <span class="toc-text">1. What the Hardware Looks Like</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Five-Layer-Model-for-a-Working-Bluetooth-Device-the-most-important-analytical-framework"><span class="toc-number">1.3.</span> <span class="toc-text">2. The Five-Layer Model for a Working Bluetooth Device (the most important analytical framework)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Key-Concepts-Explained-One-by-One"><span class="toc-number">1.4.</span> <span class="toc-text">3. Key Concepts Explained One by One</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-What-HCI-and-H4-Are"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 What HCI and H4 Are</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-How-Commands-Are-Encoded"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 How Commands Are Encoded</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-The-SPRD3-Identity-Frame-%E2%80%94-the-Signal-That-%E2%80%9Cthe-Engine-Is-Alive%E2%80%9D"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 The SPRD3 Identity Frame — the Signal That “the Engine Is Alive”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-btwrite-%E2%80%94-Why-Write-It-Repeatedly"><span class="toc-number">1.4.4.</span> <span class="toc-text">3.4 btwrite — Why Write It Repeatedly</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-pskey-%E2%80%94-the-Bluetooth-%E2%80%9CFactory-Personalization-Parameters%E2%80%9D"><span class="toc-number">1.4.5.</span> <span class="toc-text">3.5 pskey — the Bluetooth “Factory Personalization Parameters”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-6-A-Vendor-Hidden-Requirement-Write-Scan-Enable-Must-Come-First"><span class="toc-number">1.4.6.</span> <span class="toc-text">3.6 A Vendor Hidden Requirement: Write Scan Enable Must Come First</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-How-Native-Android-Does-It-reference-sample"><span class="toc-number">1.5.</span> <span class="toc-text">4. How Native Android Does It (reference sample)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Our-Alpine-Approach-Replacing-an-Entire-Suite-with-Minimal-Code"><span class="toc-number">1.6.</span> <span class="toc-text">5. Our Alpine Approach: Replacing an Entire Suite with Minimal Code</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Boot-Chain-runs-automatically-at-startup"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 Boot Chain (runs automatically at startup)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Three-Key-Decisions-why-we-chose-this-way"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 Three Key Decisions (why we chose this way)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-That-%E2%80%9CPermission-Pitfall%E2%80%9D"><span class="toc-number">1.6.3.</span> <span class="toc-text">5.3 That “Permission Pitfall”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Source-Code-Walkthrough-What-the-Daemon-Does"><span class="toc-number">1.7.</span> <span class="toc-text">6. Source Code Walkthrough: What the Daemon Does</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-Configuring-the-Serial-Port-3M-hardware-flow-control"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 Configuring the Serial Port (3M + hardware flow control)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-Reading-a-Complete-H4-Packet"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 Reading a Complete H4 Packet</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-The-Complete-Scanning-Flow"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 The Complete Scanning Flow</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-4-External-Interface-unix-socket"><span class="toc-number">1.7.4.</span> <span class="toc-text">6.4 External Interface: unix socket</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-A2DP-Real-Audio-Playback-new-in-v1-0-3"><span class="toc-number">1.8.</span> <span class="toc-text">7. A2DP Real Audio Playback (new in v1.0.3)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-Audio-Pipeline"><span class="toc-number">1.8.1.</span> <span class="toc-text">7.1 Audio Pipeline</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-Three-Key-Parameters-Found-the-Hard-Way"><span class="toc-number">1.8.2.</span> <span class="toc-text">7.2 Three Key Parameters Found the Hard Way</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Troubleshooting-Methodology-check-this-way-when-porting"><span class="toc-number">1.9.</span> <span class="toc-text">8. Troubleshooting Methodology (check this way when porting)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-General-Checklist-for-Porting-to-Similar-Devices"><span class="toc-number">1.10.</span> <span class="toc-text">9. General Checklist for Porting to Similar Devices</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-What-This-Wiki-Wants-You-to-Remember"><span class="toc-number">1.11.</span> <span class="toc-text">10. What This Wiki Wants You to Remember</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        HT0 Bluetooth Principles and Porting Learning Wiki
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-21T03:57:09.000Z" itemprop="datePublished">2026-09-21</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/WCN/" rel="tag">WCN</a>, <a class="tag-link-link" href="/tags/%E8%93%9D%E7%89%99/" rel="tag">蓝牙</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="HT0-Bluetooth-Principles-and-Porting-Learning-Wiki"><a href="#HT0-Bluetooth-Principles-and-Porting-Learning-Wiki" class="headerlink" title="HT0 Bluetooth Principles and Porting Learning Wiki"></a>HT0 Bluetooth Principles and Porting Learning Wiki</h1><blockquote>
+<p>This document is not an operation manual, but a <strong>principles lesson</strong>: it explains why this Bluetooth chip boots the way it does, how Android originally did it, why we changed it to the current design, and what every key line of code does.<br>After reading it you should be able to: facing a combo Bluetooth device with “an Android kernel + a different userland”, analyze on your own how to bring up Bluetooth.</p>
+</blockquote>
+<hr>
+<h2 id="0-Building-Intuition-in-One-Sentence"><a href="#0-Building-Intuition-in-One-Sentence" class="headerlink" title="0. Building Intuition in One Sentence"></a>0. Building Intuition in One Sentence</h2><blockquote>
+<p>Bluetooth is not a “software switch”; it is a small processor that <strong>needs to be powered on in a specific sequence, woken up, fed firmware, and then spoken to using the HCI protocol</strong>.<br>Android uses a whole set of services (init + download + wcnd + libbt-vendor + Bluedroid) to perform this sequence for you;<br>we <strong>rewrote this sequence with the minimum amount of code</strong>, running on the Alpine userland.</p>
+</blockquote>
+<hr>
+<h2 id="1-What-the-Hardware-Looks-Like"><a href="#1-What-the-Hardware-Looks-Like" class="headerlink" title="1. What the Hardware Looks Like"></a>1. What the Hardware Looks Like</h2><p>This chip is called <strong>Marlin combo WCN</strong> (Spreadtrum SC9832A platform); “combo” means one chip doing both WiFi and Bluetooth:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">  ┌──────────────────────────────┐</span><br><span class="line">  │      Marlin combo WCN        │</span><br><span class="line">  │  ┌─────────┐   ┌───────────┐ │</span><br><span class="line">  │  │ WiFi     │   │ Bluetooth │ │</span><br><span class="line">  │  │ (wlan0)  │   │ (HCI 引擎)│ │</span><br><span class="line">  │  └─────────┘   └───────────┘ │</span><br><span class="line">  └────┬──────────────────┬──────┘</span><br><span class="line">       │ SDIO             │ UART</span><br><span class="line">       │ (数据/固件)       │ ttyS0 (HCI 控制)</span><br><span class="line">mmc2:8800:1         /proc/bluetooth/sleep/btwrite</span><br><span class="line">(设备ID 0x2331)      (写1=唤醒蓝牙引擎)</span><br></pre></td></tr></table></figure>
+
+<p>Two channels with completely different roles — this is the foundation for understanding everything:</p>
+<table>
+<thead>
+<tr>
+<th>Channel</th>
+<th>What it carries</th>
+<th>What it is used for</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>SDIO</strong></td>
+<td>high-speed data bus</td>
+<td>burning firmware (the combined WiFi+Bluetooth firmware image is written in large blocks), WiFi data</td>
+</tr>
+<tr>
+<td><strong>UART ttyS0</strong></td>
+<td>3M baud rate + hardware flow control (CRTSCTS)</td>
+<td>the Bluetooth <strong>HCI command&#x2F;event channel</strong> (sending commands, receiving events, carrying audio packets)</td>
+</tr>
+<tr>
+<td><strong>btwrite node</strong></td>
+<td>a proc file</td>
+<td>writing <code>1</code> &#x3D; wake the Bluetooth engine from low power</td>
+</tr>
+</tbody></table>
+<p><strong>Key insight</strong>: WiFi and Bluetooth <strong>share the same firmware</strong>. So at the moment “you bring up WiFi”, the Bluetooth firmware has already been burned into the chip — what Bluetooth lacks is not firmware, but <strong>power-on, wake-up, and someone talking to it</strong>.</p>
+<hr>
+<h2 id="2-The-Five-Layer-Model-for-a-Working-Bluetooth-Device-the-most-important-analytical-framework"><a href="#2-The-Five-Layer-Model-for-a-Working-Bluetooth-Device-the-most-important-analytical-framework" class="headerlink" title="2. The Five-Layer Model for a Working Bluetooth Device (the most important analytical framework)"></a>2. The Five-Layer Model for a Working Bluetooth Device (the most important analytical framework)</h2><p>For any Bluetooth device to work, all five layers must be connected. <strong>Each layer has a clear “pass criterion”</strong>; if a layer fails, stop at that layer and investigate it — do not skip layers and try blindly.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">① 物理/固件层   固件烧进去了吗？芯片上电了吗？</span><br><span class="line">                验通：SDIO 枚举出 0x2331；BT-OPEN 返回 OK</span><br><span class="line">② 通道层        HCI 串口能读写吗？</span><br><span class="line">                验通：往 ttyS0 发 Reset，能收到固件回的事件</span><br><span class="line">③ 引擎层        蓝牙引擎醒着吗？跑起来了吗？</span><br><span class="line">                验通：btwrite 唤醒后，固件回 &quot;SPRD3&quot; 身份帧</span><br><span class="line">④ 协议层        标准 HCI 命令它认吗？</span><br><span class="line">                验通：Read Version / Read BD_ADDR / Read Features 都回正常</span><br><span class="line">⑤ 应用层        UI 怎么调用？音频怎么流？</span><br><span class="line">                验通：扫描出设备、能连接、A2DP 能出声</span><br></pre></td></tr></table></figure>
+
+<p>Almost every pitfall we hit this time was “mistakenly thought the problem was at the upper layer, but it was actually stuck at the lower layer”. For example:</p>
+<ul>
+<li>No devices found by scanning → not a protocol problem, but <strong>the scan enable was not turned on first</strong> (a vendor hidden requirement at layer ④);</li>
+<li>No response to commands → not a command error, but <strong>the engine was not woken up</strong> (layer ③);</li>
+<li>BT-OPEN failure → not a command error, but <strong>proc node permissions of 600 inside the chroot</strong> (a permission issue at layer ①).</li>
+</ul>
+<hr>
+<h2 id="3-Key-Concepts-Explained-One-by-One"><a href="#3-Key-Concepts-Explained-One-by-One" class="headerlink" title="3. Key Concepts Explained One by One"></a>3. Key Concepts Explained One by One</h2><h3 id="3-1-What-HCI-and-H4-Are"><a href="#3-1-What-HCI-and-H4-Are" class="headerlink" title="3.1 What HCI and H4 Are"></a>3.1 What HCI and H4 Are</h3><p><strong>HCI</strong> (Host Controller Interface) &#x3D; the standard dialogue protocol between the host (CPU) and the Bluetooth controller (chip).<br><strong>H4</strong> &#x3D; the “packet format” for carrying HCI over UART. The first byte of each packet is the packet type:</p>
+<table>
+<thead>
+<tr>
+<th>First byte</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0x01</code></td>
+<td>Command (host→chip, command)</td>
+</tr>
+<tr>
+<td><code>0x02</code></td>
+<td>ACL Data (bidirectional, connection data&#x2F;audio)</td>
+</tr>
+<tr>
+<td><code>0x04</code></td>
+<td>Event (chip→host, event&#x2F;response)</td>
+</tr>
+</tbody></table>
+<p>So what our daemon essentially does is: <strong>write <code>0x01 + opcode + parameters</code> to ttyS0, then read <code>0x04 + event code + data</code> from ttyS0</strong>.</p>
+<h3 id="3-2-How-Commands-Are-Encoded"><a href="#3-2-How-Commands-Are-Encoded" class="headerlink" title="3.2 How Commands Are Encoded"></a>3.2 How Commands Are Encoded</h3><p>One HCI command &#x3D; type(1) + Opcode(2) + parameter length(1) + parameters.<br>The Opcode splits into OGF (group, high 6 bits) and OCF (command, low 10 bits):</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">opcode = (OGF &lt;&lt; <span class="number">10</span>) | OCF</span><br><span class="line"><span class="comment">// 例如 Inquiry(扫描)：OGF=0x01(链路控制), OCF=0x0001</span></span><br><span class="line"><span class="comment">// → opcode = (0x01&lt;&lt;10)|0x0001 = 0x0401</span></span><br></pre></td></tr></table></figure>
+
+<p>In the source code, <code>send_cmd()</code> assembles this:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pkt[<span class="number">0</span>] = H4_CMD;              <span class="comment">// 0x01</span></span><br><span class="line">pkt[<span class="number">1</span>] = opcode &amp; <span class="number">0xff</span>;       <span class="comment">// opcode 低字节</span></span><br><span class="line">pkt[<span class="number">2</span>] = (opcode&gt;&gt;<span class="number">8</span>) &amp; <span class="number">0xff</span>;  <span class="comment">// opcode 高字节</span></span><br><span class="line">pkt[<span class="number">3</span>] = plen;                <span class="comment">// 参数长度</span></span><br><span class="line"><span class="built_in">memcpy</span>(pkt+<span class="number">4</span>, params, plen);  <span class="comment">// 参数</span></span><br><span class="line">write(fd, pkt, <span class="number">4</span>+plen);</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-The-SPRD3-Identity-Frame-—-the-Signal-That-“the-Engine-Is-Alive”"><a href="#3-3-The-SPRD3-Identity-Frame-—-the-Signal-That-“the-Engine-Is-Alive”" class="headerlink" title="3.3 The SPRD3 Identity Frame — the Signal That “the Engine Is Alive”"></a>3.3 The SPRD3 Identity Frame — the Signal That “the Engine Is Alive”</h3><p>After wake-up, the firmware actively emits a sequence:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">55 7e 00 81 00 06 53 50 52 44 33 00 57 0a 7e</span><br><span class="line">                  └──── &quot;SPRD3&quot; = 展讯芯片的 ASCII 标识</span><br></pre></td></tr></table></figure>
+<p>Seeing <code>SPRD3</code> means: the Bluetooth engine has already booted from its boot state, the HCI channel is alive, and standard commands can now be sent. <strong>This is the acceptance mark for layer ③.</strong></p>
+<h3 id="3-4-btwrite-—-Why-Write-It-Repeatedly"><a href="#3-4-btwrite-—-Why-Write-It-Repeatedly" class="headerlink" title="3.4 btwrite — Why Write It Repeatedly"></a>3.4 btwrite — Why Write It Repeatedly</h3><p>The Bluetooth engine has <strong>low-power sleep</strong>. When idle it sleeps, and while asleep it simply ignores commands you send.<br>Writing <code>1</code> to <code>/proc/bluetooth/sleep/btwrite</code> &#x3D; kick it awake.</p>
+<ul>
+<li>Android kicks it once every 30 seconds periodically (done by libbt-vendor);</li>
+<li>We have no libbt-vendor, so we wrote a script to <strong>kick it once every 1.5~2 seconds</strong>, more frequently than Android, ensuring it does not fall asleep during scanning&#x2F;connecting.</li>
+</ul>
+<blockquote>
+<p>Lesson: the root cause of all early “no response to commands” tests was <strong>this missing kick</strong>.</p>
+</blockquote>
+<h3 id="3-5-pskey-—-the-Bluetooth-“Factory-Personalization-Parameters”"><a href="#3-5-pskey-—-the-Bluetooth-“Factory-Personalization-Parameters”" class="headerlink" title="3.5 pskey — the Bluetooth “Factory Personalization Parameters”"></a>3.5 pskey — the Bluetooth “Factory Personalization Parameters”</h3><p>pskey is the chip’s personalized configuration (Bluetooth address, feature bits, UART parameters, transmit power, etc.); its structure is a large blob of vendor-defined fields.<br><strong>Key insight</strong>: we did not send pskey separately, because——</p>
+<ul>
+<li>the <code>[SETCTION 6]</code> section in the <code>connectivity_configure.ini</code> file is this pskey;</li>
+<li><strong><code>download</code> reads this file itself while burning the firmware, and has already delivered the pskey</strong>;</li>
+<li>the measured <code>Read Features</code> returned feature bits exactly matching the pskey file → <strong>proving it is already in effect</strong>.</li>
+</ul>
+<p>So “do we need to add pskey” is a non-question. <strong>Verify with evidence; do not grind on gut feeling.</strong></p>
+<h3 id="3-6-A-Vendor-Hidden-Requirement-Write-Scan-Enable-Must-Come-First"><a href="#3-6-A-Vendor-Hidden-Requirement-Write-Scan-Enable-Must-Come-First" class="headerlink" title="3.6 A Vendor Hidden Requirement: Write Scan Enable Must Come First"></a>3.6 A Vendor Hidden Requirement: Write Scan Enable Must Come First</h3><p>In standard Bluetooth logic, sending Inquiry scans for devices. But this Spreadtrum firmware <strong>does not comply</strong>:<br>send Inquiry directly and it replies “received” (CMD_STATUS&#x3D;0), then <strong>never returns scan results</strong>.</p>
+<p>Investigation found: you must <strong>first send <code>Write Scan Enable (0x0c1a)</code> set to <code>0x03</code></strong> (enabling both “discoverable” and “connectable”), and only then will Inquiry actually produce results.</p>
+<blockquote>
+<p>This is “vendor firmware behavior” — it is not written in the specification, and can only be reverse-engineered through <strong>controlled experiments</strong> (what the successful attempt did extra).</p>
+</blockquote>
+<hr>
+<h2 id="4-How-Native-Android-Does-It-reference-sample"><a href="#4-How-Native-Android-Does-It-reference-sample" class="headerlink" title="4. How Native Android Does It (reference sample)"></a>4. How Native Android Does It (reference sample)</h2><p>At Android boot, <code>init</code> automatically starts this chain according to <code>init.board.rc</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">init</span><br><span class="line"> ├─ download        烧 combo 固件（读 configure.ini，含 pskey）</span><br><span class="line"> ├─ wcnd            蓝牙子系统上电（BT-OPEN 命令）</span><br><span class="line"> ├─ btld / bt_rm    低功耗管理、射频管理</span><br><span class="line"> └─ Bluedroid 协议栈</span><br><span class="line">      ├─ libbt-vendor: 周期 btwrite 唤醒、发 pskey、管 UART 波特率</span><br><span class="line">      └─ bluetooth.default.so: 完整 HCI/ATT/A2DP/RFCOMM 协议栈</span><br><span class="line">           └─ BluetoothCtrl（你看到的设置界面）</span><br></pre></td></tr></table></figure>
+
+<p><strong>Why does Android not use the kernel hci_uart driver?</strong> Because in Spreadtrum’s custom solution, <code>libbt-vendor</code> opens the UART directly and manages HCI itself — it is “userland direct connection”. This gave us inspiration.</p>
+<hr>
+<h2 id="5-Our-Alpine-Approach-Replacing-an-Entire-Suite-with-Minimal-Code"><a href="#5-Our-Alpine-Approach-Replacing-an-Entire-Suite-with-Minimal-Code" class="headerlink" title="5. Our Alpine Approach: Replacing an Entire Suite with Minimal Code"></a>5. Our Alpine Approach: Replacing an Entire Suite with Minimal Code</h2><h3 id="5-1-Boot-Chain-runs-automatically-at-startup"><a href="#5-1-Boot-Chain-runs-automatically-at-startup" class="headerlink" title="5.1 Boot Chain (runs automatically at startup)"></a>5.1 Boot Chain (runs automatically at startup)</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">开机</span><br><span class="line"> ├─ wifi.start          ① chroot 安卓环境 + download 烧固件 + SDIO 0x2331 + WiFi 驱动</span><br><span class="line"> ├─ bt_bringup.start   ② chmod 666 mdbg → wcnd → bt_once(BT-OPEN) → bt_wake.sh(btwrite 周期唤醒)</span><br><span class="line"> ├─ bt_daemon(openrc)   ③ 自写用户态 daemon 打开 ttyS0，监听 unix socket</span><br><span class="line"> └─ LVGL 桌面            ④ 蓝牙设置页通过 socket 发命令</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-2-Three-Key-Decisions-why-we-chose-this-way"><a href="#5-2-Three-Key-Decisions-why-we-chose-this-way" class="headerlink" title="5.2 Three Key Decisions (why we chose this way)"></a>5.2 Three Key Decisions (why we chose this way)</h3><table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>What we chose</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Kernel hci_uart.ko vs userland direct connection</td>
+<td><strong>userland direct connection</strong></td>
+<td>this kernel is a custom Android 3.10.65; the hardcoded tty_struct offsets in hci_uart.ko do not match, <code>hciconfig up</code> times out, TX&#x3D;0 (not a single byte can be sent). Opening <code>/dev/ttyS0</code> directly from userland bypasses the kernel protocol stack and is instead the most stable — the Android vendor did exactly this</td>
+</tr>
+<tr>
+<td>Porting Bluedroid vs writing a minimal daemon ourselves</td>
+<td><strong>writing the daemon ourselves</strong></td>
+<td>Alpine lacks that long chain of Bluedroid dependencies (HAL, property service, shared libraries); the cost of a full port is far higher than “implementing only the few HCI commands needed”</td>
+</tr>
+<tr>
+<td>Writing download ourselves vs reusing the original Android version</td>
+<td><strong>reusing the original version (running in chroot)</strong></td>
+<td>download’s power-on sequence, handshake, and partition reads are the chip’s “black magic”; writing it ourselves is extremely risky. Run the Android binary as-is in the chroot, together with the libraries&#x2F;nodes&#x2F;partition symlinks it needs</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Core idea: <strong>borrow whatever can be borrowed (download&#x2F;wcnd use the original versions directly), and rewrite only the minimal necessary part (the HCI command set).</strong></p>
+</blockquote>
+<h3 id="5-3-That-“Permission-Pitfall”"><a href="#5-3-That-“Permission-Pitfall”" class="headerlink" title="5.3 That “Permission Pitfall”"></a>5.3 That “Permission Pitfall”</h3><p>The easiest pitfall in porting is not technology, but <strong>permissions</strong>:<br><code>wcnd</code> runs as the system user in the chroot and needs to read <code>/tmp/aand/proc/mdbg/*</code>, but that node is <code>600</code> (only root can read) → BT-OPEN keeps failing.<br><code>chmod 666</code> solves it in one second. This kind of “the permission model changed after porting” problem will recur repeatedly.</p>
+<hr>
+<h2 id="6-Source-Code-Walkthrough-What-the-Daemon-Does"><a href="#6-Source-Code-Walkthrough-What-the-Daemon-Does" class="headerlink" title="6. Source Code Walkthrough: What the Daemon Does"></a>6. Source Code Walkthrough: What the Daemon Does</h2><p>Three things in essence: <strong>configure the serial port, send commands, read events</strong>.</p>
+<h3 id="6-1-Configuring-the-Serial-Port-3M-hardware-flow-control"><a href="#6-1-Configuring-the-Serial-Port-3M-hardware-flow-control" class="headerlink" title="6.1 Configuring the Serial Port (3M + hardware flow control)"></a>6.1 Configuring the Serial Port (3M + hardware flow control)</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">t.c_cflag = B3000000 | CS8 | CREAD | CLOCAL | CRTSCTS;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>B3000000</code>: 3 million baud rate (the Bluetooth engine switches to this high-speed setting after initialization)</li>
+<li><code>CRTSCTS</code>: enables hardware flow control (the two UART lines do flow control; without it at high speed, packets are dropped)</li>
+<li><code>VMIN=1</code>: blocking read, returns only after reading at least 1 byte — <strong>this was the key fix for the early frame-truncation bug</strong></li>
+</ul>
+<h3 id="6-2-Reading-a-Complete-H4-Packet"><a href="#6-2-Reading-a-Complete-H4-Packet" class="headerlink" title="6.2 Reading a Complete H4 Packet"></a>6.2 Reading a Complete H4 Packet</h3><p>You cannot read blindly; you must read the full length according to the frame header:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">read(fd, buf, <span class="number">1</span>);              <span class="comment">// 先读类型字节</span></span><br><span class="line"><span class="keyword">if</span>(buf[<span class="number">0</span>] == H4_EVT) &#123;         <span class="comment">// 0x04 = 事件</span></span><br><span class="line">    read(fd, buf+<span class="number">1</span>, <span class="number">2</span>);        <span class="comment">// 读 事件码(1) + 长度(1)</span></span><br><span class="line">    plen = buf[<span class="number">2</span>];</span><br><span class="line">    <span class="keyword">while</span>(没读够 plen) read(...); <span class="comment">// 把参数读完</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Early bug: with non-blocking reads, only 7 bytes were read at once and the function returned, causing garbled parsing of command responses. It became stable only after changing to “read the full length according to the frame header”.</p>
+</blockquote>
+<h3 id="6-3-The-Complete-Scanning-Flow"><a href="#6-3-The-Complete-Scanning-Flow" class="headerlink" title="6.3 The Complete Scanning Flow"></a>6.3 The Complete Scanning Flow</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">send_cmd(<span class="number">0x0c1a</span>, <span class="number">0x03</span>);        <span class="comment">// ① 先开扫描使能（厂商隐藏要求！）</span></span><br><span class="line">send_cmd(OGF_INQUIRY, inq);     <span class="comment">// ② 发 Inquiry</span></span><br><span class="line"><span class="keyword">while</span>(没到超时) &#123;</span><br><span class="line">    read_pkt(...);</span><br><span class="line">    <span class="keyword">if</span>(事件是 Inquiry Result)  解析出 BD_ADDR / 设备类 / RSSI</span><br><span class="line">    <span class="title function_">if</span><span class="params">(事件是 Inquiry Complete)</span> <span class="keyword">break</span>;</span><br><span class="line">&#125;</span><br><span class="line">send_cmd(OCF_INQUIRY_CANCEL);   <span class="comment">// ③ 取消扫描</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="6-4-External-Interface-unix-socket"><a href="#6-4-External-Interface-unix-socket" class="headerlink" title="6.4 External Interface: unix socket"></a>6.4 External Interface: unix socket</h3><p>The daemon does not speak a complex protocol; it just opens a <code>/tmp/bt_ctl.sock</code>, and the GUI connects and sends one-line text commands:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">state            → 返回 ON/OFF</span><br><span class="line">on / off         → 开关</span><br><span class="line">scan 8           → 扫 8 秒，返回 OK + 设备列表(BD_ADDR 设备类 RSSI)</span><br><span class="line">connect &lt;mac&gt;    → 连接指定设备</span><br></pre></td></tr></table></figure>
+
+<p>The GUI (LVGL page) only sends and receives strings and <strong>does not need to understand Bluetooth at all</strong>. This is the value of layering.</p>
+<hr>
+<h2 id="7-A2DP-Real-Audio-Playback-new-in-v1-0-3"><a href="#7-A2DP-Real-Audio-Playback-new-in-v1-0-3" class="headerlink" title="7. A2DP Real Audio Playback (new in v1.0.3)"></a>7. A2DP Real Audio Playback (new in v1.0.3)</h2><p>What came before was only “able to connect”. To actually produce sound, you must go through <strong>A2DP</strong> (Advanced Audio Distribution Profile).</p>
+<h3 id="7-1-Audio-Pipeline"><a href="#7-1-Audio-Pipeline" class="headerlink" title="7.1 Audio Pipeline"></a>7.1 Audio Pipeline</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">屏幕点歌</span><br><span class="line">  → mplayer -ao pcm:file=/tmp/bt_audio.fifo -format s16le</span><br><span class="line">  → /tmp/bt_audio.fifo (命名管道)</span><br><span class="line">  → daemon 读 PCM → SBC 编码 → 打成 ACL 数据包</span><br><span class="line">  → UART → 蓝牙音箱 → 喇叭出声</span><br></pre></td></tr></table></figure>
+
+<p>Why a <strong>named pipe (fifo)</strong>? Because Alpine has no audio server like PulseAudio. The simplest approach:<br>mplayer writes the decoded PCM not to the sound card but into a file (fifo), and the daemon reads PCM from this file, encodes it, and sends it to the speaker.</p>
+<h3 id="7-2-Three-Key-Parameters-Found-the-Hard-Way"><a href="#7-2-Three-Key-Parameters-Found-the-Hard-Way" class="headerlink" title="7.2 Three Key Parameters Found the Hard Way"></a>7.2 Three Key Parameters Found the Hard Way</h3><table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Symptom</th>
+<th>Truth</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Byte order</strong></td>
+<td>the melody is audible, but it is all static noise</td>
+<td>mplayer outputs <strong>big-endian</strong> PCM by default, while the daemon reads it as native <strong>little-endian</strong> int16 → the data is completely garbled. Adding <code>-format s16le</code> (forcing little-endian) makes it clear</td>
+</tr>
+<tr>
+<td><strong>Judgment timing</strong></td>
+<td>clicking a song produces no sound, mplayer fell back to <code>-ao null</code></td>
+<td>the Bluetooth state check <code>bt_audio_connected()</code> was written inside the forked child process, after stdout was redirected with dup2, causing the socket connection to fail. It must be moved into the <strong>parent process before fork</strong></td>
+</tr>
+<tr>
+<td><strong>Frame parameters</strong></td>
+<td>playback stops after a few seconds</td>
+<td>following Android’s gold standard: SBC bitpool&#x3D;35, 7 frames per packet, 20ms single sends, shallow send window, exit Sniff mode before Start — only by copying Android exactly is it stable</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Methodology: <strong>when “sound comes out but it is wrong”, first suspect the data format (byte order&#x2F;sample rate&#x2F;channels), not a protocol error.</strong></p>
+</blockquote>
+<hr>
+<h2 id="8-Troubleshooting-Methodology-check-this-way-when-porting"><a href="#8-Troubleshooting-Methodology-check-this-way-when-porting" class="headerlink" title="8. Troubleshooting Methodology (check this way when porting)"></a>8. Troubleshooting Methodology (check this way when porting)</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">没反应/连不上</span><br><span class="line">  ├─ 第①层：SDIO 枚举了吗？BT-OPEN OK 吗？权限够吗？</span><br><span class="line">  ├─ 第②层：往 ttyS0 发 Reset，收得到事件吗？(收不到=串口/波特率/流控错)</span><br><span class="line">  ├─ 第③层：btwrite 唤醒了吗？回 SPRD3 了吗？</span><br><span class="line">  ├─ 第④层：标准命令 Read Version 正常吗？扫描前开 Scan Enable 了吗？</span><br><span class="line">  └─ 第⑤层：UI 命令发对了吗？socket 连上 daemon 了吗？</span><br><span class="line"></span><br><span class="line">有声不对</span><br><span class="line">  ├─ 字节序(s16le)、采样率(44100)、声道(2)</span><br><span class="line">  └─ SBC 参数(bitpool/每包帧数)</span><br><span class="line"></span><br><span class="line">莫名复位</span><br><span class="line">  └─ 看串口有没有回引导器帧(7e...7e)= 引擎崩了，多半是唤醒/发送时序问题</span><br></pre></td></tr></table></figure>
+
+<p><strong>The reference machine is a goldmine</strong>: there is another machine of the same device model running native Android. Connect it via ADB and capture the real ttyS0 traffic when it boots&#x2F;enables Bluetooth — this is ten times faster than black-box guessing. Our <code>btwrite</code>, <code>Scan Enable</code>, and SBC parameters were all reverse-engineered this way through comparison.</p>
+<hr>
+<h2 id="9-General-Checklist-for-Porting-to-Similar-Devices"><a href="#9-General-Checklist-for-Porting-to-Similar-Devices" class="headerlink" title="9. General Checklist for Porting to Similar Devices"></a>9. General Checklist for Porting to Similar Devices</h2><p>Next time you encounter “an Android kernel + a different userland, with Bluetooth needing to be brought up again”, follow this order:</p>
+<ol>
+<li><strong>Identify the chip</strong>: check whether it is a combo chip, whether data goes over SDIO or something else, and whether HCI goes over UART or SDIO.</li>
+<li><strong>Find the vendor’s original sequence</strong>: read the vendor’s original <code>init.*.rc</code> &#x2F; <code>ueventd.rc</code> to find download, power-on, wake-up, and HCI nodes. <strong>Reusable binaries (download&#x2F;wcnd) can be reused directly in the chroot.</strong></li>
+<li><strong>Verify layer by layer</strong>: verify each layer according to the pass criteria in §2, one layer at a time, without skipping layers.</li>
+<li><strong>Solve permissions</strong>: proc&#x2F;sys node permissions and ownership inside the chroot are the number one pitfall in porting.</li>
+<li><strong>Write the minimal daemon</strong>: implement only the commands you need (on&#x2F;off&#x2F;scan&#x2F;connect&#x2F;audio); do not port the entire protocol stack right away.</li>
+<li><strong>Capture reference packets</strong>: if you have a same-model vendor machine, use ADB to capture and replay real traffic, saving countless hours of black-box time.</li>
+<li><strong>Harden the boot</strong>: write the entire chain as a boot script so it comes up automatically after reboot.</li>
+</ol>
+<hr>
+<h2 id="10-What-This-Wiki-Wants-You-to-Remember"><a href="#10-What-This-Wiki-Wants-You-to-Remember" class="headerlink" title="10. What This Wiki Wants You to Remember"></a>10. What This Wiki Wants You to Remember</h2><ul>
+<li><strong>Bluetooth &#x3D; a small processor that needs timing care</strong>, not a software switch.</li>
+<li><strong>A combo chip’s firmware is WiFi+BT combined</strong>; bringing up WiFi often means the Bluetooth firmware is already in place.</li>
+<li><strong>Layer-by-layer verification</strong> is the master key: each layer has one pass criterion; if it fails, do not skip layers.</li>
+<li><strong>Vendor hidden requirements</strong> (Scan Enable, periodic btwrite wake-up, SBC parameters) can only be discovered through <strong>controlled experiments</strong> and <strong>vendor reference machines</strong>; they are not in the specification books.</li>
+<li><strong>Porting &#x3D; borrow whatever can be borrowed, rewrite minimally</strong>: reuse the original binaries’ sequences directly, and rewrite only the most essential HCI layer.</li>
+<li><strong>When “no response”, first suspect the lower layer&#x2F;permissions&#x2F;wake-up; when “sound is wrong”, first suspect the data format.</strong></li>
+</ul>
+<hr>
+<blockquote>
+<p>Companion documents:</p>
+<ul>
+<li><code>HT0蓝牙拉起_部署交付文档.md</code> —— how to deploy on a new device (operations layer)</li>
+<li><code>蓝牙芯片打通_操作手册.md</code> —— manual troubleshooting steps</li>
+<li><code>蓝牙打通_工作过程总结.md</code> —— the complete timeline of pitfalls hit this time</li>
+<li><code>蓝牙启动流程_安卓vsAlpine对比.md</code> —— step-by-step comparison</li>
+<li>this article —— why it is done this way (principles layer)</li>
+</ul>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-Bluetooth-Principles-and-Porting-Learning-Wiki"><span class="toc-number">1.</span> <span class="toc-text">HT0 Bluetooth Principles and Porting Learning Wiki</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-Building-Intuition-in-One-Sentence"><span class="toc-number">1.1.</span> <span class="toc-text">0. Building Intuition in One Sentence</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-What-the-Hardware-Looks-Like"><span class="toc-number">1.2.</span> <span class="toc-text">1. What the Hardware Looks Like</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Five-Layer-Model-for-a-Working-Bluetooth-Device-the-most-important-analytical-framework"><span class="toc-number">1.3.</span> <span class="toc-text">2. The Five-Layer Model for a Working Bluetooth Device (the most important analytical framework)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Key-Concepts-Explained-One-by-One"><span class="toc-number">1.4.</span> <span class="toc-text">3. Key Concepts Explained One by One</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-What-HCI-and-H4-Are"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 What HCI and H4 Are</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-How-Commands-Are-Encoded"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 How Commands Are Encoded</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-The-SPRD3-Identity-Frame-%E2%80%94-the-Signal-That-%E2%80%9Cthe-Engine-Is-Alive%E2%80%9D"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 The SPRD3 Identity Frame — the Signal That “the Engine Is Alive”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-btwrite-%E2%80%94-Why-Write-It-Repeatedly"><span class="toc-number">1.4.4.</span> <span class="toc-text">3.4 btwrite — Why Write It Repeatedly</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-pskey-%E2%80%94-the-Bluetooth-%E2%80%9CFactory-Personalization-Parameters%E2%80%9D"><span class="toc-number">1.4.5.</span> <span class="toc-text">3.5 pskey — the Bluetooth “Factory Personalization Parameters”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-6-A-Vendor-Hidden-Requirement-Write-Scan-Enable-Must-Come-First"><span class="toc-number">1.4.6.</span> <span class="toc-text">3.6 A Vendor Hidden Requirement: Write Scan Enable Must Come First</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-How-Native-Android-Does-It-reference-sample"><span class="toc-number">1.5.</span> <span class="toc-text">4. How Native Android Does It (reference sample)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Our-Alpine-Approach-Replacing-an-Entire-Suite-with-Minimal-Code"><span class="toc-number">1.6.</span> <span class="toc-text">5. Our Alpine Approach: Replacing an Entire Suite with Minimal Code</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Boot-Chain-runs-automatically-at-startup"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 Boot Chain (runs automatically at startup)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Three-Key-Decisions-why-we-chose-this-way"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 Three Key Decisions (why we chose this way)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-That-%E2%80%9CPermission-Pitfall%E2%80%9D"><span class="toc-number">1.6.3.</span> <span class="toc-text">5.3 That “Permission Pitfall”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Source-Code-Walkthrough-What-the-Daemon-Does"><span class="toc-number">1.7.</span> <span class="toc-text">6. Source Code Walkthrough: What the Daemon Does</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-Configuring-the-Serial-Port-3M-hardware-flow-control"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 Configuring the Serial Port (3M + hardware flow control)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-Reading-a-Complete-H4-Packet"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 Reading a Complete H4 Packet</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-The-Complete-Scanning-Flow"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 The Complete Scanning Flow</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-4-External-Interface-unix-socket"><span class="toc-number">1.7.4.</span> <span class="toc-text">6.4 External Interface: unix socket</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-A2DP-Real-Audio-Playback-new-in-v1-0-3"><span class="toc-number">1.8.</span> <span class="toc-text">7. A2DP Real Audio Playback (new in v1.0.3)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-Audio-Pipeline"><span class="toc-number">1.8.1.</span> <span class="toc-text">7.1 Audio Pipeline</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-Three-Key-Parameters-Found-the-Hard-Way"><span class="toc-number">1.8.2.</span> <span class="toc-text">7.2 Three Key Parameters Found the Hard Way</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Troubleshooting-Methodology-check-this-way-when-porting"><span class="toc-number">1.9.</span> <span class="toc-text">8. Troubleshooting Methodology (check this way when porting)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-General-Checklist-for-Porting-to-Similar-Devices"><span class="toc-number">1.10.</span> <span class="toc-text">9. General Checklist for Porting to Similar Devices</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-What-This-Wiki-Wants-You-to-Remember"><span class="toc-number">1.11.</span> <span class="toc-text">10. What This Wiki Wants You to Remember</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&text=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&title=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&is_video=false&description=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=HT0 Bluetooth Principles and Porting Learning Wiki&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&title=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&title=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&title=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&title=HT0 Bluetooth Principles and Porting Learning Wiki"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/21/bt-01-ht0-wiki-md/&name=HT0 Bluetooth Principles and Porting Learning Wiki&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

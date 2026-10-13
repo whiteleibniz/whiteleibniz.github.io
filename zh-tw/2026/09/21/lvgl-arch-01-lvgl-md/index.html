@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="LVGL 桌面應用架構與第三方接入規範 目標：把這個 LVGL 桌面做成”類安卓系統”——第三方開發者像寫 APK 一樣，拷模板、寫 UI、丟進 apps&#x2F;，重啟自動出圖標，不用改桌面源碼。適用：HT0（SC9832A &#x2F; Alpine）及同架構 LVGL 桌面。   1. 設計目標   安卓 APK 本桌面對應物    AndroidManifest.xml app.ini">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LVGL桌面應用架構與第三方接入規範">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="LVGL 桌面應用架構與第三方接入規範 目標：把這個 LVGL 桌面做成”類安卓系統”——第三方開發者像寫 APK 一樣，拷模板、寫 UI、丟進 apps&#x2F;，重啟自動出圖標，不用改桌面源碼。適用：HT0（SC9832A &#x2F; Alpine）及同架構 LVGL 桌面。   1. 設計目標   安卓 APK 本桌面對應物    AndroidManifest.xml app.ini">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-21T04:26:56.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.778Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="LVGL">
+<meta property="article:tag" content="架构">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>LVGL桌面應用架構與第三方接入規範</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/21/lvgl-arch-01-lvgl-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/09/21/bt-01-ht0-wiki-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&text=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&title=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&is_video=false&description=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=LVGL桌面應用架構與第三方接入規範&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&title=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&title=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&title=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&title=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&name=LVGL桌面應用架構與第三方接入規範&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LVGL-%E6%A1%8C%E9%9D%A2%E6%87%89%E7%94%A8%E6%9E%B6%E6%A7%8B%E8%88%87%E7%AC%AC%E4%B8%89%E6%96%B9%E6%8E%A5%E5%85%A5%E8%A6%8F%E7%AF%84"><span class="toc-number">1.</span> <span class="toc-text">LVGL 桌面應用架構與第三方接入規範</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%A8%AD%E8%A8%88%E7%9B%AE%E6%A8%99"><span class="toc-number">1.1.</span> <span class="toc-text">1. 設計目標</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%87%89%E7%94%A8%E5%85%AD%E9%A1%9E%EF%BC%88%E5%B0%8D%E8%99%9F%E5%85%A5%E5%BA%A7%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. 應用六類（對號入座）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%85%A9%E7%A8%AE%E7%AC%AC%E4%B8%89%E6%96%B9%E6%8E%A5%E5%85%A5%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.3.</span> <span class="toc-text">3. 兩種第三方接入模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A8%A1%E5%9E%8B-A%EF%BC%9A%E6%8F%92%E4%BB%B6-so%EF%BC%88%E8%BC%95%E9%87%8F%E3%80%81%E5%92%8C%E6%A1%8C%E9%9D%A2-UI-%E4%B8%80%E8%87%B4%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">模型 A：插件 .so（輕量、和桌面 UI 一致）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A8%A1%E5%9E%8B-B%EF%BC%9A%E7%8D%A8%E7%AB%8B%E9%80%B2%E7%A8%8B%EF%BC%88%E9%87%8D%E8%B3%87%E6%BA%90-%E7%8F%BE%E6%88%90%E4%BA%8C%E9%80%B2%E5%88%B6%EF%BC%8C%E6%8E%A8%E8%96%A6%E7%AC%AC%E4%B8%89%E6%96%B9%E4%B8%BB%E5%8A%9B%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">模型 B：獨立進程（重資源&#x2F;現成二進制，推薦第三方主力）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%9B%AE%E9%8C%84%E7%B5%90%E6%A7%8B%EF%BC%88%E7%9B%AE%E6%A8%99%E6%85%8B%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 目錄結構（目標態）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E7%B3%BB%E7%B5%B1%E6%9C%8D%E5%8B%99-API%EF%BC%88%E7%AC%AC%E4%B8%89%E6%96%B9%E6%80%8E%E9%BA%BC%E8%AA%BF%E7%B3%BB%E7%B5%B1%E8%83%BD%E5%8A%9B%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 系統服務 API（第三方怎麼調系統能力）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E7%AC%AC%E4%B8%89%E6%96%B9%E9%96%8B%E7%99%BC%E6%B5%81%E7%A8%8B%EF%BC%88%E5%92%8C%E5%AE%89%E5%8D%93%E4%B8%80%E6%A8%A3%E7%B0%A1%E5%96%AE%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">6. 第三方開發流程（和安卓一樣簡單）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-helloworld-%E6%A8%A1%E6%9D%BF%EF%BC%88%E6%A8%A1%E5%9E%8B-A%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">7. helloworld 模板（模型 A）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E8%90%BD%E5%9C%B0%E8%B7%AF%E7%B7%9A%E5%9C%96%EF%BC%88%E5%85%88%E5%81%9A%E5%93%AA%E6%AD%A5%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">8. 落地路線圖（先做哪步）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B8%BD%E7%B5%90"><span class="toc-number">1.9.</span> <span class="toc-text">9. 一句話總結</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        LVGL桌面應用架構與第三方接入規範
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-21T04:26:56.000Z" itemprop="datePublished">2026-09-21</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/LVGL/" rel="tag">LVGL</a>, <a class="tag-link-link" href="/tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="LVGL-桌面應用架構與第三方接入規範"><a href="#LVGL-桌面應用架構與第三方接入規範" class="headerlink" title="LVGL 桌面應用架構與第三方接入規範"></a>LVGL 桌面應用架構與第三方接入規範</h1><blockquote>
+<p>目標：把這個 LVGL 桌面做成”類安卓系統”——第三方開發者像寫 APK 一樣，拷模板、寫 UI、丟進 apps&#x2F;，重啟自動出圖標，<strong>不用改桌面源碼</strong>。<br>適用：HT0（SC9832A &#x2F; Alpine）及同架構 LVGL 桌面。</p>
+</blockquote>
+<hr>
+<h2 id="1-設計目標"><a href="#1-設計目標" class="headerlink" title="1. 設計目標"></a>1. 設計目標</h2><table>
+<thead>
+<tr>
+<th>安卓 APK</th>
+<th>本桌面對應物</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AndroidManifest.xml</td>
+<td><code>app.ini</code> &#x2F; 導出的 <code>lv_app_t</code></td>
+</tr>
+<tr>
+<td>Activity 生命週期</td>
+<td><code>on_create</code> &#x2F; <code>on_destroy</code> &#x2F; <code>on_key</code></td>
+</tr>
+<tr>
+<td>桌面自動掃描 APK 出圖標</td>
+<td>桌面啟動掃 <code>apps/</code>，dlopen &#x2F; 讀 ini，自動註冊</td>
+</tr>
+<tr>
+<td>SDK + 模板工程</td>
+<td>一個 <code>app_template/</code>，拷了就能寫</td>
+</tr>
+<tr>
+<td><code>adb install</code></td>
+<td><code>scp</code> 到 <code>apps/</code> 重啟桌面</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-應用六類（對號入座）"><a href="#2-應用六類（對號入座）" class="headerlink" title="2. 應用六類（對號入座）"></a>2. 應用六類（對號入座）</h2><table>
+<thead>
+<tr>
+<th>類型</th>
+<th>例子</th>
+<th>接入方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>① 內置 Page（輕量共享UI）</td>
+<td>設置&#x2F;藍牙&#x2F;網絡</td>
+<td>編譯進桌面（現狀）</td>
+</tr>
+<tr>
+<td>② 獨立進程（重資源&#x2F;現成程序）</td>
+<td>模擬器&#x2F;mplayer</td>
+<td><strong>app.ini + start.sh</strong>（第三方主力）</td>
+</tr>
+<tr>
+<td>③ 後臺守護（無圖標）</td>
+<td>bt_user_daemon&#x2F;wpa</td>
+<td>開機腳本管，不進桌面</td>
+</tr>
+<tr>
+<td>④ 桌面內嵌組件</td>
+<td>狀態欄&#x2F;音量&#x2F;下拉菜單</td>
+<td>桌面內部，非應用</td>
+</tr>
+<tr>
+<td>⑤ 腳本&#x2F;命令型</td>
+<td>LED&#x2F;重啟&#x2F;截圖</td>
+<td>app.ini type&#x3D;script</td>
+</tr>
+<tr>
+<td>⑥ 混合橋接</td>
+<td>音樂頁(殼+mplayer進程)</td>
+<td>內置 page fork 獨立進程</td>
+</tr>
+</tbody></table>
+<p><strong>第三方開發者主要用 ②（獨立進程），輕量 UI 小應用用插件 .so。</strong></p>
+<hr>
+<h2 id="3-兩種第三方接入模型"><a href="#3-兩種第三方接入模型" class="headerlink" title="3. 兩種第三方接入模型"></a>3. 兩種第三方接入模型</h2><h3 id="模型-A：插件-so（輕量、和桌面-UI-一致）"><a href="#模型-A：插件-so（輕量、和桌面-UI-一致）" class="headerlink" title="模型 A：插件 .so（輕量、和桌面 UI 一致）"></a>模型 A：插件 .so（輕量、和桌面 UI 一致）</h3><p>每個應用一個 <code>.so</code>，導出固定結構：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 統一頭文件 lv_app_api.h（系統提供，第三方只 include 它）</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>*  name;          <span class="comment">// 應用名，如 &quot;計算器&quot;</span></span><br><span class="line">    <span class="type">const</span> <span class="type">uint8_t</span>* icon;       <span class="comment">// 圖標 C 數組（png/c 數組）</span></span><br><span class="line">    <span class="type">int</span>          icon_w, icon_h;</span><br><span class="line"></span><br><span class="line">    <span class="type">void</span> (*on_create)(<span class="type">lv_obj_t</span>* parent);  <span class="comment">// 進入：在 parent 上畫 UI</span></span><br><span class="line">    <span class="type">void</span> (*on_destroy)(<span class="type">void</span>);             <span class="comment">// 退出：釋放資源</span></span><br><span class="line">    <span class="type">int</span>  (*on_key)(<span class="type">uint32_t</span> key);        <span class="comment">// 按鍵返回 1=已處理</span></span><br><span class="line">&#125; <span class="type">lv_app_t</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 每個 .so 導出這一個符號</span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">lv_app_t</span> g_app __attribute__((visibility(<span class="string">&quot;default&quot;</span>)));</span><br></pre></td></tr></table></figure>
+
+<p>桌面啟動掃描：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">apps_scan</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    DIR* d = opendir(<span class="string">&quot;/usr/local/lvgl/apps&quot;</span>);</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dirent</span>* <span class="title">e</span>;</span></span><br><span class="line">    <span class="keyword">while</span> ((e = readdir(d))) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strstr</span>(e-&gt;d_name, <span class="string">&quot;.so&quot;</span>)) <span class="keyword">continue</span>;</span><br><span class="line">        <span class="type">void</span>* h = dlopen(path, RTLD_NOW);</span><br><span class="line">        <span class="type">lv_app_t</span>* app = dlsym(h, <span class="string">&quot;g_app&quot;</span>);</span><br><span class="line">        launcher_register(app-&gt;name, app-&gt;icon, APP_PLUGIN, h);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>點圖標 → <code>app-&gt;on_create(lv_scr_act())</code>；退出 → <code>app-&gt;on_destroy()</code>。</p>
+<h3 id="模型-B：獨立進程（重資源-現成二進制，推薦第三方主力）"><a href="#模型-B：獨立進程（重資源-現成二進制，推薦第三方主力）" class="headerlink" title="模型 B：獨立進程（重資源&#x2F;現成二進制，推薦第三方主力）"></a>模型 B：獨立進程（重資源&#x2F;現成二進制，推薦第三方主力）</h3><p>每個應用一個目錄：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">apps/snes9x/</span><br><span class="line">  ├── app.ini        ← 描述文件</span><br><span class="line">  ├── snes9x         ← 二進制（現成的移植程序）</span><br><span class="line">  ├── start.sh       ← 啟動腳本</span><br><span class="line">  └── roms/          ← 自帶資源</span><br></pre></td></tr></table></figure>
+
+<p><code>app.ini</code>：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">name</span>=我的遊戲</span><br><span class="line"><span class="attr">icon</span>=snes.png</span><br><span class="line"><span class="attr">type</span>=process</span><br><span class="line"><span class="attr">exec</span>=start.sh</span><br></pre></td></tr></table></figure>
+
+<p>桌面掃 <code>app.ini</code>，點圖標：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">fork(); exec(<span class="string">&quot;/usr/local/lvgl/apps/snes9x/start.sh&quot;</span>); waitpid(...);</span><br><span class="line"><span class="comment">// start.sh 負責：搶 framebuffer、接管 /dev/input、跑程序、退出恢復</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>為什麼第三方優先用 B</strong>：不用懂 LVGL，現成的 C&#x2F;彙編&#x2F;任何語言程序都能接，崩潰不拖垮桌面。</p>
+</blockquote>
+<hr>
+<h2 id="4-目錄結構（目標態）"><a href="#4-目錄結構（目標態）" class="headerlink" title="4. 目錄結構（目標態）"></a>4. 目錄結構（目標態）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">/home/lvgl_demo/lvgl_demo/</span><br><span class="line">├── launcher/            桌面主程序（內置 page + 掃描器）</span><br><span class="line">│   └── lv_pages/        內置：設置/藍牙/網絡/文件管理...</span><br><span class="line">├── apps/                ★ 第三方應用安裝目錄（桌面自動掃）</span><br><span class="line">│   ├── snes9x/          模型 B：app.ini + 二進制 + start.sh</span><br><span class="line">│   ├── calculator.so    模型 A：插件</span><br><span class="line">│   └── &lt;新應用&gt;/</span><br><span class="line">├── include/lv_app_api.h ★ 給第三方的統一頭文件</span><br><span class="line">├── app_template/        ★ 第三方模板工程（拷了就能寫）</span><br><span class="line">├── extern/              系統自帶的重程序（mplayer 等）</span><br><span class="line">├── shell/               開機/啟動腳本</span><br><span class="line">└── AI工作流/</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="5-系統服務-API（第三方怎麼調系統能力）"><a href="#5-系統服務-API（第三方怎麼調系統能力）" class="headerlink" title="5. 系統服務 API（第三方怎麼調系統能力）"></a>5. 系統服務 API（第三方怎麼調系統能力）</h2><p>第三方應用要調藍牙&#x2F;WiFi&#x2F;音量，走<strong>統一 socket</strong>，別直接碰硬件：</p>
+<table>
+<thead>
+<tr>
+<th>能力</th>
+<th>接口</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>藍牙</td>
+<td><code>/tmp/bt_ctl.sock</code></td>
+<td><code>scan 8</code> &#x2F; <code>connect &lt;mac&gt;</code> &#x2F; <code>on</code> &#x2F; <code>off</code></td>
+</tr>
+<tr>
+<td>WiFi</td>
+<td><code>wpa_cli -i wlan0</code></td>
+<td>標準命令</td>
+</tr>
+<tr>
+<td>音量</td>
+<td>寫 mixer &#x2F; alsa</td>
+<td>系統封裝一個 <code>sndctl set 70</code></td>
+</tr>
+<tr>
+<td>Framebuffer</td>
+<td>獨立進程自己 <code>open /dev/fb0</code></td>
+<td>start.sh 裡</td>
+</tr>
+<tr>
+<td>輸入</td>
+<td>獨立進程自己讀 <code>/dev/input/eventX</code></td>
+<td>start.sh 裡</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>原則：<strong>硬件細節封在系統層，第三方只調 socket&#x2F;腳本</strong>，換硬件不影響應用。</p>
+</blockquote>
+<hr>
+<h2 id="6-第三方開發流程（和安卓一樣簡單）"><a href="#6-第三方開發流程（和安卓一樣簡單）" class="headerlink" title="6. 第三方開發流程（和安卓一樣簡單）"></a>6. 第三方開發流程（和安卓一樣簡單）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. cp -r app_template my_app        拷模板</span><br><span class="line">2. 改 my_app/ 裡的 name/icon + 寫 on_create UI</span><br><span class="line">3. make                             交叉編譯成 .so（或打包二進制）</span><br><span class="line">4. scp 到 設備:/usr/local/lvgl/apps/my_app/</span><br><span class="line">5. 重啟桌面（或桌面自動熱掃）</span><br><span class="line">   → 圖標自動出現在桌面，點即用</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="7-helloworld-模板（模型-A）"><a href="#7-helloworld-模板（模型-A）" class="headerlink" title="7. helloworld 模板（模型 A）"></a>7. helloworld 模板（模型 A）</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// my_app.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lv_app_api.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;lvgl/lvgl.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">on_create</span><span class="params">(<span class="type">lv_obj_t</span>* parent)</span> &#123;</span><br><span class="line">    <span class="type">lv_obj_t</span>* btn = lv_btn_create(parent);</span><br><span class="line">    <span class="type">lv_obj_t</span>* label = lv_label_create(btn);</span><br><span class="line">    lv_label_set_text(label, <span class="string">&quot;Hello!&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">on_destroy</span><span class="params">(<span class="type">void</span>)</span> &#123; <span class="comment">/* 釋放 */</span> &#125;</span><br><span class="line"><span class="type">static</span> <span class="type">int</span>  <span class="title function_">on_key</span><span class="params">(<span class="type">uint32_t</span> k)</span> &#123; <span class="keyword">return</span> <span class="number">0</span>; &#125;</span><br><span class="line"></span><br><span class="line"><span class="type">lv_app_t</span> g_app = &#123;</span><br><span class="line">    .name = <span class="string">&quot;Hello&quot;</span>,</span><br><span class="line">    .icon = my_icon, .icon_w=<span class="number">48</span>, .icon_h=<span class="number">48</span>,</span><br><span class="line">    .on_create = on_create,</span><br><span class="line">    .on_destroy = on_destroy,</span><br><span class="line">    .on_key = on_key,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>編譯：<code>arm-linux-gcc -shared -fPIC my_app.c -o my_app.so -I$LVGL_INC -llvgl</code></p>
+<hr>
+<h2 id="8-落地路線圖（先做哪步）"><a href="#8-落地路線圖（先做哪步）" class="headerlink" title="8. 落地路線圖（先做哪步）"></a>8. 落地路線圖（先做哪步）</h2><table>
+<thead>
+<tr>
+<th>步驟</th>
+<th>內容</th>
+<th>價值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>建 <code>apps/</code> 目錄 + 桌面掃描器（先只支持模型 B 讀 app.ini）</td>
+<td>重資源程序立刻能接</td>
+</tr>
+<tr>
+<td>2</td>
+<td>寫 <code>app_template/</code> + 文檔</td>
+<td>第三方能上手</td>
+</tr>
+<tr>
+<td>3</td>
+<td>提供 <code>lv_app_api.h</code> + 插件 dlopen 支持</td>
+<td>輕量 UI 應用能接</td>
+</tr>
+<tr>
+<td>4</td>
+<td>封裝系統服務 socket API 文檔</td>
+<td>應用能調藍牙&#x2F;WiFi&#x2F;音量</td>
+</tr>
+<tr>
+<td>5</td>
+<td>熱加載（不用重啟桌面，放進去就出圖標）</td>
+<td>體驗接近 APK</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-一句話總結"><a href="#9-一句話總結" class="headerlink" title="9. 一句話總結"></a>9. 一句話總結</h2><blockquote>
+<p><strong>桌面 &#x3D; 啟動器 + 應用掃描器；第三方應用 &#x3D; 一個目錄（app.ini + 二進制&#x2F;插件）。</strong><br>重資源程序用獨立進程（B），輕量 UI 用插件 .so（A），兩者桌面都自動發現、自動出圖標。<br>硬件細節封在系統層，第三方只調統一 socket——這就是 LVGL 版的”APK 生態”。</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LVGL-%E6%A1%8C%E9%9D%A2%E6%87%89%E7%94%A8%E6%9E%B6%E6%A7%8B%E8%88%87%E7%AC%AC%E4%B8%89%E6%96%B9%E6%8E%A5%E5%85%A5%E8%A6%8F%E7%AF%84"><span class="toc-number">1.</span> <span class="toc-text">LVGL 桌面應用架構與第三方接入規範</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%A8%AD%E8%A8%88%E7%9B%AE%E6%A8%99"><span class="toc-number">1.1.</span> <span class="toc-text">1. 設計目標</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%87%89%E7%94%A8%E5%85%AD%E9%A1%9E%EF%BC%88%E5%B0%8D%E8%99%9F%E5%85%A5%E5%BA%A7%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. 應用六類（對號入座）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%85%A9%E7%A8%AE%E7%AC%AC%E4%B8%89%E6%96%B9%E6%8E%A5%E5%85%A5%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.3.</span> <span class="toc-text">3. 兩種第三方接入模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A8%A1%E5%9E%8B-A%EF%BC%9A%E6%8F%92%E4%BB%B6-so%EF%BC%88%E8%BC%95%E9%87%8F%E3%80%81%E5%92%8C%E6%A1%8C%E9%9D%A2-UI-%E4%B8%80%E8%87%B4%EF%BC%89"><span class="toc-number">1.3.1.</span> <span class="toc-text">模型 A：插件 .so（輕量、和桌面 UI 一致）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A8%A1%E5%9E%8B-B%EF%BC%9A%E7%8D%A8%E7%AB%8B%E9%80%B2%E7%A8%8B%EF%BC%88%E9%87%8D%E8%B3%87%E6%BA%90-%E7%8F%BE%E6%88%90%E4%BA%8C%E9%80%B2%E5%88%B6%EF%BC%8C%E6%8E%A8%E8%96%A6%E7%AC%AC%E4%B8%89%E6%96%B9%E4%B8%BB%E5%8A%9B%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">模型 B：獨立進程（重資源&#x2F;現成二進制，推薦第三方主力）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%9B%AE%E9%8C%84%E7%B5%90%E6%A7%8B%EF%BC%88%E7%9B%AE%E6%A8%99%E6%85%8B%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">4. 目錄結構（目標態）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E7%B3%BB%E7%B5%B1%E6%9C%8D%E5%8B%99-API%EF%BC%88%E7%AC%AC%E4%B8%89%E6%96%B9%E6%80%8E%E9%BA%BC%E8%AA%BF%E7%B3%BB%E7%B5%B1%E8%83%BD%E5%8A%9B%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">5. 系統服務 API（第三方怎麼調系統能力）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E7%AC%AC%E4%B8%89%E6%96%B9%E9%96%8B%E7%99%BC%E6%B5%81%E7%A8%8B%EF%BC%88%E5%92%8C%E5%AE%89%E5%8D%93%E4%B8%80%E6%A8%A3%E7%B0%A1%E5%96%AE%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">6. 第三方開發流程（和安卓一樣簡單）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-helloworld-%E6%A8%A1%E6%9D%BF%EF%BC%88%E6%A8%A1%E5%9E%8B-A%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">7. helloworld 模板（模型 A）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E8%90%BD%E5%9C%B0%E8%B7%AF%E7%B7%9A%E5%9C%96%EF%BC%88%E5%85%88%E5%81%9A%E5%93%AA%E6%AD%A5%EF%BC%89"><span class="toc-number">1.8.</span> <span class="toc-text">8. 落地路線圖（先做哪步）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B8%BD%E7%B5%90"><span class="toc-number">1.9.</span> <span class="toc-text">9. 一句話總結</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&text=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&title=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&is_video=false&description=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=LVGL桌面應用架構與第三方接入規範&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&title=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&title=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&title=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&title=LVGL桌面應用架構與第三方接入規範"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/09/21/lvgl-arch-01-lvgl-md/&name=LVGL桌面應用架構與第三方接入規範&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

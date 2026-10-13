@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Spreadtrum SC9832A FM radio — reverse-engineered reconstruction of the ioctl command table (with field-test confirmation) Audience: engineers responsible for the FM daemon &#x2F; UI; engineers who wan">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FM radio ioctl command table: reverse-engineered reconstruction">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Spreadtrum SC9832A FM radio — reverse-engineered reconstruction of the ioctl command table (with field-test confirmation) Audience: engineers responsible for the FM daemon &#x2F; UI; engineers who wan">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.955Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>FM radio ioctl command table: reverse-engineered reconstruction</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/23/fm-05-fm-seek-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/23/fm-07-fm-vsalpine-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&text=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&title=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&is_video=false&description=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM radio ioctl command table: reverse-engineered reconstruction&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&title=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&title=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&title=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&title=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&name=FM radio ioctl command table: reverse-engineered reconstruction&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-FM-radio-%E2%80%94-reverse-engineered-reconstruction-of-the-ioctl-command-table-with-field-test-confirmation"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A FM radio — reverse-engineered reconstruction of the ioctl command table (with field-test confirmation)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-One-line-summary"><span class="toc-number">1.1.</span> <span class="toc-text">0. One-line summary</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#0-1-%E2%9A%A0%EF%B8%8F-Important-corrections-added-2026-09-22-read-before-use"><span class="toc-number">1.2.</span> <span class="toc-text">0.1 ⚠️ Important corrections (added 2026-09-22, read before use)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Conclusion-table-usable-directly-as-fm-ioctl-h"><span class="toc-number">1.3.</span> <span class="toc-text">1. Conclusion table (usable directly as fm_ioctl.h)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Undefined-ranges-calls-return-1-with-no-log"><span class="toc-number">1.3.1.</span> <span class="toc-text">Undefined ranges (calls return -1 with no log)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-How-the-command-numbers-were-derived"><span class="toc-number">1.4.</span> <span class="toc-text">2. How the command numbers were derived</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-Encoding-rules"><span class="toc-number">1.4.1.</span> <span class="toc-text">2.1 Encoding rules</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Static-route-reading-the-constants-from-the-machine-code-of-fm-ioctl"><span class="toc-number">1.4.2.</span> <span class="toc-text">2.2 Static route: reading the constants from the machine code of fm_ioctl()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-Dynamic-route-using-dmesg-as-the-%E2%80%9Carbiter-of-truth%E2%80%9D-the-final-criterion"><span class="toc-number">1.4.3.</span> <span class="toc-text">2.3 Dynamic route: using dmesg as the “arbiter of truth” (the final criterion)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-Cross-validation-search-for-the-same-constant-in-the-Android-libraries"><span class="toc-number">1.4.4.</span> <span class="toc-text">2.4 Cross-validation: search for the same constant in the Android libraries</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-Cross-conclusion-of-the-static-and-dynamic-routes"><span class="toc-number">1.4.5.</span> <span class="toc-text">2.5 Cross-conclusion of the static and dynamic routes</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Incidental-finding-the-driver-actually-provides-a-dual-%E2%80%9CAT-command-ioctl%E2%80%9D-interface"><span class="toc-number">1.5.</span> <span class="toc-text">3. Incidental finding: the driver actually provides a dual “AT command + ioctl” interface</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-An-important-behavior-TUNE-blocks-for-about-4-seconds"><span class="toc-number">1.5.1.</span> <span class="toc-text">3.1 An important behavior: TUNE blocks for about 4 seconds</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Direct-impact-on-downstream-design"><span class="toc-number">1.6.</span> <span class="toc-text">4. Direct impact on downstream design</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Confirmed-hard-facts-no-need-to-re-investigate"><span class="toc-number">1.7.</span> <span class="toc-text">5. Confirmed hard facts (no need to re-investigate)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Verified-dead-ends-do-not-retry"><span class="toc-number">1.8.</span> <span class="toc-text">6. Verified dead ends (do not retry)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Still-unconfirmed-do-not-treat-as-fact"><span class="toc-number">1.9.</span> <span class="toc-text">7. Still unconfirmed (do not treat as fact)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Reproduction-scripts-engineering-scripts-outside-AI%E5%B7%A5%E4%BD%9C%E6%B5%81"><span class="toc-number">1.10.</span> <span class="toc-text">8. Reproduction scripts (engineering scripts outside AI工作流)</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        FM radio ioctl command table: reverse-engineered reconstruction
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Spreadtrum-SC9832A-FM-radio-—-reverse-engineered-reconstruction-of-the-ioctl-command-table-with-field-test-confirmation"><a href="#Spreadtrum-SC9832A-FM-radio-—-reverse-engineered-reconstruction-of-the-ioctl-command-table-with-field-test-confirmation" class="headerlink" title="Spreadtrum SC9832A FM radio — reverse-engineered reconstruction of the ioctl command table (with field-test confirmation)"></a>Spreadtrum SC9832A FM radio — reverse-engineered reconstruction of the ioctl command table (with field-test confirmation)</h1><blockquote>
+<p><strong>Audience</strong>: engineers responsible for the FM daemon &#x2F; UI; engineers who want to reuse this technique when connecting other peripherals later.<br><strong>How to use</strong>: when writing <code>/dev/fm</code>-related code, <strong>look up the command numbers directly in the tables in this article</strong>; do not guess again, and do not wait for the vendor’s header files again.<br><strong>Core value</strong>: it turns the former “number one blocker” into a <strong>constant table you can code directly</strong>, and provides a reusable forensics method.</p>
+</blockquote>
+<hr>
+<h2 id="0-One-line-summary"><a href="#0-One-line-summary" class="headerlink" title="0. One-line summary"></a>0. One-line summary</h2><blockquote>
+<p><code>marlin_fm.ko</code> is <strong>not stripped</strong>, and the command numbers are written right in the machine code of <code>fm_ioctl()</code>.<br>All commands are uniformly encoded as <strong><code>_IOWR(0xF5, nr, 4)</code> &#x3D; <code>0xC004F500 | nr</code></strong>;<br>of the 47 commands, <strong>45 have been confirmed by on-device tests (the kernel log printed the command names)</strong>, and the other 2 were inferred by static disassembly.<br><strong>The only hard blocker has been removed; you can start writing the daemon.</strong></p>
+</blockquote>
+<hr>
+<h2 id="0-1-⚠️-Important-corrections-added-2026-09-22-read-before-use"><a href="#0-1-⚠️-Important-corrections-added-2026-09-22-read-before-use" class="headerlink" title="0.1 ⚠️ Important corrections (added 2026-09-22, read before use)"></a>0.1 ⚠️ Important corrections (added 2026-09-22, read before use)</h2><p>The command number table itself is <strong>still accurate</strong>, but the following three <strong>capability-level conclusions have been overturned by later field tests</strong>; do not design according to the old conclusions:</p>
+<table>
+<thead>
+<tr>
+<th>Old conclusion (original draft of this article)</th>
+<th>Field-test correction</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SCAN 0x08</code> + <code>SCAN_GETRSSI 0x24</code> are usable and can draw a spectrum&#x2F;signal strength</td>
+<td>❌ <strong>Both are empty shells</strong>: the calls return 0 but with <strong>zero SDIO traffic</strong>; <code>GETRSSI 0x07</code> is the only signal-class command that really sends SDIO, but it always returns <code>ETIMEDOUT</code> after 4.2s with a barely changing return value → <strong>this device cannot obtain a trustworthy signal strength</strong></td>
+</tr>
+<tr>
+<td><code>SEEK 0x03</code> can “search up&#x2F;down for the next station”</td>
+<td>❌ <strong>The driver truncates the start frequency to 1 byte</strong> (<code>freq &amp; 0xFF</code> goes into the AT frame), so in-band frequencies cannot be passed in; field tests show only <strong>two fixed return values, 92.5MHz &#x2F; 103.1MHz</strong>, independent of the current frequency → <strong>station seeking cannot be implemented</strong></td>
+</tr>
+<tr>
+<td><code>write(/dev/fm)</code> can be used to write AT text and bypass the ioctl</td>
+<td>❌ Always <code>-1 / EINVAL(22)</code>, with no SDIO traffic at all</td>
+</tr>
+</tbody></table>
+<p>In addition, <strong>audio-class commands such as <code>OVER_BT_ENABLE 0x1d</code> &#x2F; <code>ANA_SWITCH 0x1e</code> &#x2F; <code>I2S_SETTING 0x21</code> are all empty shells</strong><br>(disassembly of <code>fm_ioctl</code> shows <code>R_ARM_CALL</code> calling only 7 functions, with no audio path functions).</p>
+<p>→ <strong>For detailed field-test data, see <code>FM收音_SEEK与场强_实测结论.md</code>.</strong></p>
+<hr>
+<h2 id="1-Conclusion-table-usable-directly-as-fm-ioctl-h"><a href="#1-Conclusion-table-usable-directly-as-fm-ioctl-h" class="headerlink" title="1. Conclusion table (usable directly as fm_ioctl.h)"></a>1. Conclusion table (usable directly as <code>fm_ioctl.h</code>)</h2><p>Encoding: <code>cmd = 0xC004F500 | nr</code>, i.e. <code>_IOWR(magic=0xF5, nr, size=4)</code>.</p>
+<table>
+<thead>
+<tr>
+<th>nr</th>
+<th>Command number</th>
+<th>Command name</th>
+<th>Confirmation method</th>
+<th>Return value measured on this device</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0x00</td>
+<td><code>0xC004F500</code></td>
+<td><code>power up</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Power-up (<strong>note: not <code>TUNE</code></strong>)</td>
+</tr>
+<tr>
+<td>0x01</td>
+<td><code>0xC004F501</code></td>
+<td><code>power down</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Power-down</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td><code>0xC004F502</code></td>
+<td><code>TUNE</code></td>
+<td><strong>measured</strong></td>
+<td>-1 (<code>ETIMEDOUT</code>)</td>
+<td>Tune to a specified frequency (parameter &#x3D; frequency)</td>
+</tr>
+<tr>
+<td>0x03</td>
+<td><code>0xC004F503</code></td>
+<td><code>SEEK</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Search up&#x2F;down for the next station</td>
+</tr>
+<tr>
+<td>0x04</td>
+<td><code>0xC004F504</code></td>
+<td><code>SETVOL</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Set the volume</td>
+</tr>
+<tr>
+<td>0x05</td>
+<td><code>0xC004F505</code></td>
+<td><code>GETVOL</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Read the volume</td>
+</tr>
+<tr>
+<td>0x06</td>
+<td><code>0xC004F506</code></td>
+<td><code>MUTE</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Mute switch</td>
+</tr>
+<tr>
+<td>0x07</td>
+<td><code>0xC004F507</code></td>
+<td><code>GETRSSI</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td><strong>Signal strength</strong> (UI signal bar)</td>
+</tr>
+<tr>
+<td>0x08</td>
+<td><code>0xC004F508</code></td>
+<td><code>SCAN</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Full-band scan</td>
+</tr>
+<tr>
+<td>0x09</td>
+<td><code>0xC004F509</code></td>
+<td><code>STOP_SCAN</code></td>
+<td>static inference</td>
+<td>-1 (no log printed)</td>
+<td>Interrupt the scan</td>
+</tr>
+<tr>
+<td>0x0a</td>
+<td><code>0xC004F50A</code></td>
+<td><code>GETCHIPID</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Chip ID (this device returns <code>0x2341</code>)</td>
+</tr>
+<tr>
+<td>0x0b</td>
+<td><code>0xC004F50B</code></td>
+<td><code>EM_TEST</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Engineering mode</td>
+</tr>
+<tr>
+<td>0x0c</td>
+<td><code>0xC004F50C</code></td>
+<td><code>RW_REG</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Register read&#x2F;write (debugging)</td>
+</tr>
+<tr>
+<td>0x0d</td>
+<td><code>0xC004F50D</code></td>
+<td><code>GETMONOSTERO</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Mono&#x2F;stereo status</td>
+</tr>
+<tr>
+<td>0x0e</td>
+<td><code>0xC004F50E</code></td>
+<td><code>GETCURPAMD</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Current PAMD value</td>
+</tr>
+<tr>
+<td>0x0f</td>
+<td><code>0xC004F50F</code></td>
+<td><code>GETGOODBCNT</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Good block count (audio quality statistics)</td>
+</tr>
+<tr>
+<td>0x10</td>
+<td><code>0xC004F510</code></td>
+<td><code>GETBADBNT</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Bad block count</td>
+</tr>
+<tr>
+<td>0x11</td>
+<td><code>0xC004F511</code></td>
+<td><code>GETBLERRATIO</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Block error rate</td>
+</tr>
+<tr>
+<td>0x12</td>
+<td><code>0xC004F512</code></td>
+<td><code>RDS_ONOFF</code></td>
+<td><strong>measured</strong></td>
+<td>-1</td>
+<td>RDS switch</td>
+</tr>
+<tr>
+<td>0x13</td>
+<td><code>0xC004F513</code></td>
+<td><code>RDS_SUPPORT</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Whether RDS is supported</td>
+</tr>
+<tr>
+<td>0x17</td>
+<td><code>0xC004F517</code></td>
+<td><code>SIM_DATA</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Simulation data (production testing)</td>
+</tr>
+<tr>
+<td>0x18</td>
+<td><code>0xC004F518</code></td>
+<td><code>IS_FM_POWERED_UP</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td><strong>Whether it is already powered up</strong> (for daemon startup self-check)</td>
+</tr>
+<tr>
+<td>0x1d</td>
+<td><code>0xC004F51D</code></td>
+<td><code>OVER_BT_ENABLE</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td><strong>FM audio over Bluetooth</strong> (key to channel arbitration)</td>
+</tr>
+<tr>
+<td>0x1e</td>
+<td><code>0xC004F51E</code></td>
+<td><code>ANA_SWITCH</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td><strong>Analog audio path switching</strong></td>
+</tr>
+<tr>
+<td>0x1f</td>
+<td><code>0xC004F51F</code></td>
+<td><code>GETCAPARRAY</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Capacitance array (hardware calibration)</td>
+</tr>
+<tr>
+<td>0x21</td>
+<td><code>0xC004F521</code></td>
+<td><code>I2S_SETTING</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td><strong>I2S audio path settings</strong></td>
+</tr>
+<tr>
+<td>0x22</td>
+<td><code>0xC004F522</code></td>
+<td><code>RDS_GROUPCNT</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>RDS group count</td>
+</tr>
+<tr>
+<td>0x23</td>
+<td><code>0xC004F523</code></td>
+<td><code>GET_LOG</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Fetch the driver log</td>
+</tr>
+<tr>
+<td>0x24</td>
+<td><code>0xC004F524</code></td>
+<td><code>SCAN_GETRSSI</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td><strong>Fetch the signal strength point by point during scanning</strong> (for drawing a spectrum)</td>
+</tr>
+<tr>
+<td>0x25</td>
+<td><code>0xC004F525</code></td>
+<td><code>SETMONOSTERO</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Force mono&#x2F;stereo</td>
+</tr>
+<tr>
+<td>0x26</td>
+<td><code>0xC004F526</code></td>
+<td><code>RDS_BC_RST</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>RDS broadcast reset</td>
+</tr>
+<tr>
+<td>0x27</td>
+<td><code>0xC004F527</code></td>
+<td><code>CQI_GET</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Channel quality</td>
+</tr>
+<tr>
+<td>0x28</td>
+<td><code>0xC004F528</code></td>
+<td><code>GET_HW_INFO</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Hardware information</td>
+</tr>
+<tr>
+<td>0x29</td>
+<td><code>0xC004F529</code></td>
+<td><code>GET_I2S_INFO</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Current I2S state</td>
+</tr>
+<tr>
+<td>0x2a</td>
+<td><code>0xC004F52A</code></td>
+<td><code>IS_DESE_CHAN</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Whether it is on a desense channel</td>
+</tr>
+<tr>
+<td>0x2b</td>
+<td><code>0xC004F52B</code></td>
+<td><code>TOP_RDWR</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Top-level register read&#x2F;write</td>
+</tr>
+<tr>
+<td>0x2c</td>
+<td><code>0xC004F52C</code></td>
+<td><code>HOST_RDWR</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Host-side read&#x2F;write</td>
+</tr>
+<tr>
+<td>0x2d</td>
+<td><code>0xC004F52D</code></td>
+<td><code>PRE_SEARCH</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Pre-search</td>
+</tr>
+<tr>
+<td>0x2e</td>
+<td><code>0xC004F52E</code></td>
+<td><code>RESTORE_SEARCH</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Restore search</td>
+</tr>
+<tr>
+<td>0x30</td>
+<td><code>0xC004F530</code></td>
+<td><code>GET_AUDIO_INFO</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td><strong>Current audio path state</strong></td>
+</tr>
+<tr>
+<td>0x3c</td>
+<td><code>0xC004F53C</code></td>
+<td><code>SCAN_NEW</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>New version of scan</td>
+</tr>
+<tr>
+<td>0x3d</td>
+<td><code>0xC004F53D</code></td>
+<td><code>SEEK_NEW</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>New version of seek</td>
+</tr>
+<tr>
+<td>0x3e</td>
+<td><code>0xC004F53E</code></td>
+<td><code>TUNE_NEW</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>New version of tuning</td>
+</tr>
+<tr>
+<td>0x3f</td>
+<td><code>0xC004F53F</code></td>
+<td><code>SOFT_MUTE_TUNE</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td><strong>Soft-mute tuning</strong> (no popping when changing stations)</td>
+</tr>
+<tr>
+<td>0x40</td>
+<td><code>0xC004F540</code></td>
+<td><code>DESENSE_CHECK</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Desense detection</td>
+</tr>
+<tr>
+<td>0x46</td>
+<td><code>0xC004F546</code></td>
+<td><code>FULL_CQI_LOG</code></td>
+<td><strong>measured</strong></td>
+<td>0</td>
+<td>Full CQI log</td>
+</tr>
+<tr>
+<td>0xff</td>
+<td><code>0xC004F5FF</code></td>
+<td><code>DUMP_REG</code></td>
+<td>static inference</td>
+<td>-1 (no log printed)</td>
+<td>Dump registers</td>
+</tr>
+</tbody></table>
+<p><strong>Statistics</strong>: of the 47 commands, 45 are <strong>confirmed by measurement</strong> (the kernel log printed the command name); 2 (<code>STOP_SCAN</code> &#x2F; <code>DUMP_REG</code>) were inferred by static disassembly, return -1 when called, and print no log, so <strong>verify them once more before use</strong>.</p>
+<h3 id="Undefined-ranges-calls-return-1-with-no-log"><a href="#Undefined-ranges-calls-return-1-with-no-log" class="headerlink" title="Undefined ranges (calls return -1 with no log)"></a>Undefined ranges (calls return -1 with no log)</h3><p><code>nr = 0x14~0x16</code>, <code>0x19~0x1c</code>, <code>0x20</code>, <code>0x2f</code>, <code>0x31~0x3b</code>, <code>0x41~0x45</code>, and <code>0x47~0xfe</code> have no corresponding branch in the driver;<br>the <code>ioctl</code> takes the “Unknown FM IOCTL!” branch and returns <code>-EINVAL</code>.</p>
+<hr>
+<h2 id="2-How-the-command-numbers-were-derived"><a href="#2-How-the-command-numbers-were-derived" class="headerlink" title="2. How the command numbers were derived"></a>2. How the command numbers were derived</h2><h3 id="2-1-Encoding-rules"><a href="#2-1-Encoding-rules" class="headerlink" title="2.1 Encoding rules"></a>2.1 Encoding rules</h3><p>Take any command number and decode it with the <code>_IOC</code> macros to verify:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">dir_ = (cmd &gt;&gt; <span class="number">30</span>) &amp; <span class="number">3</span>        <span class="comment"># 3 = READ|WRITE  =&gt; _IOWR</span></span><br><span class="line">size = (cmd &gt;&gt; <span class="number">16</span>) &amp; <span class="number">0x3FFF</span>   <span class="comment"># 4</span></span><br><span class="line"><span class="built_in">type</span> = (cmd &gt;&gt;  <span class="number">8</span>) &amp; <span class="number">0xFF</span>     <span class="comment"># 0xF5</span></span><br><span class="line">nr   =  cmd        &amp; <span class="number">0xFF</span>     <span class="comment"># command number</span></span><br><span class="line"><span class="comment"># example: 0xC004F509 -&gt; _IOWR(0xF5, 9, 4)</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><code>type</code> is always <code>0xF5</code> and <code>size</code> is always <code>4</code></strong>, so the whole command set can be indexed by <code>nr</code> alone,<br>i.e. <code>#define FM_IOCTL(nr) (0xC004F500 | (nr))</code>.</p>
+<h3 id="2-2-Static-route-reading-the-constants-from-the-machine-code-of-fm-ioctl"><a href="#2-2-Static-route-reading-the-constants-from-the-machine-code-of-fm-ioctl" class="headerlink" title="2.2 Static route: reading the constants from the machine code of fm_ioctl()"></a>2.2 Static route: reading the constants from the machine code of <code>fm_ioctl()</code></h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">file /lib/modules/marlin_fm.ko          <span class="comment"># -&gt; not stripped  ← prerequisite</span></span><br><span class="line">objdump -d --disassemble=fm_ioctl /lib/modules/marlin_fm.ko</span><br></pre></td></tr></table></figure>
+
+<p><code>fm_ioctl()</code> was compiled by the compiler into a <strong>binary search</strong>, and each case looks like:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">d48: ldr  r3, [pc, #1756] @ 142c    ; fetch the 32-bit constant from the literal pool</span><br><span class="line">d50: cmp  r1, r3                    ; r1 = the cmd passed in by the user</span><br><span class="line">d64: beq  12e8                      ; jump to the handler on a hit</span><br><span class="line">d6c: sub  r3, r3, #19               ; the compiler derives the next comparison point nearby with add/sub</span><br><span class="line">d70: cmp  r1, r3</span><br></pre></td></tr></table></figure>
+
+<p><strong>Two pitfalls you will certainly hit (both actually hit)</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Pitfall</th>
+<th>Symptom</th>
+<th>Correct approach</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>movw</code> only modifies the low 16 bits</strong></td>
+<td>taking the value of <code>movw r3, #62729</code> alone yields a “half number” like <code>0xf509</code></td>
+<td>you must include the high 16 bits (the <code>movt</code>, or the result of the preceding <code>sub</code> chain); the true value is <code>0xc004f509</code></td>
+</tr>
+<tr>
+<td><strong>The print strings are not in <code>.rodata</code></strong></td>
+<td>fetching strings by <code>.rodata</code> offset fails</td>
+<td>use <code>objdump -r</code> to read the relocation table: the format strings for the command names are in <strong><code>.rodata.str1.1</code></strong></td>
+</tr>
+</tbody></table>
+<p><strong>How to extract the command names</strong>: the fixed shape of each handler block is</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">11ac: movw r2, #112           @ __LINE__</span><br><span class="line">11b0: ldr  r0, [pc, #792] @ 14d0   ; ← the format string, always within the first 6 instructions</span><br><span class="line">11b4: ldr  r1, [pc, #632] @ 1434   ; ← __func__ &quot;fm_ioctl&quot;</span><br><span class="line">11b8: bl   printk</span><br></pre></td></tr></table></figure>
+
+<p>and the format string template is always <code>&quot;FM_DRV: %s-%d -- ----&lt;command name&gt;----&quot;</code>, so a full-string regex extracts the name precisely.</p>
+<h3 id="2-3-Dynamic-route-using-dmesg-as-the-“arbiter-of-truth”-the-final-criterion"><a href="#2-3-Dynamic-route-using-dmesg-as-the-“arbiter-of-truth”-the-final-criterion" class="headerlink" title="2.3 Dynamic route: using dmesg as the “arbiter of truth” (the final criterion)"></a>2.3 Dynamic route: using dmesg as the “arbiter of truth” (the final criterion)</h3><p>In the driver, <strong>the first thing every case does is print its own name</strong>, and this <code>printk</code> line comes <strong>before the actual handler</strong>,<br>so even if the handler fails due to invalid parameters, the name is still printed — this is a zero-cost, truth-arbitrable verification:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">FM_DRV: fm_ioctl-72  -- ----TUNE----</span><br><span class="line">FM_DRV: fm_ioctl-112 -- ----GETCHIPID----</span><br></pre></td></tr></table></figure>
+
+<p>The probe is minimal (<code>ssh_tools/fmprobe.c</code>):</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> fd = open(<span class="string">&quot;/dev/fm&quot;</span>, O_RDWR);</span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> arg[<span class="number">64</span>] = &#123;<span class="number">0</span>&#125;;          <span class="comment">/* all-zero parameters: most handlers return early due to invalid parameters */</span></span><br><span class="line"><span class="type">int</span> r = ioctl(fd, <span class="number">0xC004F502</span> <span class="comment">/*TUNE*/</span>, arg);</span><br></pre></td></tr></table></figure>
+
+<p><strong>The correct way to capture kernel logs</strong>: comparing <code>dmesg | wc -l</code> before and after is <strong>unreliable</strong> — on this device the <code>SDIOTRAN</code> subsystem floods the log at high frequency, and the ring buffer wraps around, causing missed reads (the first version of the scan therefore identified only 12&#x2F;47).<br><strong>You must first clear it with <code>dmesg -c</code>, then call, then read</strong>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">subprocess.run([<span class="string">&quot;dmesg&quot;</span>, <span class="string">&quot;-c&quot;</span>])            <span class="comment"># clear</span></span><br><span class="line">subprocess.run([<span class="string">&quot;/root/fmprobe&quot;</span>, <span class="built_in">hex</span>(cmd)])<span class="comment"># call once</span></span><br><span class="line">time.sleep(<span class="number">0.25</span>)</span><br><span class="line">body = subprocess.run([<span class="string">&quot;dmesg&quot;</span>], capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>).stdout</span><br></pre></td></tr></table></figure>
+
+<p>After switching to this method, <strong>one scan named 45&#x2F;47 successfully</strong>.</p>
+<h3 id="2-4-Cross-validation-search-for-the-same-constant-in-the-Android-libraries"><a href="#2-4-Cross-validation-search-for-the-same-constant-in-the-Android-libraries" class="headerlink" title="2.4 Cross-validation: search for the same constant in the Android libraries"></a>2.4 Cross-validation: search for the same constant in the Android libraries</h3><p>The vendor Android partition’s <code>libfmjni.so</code> <strong>contains the same batch of <code>0xC004F5xx</code> literals</strong> (18 occurrences found by raw byte search),<br>which independently confirms from a third party that the encoding is not something we miscalculated:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">raw = <span class="built_in">open</span>(<span class="string">&quot;/mnt/android_sys/lib/libfmjni.so&quot;</span>, <span class="string">&quot;rb&quot;</span>).read()</span><br><span class="line">b = (<span class="number">0xC004F500</span> | <span class="number">0x0a</span>).to_bytes(<span class="number">4</span>, <span class="string">&quot;little&quot;</span>)   <span class="comment"># 0a f5 04 c0</span></span><br><span class="line"><span class="built_in">print</span>(b <span class="keyword">in</span> raw)                                  <span class="comment"># True</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ <strong>Directly grepping <code>0xc004f5xx</code> in the objdump text finds nothing</strong> — <code>movw</code>&#x2F;<code>movt</code> split it into two instructions.<br>Either search the raw bytes, or search for <code>movt ... @ 0xc004</code>.</p>
+</blockquote>
+<h3 id="2-5-Cross-conclusion-of-the-static-and-dynamic-routes"><a href="#2-5-Cross-conclusion-of-the-static-and-dynamic-routes" class="headerlink" title="2.5 Cross-conclusion of the static and dynamic routes"></a>2.5 Cross-conclusion of the static and dynamic routes</h3><p>Static disassembly first produced 47 candidate constants, 31 of which resolved their names directly;<br>the remaining 16 (<code>0x02/0x05/0x08/0x0c/0x0f/0x12/0x18/0x1d/0x1f/0x23/0x26/0x29/0x2c/0x30/0x3e/0x46</code>)<br>were first inferred based on “the order of the command names in <code>.rodata</code> &#x3D; ascending <code>nr</code> order”, and then <strong>all were confirmed one by one by measurement, with no errors</strong>.</p>
+<hr>
+<h2 id="3-Incidental-finding-the-driver-actually-provides-a-dual-“AT-command-ioctl”-interface"><a href="#3-Incidental-finding-the-driver-actually-provides-a-dual-“AT-command-ioctl”-interface" class="headerlink" title="3. Incidental finding: the driver actually provides a dual “AT command + ioctl” interface"></a>3. Incidental finding: the driver actually provides a dual “AT command + ioctl” interface</h2><p>The complete kernel log captured during a measured TUNE:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">FM_DRV: fm_ioctl-72  -- ----TUNE----</span><br><span class="line">FM_DRV: fm_write-348 -- fm_write_completion done=0X0</span><br><span class="line">FM_DRV: fm_write_buf-310 -- fm start wake marlin</span><br><span class="line">FM_DRV: fm_write_buf-337 -- * fmdev-&gt;write_buf: at+fm=1,0 *</span><br><span class="line">fm_sdio_write size: 11</span><br><span class="line">FM_DRV: fm_write-356 -- fm_write_after_completion done=0X0</span><br></pre></td></tr></table></figure>
+
+<p>Three confirmable facts:</p>
+<ol>
+<li><strong>What the driver sends to the chip over SDIO is AT text</strong>, in the format <strong><code>at+fm=&lt;opcode&gt;,&lt;param&gt;</code></strong><br>(<code>at+fm=1,0</code> is 10 characters + NUL &#x3D; 11 bytes, matching <code>fm_sdio_write size: 11</code>).</li>
+<li><strong>The AT opcode is not the ioctl nr</strong>: <code>TUNE</code>‘s ioctl nr is <code>0x02</code>, but its AT opcode is <code>1</code>.<br>They are two separate numbering schemes; <strong>do not mix them up</strong>.</li>
+<li>The driver contains <code>parse_at_fm_cmd</code> &#x2F; <code>parse_at_fm_num</code>, indicating that <code>/dev/fm</code> <strong>also accepts direct <code>write()</code> of AT text</strong><br>— this is another way to bypass the ioctl (the fact that <code>libengfm.so</code> exports only <code>fm_runcommand</code> corroborates this).</li>
+</ol>
+<blockquote>
+<p>⚠️ <strong>The full AT opcode table has not been calibrated yet</strong>: only <code>power up -&gt; at+fm=0</code> and <code>TUNE -&gt; at+fm=1,&lt;freq&gt;</code> are confirmed so far.<br>Many commands in the scan print <code>at+fm=12</code>, whose semantics are unconfirmed (suspected to be a generic query frame).<br><strong>Until the AT frame of every command has been captured once, the daemon must always use the ioctl, not AT text.</strong></p>
+</blockquote>
+<h3 id="3-1-An-important-behavior-TUNE-blocks-for-about-4-seconds"><a href="#3-1-An-important-behavior-TUNE-blocks-for-about-4-seconds" class="headerlink" title="3.1 An important behavior: TUNE blocks for about 4 seconds"></a>3.1 An important behavior: <code>TUNE</code> blocks for about 4 seconds</h3><p><code>TUNE</code> (with arg&#x3D;0 at the time, i.e. an invalid frequency) returned <code>-1 / ETIMEDOUT</code>, and the log timestamps spanned</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[11448.618865] ----TUNE----      →  [11452.613128] fm_write_after_completion</span><br></pre></td></tr></table></figure>
+
+<p>That is <strong>about 3.99 s</strong>, corresponding to the driver line <code>seek Timeout(%d sec), fm seek end !</code>.</p>
+<p><strong>Design implications</strong>:</p>
+<ul>
+<li>TUNE&#x2F;SEEK in the daemon <strong>must be placed in a separate thread</strong>; the UI thread must not wait synchronously;</li>
+<li>the socket interface must have a timeout set (a pitfall hit on this project’s Bluetooth page: <code>SO_RCVTIMEO</code>);</li>
+<li>the UI needs a “tuning in progress” state and a timeout fallback.</li>
+</ul>
+<hr>
+<h2 id="4-Direct-impact-on-downstream-design"><a href="#4-Direct-impact-on-downstream-design" class="headerlink" title="4. Direct impact on downstream design"></a>4. Direct impact on downstream design</h2><table>
+<thead>
+<tr>
+<th>Previous state</th>
+<th>Now</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>操作手册</code> Step 2 &#x3D; “obtain the ioctl command numbers (the number one blocker)”</td>
+<td><strong>This step is complete</strong>; work can start from Step 3</td>
+</tr>
+<tr>
+<td>daemon could not be coded</td>
+<td>you can directly &#96;#define FM_IOCTL(nr) (0xC004F500</td>
+</tr>
+<tr>
+<td><code>OVER_BT_ENABLE</code> &#x2F; <code>ANA_SWITCH</code> semantics unknown</td>
+<td>the command numbers are now determined (<code>0x1D</code> &#x2F; <code>0x1E</code>), so you can start A&#x2F;B listening tests to confirm the path</td>
+</tr>
+<tr>
+<td>no interface for scanning&#x2F;fetching signal strength</td>
+<td><code>SCAN 0x08</code> + <code>SCAN_GETRSSI 0x24</code> are usable, and the UI spectrum can be drawn</td>
+</tr>
+<tr>
+<td>changing stations pops</td>
+<td><code>SOFT_MUTE_TUNE 0x3F</code> is usable</td>
+</tr>
+</tbody></table>
+<p><strong>The daemon’s minimal closed loop (P0) needs only 8 commands</strong>:<br><code>IS_FM_POWERED_UP(0x18)</code> → <code>power up(0x00)</code> → <code>TUNE(0x02)</code> &#x2F; <code>TUNE_NEW(0x3E)</code> →<br><code>GETRSSI(0x07)</code> → <code>SETVOL(0x04)</code> → <code>MUTE(0x06)</code> → <code>ANA_SWITCH(0x1E)</code> → <code>power down(0x01)</code>.</p>
+<hr>
+<h2 id="5-Confirmed-hard-facts-no-need-to-re-investigate"><a href="#5-Confirmed-hard-facts-no-need-to-re-investigate" class="headerlink" title="5. Confirmed hard facts (no need to re-investigate)"></a>5. Confirmed hard facts (no need to re-investigate)</h2><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Command encoding</td>
+<td><code>_IOWR(0xF5, nr, 4)</code> &#x3D; <code>0xC004F500 | nr</code></td>
+</tr>
+<tr>
+<td>Total number of commands</td>
+<td>47 with branches (45 measured + 2 inferred)</td>
+</tr>
+<tr>
+<td>Command name print format</td>
+<td><code>FM_DRV: &lt;func&gt;-&lt;line&gt; -- ----&lt;NAME&gt;----</code></td>
+</tr>
+<tr>
+<td>Command name print timing</td>
+<td><strong>before the actual handler</strong> (hence usable as the arbiter of truth)</td>
+</tr>
+<tr>
+<td>Device node</td>
+<td><code>/dev/fm</code> (misc 10:23)</td>
+</tr>
+<tr>
+<td>Chip communication</td>
+<td>SDIO, AT text <code>at+fm=&lt;opcode&gt;,&lt;param&gt;</code></td>
+</tr>
+<tr>
+<td><code>TUNE</code> blocking duration</td>
+<td>≈ 3.99 s (failure path, returns <code>ETIMEDOUT</code> on timeout)</td>
+</tr>
+<tr>
+<td><code>GETCHIPID</code> return value</td>
+<td><code>0x2341</code></td>
+</tr>
+<tr>
+<td>Static tool availability</td>
+<td>the device ships with <code>objdump</code> &#x2F; <code>readelf</code> &#x2F; <code>nm</code> &#x2F; <code>strings</code> &#x2F; <code>gcc</code> &#x2F; <code>python3</code></td>
+</tr>
+<tr>
+<td>Android side</td>
+<td><code>libfmjni.so</code> contains the same batch of constants; <code>libFMHalSource.so</code> handles PCM (<code>/dev/snd/controlC%i</code>)</td>
+</tr>
+</tbody></table>
+<h2 id="6-Verified-dead-ends-do-not-retry"><a href="#6-Verified-dead-ends-do-not-retry" class="headerlink" title="6. Verified dead ends (do not retry)"></a>6. Verified dead ends (do not retry)</h2><table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Looking for the FM driver source on the device</td>
+<td>❌ None; <code>/tmp/linux-3.10.65</code> is a <strong>vanilla kernel tree</strong> with no Spreadtrum private FM source</td>
+</tr>
+<tr>
+<td>Looking for <code>fm.h</code> &#x2F; <code>sprd_fm.h</code> header files</td>
+<td>❌ None on the whole disk (<code>find / -name &#39;*.h&#39; | grep -i fm</code> only hits unrelated files)</td>
+</tr>
+<tr>
+<td>Directly grepping the objdump text for <code>0xc004f5xx</code></td>
+<td>❌ the <code>movw</code>&#x2F;<code>movt</code> split makes it unfindable; <strong>you must search the raw bytes or search <code>movt @ 0xc004</code></strong></td>
+</tr>
+<tr>
+<td>Fetching the command name format strings from <code>.rodata</code></td>
+<td>❌ they are actually in <strong><code>.rodata.str1.1</code></strong>; you must read the relocation table</td>
+</tr>
+<tr>
+<td>Comparing <code>dmesg | wc -l</code> before and after to capture logs</td>
+<td>❌ the <code>SDIOTRAN</code> flood causes ring buffer wrap-around and silent missed reads; <strong>you must clear first with <code>dmesg -c</code></strong></td>
+</tr>
+<tr>
+<td>Reusing the Android FM user-space libraries</td>
+<td>❌ they depend on the Android runtime (<code>libcutils</code>&#x2F;<code>libutils</code>&#x2F;<code>binder</code>) and cannot be ported directly</td>
+</tr>
+</tbody></table>
+<h2 id="7-Still-unconfirmed-do-not-treat-as-fact"><a href="#7-Still-unconfirmed-do-not-treat-as-fact" class="headerlink" title="7. Still unconfirmed (do not treat as fact)"></a>7. Still unconfirmed (do not treat as fact)</h2><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Why it must wait for measurement</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>The full AT opcode table</td>
+<td>only 2 confirmed; the semantics of <code>at+fm=12</code> are unknown</td>
+</tr>
+<tr>
+<td>The exact command numbers of <code>STOP_SCAN</code> &#x2F; <code>DUMP_REG</code></td>
+<td>static inference, not confirmed by measured prints</td>
+</tr>
+<tr>
+<td>The structure&#x2F;dimension of each ioctl’s parameters</td>
+<td>this round used all-zero parameters and did not calibrate them (e.g. TUNE’s frequency unit and step)</td>
+</tr>
+<tr>
+<td>The value semantics of <code>ANA_SWITCH</code> &#x2F; <code>I2S_SETTING</code> &#x2F; <code>OVER_BT_ENABLE</code></td>
+<td>requires <strong>human-ear</strong> A&#x2F;B listening confirmation</td>
+</tr>
+<tr>
+<td>Whether it depends on headphones as the antenna</td>
+<td>requires a field test tuning to a strong-signal station without headphones plugged in</td>
+</tr>
+<tr>
+<td>The valid range and thresholds of RSSI</td>
+<td>must be calibrated by measurement; <strong>do not copy generic thresholds from the internet</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-Reproduction-scripts-engineering-scripts-outside-AI工作流"><a href="#8-Reproduction-scripts-engineering-scripts-outside-AI工作流" class="headerlink" title="8. Reproduction scripts (engineering scripts outside AI工作流)"></a>8. Reproduction scripts (engineering scripts outside <code>AI工作流</code>)</h2><table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ssh_tools/fm_ioctl_extract.py</code></td>
+<td>reverse-engineers command numbers↔names by static disassembly (including fixes for the two pitfalls: the <code>movw</code> high bits and <code>.rodata.str1.1</code>)</td>
+</tr>
+<tr>
+<td><code>ssh_tools/fm_re_full.py</code></td>
+<td>command name completeness check + Android library raw-byte cross-validation</td>
+</tr>
+<tr>
+<td><code>ssh_tools/pull_disasm.py</code></td>
+<td>pulls the <code>fm_ioctl</code> disassembly down locally for manual reading</td>
+</tr>
+<tr>
+<td><code>ssh_tools/fmprobe.c</code></td>
+<td>minimal ioctl probe on the device</td>
+</tr>
+<tr>
+<td><code>ssh_tools/fmprobe_sweep.py</code></td>
+<td>full measured scan (using the <code>dmesg -c</code> clearing method)</td>
+</tr>
+<tr>
+<td><code>ssh_tools/fm_any.c</code></td>
+<td>generic <code>/dev/fm</code> ioctl probe (<code>fm_any --seq 30:0 29:0</code>)</td>
+</tr>
+<tr>
+<td><code>ssh_tools/fm_tune_probe.c</code> + <code>_run.py</code></td>
+<td>dumps the 32-byte arg structure written back by the ioctl (to determine what the driver wrote)</td>
+</tr>
+<tr>
+<td><code>ssh_tools/fm_seek_probe&#123;,2&#125;.c</code> + <code>_run.py</code></td>
+<td>SEEK parameter matrix &#x2F; start point and direction semantics calibration (<strong>see 0.1 and the dedicated article for details</strong>)</td>
+</tr>
+<tr>
+<td><code>ssh_tools/fm_at_probe.c</code> + <code>_run.py</code></td>
+<td>verifies <code>write(/dev/fm)</code> writing AT text (conclusion: EINVAL)</td>
+</tr>
+<tr>
+<td><code>ssh_tools/fm_sigcmd_trace.py</code></td>
+<td>tests signal-class commands under a clean dmesg to see whether there is SDIO traffic</td>
+</tr>
+<tr>
+<td><code>ssh_tools/fm_rssi_sweep.py</code> &#x2F; <code>fm_rssi_trace.py</code></td>
+<td>multi-frequency RSSI scan &#x2F; complete driver log of a single tune+RSSI</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>The same technique can be reused directly on peripherals that “have a driver but no source”, such as GPS &#x2F; NFC &#x2F; sensors.</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>One-line summary</strong>: the command numbers were not lost, just hidden in the machine code of the <code>.ko</code>;<br><strong>static disassembly to locate candidates + single-step measured calls with all-zero parameters + <code>dmesg -c</code> clearing to capture logs</strong> —<br>three steps settle all 47 commands. The only hard blocker is removed, and you can start writing the daemon.</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Spreadtrum-SC9832A-FM-radio-%E2%80%94-reverse-engineered-reconstruction-of-the-ioctl-command-table-with-field-test-confirmation"><span class="toc-number">1.</span> <span class="toc-text">Spreadtrum SC9832A FM radio — reverse-engineered reconstruction of the ioctl command table (with field-test confirmation)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-One-line-summary"><span class="toc-number">1.1.</span> <span class="toc-text">0. One-line summary</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#0-1-%E2%9A%A0%EF%B8%8F-Important-corrections-added-2026-09-22-read-before-use"><span class="toc-number">1.2.</span> <span class="toc-text">0.1 ⚠️ Important corrections (added 2026-09-22, read before use)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Conclusion-table-usable-directly-as-fm-ioctl-h"><span class="toc-number">1.3.</span> <span class="toc-text">1. Conclusion table (usable directly as fm_ioctl.h)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Undefined-ranges-calls-return-1-with-no-log"><span class="toc-number">1.3.1.</span> <span class="toc-text">Undefined ranges (calls return -1 with no log)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-How-the-command-numbers-were-derived"><span class="toc-number">1.4.</span> <span class="toc-text">2. How the command numbers were derived</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-Encoding-rules"><span class="toc-number">1.4.1.</span> <span class="toc-text">2.1 Encoding rules</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Static-route-reading-the-constants-from-the-machine-code-of-fm-ioctl"><span class="toc-number">1.4.2.</span> <span class="toc-text">2.2 Static route: reading the constants from the machine code of fm_ioctl()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-Dynamic-route-using-dmesg-as-the-%E2%80%9Carbiter-of-truth%E2%80%9D-the-final-criterion"><span class="toc-number">1.4.3.</span> <span class="toc-text">2.3 Dynamic route: using dmesg as the “arbiter of truth” (the final criterion)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-Cross-validation-search-for-the-same-constant-in-the-Android-libraries"><span class="toc-number">1.4.4.</span> <span class="toc-text">2.4 Cross-validation: search for the same constant in the Android libraries</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-Cross-conclusion-of-the-static-and-dynamic-routes"><span class="toc-number">1.4.5.</span> <span class="toc-text">2.5 Cross-conclusion of the static and dynamic routes</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Incidental-finding-the-driver-actually-provides-a-dual-%E2%80%9CAT-command-ioctl%E2%80%9D-interface"><span class="toc-number">1.5.</span> <span class="toc-text">3. Incidental finding: the driver actually provides a dual “AT command + ioctl” interface</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-An-important-behavior-TUNE-blocks-for-about-4-seconds"><span class="toc-number">1.5.1.</span> <span class="toc-text">3.1 An important behavior: TUNE blocks for about 4 seconds</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Direct-impact-on-downstream-design"><span class="toc-number">1.6.</span> <span class="toc-text">4. Direct impact on downstream design</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Confirmed-hard-facts-no-need-to-re-investigate"><span class="toc-number">1.7.</span> <span class="toc-text">5. Confirmed hard facts (no need to re-investigate)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Verified-dead-ends-do-not-retry"><span class="toc-number">1.8.</span> <span class="toc-text">6. Verified dead ends (do not retry)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Still-unconfirmed-do-not-treat-as-fact"><span class="toc-number">1.9.</span> <span class="toc-text">7. Still unconfirmed (do not treat as fact)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Reproduction-scripts-engineering-scripts-outside-AI%E5%B7%A5%E4%BD%9C%E6%B5%81"><span class="toc-number">1.10.</span> <span class="toc-text">8. Reproduction scripts (engineering scripts outside AI工作流)</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&text=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&title=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&is_video=false&description=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=FM radio ioctl command table: reverse-engineered reconstruction&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&title=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&title=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&title=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&title=FM radio ioctl command table: reverse-engineered reconstruction"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-06-fm-ioctl-md/&name=FM radio ioctl command table: reverse-engineered reconstruction&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

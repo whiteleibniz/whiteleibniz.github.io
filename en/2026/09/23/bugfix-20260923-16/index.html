@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix 16 — GBA “after the changes no game can be entered”: putting the “timeout supplementary kill” in the reaping thread &#x3D; giving the game a 600ms lifespan Date: 2026-09-23 Scope of impact: lv_">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA games cannot be entered: the timeout supplementary kill misfired">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix 16 — GBA “after the changes no game can be entered”: putting the “timeout supplementary kill” in the reaping thread &#x3D; giving the game a 600ms lifespan Date: 2026-09-23 Scope of impact: lv_">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.947Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA games cannot be entered: the timeout supplementary kill misfired</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/23/bugfix-20260923-15/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/23/bugfix-20260923-17/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&text=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&title=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&is_video=false&description=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA games cannot be entered: the timeout supplementary kill misfired&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&title=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&title=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&title=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&title=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&name=GBA games cannot be entered: the timeout supplementary kill misfired&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-16-%E2%80%94-GBA-%E2%80%9Cafter-the-changes-no-game-can-be-entered%E2%80%9D-putting-the-%E2%80%9Ctimeout-supplementary-kill%E2%80%9D-in-the-reaping-thread-giving-the-game-a-600ms-lifespan"><span class="toc-number">1.</span> <span class="toc-text">bugfix 16 — GBA “after the changes no game can be entered”: putting the “timeout supplementary kill” in the reaping thread &#x3D; giving the game a 600ms lifespan</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Forensics-decisive-log"><span class="toc-number">1.2.</span> <span class="toc-text">2. Forensics (decisive log)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Root-cause"><span class="toc-number">1.3.</span> <span class="toc-text">3. Root cause</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Fix"><span class="toc-number">1.4.</span> <span class="toc-text">4. Fix</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Self-test-performed-by-AI-measurement-this-round-passed"><span class="toc-number">1.5.</span> <span class="toc-text">5. Self-test (performed by AI measurement this round, passed)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E2%80%9CWhy-is-FC-smooth-and-GBA-not%E2%80%9D-%E2%80%94-difference-table"><span class="toc-number">1.6.</span> <span class="toc-text">6. “Why is FC smooth and GBA not” — difference table</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Lessons-anti-patterns"><span class="toc-number">1.7.</span> <span class="toc-text">7. Lessons &#x2F; anti-patterns</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Changed-files-list"><span class="toc-number">1.8.</span> <span class="toc-text">8. Changed files list</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA games cannot be entered: the timeout supplementary kill misfired
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-16-—-GBA-“after-the-changes-no-game-can-be-entered”-putting-the-“timeout-supplementary-kill”-in-the-reaping-thread-giving-the-game-a-600ms-lifespan"><a href="#bugfix-16-—-GBA-“after-the-changes-no-game-can-be-entered”-putting-the-“timeout-supplementary-kill”-in-the-reaping-thread-giving-the-game-a-600ms-lifespan" class="headerlink" title="bugfix 16 — GBA “after the changes no game can be entered”: putting the “timeout supplementary kill” in the reaping thread &#x3D; giving the game a 600ms lifespan"></a>bugfix 16 — GBA “after the changes no game can be entered”: putting the “timeout supplementary kill” in the reaping thread &#x3D; giving the game a 600ms lifespan</h1><ul>
+<li><strong>Date</strong>: 2026-09-23</li>
+<li><strong>Scope of impact</strong>: <code>lv_pages/gba_game_page.c</code> (GBA game app; entering a game fails 100%)</li>
+<li><strong>Severity</strong>: P0 (functionality completely unusable, and it is a regression introduced by my own previous round of changes)</li>
+<li><strong>Related</strong>: bugfix 09~15 (consecutive iterations on the same exit chain)</li>
+<li><strong>Rollback point</strong>: <code>lv_pages/gba_game_page.c.bak_exit2</code> (state of document 14: games can be entered, intermittent picture freeze)</li>
+</ul>
+<hr>
+<h2 id="1-Symptom"><a href="#1-Symptom" class="headerlink" title="1. Symptom"></a>1. Symptom</h2><p>User feedback: <strong>“after the changes no game can be entered”</strong>. After pressing the confirm key to select a ROM, the game picture “flashes once” and returns to the list (sometimes the desktop as well), looking like “it simply cannot be entered”.</p>
+<p>Note the difference from the previous article (bugfix 15):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>bugfix 15</th>
+<th>bugfix 16 (this article)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Symptom</td>
+<td>games can be entered and played, <strong>exit intermittently hangs on the game picture</strong></td>
+<td><strong>entering a game exits instantly</strong>, no way to play at all</td>
+</tr>
+<tr>
+<td>Player’s feeling</td>
+<td>“occasionally abnormal”</td>
+<td>“completely unusable”</td>
+</tr>
+</tbody></table>
+<p><strong>This is a new regression I introduced while fixing 15</strong> — the source of “the more I fix, the more of a mess it gets”.</p>
+<hr>
+<h2 id="2-Forensics-decisive-log"><a href="#2-Forensics-decisive-log" class="headerlink" title="2. Forensics (decisive log)"></a>2. Forensics (decisive log)</h2><p>The complete sequence of one “enter game” event in <code>/tmp/lvgl_demo.log</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[HW Key] code=115 value=1 -&gt; ENTER          ← 用户按确认键</span><br><span class="line">[gba] 封面: .../Advance Wars (USA) (Rev 1).png</span><br><span class="line">[system] LVGL draw paused                    ← 进入游戏</span><br><span class="line">[Key Thread] 临时按键拦截器已启用。</span><br><span class="line">[Key Thread] EVIOCGRAB 请求释放</span><br><span class="line">[Key Thread] EVIOCGRAB 已释放(交给外部进程)</span><br><span class="line">[Key Thread] EVIOCGRAB 请求恢复独占           ← ★ 紧接着就恢复了</span><br><span class="line">[gba] fb 兜底翻回第0页(前端退出时停在第 1 页)   ← ★ 前端已经死了</span><br><span class="line">[system] LVGL draw resumed[nav] key=27</span><br><span class="line">[pm] 页面 &#x27;gba_game&#x27; 离场</span><br></pre></td></tr></table></figure>
+
+<p><strong>Two decisive facts</strong>:</p>
+<ol>
+<li>Between <code>EVIOCGRAB 已释放</code> and <code>EVIOCGRAB 请求恢复独占</code> there is <strong>no <code>[miniretro]</code> startup log of any kind</strong> — while in a normal game entry this section must have 12 lines (mapping fb, opening 5 evdev devices, loading the core, loading the ROM…).</li>
+<li>In the ordering, “restore exclusive grab + fallback page flip” immediately follows “release exclusive grab”, showing the <strong>child process has already exited</strong>, and exited extremely fast.</li>
+</ol>
+<p>→ <strong>The frontend did not exit on its own; it was killed by the parent process.</strong></p>
+<hr>
+<h2 id="3-Root-cause"><a href="#3-Root-cause" class="headerlink" title="3. Root cause"></a>3. Root cause</h2><p>In the previous round (bugfix 15) I changed the reaping logic from “blocking <code>waitpid</code>“ to:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* ★ 错误写法（bugfix 15 引入） */</span></span><br><span class="line"><span class="type">bool</span> reaped = <span class="literal">false</span>;</span><br><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">60</span>; i++) &#123;            <span class="comment">/* 最多 600ms */</span></span><br><span class="line">    <span class="type">pid_t</span> r = waitpid(pid, &amp;status, WNOHANG);</span><br><span class="line">    <span class="keyword">if</span>(r == pid) &#123; reaped = <span class="literal">true</span>; <span class="keyword">break</span>; &#125;</span><br><span class="line">    usleep(<span class="number">10</span> * <span class="number">1000</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span>(!reaped) &#123;</span><br><span class="line">    <span class="keyword">if</span>(kill(pid, <span class="number">0</span>) == <span class="number">0</span>) kill(pid, SIGKILL);   <span class="comment">/* ★ 把还在正常跑的游戏杀了 */</span></span><br><span class="line">    waitpid(pid, &amp;status, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>The motivation at the time was good</strong>: to leave a hard guarantee for “the frontend hangs” while not occupying the key thread. The comment even said “never set an upper limit of running for N seconds counts as exit” —</p>
+<p><strong>but this code itself is that upper limit.</strong> The criterion secretly changed from “the child process really disappears” to “600ms is up”, so:</p>
+<blockquote>
+<p>The user presses confirm → the frontend starts → renders the first frame → <strong>600ms is up → the parent process sends the supplementary SIGKILL → the game “flashes once and is gone”</strong>.</p>
+</blockquote>
+<p>This also explains why “the first entry sometimes shows one frame” — the frontend start + rendering the first frame is right around 600ms, and with luck one frame makes it out.</p>
+<p><strong>This pit was recorded in the project memory</strong> (“six already falsified paths”, item ①: setting an upper limit of “running for N seconds counts as exit” for a wait loop), and I violated it knowingly.</p>
+<hr>
+<h2 id="4-Fix"><a href="#4-Fix" class="headerlink" title="4. Fix"></a>4. Fix</h2><p><strong>Principle: return to “the criterion is a single hard event — the child process really disappears”, and strip “waiting” and “the supplementary kill” out of the reaping path entirely.</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Location</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>New <code>gba_kill_later()</code></td>
+<td><strong>a dedicated supplementary-kill thread</strong>: the only place that holds “sleep 600ms then send the supplementary SIGKILL”. It shares the same lock as the wait thread and uses <code>kill(pid,0)</code> + <code>child_pid</code> consistency verification to avoid mistakenly harming a reused pid</td>
+</tr>
+<tr>
+<td>B</td>
+<td><code>gba_wait_thread()</code></td>
+<td>removed the 600ms polling timeout, <strong>restored to a blocking <code>waitpid</code> (no upper limit)</strong> — identical line by line to the FC page’s <code>fc_wait_thread</code></td>
+</tr>
+<tr>
+<td>C</td>
+<td><code>gba_exit_to_list()</code></td>
+<td>no <code>sleep</code> in the key thread (it would leak keys and pop this page away); changed to <code>kill(SIGTERM)</code> + start the supplementary-kill thread and then <strong>return immediately</strong> to swallow keys</td>
+</tr>
+<tr>
+<td>D</td>
+<td><code>gba_on_destroy()</code></td>
+<td>unchanged (a rare main-thread path; SIGTERM + 300ms polling to protect .sav flushing)</td>
+</tr>
+</tbody></table>
+<p>The frontend <code>miniretro_gba.c</code> was <strong>unchanged</strong> this round.</p>
+<p><strong>Key implementation of the supplementary-kill thread</strong>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> *<span class="title function_">gba_kill_later</span><span class="params">(<span class="type">void</span> *arg)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">pid_t</span> pid = (<span class="type">pid_t</span>)(<span class="type">intptr_t</span>)arg;</span><br><span class="line">    usleep(GBA_KILL_TIMEOUT_MS * <span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line">    pthread_mutex_lock(&amp;s_gba.lock);</span><br><span class="line">    <span class="type">bool</span> alive = (s_gba.child_pid == pid);      <span class="comment">/* wait 线程收尸后会置 -1 */</span></span><br><span class="line">    <span class="keyword">if</span>(alive &amp;&amp; kill(pid, <span class="number">0</span>) == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;[gba] 前端 %dms 未退出, 补 SIGKILL pid=%d\n&quot;</span>, GBA_KILL_TIMEOUT_MS, (<span class="type">int</span>)pid);</span><br><span class="line">        kill(pid, SIGKILL);</span><br><span class="line">    &#125;</span><br><span class="line">    pthread_mutex_unlock(&amp;s_gba.lock);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Why the lock must cover both the check and the supplementary kill</strong>: the wait thread also sets <code>child_pid</code> to <code>-1</code> within the same lock. If reaping has already completed (<code>child_pid != pid</code>), the supplementary-kill thread skips directly → it will not act on an already-reclaimed, possibly-reused pid; if <code>child_pid == pid</code> can still be obtained, the process really has not been reaped and really is alive → the supplementary kill is legitimate.</p>
+<hr>
+<h2 id="5-Self-test-performed-by-AI-measurement-this-round-passed"><a href="#5-Self-test-performed-by-AI-measurement-this-round-passed" class="headerlink" title="5. Self-test (performed by AI measurement this round, passed)"></a>5. Self-test (performed by AI measurement this round, passed)</h2><p><strong>Method</strong>: inject uinput key navigation on the device (<code>LEFT×2 → DOWN×3 → ENTER×2</code>, via the <code>usb_map</code> path) to enter “Advance Wars”, then check whether the frontend is alive.</p>
+<p><strong>Results</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Check item</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Frontend process</td>
+<td><code>miniretro_gba</code> pid&#x3D;1780 <strong>still running</strong> (more than 1 minute since entering the game)</td>
+</tr>
+<tr>
+<td>fb foreground page</td>
+<td><code>yoffset=1280</code> (page 1) → <strong>the frontend is flipping pages and rendering normally</strong></td>
+</tr>
+<tr>
+<td>Log misfire traces</td>
+<td><code>grep -c &#39;未退出, 补 SIGKILL&#39;</code> &#x3D; <strong>0</strong></td>
+</tr>
+<tr>
+<td>Game startup log</td>
+<td><code>[miniretro] 游戏已加载 240x160, 59.73 fps</code> complete</td>
+</tr>
+<tr>
+<td>Picture</td>
+<td>the screenshot captured the actual game map of “Advance Wars” ✓</td>
+</tr>
+</tbody></table>
+<p><strong>Conclusion</strong>: the 600ms misfire has been eliminated, and the game can be entered and run continuously.</p>
+<blockquote>
+<p>Note: the injected keys go through <code>usb_map</code>, so “exiting via the 买单 key” cannot be tested (the physical code 116 does not go through <code>gba_key_intercept</code>); the exit path still requires the user to press the confirm key by hand on the device.</p>
+</blockquote>
+<hr>
+<h2 id="6-“Why-is-FC-smooth-and-GBA-not”-—-difference-table"><a href="#6-“Why-is-FC-smooth-and-GBA-not”-—-difference-table" class="headerlink" title="6. “Why is FC smooth and GBA not” — difference table"></a>6. “Why is FC smooth and GBA not” — difference table</h2><p>This is the core question the user keeps asking, and also the root cause of the repeated failures on this chain.</p>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>FC (fceumm)</th>
+<th>GBA (mgba)</th>
+<th>Consequence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>fb multi-buffered page flipping</strong></td>
+<td><strong>no page flipping</strong>, always writes page 0</td>
+<td><strong><code>FBIOPAN_DISPLAY</code> every frame, alternating between pages 0&#x2F;1</strong></td>
+<td>GBA exit must <strong>flip the page back to 0</strong>, otherwise the UI drawn by LVGL (which only draws page 0) is invisible → the screen stays frozen on the game picture</td>
+</tr>
+<tr>
+<td><strong>Amount of flushing on exit</strong></td>
+<td>small .sav, fast cleanup</td>
+<td>.sav can reach 32~128KB; a real SD card write can take hundreds of ms</td>
+<td>GBA needs a longer “wait for its cleanup” time</td>
+</tr>
+<tr>
+<td><strong>Where to wait</strong></td>
+<td><code>usleep(120ms)</code> in the key thread is enough (the frontend exits in ~30ms)</td>
+<td>if sleeping in the key thread likewise, <strong>during those 600ms nobody reads event0</strong> → the piled-up events leak to LVGL and become the “back” key → this page is popped</td>
+<td>GBA must move the wait out of the key thread</td>
+</tr>
+<tr>
+<td><strong>Reaping criterion</strong></td>
+<td>blocking <code>waitpid</code>, never had a timeout</td>
+<td>I once added a 600ms timeout → it became “setting a lifespan for the game”</td>
+<td><strong>this is this article’s P0</strong></td>
+</tr>
+<tr>
+<td><strong>Whether the frontend touches fb residue</strong></td>
+<td>no</td>
+<td>page flipping + (once) full-page memcpy freeze</td>
+<td>determines “who is responsible for the picture after exit”</td>
+</tr>
+</tbody></table>
+<p><strong>In one sentence</strong>: the FC frontend <strong>does not touch the framebuffer’s structure</strong> (no page flipping, no page copying), so its exit only needs “kill the process + wait for reaping”; the GBA frontend <strong>changes the framebuffer’s display state</strong> (foreground page), so on exit <strong>someone must be responsible for changing it back</strong> — this extra responsibility, if crammed into the “reaping thread” or the “key thread” for convenience, blows up as “the game cannot be entered” and “the exit hangs on the picture” respectively.</p>
+<hr>
+<h2 id="7-Lessons-anti-patterns"><a href="#7-Lessons-anti-patterns" class="headerlink" title="7. Lessons &#x2F; anti-patterns"></a>7. Lessons &#x2F; anti-patterns</h2><p><strong>New anti-pattern (already written into the <code>child-exit-hang-diagnosis</code> skill):</strong></p>
+<blockquote>
+<p><strong>Putting the “timeout supplementary kill” in the reaping thread &#x3D; covertly setting a lifespan for the child process.</strong><br>It looks like “leaving a hard guarantee for hangs”, but it actually covertly swaps the criterion from “the child process really disappears” to “N milliseconds is up”.<br>The symptom is very misleading: <strong>the game&#x2F;program “flashes once and is gone”, “cannot be entered”</strong>, while everything looks normal in the reaping thread’s log.<br>The correct approach: <strong>the supplementary kill must hang on a dedicated thread that “only exists after an exit request is received”</strong>, and the reaping path always has only one unbounded blocking <code>waitpid</code>.</p>
+</blockquote>
+<p><strong>Others:</strong></p>
+<ol>
+<li><strong>The iron rule of “the criterion is a single hard event” must be enforced in code, not just written in comments.</strong> This round my comment said “never set an upper limit”, yet the code was setting one.</li>
+<li><strong>The cost of a regression is higher than not fixing.</strong> bugfix 15, in order to solve “intermittent picture freeze” (low probability, tolerable), introduced “completely cannot enter” (100%, unusable). <strong>When fixing a probabilistic problem, the change must be more conservative than the problem itself.</strong></li>
+<li><strong>The distance between <code>EVIOCGRAB 请求释放</code> and <code>请求恢复独占</code></strong> is a very useful diagnostic quantity: too short &#x3D; the child process was killed (rather than exiting on its own); normal &#x3D; the frontend is running normally. <strong>It is recommended to add this to the troubleshooting checklist.</strong></li>
+<li>Static verification is faster than logs: <code>grep -c &#39;i &lt; 60&#39;</code>, <code>grep -c &#39;bool reaped&#39;</code> returning to zero confirms “the timeout logic has been completely removed”.</li>
+</ol>
+<hr>
+<h2 id="8-Changed-files-list"><a href="#8-Changed-files-list" class="headerlink" title="8. Changed files list"></a>8. Changed files list</h2><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>lv_pages/gba_game_page.c</code></td>
+<td>changes A&#x2F;B&#x2F;C; device backups <code>.bak_exit3</code> (before the change, broken), <code>.bak_exit2</code> (document 14, games can be entered)</td>
+</tr>
+<tr>
+<td><code>ssh_tools/patch_gba_exit_v3.py</code></td>
+<td>patch script (3 replacements, all hit)</td>
+</tr>
+<tr>
+<td><code>ssh_tools/deploy_gba_exit_v3.py</code></td>
+<td>deployment script (upload&#x2F;build&#x2F;atomic replacement&#x2F;restart&#x2F;static verification)</td>
+</tr>
+<tr>
+<td><code>ssh_tools/_tmp/alive_check.sh</code></td>
+<td>self-test script (frontend alive + foreground page + misfire traces)</td>
+</tr>
+<tr>
+<td><code>_fc_ref/gba_game_page.c</code></td>
+<td>local reference copy (synced to the latest)</td>
+</tr>
+</tbody></table>
+<p><strong>Commit message (pending user confirmation)</strong>:<br><code>fix(gba): 恢复无上限阻塞收尸，超时补刀移到专职线程（修「游戏进不去」回归）</code></p>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-16-%E2%80%94-GBA-%E2%80%9Cafter-the-changes-no-game-can-be-entered%E2%80%9D-putting-the-%E2%80%9Ctimeout-supplementary-kill%E2%80%9D-in-the-reaping-thread-giving-the-game-a-600ms-lifespan"><span class="toc-number">1.</span> <span class="toc-text">bugfix 16 — GBA “after the changes no game can be entered”: putting the “timeout supplementary kill” in the reaping thread &#x3D; giving the game a 600ms lifespan</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Forensics-decisive-log"><span class="toc-number">1.2.</span> <span class="toc-text">2. Forensics (decisive log)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Root-cause"><span class="toc-number">1.3.</span> <span class="toc-text">3. Root cause</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Fix"><span class="toc-number">1.4.</span> <span class="toc-text">4. Fix</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Self-test-performed-by-AI-measurement-this-round-passed"><span class="toc-number">1.5.</span> <span class="toc-text">5. Self-test (performed by AI measurement this round, passed)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E2%80%9CWhy-is-FC-smooth-and-GBA-not%E2%80%9D-%E2%80%94-difference-table"><span class="toc-number">1.6.</span> <span class="toc-text">6. “Why is FC smooth and GBA not” — difference table</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Lessons-anti-patterns"><span class="toc-number">1.7.</span> <span class="toc-text">7. Lessons &#x2F; anti-patterns</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Changed-files-list"><span class="toc-number">1.8.</span> <span class="toc-text">8. Changed files list</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&text=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&title=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&is_video=false&description=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA games cannot be entered: the timeout supplementary kill misfired&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&title=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&title=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&title=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&title=GBA games cannot be entered: the timeout supplementary kill misfired"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-16/&name=GBA games cannot be entered: the timeout supplementary kill misfired&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

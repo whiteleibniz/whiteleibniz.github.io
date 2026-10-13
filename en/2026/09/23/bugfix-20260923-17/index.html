@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="bugfix_20260923_17 · GBA audio-video latency of 1~2 seconds: located in the speaker-side buffer, no fixable point on the device side Date: 2026-09-23 Device: Spreadtrum SC9832A &#x2F; Alpine Linux &amp;#x">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GBA audio lags video by 1~2 seconds: located in the speaker-side buffer">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="bugfix_20260923_17 · GBA audio-video latency of 1~2 seconds: located in the speaker-side buffer, no fixable point on the device side Date: 2026-09-23 Device: Spreadtrum SC9832A &#x2F; Alpine Linux &amp;#x">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-23T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.947Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="bugfix">
+<meta property="article:tag" content="模拟器">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>GBA audio lags video by 1~2 seconds: located in the speaker-side buffer</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/23/bugfix-20260923-16/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/09/23/bugfix-20260923-18/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&text=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&title=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&is_video=false&description=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&title=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&title=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&title=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&title=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&name=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-17-%C2%B7-GBA-audio-video-latency-of-1-2-seconds-located-in-the-speaker-side-buffer-no-fixable-point-on-the-device-side"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_17 · GBA audio-video latency of 1~2 seconds: located in the speaker-side buffer, no fixable point on the device side</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Localization-method-chain-segmentation-quantification-latency-budget-table"><span class="toc-number">1.2.</span> <span class="toc-text">2. Localization method: chain segmentation quantification (latency budget table)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Why-it-was-judged-to-be-on-the-speaker-side-and-why-the-device-side-cannot-measure-it"><span class="toc-number">1.3.</span> <span class="toc-text">3. Why it was judged to be on the speaker side (and why the device side cannot measure it)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-This-round%E2%80%99s-conclusion-and-decision"><span class="toc-number">1.4.</span> <span class="toc-text">4. This round’s conclusion and decision</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Anti-patterns-and-pitfalls"><span class="toc-number">1.6.</span> <span class="toc-text">6. Anti-patterns and pitfalls</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Related-files"><span class="toc-number">1.7.</span> <span class="toc-text">7. Related files</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        GBA audio lags video by 1~2 seconds: located in the speaker-side buffer
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:00:00.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/bugfix/" rel="tag">bugfix</a>, <a class="tag-link-link" href="/tags/%E6%A8%A1%E6%8B%9F%E5%99%A8/" rel="tag">模拟器</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="bugfix-20260923-17-·-GBA-audio-video-latency-of-1-2-seconds-located-in-the-speaker-side-buffer-no-fixable-point-on-the-device-side"><a href="#bugfix-20260923-17-·-GBA-audio-video-latency-of-1-2-seconds-located-in-the-speaker-side-buffer-no-fixable-point-on-the-device-side" class="headerlink" title="bugfix_20260923_17 · GBA audio-video latency of 1~2 seconds: located in the speaker-side buffer, no fixable point on the device side"></a>bugfix_20260923_17 · GBA audio-video latency of 1~2 seconds: located in the speaker-side buffer, no fixable point on the device side</h1><ul>
+<li>Date: 2026-09-23</li>
+<li>Device: Spreadtrum SC9832A &#x2F; Alpine Linux &#x2F; 720x1280 fb</li>
+<li>App: GBA game (<code>miniretro_gba</code> + <code>mgba_libretro.so</code>) → Bluetooth A2DP (小爱音箱 &#x2F; Xiaoai speaker)</li>
+<li>Category: audio chain &#x2F; latency budget localization</li>
+<li><strong>Conclusion: the full-chain latency on the device side is ≤0.25s, a 4<del>8x difference from the user’s measured 1</del>2s; the excess is in the Bluetooth speaker’s application-layer buffer, which is neither observable nor controllable from the device side → no code changes this round</strong></li>
+</ul>
+<hr>
+<h2 id="1-Symptom"><a href="#1-Symptom" class="headerlink" title="1. Symptom"></a>1. Symptom</h2><p>User feedback: in the GBA game, <strong>the sound lags behind the game picture</strong>, on the order of <strong>1~2 seconds</strong>, and it is <strong>fixed</strong> (it lags by that much as soon as the game is entered, with no obvious change over long play sessions).</p>
+<p><strong>The “fixed” property is decisive</strong>: it rules out the “device-side backlog” class of causes (a backlog accumulates over time and grows the longer you play), and points to a <strong>fixed buffer</strong> somewhere in the chain.</p>
+<h2 id="2-Localization-method-chain-segmentation-quantification-latency-budget-table"><a href="#2-Localization-method-chain-segmentation-quantification-latency-budget-table" class="headerlink" title="2. Localization method: chain segmentation quantification (latency budget table)"></a>2. Localization method: chain segmentation quantification (latency budget table)</h2><p>Split “game audio generation → sound output” into 5 segments, quantify the latency of each segment, and find the segment whose <strong>magnitude does not add up</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Segment</th>
+<th>Latency</th>
+<th>Basis (reproducible)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>mGBA core internal audio buffer</td>
+<td><strong>~33ms</strong></td>
+<td><code>libretro.c</code>: <code>internalAudioBufferSize = audioSamplesPerFrame * 2</code> (capped at <code>0x4000</code>); GBA has ~1097 samples per frame → about 2 frames; and <code>retro_run</code> takes them out with <code>mAudioBufferRead(buffer, ..., audioSamplesPerFrameAvg)</code> <strong>once per frame</strong>, with no accumulation</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Frontend <code>miniretro_gba</code></td>
+<td><strong>0</strong></td>
+<td><code>fifo_write()</code> is <strong>write-on-receipt, non-blocking</strong> (EAGAIN is dropped directly); resampling is <strong>stateless sample dropping</strong> (<code>s_out_acc</code> accumulator + direct sample copying), <strong>with no internal queue and no batching</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>/tmp/bt_audio.fifo</code> backlog</td>
+<td><strong>80ms</strong></td>
+<td>measured after the water-level loop closed: <code>back ≈ 14000B</code> (the original 0.21s has been squeezed to ~0.08s)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>daemon in-flight packets</td>
+<td><strong>≤122ms</strong></td>
+<td><code>A2DP_MEDIA_INFLIGHT_MAX=6</code> × 20.3ms per packet; measured <code>inflight=0/1776</code>, <code>credit busy=0</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Bluetooth air interface + speaker application-layer buffer</strong></td>
+<td><strong>not observable</strong></td>
+<td>see §3</td>
+</tr>
+<tr>
+<td>—</td>
+<td><strong>Device-side subtotal</strong></td>
+<td><strong>≤0.25s</strong></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Compare with the user’s measured 1~2 seconds: <strong>the entire difference falls on segment 5</strong>.</p>
+<h2 id="3-Why-it-was-judged-to-be-on-the-speaker-side-and-why-the-device-side-cannot-measure-it"><a href="#3-Why-it-was-judged-to-be-on-the-speaker-side-and-why-the-device-side-cannot-measure-it" class="headerlink" title="3. Why it was judged to be on the speaker side (and why the device side cannot measure it)"></a>3. Why it was judged to be on the speaker side (and why the device side cannot measure it)</h2><p><strong>Basis for the judgment</strong>: all four segments on the device side have hard measurements totaling ≤0.25s; the “fixed” property also rules out cumulative causes. The remaining magnitude can only come from the speaker.</p>
+<p><strong>Why the device side cannot observe the speaker buffer</strong> (these three points are the focus of this section; do not waste effort looking again):</p>
+<ol>
+<li><strong>The ACL layer’s <code>Number-Completed(0x13)</code> is not an application-layer consumption acknowledgment</strong> — it is returned by the <strong>Bluetooth controller</strong> and only means “the air-interface transmission is done”; the speaker putting the packet into its own buffer does not trigger any additional notification.</li>
+<li><strong>The A2DP media channel uses L2CAP basic mode, which has no credit flow control</strong> — the sink does not tell the source “how much I still have on hand”.</li>
+<li><strong>The daemon’s sending cadence is the device side’s absolute clock</strong> (one packet every 20.3ms), fully decoupled from the speaker’s consumption cadence; the device side can only know “how much I have sent”, not “where it has played to”.</li>
+</ol>
+<p><strong>Corroborating evidence</strong>: the daemon source comment (from the v48R22 fix) states “<strong>sink 缓冲约 2s</strong>“. That was observed in an abnormal state (pushing the stream without START), but it indirectly confirms that this speaker’s buffer depth is on the <strong>order of seconds</strong>.</p>
+<h2 id="4-This-round’s-conclusion-and-decision"><a href="#4-This-round’s-conclusion-and-decision" class="headerlink" title="4. This round’s conclusion and decision"></a>4. This round’s conclusion and decision</h2><ul>
+<li><strong>No code changes on the device side.</strong> Reason: the only remaining compressible amount on the device side is about 90ms (fifo water level 60→30ms, in-flight window 6→3), which is a 5% magnitude relative to 1~2s, with negligible benefit; and tightening the Bluetooth sending window carries a historical “CP reset” risk, making the risk&#x2F;benefit ratio not worth it.</li>
+<li>The <strong>fifo water-level loop</strong> already landed in the previous round (squeezing the backlog from 0.21s to 0.08s) is kept; it is an effective, side-effect-free improvement.</li>
+<li><strong>The feasible improvement direction is only on the speaker side</strong>: the speaker app &#x2F; speaker unit’s “low latency &#x2F; game mode” switch; or swapping in a Bluetooth speaker&#x2F;headphones with lower latency for a comparison.</li>
+</ul>
+<h2 id="5-Verification"><a href="#5-Verification" class="headerlink" title="5. Verification"></a>5. Verification</h2><ul>
+<li>The user has confirmed: <strong>fixed lag</strong>, on the order of <strong>1~2 seconds</strong> → fully consistent with the “speaker fixed buffer” model.</li>
+<li><strong>Comparison experiment (recommended for the user, one step to a conclusion)</strong>: connect the device to <strong>another Bluetooth headphone&#x2F;speaker</strong>; if the latency changes significantly → 100% confirmed to be on the speaker side; if it is still 1~2 seconds regardless of the swap → go back and check the chain.</li>
+</ul>
+<h2 id="6-Anti-patterns-and-pitfalls"><a href="#6-Anti-patterns-and-pitfalls" class="headerlink" title="6. Anti-patterns and pitfalls"></a>6. Anti-patterns and pitfalls</h2><ul>
+<li><strong>★ Do not use “device-side buffer metrics” to explain “second-order” latency</strong> — first make a latency budget table, see which magnitude does not add up, then dig into that segment. Guessing “it must be the buffer” by intuition will keep you spinning on the device side.</li>
+<li><strong>★ <code>Number-Completed</code> ≠ application-layer consumption acknowledgment</strong> (see §3.1); using it to estimate the speaker buffer is wrong.</li>
+<li><strong>★ Pay attention to the counting method when measuring</strong>: only differencing whole-file counts is meaningful; using “fixed-prefix counts” for differencing is necessarily 0 (a pit I dug for myself; it was really stepped on this round); log rotation can also pollute the difference.</li>
+<li><strong>★ Using <code>FIONREAD</code> to measure fifo backlog is trustworthy</strong>: it returns the number of readable bytes inside the pipe, independent of the number of readers; reading only FIONREAD without read will not steal the consumer’s data.</li>
+<li><strong>★ The frontend’s design of “stretching audio to real time” is correct</strong>: the core’s output varies with the actual frame rate, and the frontend normalizes by <code>s_fpc × s_fps_meas</code> and always outputs at 44100 frames per second, keeping audio and video <strong>content rate</strong> in sync (at the cost of pitch dropping with the frame rate). Stop doubting this part.</li>
+</ul>
+<h2 id="7-Related-files"><a href="#7-Related-files" class="headerlink" title="7. Related files"></a>7. Related files</h2><ul>
+<li>Device source: <code>extern/miniretro/miniretro_gba.c</code>, <code>extern/miniretro/build.sh</code>, <code>/tmp/bt_user_daemon_v49.c</code></li>
+<li>Upstream evidence: <code>/home/GBAgame/mgba/src/platform/libretro/libretro.c</code> (audio buffer lines 877<del>910, <code>retro_run</code> delivery lines 618</del>648)</li>
+<li>Diagnostic scripts: <code>ssh_tools/_tmp/&#123;audio_probe,sample_audio,rate2,mgba_lr_read,delay_send&#125;.sh</code></li>
+<li>Related archives: <code>bugfix_20260923_03</code> ~ <code>_16</code></li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bugfix-20260923-17-%C2%B7-GBA-audio-video-latency-of-1-2-seconds-located-in-the-speaker-side-buffer-no-fixable-point-on-the-device-side"><span class="toc-number">1.</span> <span class="toc-text">bugfix_20260923_17 · GBA audio-video latency of 1~2 seconds: located in the speaker-side buffer, no fixable point on the device side</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Localization-method-chain-segmentation-quantification-latency-budget-table"><span class="toc-number">1.2.</span> <span class="toc-text">2. Localization method: chain segmentation quantification (latency budget table)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Why-it-was-judged-to-be-on-the-speaker-side-and-why-the-device-side-cannot-measure-it"><span class="toc-number">1.3.</span> <span class="toc-text">3. Why it was judged to be on the speaker side (and why the device side cannot measure it)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-This-round%E2%80%99s-conclusion-and-decision"><span class="toc-number">1.4.</span> <span class="toc-text">4. This round’s conclusion and decision</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verification"><span class="toc-number">1.5.</span> <span class="toc-text">5. Verification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Anti-patterns-and-pitfalls"><span class="toc-number">1.6.</span> <span class="toc-text">6. Anti-patterns and pitfalls</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Related-files"><span class="toc-number">1.7.</span> <span class="toc-text">7. Related files</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&text=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&title=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&is_video=false&description=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&title=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&title=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&title=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&title=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/bugfix-20260923-17/&name=GBA audio lags video by 1~2 seconds: located in the speaker-side buffer&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

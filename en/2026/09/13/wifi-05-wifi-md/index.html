@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="WiFi Chip Bring-up — Work Process and Approach Summary Topic: a review of the complete investigation and resolution process from “WiFi completely broken under Alpine” to “scannable, connectable”.Docum">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WiFi Chip Bring-up Work Process and Approach Summary">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="WiFi Chip Bring-up — Work Process and Approach Summary Topic: a review of the complete investigation and resolution process from “WiFi completely broken under Alpine” to “scannable, connectable”.Docum">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-13T07:27:33.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.985Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="WiFi">
+<meta property="article:tag" content="SC2331">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>WiFi Chip Bring-up Work Process and Approach Summary</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/13/wifi-04-wifi-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/13/bt-03-vsalpine-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&text=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&title=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&is_video=false&description=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=WiFi Chip Bring-up Work Process and Approach Summary&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&title=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&title=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&title=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&title=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&name=WiFi Chip Bring-up Work Process and Approach Summary&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#WiFi-Chip-Bring-up-%E2%80%94-Work-Process-and-Approach-Summary"><span class="toc-number">1.</span> <span class="toc-text">WiFi Chip Bring-up — Work Process and Approach Summary</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Problem-Definition-getting-the-question-right-first"><span class="toc-number">1.1.</span> <span class="toc-text">1. Problem Definition (getting the question right first)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Phase-1-Frontal-Attempts-about-6-approaches-all-failed"><span class="toc-number">1.2.</span> <span class="toc-text">2. Phase 1: Frontal Attempts (about 6 approaches, all failed)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Phase-2-Forensics-from-the-Reference-Machine-using-facts-instead-of-guesses"><span class="toc-number">1.3.</span> <span class="toc-text">3. Phase 2: Forensics from the Reference Machine (using facts instead of guesses)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Connection-and-Forensics"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 Connection and Forensics</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Key-Decision-chroot-Reuse-of-the-Android-Binary"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Key Decision: chroot Reuse of the Android Binary</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Phase-3-Breaking-Down-chroot-Run-Obstacles-One-by-One-strace-driven"><span class="toc-number">1.4.</span> <span class="toc-text">4. Phase 3: Breaking Down chroot Run Obstacles One by One (strace-driven)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Phase-4-DTB-Correction-eliminating-hidden-variables"><span class="toc-number">1.5.</span> <span class="toc-text">5. Phase 4: DTB Correction (eliminating hidden variables)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Phase-5-Drivers-and-User-Space-Supplicant"><span class="toc-number">1.6.</span> <span class="toc-text">6. Phase 5: Drivers and User-Space Supplicant</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-Driver-Loading-order-sensitive"><span class="toc-number">1.6.1.</span> <span class="toc-text">6.1 Driver Loading (order-sensitive)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-wpa-supplicant-decisions-made-through-pitfalls"><span class="toc-number">1.6.2.</span> <span class="toc-text">6.2 wpa_supplicant (decisions made through pitfalls)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-Scan-Success"><span class="toc-number">1.6.3.</span> <span class="toc-text">6.3 Scan Success</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Timeline-Overview"><span class="toc-number">1.7.</span> <span class="toc-text">7. Timeline Overview</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Methodology-Precipitation-transferable-to-other-boards-chips"><span class="toc-number">1.8.</span> <span class="toc-text">8. Methodology Precipitation (transferable to other boards&#x2F;chips)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-Remaining-Items-and-Future-Directions"><span class="toc-number">1.9.</span> <span class="toc-text">9. Remaining Items and Future Directions</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#This-summary-reviews-the-complete-chain-from-%E2%80%9Csymptom%E2%80%9D-to-%E2%80%9Croot-cause%E2%80%9D-to-%E2%80%9Csolution%E2%80%9D-The-core-in-one-sentence-the-chip-is-not-broken-the-kernel-is-not-broken-what-is-broken-is-%E2%80%9CAlpine-lacks-Android%E2%80%99s-chip-initialization-service%E2%80%9D-%E2%80%94-borrow-this-step-back-with-chroot-and-the-chain-is-connected"><span class="toc-number">1.10.</span> <span class="toc-text">This summary reviews the complete chain from “symptom” to “root cause” to “solution”. The core in one sentence: the chip is not broken, the kernel is not broken; what is broken is “Alpine lacks Android’s chip initialization service” — borrow this step back with chroot, and the chain is connected.</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        WiFi Chip Bring-up Work Process and Approach Summary
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-13T07:27:33.000Z" itemprop="datePublished">2026-09-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/SC2331/" rel="tag">SC2331</a>, <a class="tag-link-link" href="/tags/WiFi/" rel="tag">WiFi</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="WiFi-Chip-Bring-up-—-Work-Process-and-Approach-Summary"><a href="#WiFi-Chip-Bring-up-—-Work-Process-and-Approach-Summary" class="headerlink" title="WiFi Chip Bring-up — Work Process and Approach Summary"></a>WiFi Chip Bring-up — Work Process and Approach Summary</h1><blockquote>
+<p><strong>Topic</strong>: a review of the complete investigation and resolution process from “WiFi completely broken under Alpine” to “scannable, connectable”.<br><strong>Document goal</strong>: to record my (the executor’s) <strong>analytical approach, step-by-step breakdown, key decisions and reasons</strong>, for easy review and transfer to similar problems.<br><strong>Document version</strong>: v1.0　|　2026-09</p>
+</blockquote>
+<hr>
+<h2 id="1-Problem-Definition-getting-the-question-right-first"><a href="#1-Problem-Definition-getting-the-question-right-first" class="headerlink" title="1. Problem Definition (getting the question right first)"></a>1. Problem Definition (getting the question right first)</h2><p><strong>Symptoms</strong>:</p>
+<ul>
+<li>Device spd-box (SC9832A, Android 6 kernel 3.10.65 + Alpine Linux 3.21 armhf);</li>
+<li>WiFi&#x2F;Bluetooth work under Android;</li>
+<li>after switchroot, WiFi fails: <code>dmesg</code> repeatedly shows <code>SDIO dev not ready</code>, GPIO94 READY stays at 0, and the kernel cannot enumerate the chip.</li>
+</ul>
+<p><strong>The first thing I did was “define the problem boundary”</strong>:</p>
+<ul>
+<li>Is the hardware broken? → the user explicitly said it works under Android, and there is a same-model H709 working normally → <strong>hardware fault ruled out</strong>.</li>
+<li>Is the kernel wrong? → the kernel is still Android 3.10.65, not replaced → <strong>the kernel is most likely not the root cause</strong>.</li>
+<li>Then the only differences left are two: <strong>the root filesystem (user space)</strong> and <strong>DTB&#x2F;configuration</strong>.</li>
+</ul>
+<p>This “rule out the impossible first” definition kept the follow-up investigation from going down the wrong path of recompiling the kernel or suspecting hardware.</p>
+<hr>
+<h2 id="2-Phase-1-Frontal-Attempts-about-6-approaches-all-failed"><a href="#2-Phase-1-Frontal-Attempts-about-6-approaches-all-failed" class="headerlink" title="2. Phase 1: Frontal Attempts (about 6 approaches, all failed)"></a>2. Phase 1: Frontal Attempts (about 6 approaches, all failed)</h2><p>Before getting the reference machine, I first tried to “manually simulate” power-up in Alpine; all failed, recorded as follows:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Attempted Approach</th>
+<th>Result</th>
+<th>Reason for Failure (attributed afterwards)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>manual ioctl combinations (various orders of POWER_ON&#x2F;POWER_RST)</td>
+<td>ineffective</td>
+<td>the power-up timing is not something simple ioctls can replicate; a complete state machine is needed</td>
+</tr>
+<tr>
+<td>2</td>
+<td>injecting power attributes into the DTB (vddwifipa&#x2F;vddcon&#x2F;always-on&#x2F;runtime)</td>
+<td>ineffective</td>
+<td>the attributes themselves are not missing; what is missing is the action of “user-space driving firmware download”</td>
+</tr>
+<tr>
+<td>3</td>
+<td>GPIO sampling guidance (tracking pin levels to find the timing)</td>
+<td>ineffective</td>
+<td>READY staying at 0 shows the chip was never activated at all</td>
+</tr>
+<tr>
+<td>4</td>
+<td>&#x2F;dev&#x2F;mem mmap direct register writes</td>
+<td>ineffective</td>
+<td>register-level operations cannot replace the chip’s boot protocol</td>
+</tr>
+<tr>
+<td>5</td>
+<td>compiling kernel modules on the device (wanting to add driver logic)</td>
+<td>failed</td>
+<td>the device has no kernel build directory, and the cross-compilation toolchain is unavailable</td>
+</tr>
+<tr>
+<td>6</td>
+<td>p21 (recovery) dtb modification</td>
+<td>ineffective</td>
+<td>not the active partition; changes have no effect</td>
+</tr>
+</tbody></table>
+<p><strong>Key insight (why I stopped)</strong>:</p>
+<ul>
+<li>the common point of failures 1-4 is that “I was <strong>imitating</strong> a protocol whose complete details I did not know”;</li>
+<li>the chip’s power-up + firmware download is a <strong>vendor-private protocol</strong>; reverse-engineering it is extremely costly with a low success rate;</li>
+<li><strong>Change of approach</strong>: since there is a ready-made implementation in Android (the download service), <strong>rather than imitating, reuse it</strong>.</li>
+</ul>
+<blockquote>
+<p>Methodology 1: when facing a problem of “unknown protocol”, prioritize finding a “ready-made implementation” rather than reverse-engineering the protocol.</p>
+</blockquote>
+<hr>
+<h2 id="3-Phase-2-Forensics-from-the-Reference-Machine-using-facts-instead-of-guesses"><a href="#3-Phase-2-Forensics-from-the-Reference-Machine-using-facts-instead-of-guesses" class="headerlink" title="3. Phase 2: Forensics from the Reference Machine (using facts instead of guesses)"></a>3. Phase 2: Forensics from the Reference Machine (using facts instead of guesses)</h2><p>The user made a key suggestion: there is a <strong>same-model device with working Android</strong> that can be used for a control experiment. This solved the problem of “not knowing what the correct behavior is”.</p>
+<h3 id="3-1-Connection-and-Forensics"><a href="#3-1-Connection-and-Forensics" class="headerlink" title="3.1 Connection and Forensics"></a>3.1 Connection and Forensics</h3><p>Connected to the H709 (root&#x3D;Magisk) via WatchTools adb (<code>AndroidWatch_ADB_ToolBox\adb\adb.exe</code>):</p>
+<p>Facts obtained:</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Partition mapping</td>
+<td>boot&#x3D;p16, wcnfdl&#x3D;p14, wcnmodem&#x3D;p15, system&#x3D;p17, recovery&#x3D;p21</td>
+</tr>
+<tr>
+<td>boot image</td>
+<td><code>boot_p16_android.img</code> (20MB, <code>ANDROID!</code> header, FDT @0xB71800)</td>
+</tr>
+<tr>
+<td>Stock DTB</td>
+<td><code>android_orig.dtb</code> (53,967 bytes)</td>
+</tr>
+<tr>
+<td>Power-up program</td>
+<td><code>/system/bin/download</code> + <code>/system/lib/libiwnpi.so</code></td>
+</tr>
+<tr>
+<td>Firmware partitions</td>
+<td>wcnfdl (p14), wcnmodem (p15)</td>
+</tr>
+<tr>
+<td>User-space configuration</td>
+<td><code>/etc/marlinba/*.ini</code></td>
+</tr>
+</tbody></table>
+<p><strong>Why these are decisive</strong>:</p>
+<ul>
+<li>the partition mapping tells me “where the firmware is, where boot is”;</li>
+<li>the download binary tells me “how Android powers the chip”;</li>
+<li>the stock DTB tells me “how the hardware should be described”.</li>
+</ul>
+<blockquote>
+<p>Methodology 2: take forensics by comparing against a “known-correct system”, turning guesses into verifiable facts. Forensics should take <strong>things that run</strong> (binaries, firmware, configurations), not just look at logs.</p>
+</blockquote>
+<h3 id="3-2-Key-Decision-chroot-Reuse-of-the-Android-Binary"><a href="#3-2-Key-Decision-chroot-Reuse-of-the-Android-Binary" class="headerlink" title="3.2 Key Decision: chroot Reuse of the Android Binary"></a>3.2 Key Decision: chroot Reuse of the Android Binary</h3><p>After observing Android’s architecture, I judged:</p>
+<ul>
+<li>the download service’s hardware operations (writing <code>/dev/power_ctl</code>, ttyS0 handshake, writing firmware over SDIO) are <strong>all done through kernel drivers</strong>;</li>
+<li>it is itself an <strong>ordinary ELF</strong>; as long as it can be loaded into memory and find the device nodes&#x2F;firmware, it can drive the kernel to do the work;</li>
+<li>it needs Android’s libraries and linker → use a <strong>chroot</strong> to provide a mini Android filesystem.</li>
+</ul>
+<p><strong>So the approach was finalized</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Build a /tmp/aand/ mini Android environment in Alpine</span><br><span class="line">  → chroot into it and run download</span><br><span class="line">  → chip power-up + firmware download</span><br><span class="line">  → return to Alpine to continue</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Methodology 3: when facing a “user-space component depends on a specific root filesystem” problem, chroot is a low-cost isolation-reuse means — without changing the main system, only a minimal dependency set is built.</p>
+</blockquote>
+<hr>
+<h2 id="4-Phase-3-Breaking-Down-chroot-Run-Obstacles-One-by-One-strace-driven"><a href="#4-Phase-3-Breaking-Down-chroot-Run-Obstacles-One-by-One-strace-driven" class="headerlink" title="4. Phase 3: Breaking Down chroot Run Obstacles One by One (strace-driven)"></a>4. Phase 3: Breaking Down chroot Run Obstacles One by One (strace-driven)</h2><p>The first run of download after <code>chroot</code> will certainly error out. I used the <strong>strace localization method</strong> (no guessing; look at system calls):</p>
+<table>
+<thead>
+<tr>
+<th>Error Signal (seen via strace)</th>
+<th>Root Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>open(&quot;/dev/power_ctl&quot;)</code> fails</td>
+<td>&#x2F;dev inside the chroot is empty</td>
+<td><code>mount --bind /dev /tmp/aand/dev</code></td>
+</tr>
+<tr>
+<td><code>open(...wcnfdl)</code> fails</td>
+<td>download finds firmware partitions by by-name</td>
+<td>create links <code>wcnfdl → /dev/block/mmcblk0p14</code>, <code>wcnmodem → /dev/block/mmcblk0p15</code></td>
+</tr>
+<tr>
+<td>missing .so libraries</td>
+<td>the mini environment is incomplete</td>
+<td>copy the full set of <code>.so</code> from <code>/mnt/android_sys/lib/</code></td>
+</tr>
+</tbody></table>
+<p><strong>Key breakthrough</strong>: after <code>mount --bind /dev</code>, download could open the kernel nodes; after linking wcnfdl&#x2F;wcnmodem, it could find the firmware. <strong>Once running, decisive evidence appeared in dmesg</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mmc2: new high speed SDIO card at address 8800</span><br><span class="line">mmc2:8800:1</span><br><span class="line">device 0x2331</span><br><span class="line">sprd_download_sdio_write ... 131080 ...   (bulk firmware write)</span><br></pre></td></tr></table></figure>
+
+<p><strong>This moment means</strong>:</p>
+<ul>
+<li>the chip was successfully powered up;</li>
+<li>the firmware was successfully written;</li>
+<li>GPIO94 READY was pulled high;</li>
+<li>the kernel enumerated the SDIO slave device.</li>
+</ul>
+<blockquote>
+<p>Methodology 4: use <code>strace</code> to see “what it is actually looking for”; every ENOENT is a precise fix instruction. Far more efficient than reading documentation&#x2F;guessing configurations.</p>
+</blockquote>
+<hr>
+<h2 id="5-Phase-4-DTB-Correction-eliminating-hidden-variables"><a href="#5-Phase-4-DTB-Correction-eliminating-hidden-variables" class="headerlink" title="5. Phase 4: DTB Correction (eliminating hidden variables)"></a>5. Phase 4: DTB Correction (eliminating hidden variables)</h2><p><strong>Symptom</strong>: even when download runs through, it is sometimes still unstable. Further checking found traces that the dtb in p16 had been modified (early attempts injected power attributes).</p>
+<p><strong>Decision</strong>: directly overwrite the dtb section in p16 with the stock Android DTB:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/tmp/android_orig.dtb of=/dev/block/mmcblk0p16 bs=512 seek=20008 conv=notrunc</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>seek=20008</code> (512B blocks) corresponds to the dtb’s byte offset within boot of <code>0x9C5000</code>;</li>
+<li>after restoring the stock version, the power&#x2F;clock descriptions matched Android’s, eliminating this DTB hidden variable.</li>
+</ul>
+<p><strong>Why this must be done</strong>: download’s power-up timing was designed <strong>against the stock Android DTB’s power model</strong>; after the DTB was modified, even if the program logic is correct, the hardware descriptions no longer match.</p>
+<blockquote>
+<p>Methodology 5: when “the program is correct but the behavior is wrong”, check whether the <strong>environment description layer</strong> (DTB&#x2F;configuration files) has been modified. Restore the factory baseline first, then talk about optimizations.</p>
+</blockquote>
+<hr>
+<h2 id="6-Phase-5-Drivers-and-User-Space-Supplicant"><a href="#6-Phase-5-Drivers-and-User-Space-Supplicant" class="headerlink" title="6. Phase 5: Drivers and User-Space Supplicant"></a>6. Phase 5: Drivers and User-Space Supplicant</h2><p>Chip enumeration success ≠ WiFi usable; the data path must also be completed:</p>
+<h3 id="6-1-Driver-Loading-order-sensitive"><a href="#6-1-Driver-Loading-order-sensitive" class="headerlink" title="6.1 Driver Loading (order-sensitive)"></a>6.1 Driver Loading (order-sensitive)</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">insmod /lib/modules/marlin_fm.ko   <span class="comment"># first: provides fm_read and other symbols</span></span><br><span class="line">insmod /lib/modules/sprdwl.ko      <span class="comment"># second: the main WiFi driver</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Reversing the order reports <code>Unknown symbol</code>;</li>
+<li>on success, <code>wlan0</code> appears (MAC <code>a2:d2:f3:bf:8c:10</code>) → the driver bound successfully.</li>
+</ul>
+<h3 id="6-2-wpa-supplicant-decisions-made-through-pitfalls"><a href="#6-2-wpa-supplicant-decisions-made-through-pitfalls" class="headerlink" title="6.2 wpa_supplicant (decisions made through pitfalls)"></a>6.2 wpa_supplicant (decisions made through pitfalls)</h3><p><strong>First attempt</strong>: directly run the <strong>stock Android wpa_supplicant 2.5</strong> in the Alpine chroot:</p>
+<ul>
+<li>reports <code>CANNOT LINK</code> (missing libraries) → after copying <code>/mnt/android_sys/lib/*.so</code> it still <code>Aborted</code>;</li>
+<li>root cause: <strong>Android’s Bionic libc is incompatible with the glibc&#x2F;musl environment</strong>, and the linker mechanisms differ.</li>
+</ul>
+<p><strong>Decision shift</strong>: no longer reuse Android’s supplicant, switching to the <strong>Alpine armhf native package</strong>:</p>
+<ul>
+<li><code>wpa_supplicant-2.10-r11.apk</code> + <code>libnl3.apk</code> + <code>pcsc-lite-libs-2.2.3-r1.apk</code>;</li>
+<li>Alpine’s official&#x2F;mirror repositories were unavailable at the time (certificates&#x2F;expired), so the apks were downloaded on the PC and installed to the device with <code>apk add --allow-untrusted</code>.</li>
+</ul>
+<p><strong>Configuration</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ctrl_interface=/run/wpa_supplicant</span><br><span class="line">update_config=1</span><br><span class="line">country=CN</span><br></pre></td></tr></table></figure>
+
+<p><strong>Why this division of labor is reasonable</strong>:</p>
+<ul>
+<li><strong>underlying firmware download</strong> (vendor-private, kernel-related) → reuse the Android binary (chroot);</li>
+<li><strong>user-space supplicant</strong> (standard network protocol, libc-related) → use the Alpine native package.</li>
+</ul>
+<blockquote>
+<p>Methodology 6: split the reuse boundary by “degree of coupling with the kernel&#x2F;hardware” — hardware-private parts reuse the vendor’s, standardized parts use the new system’s native implementation. Neither side is forced.</p>
+</blockquote>
+<h3 id="6-3-Scan-Success"><a href="#6-3-Scan-Success" class="headerlink" title="6.3 Scan Success"></a>6.3 Scan Success</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wpa_cli -i wlan0 scan</span><br><span class="line">wpa_cli -i wlan0 scan_results</span><br><span class="line"><span class="comment"># CMCC-dtGM(-29) / CMCC-PcZt(-42) / CMCC-xxfS(-51) ... 6~11 hotspots in total</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>At this point the WiFi chip is fully brought up</strong>: power-up → firmware → enumeration → driver → scan.</p>
+<hr>
+<h2 id="7-Timeline-Overview"><a href="#7-Timeline-Overview" class="headerlink" title="7. Timeline Overview"></a>7. Timeline Overview</h2><table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Key Actions</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Defining the problem</td>
+<td>ruling out hardware&#x2F;kernel, locking onto user space + DTB</td>
+<td>correct direction</td>
+</tr>
+<tr>
+<td>Frontal attempts</td>
+<td>6 categories of manual power-up simulation</td>
+<td>all failed (private protocol cannot be imitated)</td>
+</tr>
+<tr>
+<td>Reference forensics</td>
+<td>adb connect to H709, take partitions&#x2F;firmware&#x2F;download&#x2F;DTB</td>
+<td>obtained the full set of materials for “correct behavior”</td>
+</tr>
+<tr>
+<td>chroot approach</td>
+<td>build the &#x2F;tmp&#x2F;aand mini Android environment</td>
+<td>approach finalized</td>
+</tr>
+<tr>
+<td>strace troubleshooting</td>
+<td>bind &#x2F;dev + firmware links + patch libraries</td>
+<td>download runs through, chip enumerated</td>
+</tr>
+<tr>
+<td>DTB correction</td>
+<td>restore the stock Android dtb</td>
+<td>hidden variable eliminated</td>
+</tr>
+<tr>
+<td>Driver</td>
+<td>marlin_fm.ko → sprdwl.ko</td>
+<td>wlan0 appears</td>
+</tr>
+<tr>
+<td>Supplicant</td>
+<td>Alpine armhf native package</td>
+<td>scan&#x2F;connect available</td>
+</tr>
+<tr>
+<td>UI layer</td>
+<td>launcher network page wiring</td>
+<td>the user can operate on the interface</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="8-Methodology-Precipitation-transferable-to-other-boards-chips"><a href="#8-Methodology-Precipitation-transferable-to-other-boards-chips" class="headerlink" title="8. Methodology Precipitation (transferable to other boards&#x2F;chips)"></a>8. Methodology Precipitation (transferable to other boards&#x2F;chips)</h2><ol>
+<li><strong>Rule out the impossible first</strong> (hardware&#x2F;kernel&#x2F;system), then concentrate firepower on the real differential layer;</li>
+<li><strong>Do not reverse-engineer private protocols, reuse them</strong> — find the original system’s ready-made implementation (binary&#x2F;service);</li>
+<li><strong>Reference machine forensics</strong>: a same-model working device is the most authoritative source of “correct behavior”; get materials that run whenever possible;</li>
+<li><strong>chroot isolation reuse</strong>: build a minimal dependency set for third-party binaries, without polluting the main system;</li>
+<li><strong>strace-driven troubleshooting</strong>: every open&#x2F;ENOENT is a precise fix instruction, no guessing;</li>
+<li><strong>Restore the factory baseline</strong>: if the environment description layer (DTB&#x2F;configuration) has been modified, restore it first before making new changes;</li>
+<li><strong>Split the reuse boundary by coupling</strong>: hardware-private parts reuse the vendor’s, standardized parts use native implementations;</li>
+<li><strong>One-way dependency chain thinking</strong>: power-up→firmware→enumeration→driver→supplicant, verify level by level, and only advance to the next level with dmesg&#x2F;log evidence for each.</li>
+</ol>
+<hr>
+<h2 id="9-Remaining-Items-and-Future-Directions"><a href="#9-Remaining-Items-and-Future-Directions" class="headerlink" title="9. Remaining Items and Future Directions"></a>9. Remaining Items and Future Directions</h2><ul>
+<li><strong>Boot auto-start fixed in place</strong>: download power-up + driver loading + wpa_supplicant have been fixed in place via local scripts&#x2F;module configuration (details in “Operation Manual” 4.10);</li>
+<li><strong>Bluetooth</strong>: SC2331 is a combo chip; Bluetooth shares the same path and can be brought up by following the same “chroot download + driver + user space” process (not yet expanded);</li>
+<li><strong>Connection stability</strong>: scanning is already stable; connection&#x2F;roaming behavior requires long-term real-network testing;</li>
+<li><strong>UI layer</strong>: the launcher network configuration page can already scan, display lists, and connect; in the future, “saved network management and signal strength ranking optimization” can be added.</li>
+</ul>
+<hr>
+<h2 id="This-summary-reviews-the-complete-chain-from-“symptom”-to-“root-cause”-to-“solution”-The-core-in-one-sentence-the-chip-is-not-broken-the-kernel-is-not-broken-what-is-broken-is-“Alpine-lacks-Android’s-chip-initialization-service”-—-borrow-this-step-back-with-chroot-and-the-chain-is-connected"><a href="#This-summary-reviews-the-complete-chain-from-“symptom”-to-“root-cause”-to-“solution”-The-core-in-one-sentence-the-chip-is-not-broken-the-kernel-is-not-broken-what-is-broken-is-“Alpine-lacks-Android’s-chip-initialization-service”-—-borrow-this-step-back-with-chroot-and-the-chain-is-connected" class="headerlink" title="This summary reviews the complete chain from “symptom” to “root cause” to “solution”. The core in one sentence: the chip is not broken, the kernel is not broken; what is broken is “Alpine lacks Android’s chip initialization service” — borrow this step back with chroot, and the chain is connected."></a><em>This summary reviews the complete chain from “symptom” to “root cause” to “solution”. The core in one sentence: the chip is not broken, the kernel is not broken; what is broken is “Alpine lacks Android’s chip initialization service” — borrow this step back with chroot, and the chain is connected.</em></h2><blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#WiFi-Chip-Bring-up-%E2%80%94-Work-Process-and-Approach-Summary"><span class="toc-number">1.</span> <span class="toc-text">WiFi Chip Bring-up — Work Process and Approach Summary</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Problem-Definition-getting-the-question-right-first"><span class="toc-number">1.1.</span> <span class="toc-text">1. Problem Definition (getting the question right first)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Phase-1-Frontal-Attempts-about-6-approaches-all-failed"><span class="toc-number">1.2.</span> <span class="toc-text">2. Phase 1: Frontal Attempts (about 6 approaches, all failed)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Phase-2-Forensics-from-the-Reference-Machine-using-facts-instead-of-guesses"><span class="toc-number">1.3.</span> <span class="toc-text">3. Phase 2: Forensics from the Reference Machine (using facts instead of guesses)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Connection-and-Forensics"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 Connection and Forensics</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Key-Decision-chroot-Reuse-of-the-Android-Binary"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Key Decision: chroot Reuse of the Android Binary</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Phase-3-Breaking-Down-chroot-Run-Obstacles-One-by-One-strace-driven"><span class="toc-number">1.4.</span> <span class="toc-text">4. Phase 3: Breaking Down chroot Run Obstacles One by One (strace-driven)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Phase-4-DTB-Correction-eliminating-hidden-variables"><span class="toc-number">1.5.</span> <span class="toc-text">5. Phase 4: DTB Correction (eliminating hidden variables)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Phase-5-Drivers-and-User-Space-Supplicant"><span class="toc-number">1.6.</span> <span class="toc-text">6. Phase 5: Drivers and User-Space Supplicant</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-Driver-Loading-order-sensitive"><span class="toc-number">1.6.1.</span> <span class="toc-text">6.1 Driver Loading (order-sensitive)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-wpa-supplicant-decisions-made-through-pitfalls"><span class="toc-number">1.6.2.</span> <span class="toc-text">6.2 wpa_supplicant (decisions made through pitfalls)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-Scan-Success"><span class="toc-number">1.6.3.</span> <span class="toc-text">6.3 Scan Success</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Timeline-Overview"><span class="toc-number">1.7.</span> <span class="toc-text">7. Timeline Overview</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Methodology-Precipitation-transferable-to-other-boards-chips"><span class="toc-number">1.8.</span> <span class="toc-text">8. Methodology Precipitation (transferable to other boards&#x2F;chips)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-Remaining-Items-and-Future-Directions"><span class="toc-number">1.9.</span> <span class="toc-text">9. Remaining Items and Future Directions</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#This-summary-reviews-the-complete-chain-from-%E2%80%9Csymptom%E2%80%9D-to-%E2%80%9Croot-cause%E2%80%9D-to-%E2%80%9Csolution%E2%80%9D-The-core-in-one-sentence-the-chip-is-not-broken-the-kernel-is-not-broken-what-is-broken-is-%E2%80%9CAlpine-lacks-Android%E2%80%99s-chip-initialization-service%E2%80%9D-%E2%80%94-borrow-this-step-back-with-chroot-and-the-chain-is-connected"><span class="toc-number">1.10.</span> <span class="toc-text">This summary reviews the complete chain from “symptom” to “root cause” to “solution”. The core in one sentence: the chip is not broken, the kernel is not broken; what is broken is “Alpine lacks Android’s chip initialization service” — borrow this step back with chroot, and the chain is connected.</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&text=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&title=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&is_video=false&description=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=WiFi Chip Bring-up Work Process and Approach Summary&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&title=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&title=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&title=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&title=WiFi Chip Bring-up Work Process and Approach Summary"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/13/wifi-05-wifi-md/&name=WiFi Chip Bring-up Work Process and Approach Summary&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

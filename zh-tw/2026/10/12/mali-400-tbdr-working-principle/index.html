@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Mali-400 是什麼Mali-400 是 ARM 授權的嵌入式 GPU IP 核，在 SC9832A 這類低端 SoC 裡以 MP1（單核）形式出現。它不是獨立顯卡，而是掛在 AMBA AXI 總線上的一個協處理器：CPU（Cortex-A7）與 GPU 共享同一塊 DDR 內存，沒有獨立顯存。軟件棧從上到下是：OpenGL ES 2.0 應用 → libEGL&#x2F;libGLESv2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="Mali-400 是什麼Mali-400 是 ARM 授權的嵌入式 GPU IP 核，在 SC9832A 這類低端 SoC 裡以 MP1（單核）形式出現。它不是獨立顯卡，而是掛在 AMBA AXI 總線上的一個協處理器：CPU（Cortex-A7）與 GPU 共享同一塊 DDR 內存，沒有獨立顯存。軟件棧從上到下是：OpenGL ES 2.0 應用 → libEGL&#x2F;libGLESv2">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-12T10:10:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T08:35:46.920Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="GPU">
+<meta property="article:tag" content="TBDR">
+<meta property="article:tag" content="OpenGL ES">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/10/12/mali-400-tbdr-working-principle/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/12/psp-hardware-rendering-recovery/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&text=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&title=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&is_video=false&description=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&title=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&title=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&title=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&title=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&name=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Mali-400-%E6%98%AF%E4%BB%80%E9%BA%BC"><span class="toc-number">1.</span> <span class="toc-text">Mali-400 是什麼</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%9B%99%E6%A0%B8%E5%BF%83%E6%9E%B6%E6%A7%8B"><span class="toc-number">2.</span> <span class="toc-text">雙核心架構</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#TBDR%EF%BC%9A%E5%85%88%E8%A8%98%E8%B3%AC%EF%BC%8C%E5%BE%8C%E7%B5%B1%E4%B8%80%E7%95%AB"><span class="toc-number">3.</span> <span class="toc-text">TBDR：先記賬，後統一畫</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AF%A6%E8%AD%89%E5%87%BA%E4%BE%86%E7%9A%84-DDK-%E5%A5%91%E7%B4%84"><span class="toc-number">4.</span> <span class="toc-text">實證出來的 DDK 契約</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B0%8D%E5%AF%A6%E9%9A%9B%E9%96%8B%E7%99%BC%E7%9A%84%E5%95%9F%E7%A4%BA"><span class="toc-number">5.</span> <span class="toc-text">對實際開發的啟示</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-12T10:10:00.000Z" itemprop="datePublished">2026-10-12</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/GPU/" rel="tag">GPU</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>, <a class="tag-link-link" href="/tags/OpenGL-ES/" rel="tag">OpenGL ES</a>, <a class="tag-link-link" href="/tags/TBDR/" rel="tag">TBDR</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Mali-400-是什麼"><a href="#Mali-400-是什麼" class="headerlink" title="Mali-400 是什麼"></a>Mali-400 是什麼</h1><p>Mali-400 是 ARM 授權的嵌入式 GPU IP 核，在 SC9832A 這類低端 SoC 裡以 MP1（單核）形式出現。它不是獨立顯卡，而是掛在 AMBA AXI 總線上的一個協處理器：CPU（Cortex-A7）與 GPU 共享同一塊 DDR 內存，沒有獨立顯存。軟件棧從上到下是：OpenGL ES 2.0 應用 → libEGL&#x2F;libGLESv2 用戶態驅動（通常是 Android 變體的 DDK）→ 內核驅動 mali.ko → 硬件。</p>
+<h1 id="雙核心架構"><a href="#雙核心架構" class="headerlink" title="雙核心架構"></a>雙核心架構</h1><p>Mali-400 內部由兩個職責不同的處理器組成：</p>
+<ul>
+<li><strong>GP（Geometry Processor，幾何處理器）</strong>：負責頂點著色、裁剪，只有 1 個頂點處理單元——幾何負載重時它就是瓶頸。</li>
+<li><strong>PP（Pixel Processor，像素處理器）</strong>：負責片元著色與光柵化，吞吐約 1 像素&#x2F;時鐘。500MHz 主頻下純填充上限約 5 億像素&#x2F;秒。</li>
+</ul>
+<p>兩級之間靠「分塊（Tiling）」環節銜接，這正是它與傳統 PC 顯卡最大的區別。</p>
+<h1 id="TBDR：先記賬，後統一畫"><a href="#TBDR：先記賬，後統一畫" class="headerlink" title="TBDR：先記賬，後統一畫"></a>TBDR：先記賬，後統一畫</h1><p>傳統 PC 顯卡（IMR，立即渲染）來一個三角形就立刻光柵化，深度測試每個像素都要往返 DDR 讀深度值，帶寬消耗巨大。Mali-400 的渲染分兩遍：</p>
+<ol>
+<li><strong>幾何遍</strong>：GP 只計算頂點、做裁剪，然後不畫——把每個三角形登記進它所覆蓋的 16×16 瓦片（tile）列表。</li>
+<li><strong>像素遍</strong>：逐瓦片處理。把該瓦片涉及的所有三角形取出來，深度緩衝與顏色緩衝直接放在芯片內部的高速存儲裡完成計算，整個瓦片算完（遇到 resolve&#x2F;flush）才一次性寫回 DDR。</li>
+</ol>
+<p>對沒有獨立顯存、與 CPU 搶 DDR 帶寬的手機 SoC 來說，這套省帶寬的設計是生存必需。代價是「讀回中間結果」這件事在硬件契約上天然不友好。</p>
+<h1 id="實證出來的-DDK-契約"><a href="#實證出來的-DDK-契約" class="headerlink" title="實證出來的 DDK 契約"></a>實證出來的 DDK 契約</h1><p>以下行為是我在 SC9832A 的 Mali-400 DDK（Android 變體驅動）上實測得出的：</p>
+<ol>
+<li><strong>從 FBO 做 glReadPixels 讀回恆為 0</strong>：幀數據在瓦片 resolve 之前只存在於片上緩衝，這顆 DDK 的 FBO 讀回通路等於沒有——glClear 後讀回是 0，真實 draw 後讀回也是 0。</li>
+<li><strong>glClear 走特殊通路</strong>：TBDR 裡 clear 只是給瓦片設初始值，可以完全不動內存，等回寫時才生效。中途去讀內存自然什麼都讀不到。</li>
+<li><strong>pbuffer 表面真實 draw 後讀回正常</strong>：pbuffer 走驅動完整的 resolve 交換路徑，所以數據能落到內存。</li>
+<li><strong>裸 framebuffer 結構體餵給 eglCreateWindowSurface 會段錯誤</strong>：這顆 DDK 是 Android ANativeWindow 變體，依賴 buffer queue 的 dequeue&#x2F;queue 機制，裸的 fbdev window 撐不起這套流程。</li>
+</ol>
+<h1 id="對實際開發的啟示"><a href="#對實際開發的啟示" class="headerlink" title="對實際開發的啟示"></a>對實際開發的啟示</h1><ul>
+<li>要把 GPU 畫的內容取出來，別走 FBO 讀回；讓渲染落到 pbuffer&#x2F;窗口面這類有完整 resolve 路徑的表面，再從那裡讀。</li>
+<li>「屏上黑」要先分清三種情況：沒渲染、讀回失敗、翻頁失敗——統計 framebuffer 各頁的非零像素比肉眼看截圖可靠得多。</li>
+<li>性能瓶頸先查幾何：GP 只有一個頂點單元，頂點負載重的場景（比如模擬器放大管線）很容易先卡在 GP 而不是 PP。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章，版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Mali-400-%E6%98%AF%E4%BB%80%E9%BA%BC"><span class="toc-number">1.</span> <span class="toc-text">Mali-400 是什麼</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%9B%99%E6%A0%B8%E5%BF%83%E6%9E%B6%E6%A7%8B"><span class="toc-number">2.</span> <span class="toc-text">雙核心架構</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#TBDR%EF%BC%9A%E5%85%88%E8%A8%98%E8%B3%AC%EF%BC%8C%E5%BE%8C%E7%B5%B1%E4%B8%80%E7%95%AB"><span class="toc-number">3.</span> <span class="toc-text">TBDR：先記賬，後統一畫</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AF%A6%E8%AD%89%E5%87%BA%E4%BE%86%E7%9A%84-DDK-%E5%A5%91%E7%B4%84"><span class="toc-number">4.</span> <span class="toc-text">實證出來的 DDK 契約</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B0%8D%E5%AF%A6%E9%9A%9B%E9%96%8B%E7%99%BC%E7%9A%84%E5%95%9F%E7%A4%BA"><span class="toc-number">5.</span> <span class="toc-text">對實際開發的啟示</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&text=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&title=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&is_video=false&description=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&title=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&title=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&title=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&title=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/10/12/mali-400-tbdr-working-principle/&name=Mali-400 工作原理：TBDR 延遲渲染與它的壞脾氣&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

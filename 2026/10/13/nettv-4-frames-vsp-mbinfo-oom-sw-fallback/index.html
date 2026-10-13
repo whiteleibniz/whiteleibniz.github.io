@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="netTV 只出 4 帧的真因一、现象展讯 SC9832A 设备上「网络电视」播放 1080p m3u8 直播流，每轮只能出 4 帧，然后画面定格；等喂到第二个 IDR 时必崩（SIGSEGV addr&#x3D;0x747474）或永久挂起，只能靠监控进程重启，表现为「4 帧一轮」的幻灯模式。 前几轮排查一直把结论记成「厂商库缺陷：第二个 IDR 必挂死」，并做了绕过（检测到第二个 IDR 就主动重生）。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="netTV 只出 4 帧的真因一、现象展讯 SC9832A 设备上「网络电视」播放 1080p m3u8 直播流，每轮只能出 4 帧，然后画面定格；等喂到第二个 IDR 时必崩（SIGSEGV addr&#x3D;0x747474）或永久挂起，只能靠监控进程重启，表现为「4 帧一轮」的幻灯模式。 前几轮排查一直把结论记成「厂商库缺陷：第二个 IDR 必挂死」，并做了绕过（检测到第二个 IDR 就主动重生）。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-12T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-13T05:01:22.420Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="VSP硬解">
+<meta property="article:tag" content="ION">
+<meta property="article:tag" content="CMA">
+<meta property="article:tag" content="故障修复">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/10/13/blog-i18n-architecture/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/en/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&text=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&title=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&is_video=false&description=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）&body=Check out this article: https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&title=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&title=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&title=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&title=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&name=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#netTV-%E5%8F%AA%E5%87%BA-4-%E5%B8%A7%E7%9A%84%E7%9C%9F%E5%9B%A0"><span class="toc-number">1.</span> <span class="toc-text">netTV 只出 4 帧的真因</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">一、现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%9C%9F%E6%AD%A3%E7%9A%84%E6%A0%B9%E5%9B%A0%E9%93%BE"><span class="toc-number">1.2.</span> <span class="toc-text">二、真正的根因链</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%88%E4%B8%89%E5%A4%84%EF%BC%8C%E9%83%BD%E5%9B%B4%E7%BB%95%E3%80%8C%E7%BB%9D%E4%B8%8D%E8%83%BD%E8%AE%A9%E5%AE%83%E5%88%87%E8%BD%AF%E8%A7%A3%E3%80%8D%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、修法（三处，都围绕「绝不能让它切软解」）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-mbinfo-%E5%88%86%E9%85%8D%E5%A4%B1%E8%B4%A5%E6%97%B6%E5%A4%8D%E7%94%A8%E6%97%A7%E5%9D%97"><span class="toc-number">1.3.1.</span> <span class="toc-text">1. mbinfo 分配失败时复用旧块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%88%86%E9%85%8D%E5%A4%B1%E8%B4%A5%E6%97%B6%E9%80%90%E7%BA%A7%E9%99%8D%E4%BD%8E%E5%AF%B9%E9%BD%90%E9%87%8D%E8%AF%95"><span class="toc-number">1.3.2.</span> <span class="toc-text">2. 分配失败时逐级降低对齐重试</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%A3%80%E6%B5%8B%E5%88%B0%E3%80%8C%E5%88%87%E8%BD%AF%E8%A7%A3%E3%80%8D%E7%AB%8B%E5%88%BB%E4%B8%BB%E5%8A%A8%E9%87%8D%E7%94%9F"><span class="toc-number">1.3.3.</span> <span class="toc-text">3. 检测到「切软解」立刻主动重生</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%A1%BA%E5%B8%A6%E6%8C%96%E5%87%BA%E6%9D%A5%E7%9A%84%E5%9D%91%EF%BC%9A%E6%A0%B9%E5%88%86%E5%8C%BA-100-%E6%BB%A1"><span class="toc-number">1.4.</span> <span class="toc-text">四、顺带挖出来的坑：根分区 100% 满</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%8F%A6%E4%B8%80%E6%9D%A1%E7%BA%AA%E5%BE%8B%EF%BC%9ASSH-%E5%91%BD%E4%BB%A4%E5%BF%85%E9%A1%BB%E7%9F%AD"><span class="toc-number">1.5.</span> <span class="toc-text">五、另一条纪律：SSH 命令必须短</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">1.6.</span> <span class="toc-text">六、经验总结</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-12T18:30:00.000Z" itemprop="datePublished">2026-10-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/CMA/" rel="tag">CMA</a>, <a class="tag-link-link" href="/tags/ION/" rel="tag">ION</a>, <a class="tag-link-link" href="/tags/VSP%E7%A1%AC%E8%A7%A3/" rel="tag">VSP硬解</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/%E6%95%85%E9%9A%9C%E4%BF%AE%E5%A4%8D/" rel="tag">故障修复</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="netTV-只出-4-帧的真因"><a href="#netTV-只出-4-帧的真因" class="headerlink" title="netTV 只出 4 帧的真因"></a>netTV 只出 4 帧的真因</h1><h2 id="一、现象"><a href="#一、现象" class="headerlink" title="一、现象"></a>一、现象</h2><p>展讯 SC9832A 设备上「网络电视」播放 1080p m3u8 直播流，每轮只能出 <strong>4 帧</strong>，然后画面定格；等喂到第二个 IDR 时必崩（<code>SIGSEGV addr=0x747474</code>）或永久挂起，只能靠监控进程重启，表现为「4 帧一轮」的幻灯模式。</p>
+<p>前几轮排查一直把结论记成「厂商库缺陷：第二个 IDR 必挂死」，并做了绕过（检测到第二个 IDR 就主动重生）。<strong>这个结论是错的</strong>——第二个 IDR 只是次生现象。</p>
+<h2 id="二、真正的根因链"><a href="#二、真正的根因链" class="headerlink" title="二、真正的根因链"></a>二、真正的根因链</h2><p>关键做法：不要只看「崩在哪一轮」，要把<strong>每一轮投喂的返回码</strong>拉成一条时间线。用正则把日志里每个 AU 的 <code>decRet / frameEffective / consume byte</code> 抽出来，结果一目了然：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">AU[  3] sz= 106336 t=5  ret=0   eff=0 cons=106336   ← 第一个 IDR，解码成功</span><br><span class="line">AU[  4] sz=   8983 t=1  ret=0   eff=0 cons=8983</span><br><span class="line">...</span><br><span class="line">AU[  9] sz=  13967 t=1  ret=0   eff=0 cons=13967    ← 出第 4 帧</span><br><span class="line">AU[ 10] sz=  17116 t=1  ret=-3  eff=0 cons=17116    ← ★ 突变点</span><br><span class="line">AU[ 11] sz=  13424 t=1  ret=-9  eff=0 cons=13424    ← 从此恒 -9</span><br><span class="line">AU[ 12..35]                 ret=-9  needIVOP:1 ...</span><br></pre></td></tr></table></figure>
+
+<p>拉出 AU[10] 那一轮的厂商日志，真因就写在那儿：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">VSP_malloc_mbinfo_cb, 1770, idx: 4, size_mbinfo: 653824</span><br><span class="line">ioctl c0144900 failed with code -1: Out of memory</span><br><span class="line">[ion] C1 /dev/ion alloc(653824,heap=0,align=8) FAILED rc=-12</span><br><span class="line">[ion] get_phy_addr: heapID=0 base=0x0 -&gt; fail</span><br><span class="line">mPmem_mbinfo[4]: get phy addr fail -1</span><br><span class="line">H264Dec_init_picture, 648, mbinfo memory is not enough</span><br><span class="line">H264Dec_Process_slice, 117, error_flag=0x2</span><br><span class="line">decRet: -3</span><br><span class="line">failed to allocate memory.</span><br><span class="line">change to sw decoder.</span><br></pre></td></tr></table></figure>
+
+<p>下一轮立刻：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">onQueueFilled, 1122, change to sw decoder, mThumbnailMode: 0</span><br><span class="line">H264Dec_ReleaseRefBuffers, 32</span><br><span class="line">openDecoder, lib: libomx_avcdec_sw_sprd.so</span><br><span class="line">decRet: -9, needIVOP: 1, SPS:0, PPS:0</span><br></pre></td></tr></table></figure>
+
+<p>串起来就是：</p>
+<ol>
+<li>VSP 每解约 2 帧就要一块 <strong>653824 字节的 mbinfo</strong>（宏块信息），而且<strong>从不 free</strong>，按 idx 递增申请；</li>
+<li>CMA 连续内存池只有 ~7MB，扣掉输出帧缓冲 3.1MB、输入缓冲 1.5MB，只够放 <strong>4 块</strong> mbinfo；</li>
+<li>第 5 块 <code>ion_alloc</code> 返回 <code>-ENOMEM</code> → <code>decRet=-3</code>；</li>
+<li>组件的处理是 <strong>永久切换软件解码器</strong>（<code>libomx_avcdec_sw_sprd.so</code>）——这是一道<strong>单向门</strong>；</li>
+<li>软解路径拿不到之前喂进去的 SPS&#x2F;PPS（<code>SPS:0 PPS:0</code>），于是每轮返回 <code>-9 needIVOP</code>（要 I 帧），永远出不了帧；</li>
+<li>画面定格在 4 帧，再喂第二个 IDR 时，在软解上下文里崩掉或者挂死。</li>
+</ol>
+<p><strong>所以「第二个 IDR 崩溃」不是 bug，是硬解已经死掉之后的必然结果。</strong></p>
+<h2 id="三、修法（三处，都围绕「绝不能让它切软解」）"><a href="#三、修法（三处，都围绕「绝不能让它切软解」）" class="headerlink" title="三、修法（三处，都围绕「绝不能让它切软解」）"></a>三、修法（三处，都围绕「绝不能让它切软解」）</h2><h3 id="1-mbinfo-分配失败时复用旧块"><a href="#1-mbinfo-分配失败时复用旧块" class="headerlink" title="1. mbinfo 分配失败时复用旧块"></a>1. mbinfo 分配失败时复用旧块</h3><p>原先的 LRU 复用只在「池满（<code>g_c1r_n &gt;= C1_REUSE_MAX=5</code>）」时触发。可实际 CMA 只够 4 块，第 5 块申请直接失败，<strong>永远轮不到复用逻辑</strong>。改成两条触发路径：池满 <strong>或</strong> 本次 <code>ion_alloc</code> 失败。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">c1_reuse</span><span class="params">(<span class="type">void</span> *self, <span class="type">const</span> <span class="type">char</span> *name, <span class="type">unsigned</span> size)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (size != C1_REUSE_SZ || g_c1r_n &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> s = g_c1r_next % g_c1r_n;   <span class="comment">/* 注意是 %g_c1r_n，不是 %MAX */</span></span><br><span class="line">    g_c1r_next++;</span><br><span class="line">    ...  <span class="comment">/* 把旧块的 fd/base/handle/PA 填进新的 MemoryHeapIon 对象 */</span></span><br><span class="line">    map_add(g_c1r[s].buf_fd, g_c1r[s].pa, size);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>代价是有可能复用到仍被 DPB 参照的块（可能花帧），但和「永久软解」相比，这个代价值得付。</p>
+<h3 id="2-分配失败时逐级降低对齐重试"><a href="#2-分配失败时逐级降低对齐重试" class="headerlink" title="2. 分配失败时逐级降低对齐重试"></a>2. 分配失败时逐级降低对齐重试</h3><p>原来的对齐算法是 <code>order = ceil(log2(size))</code>，上限 8。639KB 的 mbinfo 会被算成 <strong>1MB 对齐</strong>申请，CMA 很快碎成没法用的大块。失败时按 <code>6/4/2/0</code> 逐级降对齐重试，只改对齐不改大小，能多挤出一两块。</p>
+<h3 id="3-检测到「切软解」立刻主动重生"><a href="#3-检测到「切软解」立刻主动重生" class="headerlink" title="3. 检测到「切软解」立刻主动重生"></a>3. 检测到「切软解」立刻主动重生</h3><p>软解是单向门，在里面挣扎没有任何意义。厂商日志会打 <code>change to sw decoder</code>，在 <code>__android_log_print</code> 钩子里抓这个串，置标志位，投喂循环下一轮立即 <code>usleep(800ms)</code> 排空 DMA 后 <code>_exit(9)</code>，让监控 0.15s 拉起一个干净的硬解进程。</p>
+<h2 id="四、顺带挖出来的坑：根分区-100-满"><a href="#四、顺带挖出来的坑：根分区-100-满" class="headerlink" title="四、顺带挖出来的坑：根分区 100% 满"></a>四、顺带挖出来的坑：根分区 100% 满</h2><p>排查过程中发现的另一件事：<code>df -h /</code> 显示 6.2G 根分区<strong>一个字节都不剩</strong>。后果是 <code>curl</code> 写 <code>/tmp/nettv.raw</code> 失败（退出码 23），播放器把它误判成「频道源不可达」（退出码 98），表现跟源失效一模一样。</p>
+<p>清掉三个调试日志（<code>btud_dbg.log</code> 326MB、<code>nt_live.log</code> 239MB、<code>dis.txt</code> 158MB）后释放 724MB。</p>
+<p><strong>教训</strong>：嵌入式设备上「网络失败」和「磁盘写不进去」在应用层看起来是同一个现象，排查网络问题前先 <code>df</code>。</p>
+<h2 id="五、另一条纪律：SSH-命令必须短"><a href="#五、另一条纪律：SSH-命令必须短" class="headerlink" title="五、另一条纪律：SSH 命令必须短"></a>五、另一条纪律：SSH 命令必须短</h2><p>我跑了一条前台 gcc 编译命令（超过 20 秒），被本地沙箱 SIGTERM 掉，泄漏的会话把设备上的 sshd 拖死——22 端口变成 <code>Connection refused</code>，远程无法恢复，只能断电重启。</p>
+<p><strong>在资源紧张的嵌入式设备上，长任务一律「后台脚本 + 短轮询」，前台命令永远包 <code>timeout</code> 且控制在 20 秒内。</strong></p>
+<h2 id="六、经验总结"><a href="#六、经验总结" class="headerlink" title="六、经验总结"></a>六、经验总结</h2><ol>
+<li><strong>把逐轮返回码拉成时间线，比盯崩溃点有用得多</strong>。崩溃点往往在因果链的最末端（本例是第二个 IDR），真正的突变点（本例是 <code>decRet</code> 从 0 变 -3 再变 -9）要靠时间线才能看见。</li>
+<li><strong>警惕「单向门」状态切换</strong>。硬件解码器资源不足时切软件解码，听着很优雅，但如果切过去之后拿不到 SPS&#x2F;PPS、又切不回来，那就是死路。遇到单向门，正确的策略是<strong>检测它并整体重生</strong>，而不是在降级状态里继续投喂。</li>
+<li><strong>内存池类故障要看「申请序号」</strong>。<code>idx: 4</code> 这个数字直接告诉你池子容量是 4，而代码里写死的 <code>MAX=5</code> 就是永远不会触发的死逻辑——<strong>用常量描述资源上界，一定要用实测值，不要用估计值</strong>。</li>
+<li><strong>对齐方式会决定 CMA 能用多久</strong>。<code>align = ceil(log2(size))</code> 对非 2 的幂尺寸是很大的浪费，639KB 按 1MB 对齐，碎片速度是 4KB 对齐的几十倍。</li>
+<li><strong>排查前先做环境体检</strong>（<code>df</code>、<code>free</code>、路由）。本例如果一上来就 <code>df</code>，能省掉一整轮「源是不是又挂了」的误判。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为 whiteleibniz 原创文章（AI 协作整理），版权归 whiteleibniz 所有，转载请注明出处与原文链接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#netTV-%E5%8F%AA%E5%87%BA-4-%E5%B8%A7%E7%9A%84%E7%9C%9F%E5%9B%A0"><span class="toc-number">1.</span> <span class="toc-text">netTV 只出 4 帧的真因</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">一、现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%9C%9F%E6%AD%A3%E7%9A%84%E6%A0%B9%E5%9B%A0%E9%93%BE"><span class="toc-number">1.2.</span> <span class="toc-text">二、真正的根因链</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%88%E4%B8%89%E5%A4%84%EF%BC%8C%E9%83%BD%E5%9B%B4%E7%BB%95%E3%80%8C%E7%BB%9D%E4%B8%8D%E8%83%BD%E8%AE%A9%E5%AE%83%E5%88%87%E8%BD%AF%E8%A7%A3%E3%80%8D%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、修法（三处，都围绕「绝不能让它切软解」）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-mbinfo-%E5%88%86%E9%85%8D%E5%A4%B1%E8%B4%A5%E6%97%B6%E5%A4%8D%E7%94%A8%E6%97%A7%E5%9D%97"><span class="toc-number">1.3.1.</span> <span class="toc-text">1. mbinfo 分配失败时复用旧块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%88%86%E9%85%8D%E5%A4%B1%E8%B4%A5%E6%97%B6%E9%80%90%E7%BA%A7%E9%99%8D%E4%BD%8E%E5%AF%B9%E9%BD%90%E9%87%8D%E8%AF%95"><span class="toc-number">1.3.2.</span> <span class="toc-text">2. 分配失败时逐级降低对齐重试</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%A3%80%E6%B5%8B%E5%88%B0%E3%80%8C%E5%88%87%E8%BD%AF%E8%A7%A3%E3%80%8D%E7%AB%8B%E5%88%BB%E4%B8%BB%E5%8A%A8%E9%87%8D%E7%94%9F"><span class="toc-number">1.3.3.</span> <span class="toc-text">3. 检测到「切软解」立刻主动重生</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%A1%BA%E5%B8%A6%E6%8C%96%E5%87%BA%E6%9D%A5%E7%9A%84%E5%9D%91%EF%BC%9A%E6%A0%B9%E5%88%86%E5%8C%BA-100-%E6%BB%A1"><span class="toc-number">1.4.</span> <span class="toc-text">四、顺带挖出来的坑：根分区 100% 满</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%8F%A6%E4%B8%80%E6%9D%A1%E7%BA%AA%E5%BE%8B%EF%BC%9ASSH-%E5%91%BD%E4%BB%A4%E5%BF%85%E9%A1%BB%E7%9F%AD"><span class="toc-number">1.5.</span> <span class="toc-text">五、另一条纪律：SSH 命令必须短</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">1.6.</span> <span class="toc-text">六、经验总结</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&text=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&title=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&is_video=false&description=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）&body=Check out this article: https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&title=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&title=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&title=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&title=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/&name=netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

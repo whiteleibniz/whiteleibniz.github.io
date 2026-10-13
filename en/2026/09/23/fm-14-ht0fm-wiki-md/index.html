@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="HT0 FM Radio Principles and Porting Study Wiki Audience: Engineers who want to understand “what is really going on with this chip’s FM”, as well as those who will port to other platforms in the future">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HT0FM Radio Principles and Porting Study Wiki">
+<meta property="og:url" content="https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="HT0 FM Radio Principles and Porting Study Wiki Audience: Engineers who want to understand “what is really going on with this chip’s FM”, as well as those who will port to other platforms in the future">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-23T04:16:40.000Z">
+<meta property="article:modified_time" content="2026-10-13T07:51:58.962Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="收音机">
+<meta property="article:tag" content="FM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>HT0FM Radio Principles and Porting Study Wiki</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/en/2026/09/23/fm-13-fm-md/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/09/23/fm-01-dma-md/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&text=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&title=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&is_video=false&description=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=HT0FM Radio Principles and Porting Study Wiki&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&title=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&title=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&title=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&title=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&name=HT0FM Radio Principles and Porting Study Wiki&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-FM-Radio-Principles-and-Porting-Study-Wiki"><span class="toc-number">1.</span> <span class="toc-text">HT0 FM Radio Principles and Porting Study Wiki</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-Build-Intuition-in-One-Sentence"><span class="toc-number">1.1.</span> <span class="toc-text">0. Build Intuition in One Sentence</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-What-the-Hardware-Looks-Like"><span class="toc-number">1.2.</span> <span class="toc-text">1. What the Hardware Looks Like</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-One-Chip-Three-Functions"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.1 One Chip, Three Functions</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-What-%E2%80%9CShared-SDIO%E2%80%9D-Means"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2 What “Shared SDIO” Means</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Software-Layering-Five-Layer-Model"><span class="toc-number">1.3.</span> <span class="toc-text">2. Software Layering (Five-Layer Model)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Boundary-of-Capabilities-Provided-by-the-Driver-Command-List-and-RDS"><span class="toc-number">1.4.</span> <span class="toc-text">3. The Boundary of Capabilities Provided by the Driver: Command List and RDS</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Control-Commands-from-the-Debug-Prints-of-strings-marlin-fm-ko"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 Control Commands (from the Debug Prints of strings marlin_fm.ko)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-AT-Command-Style-%E2%80%94-Confirmed-by-Measurement-and-It-Is-Real"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 AT Command Style — Confirmed by Measurement, and It Is Real</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-RDS-%E2%80%94-The-Differentiating-Value-of-This-Project"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 RDS — The Differentiating Value of This Project</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-How-Native-Android-Does-It-Reference-Sample"><span class="toc-number">1.5.</span> <span class="toc-text">4. How Native Android Does It (Reference Sample)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-The-Audio-Architecture-Read-from-libFMHalSource-so"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 The Audio Architecture Read from libFMHalSource.so</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Why-These-Libraries-Cannot-Be-Directly-Reused"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 Why These Libraries Cannot Be Directly Reused</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Our-Approach-Replacing-an-Entire-Stack-with-Minimal-Code-on-Alpine"><span class="toc-number">1.6.</span> <span class="toc-text">5. Our Approach: Replacing an Entire Stack with Minimal Code on Alpine</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Design-Trade-offs"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 Design Trade-offs</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Why-%E2%80%9CMirroring-bt-user-daemon%E2%80%9D-Is-the-Right-Choice"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 Why “Mirroring bt_user_daemon” Is the Right Choice</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-The-Pitfall-You-Must-Remember-Socket-Timeout"><span class="toc-number">1.6.3.</span> <span class="toc-text">5.3 The Pitfall You Must Remember: Socket Timeout</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Audio-Path-Three-Possibilities-One-Must-Be-Chosen-by-Measurement"><span class="toc-number">1.7.</span> <span class="toc-text">6. Audio Path: Three Possibilities, One Must Be Chosen by Measurement</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Three-Words-Uncertainty"><span class="toc-number">1.8.</span> <span class="toc-text">7. Three Words: Uncertainty</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Troubleshooting-Methodology-Follow-This-When-Migrating"><span class="toc-number">1.9.</span> <span class="toc-text">8. Troubleshooting Methodology (Follow This When Migrating)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-General-Checklist-for-Migrating-to-Similar-Devices"><span class="toc-number">1.10.</span> <span class="toc-text">9. General Checklist for Migrating to Similar Devices</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-What-This-Wiki-Wants-You-to-Remember"><span class="toc-number">1.11.</span> <span class="toc-text">10. What This Wiki Wants You to Remember</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        HT0FM Radio Principles and Porting Study Wiki
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-09-23T04:16:40.000Z" itemprop="datePublished">2026-09-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/FM/" rel="tag">FM</a>, <a class="tag-link-link" href="/tags/%E6%94%B6%E9%9F%B3%E6%9C%BA/" rel="tag">收音机</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="HT0-FM-Radio-Principles-and-Porting-Study-Wiki"><a href="#HT0-FM-Radio-Principles-and-Porting-Study-Wiki" class="headerlink" title="HT0 FM Radio Principles and Porting Study Wiki"></a>HT0 FM Radio Principles and Porting Study Wiki</h1><blockquote>
+<p><strong>Audience</strong>: Engineers who want to understand “what is really going on with this chip’s FM”, as well as those who will port to other platforms in the future<br><strong>How to read</strong>: §0–§2 build intuition → §3 understand the software&#x2F;hardware layering → §4 see how Android does it → §5 see how we do it → §8 troubleshooting methodology → §9 migration checklist<br><strong>Core value</strong>: Facts scattered across <code>.ko</code> symbols, the ALSA topology, and the Android vendor libraries, organized into a readable chain of knowledge</p>
+</blockquote>
+<hr>
+<h2 id="0-Build-Intuition-in-One-Sentence"><a href="#0-Build-Intuition-in-One-Sentence" class="headerlink" title="0. Build Intuition in One Sentence"></a>0. Build Intuition in One Sentence</h2><p><strong>On this chip, the FM radio is not a standalone piece of hardware, but the third functional module inside the Marlin2 “three-in-one” chip.</strong></p>
+<p>Its RF, demodulation, and RDS decoding are all completed inside the chip; externally it exposes only one control channel over SDIO and one <code>/dev/fm</code> character device.<br>What you can do in Linux user space is essentially only three things: <strong>give it commands, ask it for field strength, and connect the audio it produces to the codec</strong>.</p>
+<hr>
+<h2 id="1-What-the-Hardware-Looks-Like"><a href="#1-What-the-Hardware-Looks-Like" class="headerlink" title="1. What the Hardware Looks Like"></a>1. What the Hardware Looks Like</h2><h3 id="1-1-One-Chip-Three-Functions"><a href="#1-1-One-Chip-Three-Functions" class="headerlink" title="1.1 One Chip, Three Functions"></a>1.1 One Chip, Three Functions</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">                     ┌─────────────────────────┐</span><br><span class="line">SDIO 总线  ──────────▶  Unisoc(展讯) Marlin2   │</span><br><span class="line">(共享！)              │  ┌───────────────────┐ │</span><br><span class="line">                      │  │ WiFi  (sprdwl)    │ │</span><br><span class="line">                      │  ├───────────────────┤ │</span><br><span class="line">                      │  │ Bluetooth (BT/UART)│ │</span><br><span class="line">                      │  ├───────────────────┤ │</span><br><span class="line">                      │  │ FM Radio (marlin_fm)│ │</span><br><span class="line">                      │  └───────────────────┘ │</span><br><span class="line">                      └───────────┬───────────┘</span><br><span class="line">                                  │ 音频输出</span><br><span class="line">                 ┌────────────────┼────────────────┐</span><br><span class="line">                 ▼                ▼                ▼</span><br><span class="line">           内部 codec 直通      I2S 总线      Over BT（走蓝牙）</span><br></pre></td></tr></table></figure>
+
+<p><strong>Measured evidence</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Fact</th>
+<th>Value</th>
+<th>How to obtain</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SDIO modalias</td>
+<td><code>sdio:c00v0000d2331</code></td>
+<td><code>cat /sys/bus/sdio/devices/*/modalias</code></td>
+</tr>
+<tr>
+<td>SDIO device path</td>
+<td><code>mmc2:8800:1</code></td>
+<td><code>ls /sys/bus/sdio/devices/</code></td>
+</tr>
+<tr>
+<td>vendor &#x2F; device</td>
+<td><code>0x0000</code> &#x2F; <code>0x2331</code></td>
+<td><code>cat .../vendor</code>, <code>.../device</code></td>
+</tr>
+<tr>
+<td><strong>Official statement on shared SDIO</strong></td>
+<td><code>SDIO radio driver for marlin2 FM Radio Receivers, share SDIO with BT/WIFI</code></td>
+<td><code>strings /lib/modules/marlin_fm.ko | grep description=</code></td>
+</tr>
+</tbody></table>
+<p>The last row is <strong>the most critical one</strong>: the driver author states in writing that FM and BT&#x2F;WiFi <strong>share SDIO</strong>.<br>This determines that all of FM’s availability dependencies (firmware, power-up) are bound together with WiFi&#x2F;Bluetooth.</p>
+<h3 id="1-2-What-“Shared-SDIO”-Means"><a href="#1-2-What-“Shared-SDIO”-Means" class="headerlink" title="1.2 What “Shared SDIO” Means"></a>1.2 What “Shared SDIO” Means</h3><table>
+<thead>
+<tr>
+<th>Impact area</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Firmware</strong></td>
+<td><code>download</code> burns the combo firmware as a whole in one go, <strong>including the FM part</strong>. There is no independent FM firmware process</td>
+</tr>
+<tr>
+<td><strong>Power-up</strong></td>
+<td>There is no independent FM power-up switch; the chip simply needs to be powered as a whole (it depends on the <code>wcnd</code> &#x2F; BT-OPEN chain)</td>
+</tr>
+<tr>
+<td><strong>Bandwidth</strong></td>
+<td>SDIO is a shared bus, so high WiFi throughput may theoretically affect the FM data stream; <strong>this needs evaluation by measurement</strong></td>
+</tr>
+<tr>
+<td><strong>Fault coupling</strong></td>
+<td>If WiFi dies ⇒ SDIO does not enumerate ⇒ FM is necessarily unavailable. <strong>Troubleshooting must confirm WiFi first</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-Software-Layering-Five-Layer-Model"><a href="#2-Software-Layering-Five-Layer-Model" class="headerlink" title="2. Software Layering (Five-Layer Model)"></a>2. Software Layering (Five-Layer Model)</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">⑤ UI 层      LVGL 收音机页         ← 本项目新增主体</span><br><span class="line">      │ unix socket /tmp/fm_ctl.sock</span><br><span class="line">④ daemon 层  fm_radio_daemon       ← 本项目新增，独占 /dev/fm</span><br><span class="line">      │ ioctl / AT 命令</span><br><span class="line">③ 驱动层      marlin_fm.ko → /dev/fm (misc 23)   ← 已存在</span><br><span class="line">      │ SDIO 事务</span><br><span class="line">② 固件层      Marlin2 combo 固件（含 FM）        ← 随 WiFi 一起烧好</span><br><span class="line">      │ SDIO 物理链路</span><br><span class="line">① 硬件层      Marlin2 芯片 FM 部件               ← 已存在</span><br></pre></td></tr></table></figure>
+
+<p><strong>The “pass criteria” corresponding to each layer</strong> (this is the basis for layered troubleshooting):</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Pass criterion</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>① Hardware</td>
+<td><code>cat /sys/bus/sdio/devices/*/device</code> yields <code>0x2331</code></td>
+</tr>
+<tr>
+<td>② Firmware</td>
+<td>WiFi can come up (<code>download</code> stays resident)</td>
+</tr>
+<tr>
+<td>③ Driver</td>
+<td><code>lsmod | grep marlin_fm</code>, <code>ls /dev/fm</code>, and <code>grep -w fm /proc/misc</code> yields <code>23 fm</code></td>
+</tr>
+<tr>
+<td>④ daemon</td>
+<td><code>connect /tmp/fm_ctl.sock</code> succeeds and <code>state</code> returns <code>OK *</code></td>
+</tr>
+<tr>
+<td>⑤ UI</td>
+<td>Can tune stations, hear sound, and return to the desktop without stopping playback</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="3-The-Boundary-of-Capabilities-Provided-by-the-Driver-Command-List-and-RDS"><a href="#3-The-Boundary-of-Capabilities-Provided-by-the-Driver-Command-List-and-RDS" class="headerlink" title="3. The Boundary of Capabilities Provided by the Driver: Command List and RDS"></a>3. The Boundary of Capabilities Provided by the Driver: Command List and RDS</h2><h3 id="3-1-Control-Commands-from-the-Debug-Prints-of-strings-marlin-fm-ko"><a href="#3-1-Control-Commands-from-the-Debug-Prints-of-strings-marlin-fm-ko" class="headerlink" title="3.1 Control Commands (from the Debug Prints of strings marlin_fm.ko)"></a>3.1 Control Commands (from the Debug Prints of <code>strings marlin_fm.ko</code>)</h3><p>The driver prints <code>----&lt;命令名&gt;----</code> for each ioctl branch; the commands are recovered accordingly:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Commands</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Basic</td>
+<td><code>TUNE</code>、<code>TUNE_NEW</code>、<code>SEEK</code>、<code>SEEK_NEW</code>、<code>MUTE</code>、<code>SETVOL</code>、<code>GETVOL</code>、<code>IS_FM_POWERED_UP</code></td>
+</tr>
+<tr>
+<td>Scan</td>
+<td><code>SCAN</code>、<code>SCAN_NEW</code>、<code>STOP_SCAN</code>、<code>SCAN_GETRSSI</code>、<code>PRE_SEARCH</code>、<code>RESTORE_SEARCH</code></td>
+</tr>
+<tr>
+<td>Signal</td>
+<td><code>GETRSSI</code>、<code>GETMONOSTERO</code>、<code>SETMONOSTERO</code>、<code>SOFT_MUTE_TUNE</code>、<code>DESENSE_CHECK</code>、<code>IS_DESE_CHAN</code>、<code>CQI_GET</code>、<code>FULL_CQI_LOG</code></td>
+</tr>
+<tr>
+<td>Audio</td>
+<td><code>ANA_SWITCH</code>、<code>I2S_SETTING</code>、<code>GET_I2S_INFO</code>、<code>GET_AUDIO_INFO</code>、<code>OVER_BT_ENABLE</code></td>
+</tr>
+<tr>
+<td>RDS</td>
+<td><code>RDS_SUPPORT</code>、<code>RDS_ONOFF</code>、<code>RDS_GROUPCNT</code>、<code>RDS_BC_RST</code></td>
+</tr>
+<tr>
+<td>Information</td>
+<td><code>GETCHIPID</code>、<code>GET_HW_INFO</code>、<code>GETCAPARRAY</code>、<code>GETCURPAMD</code>、<code>GETGOODBCNT</code>、<code>GETBADBNT</code>、<code>GETBLERRATIO</code></td>
+</tr>
+<tr>
+<td>Mass-production debugging</td>
+<td><code>RW_REG</code>、<code>TOP_RDWR</code>、<code>HOST_RDWR</code>、<code>DUMP_REG</code>、<code>EM_TEST</code>、<code>SIM_DATA</code>、<code>GET_LOG</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>✅ <strong>Update (2026-09-22)</strong>: the command numbers have been <strong>fully reverse-engineered and confirmed by measurement</strong>; see<br><a href="FM%E6%94%B6%E9%9F%B3ioctl%E5%91%BD%E4%BB%A4%E8%A1%A8_%E9%80%86%E5%90%91%E8%BF%98%E5%8E%9F.md"><code>FM收音ioctl命令表_逆向还原.md</code></a>.<br>The encoding is unified as <code>_IOWR(0xF5, nr, 4)</code> &#x3D; <code>0xC004F500 | nr</code>, with 45 of the 47 commands passing measurement.<br>This section is retained as a <strong>functional-perspective</strong> classification; for the actual numbers, consult that document.</p>
+</blockquote>
+<h3 id="3-2-AT-Command-Style-—-Confirmed-by-Measurement-and-It-Is-Real"><a href="#3-2-AT-Command-Style-—-Confirmed-by-Measurement-and-It-Is-Real" class="headerlink" title="3.2 AT Command Style — Confirmed by Measurement, and It Is Real"></a>3.2 AT Command Style — Confirmed by Measurement, and It Is Real</h3><p>The driver contains two functions, <code>parse_at_fm_cmd</code> &#x2F; <code>parse_at_fm_num</code>; on the Android side, <code>libengfm.so</code> exports only one symbol, <code>fm_runcommand</code><br>(literally translated, “run an FM command”).</p>
+<p><strong>This is not speculation; AT frames have actually been captured</strong>. The complete kernel log when calling <code>TUNE</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">FM_DRV: fm_ioctl-72  -- ----TUNE----</span><br><span class="line">FM_DRV: fm_write-348 -- fm_write_completion done=0X0</span><br><span class="line">FM_DRV: fm_write_buf-337 -- * fmdev-&gt;write_buf: at+fm=1,0 *</span><br><span class="line">fm_sdio_write size: 11</span><br></pre></td></tr></table></figure>
+
+<p>Conclusions:</p>
+<ol>
+<li>What the driver sends over SDIO is indeed <strong>AT text</strong>, in the format <strong><code>at+fm=&lt;opcode&gt;,&lt;param&gt;</code></strong><br>(<code>at+fm=1,0</code> is 10 characters + NUL &#x3D; 11 bytes, which matches <code>fm_sdio_write size: 11</code>).</li>
+<li><strong>The AT opcode and the ioctl nr are two separate numbering schemes</strong>: the ioctl nr of <code>TUNE</code> is <code>0x02</code>, but its AT opcode is <code>1</code>.<br>So far only <code>power up -&gt; at+fm=0</code> and <code>TUNE -&gt; at+fm=1,&lt;freq&gt;</code> have been confirmed. <strong>The full AT table is not yet calibrated; do not mix the two schemes</strong>.</li>
+<li>Another byproduct: <strong><code>TUNE</code> is a blocking call</strong>, and the failure path takes about <strong>3.99 s</strong> (the log timestamp span<br><code>11448.618</code> → <code>11452.613</code>). Therefore the daemon must run TUNE&#x2F;SEEK on a dedicated thread, and the socket must have timeouts set.</li>
+</ol>
+<h3 id="3-3-RDS-—-The-Differentiating-Value-of-This-Project"><a href="#3-3-RDS-—-The-Differentiating-Value-of-This-Project" class="headerlink" title="3.3 RDS — The Differentiating Value of This Project"></a>3.3 RDS — The Differentiating Value of This Project</h3><p><code>nm marlin_fm.ko</code> reveals a complete RDS parser:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Function</th>
+<th>Length&#x2F;meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>PS</strong></td>
+<td><code>rds_get_ps</code></td>
+<td>Station name, <strong>8 characters</strong></td>
+</tr>
+<tr>
+<td><strong>RT</strong></td>
+<td><code>rds_get_rt</code></td>
+<td>Radio text, <strong>64 characters</strong> (scrolling subtitles)</td>
+</tr>
+<tr>
+<td>PTY</td>
+<td><code>rds_get_pty</code></td>
+<td>Program type (news&#x2F;classical&#x2F;rock…)</td>
+</tr>
+<tr>
+<td>PI</td>
+<td><code>rds_get_pi_code</code></td>
+<td>Program identification code</td>
+</tr>
+<tr>
+<td><strong>AF</strong></td>
+<td><code>rds_get_af</code> &#x2F; <code>rds_get_af_method</code></td>
+<td><strong>Alternative frequencies</strong> — automatically switch to another frequency of the same program when the signal degrades</td>
+</tr>
+<tr>
+<td>TP&#x2F;TA</td>
+<td><code>rds_get_tp_ta</code></td>
+<td>Traffic program &#x2F; traffic announcement</td>
+</tr>
+<tr>
+<td>CT</td>
+<td><code>rds_get_ct</code></td>
+<td>Station clock</td>
+</tr>
+<tr>
+<td>DI&#x2F;MS</td>
+<td><code>rds_get_di_ms</code></td>
+<td>Decoder identification &#x2F; music-speech</td>
+</tr>
+<tr>
+<td><strong>EWS</strong></td>
+<td><code>rds_get_ews</code></td>
+<td><strong>Emergency broadcast</strong> (has compliance significance)</td>
+</tr>
+<tr>
+<td>PTYN &#x2F; PIN &#x2F; SLC</td>
+<td><code>rds_get_ptyn</code> &#x2F; <code>rds_get_pin</code> &#x2F; <code>rds_get_slc</code></td>
+<td>Program type name &#x2F; item number &#x2F; SLC</td>
+</tr>
+<tr>
+<td>ODA &#x2F; TDC</td>
+<td><code>rds_get_oda</code> &#x2F; <code>rds_get_oda_aid</code> &#x2F; <code>rds_get_tdc</code></td>
+<td>Open data application &#x2F; transparent data channel</td>
+</tr>
+<tr>
+<td>EON</td>
+<td><code>rds_get_eon</code> &#x2F; <code>rds_get_eon_ta</code></td>
+<td>Enhanced other network information</td>
+</tr>
+</tbody></table>
+<p><strong>This means the radio app is not merely “able to make sound”, but can display station names, scrolling text, and program types, and can even track frequencies automatically</strong>.<br>When designing the UI, be sure to make use of these capabilities; do not degenerate it into an interface with only frequency digits.</p>
+<hr>
+<h2 id="4-How-Native-Android-Does-It-Reference-Sample"><a href="#4-How-Native-Android-Does-It-Reference-Sample" class="headerlink" title="4. How Native Android Does It (Reference Sample)"></a>4. How Native Android Does It (Reference Sample)</h2><p>The vendor Android partition is mounted at <code>/mnt/android_sys</code> on the device and can be browsed directly:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>FM HAL audio source</td>
+<td><code>/mnt/android_sys/lib/libFMHalSource.so</code></td>
+<td>The <code>android::FMHalSource</code> class</td>
+</tr>
+<tr>
+<td>Engineering mode library</td>
+<td><code>/mnt/android_sys/lib/libengfm.so</code></td>
+<td><strong>Exports only <code>fm_runcommand</code></strong></td>
+</tr>
+<tr>
+<td>JNI bridge</td>
+<td><code>/mnt/android_sys/lib/libfmjni.so</code></td>
+<td>Java ↔ native</td>
+</tr>
+<tr>
+<td>Broadcast services</td>
+<td><code>libradio.so</code> &#x2F; <code>libradioservice.so</code> &#x2F; <code>libradio_metadata.so</code></td>
+<td>The standard broadcast radio HAL stack</td>
+</tr>
+<tr>
+<td>Service APK</td>
+<td><code>/mnt/android_sys/priv-app/radio_interactor_service/</code></td>
+<td>Upper-layer service</td>
+</tr>
+<tr>
+<td>Driver</td>
+<td><code>/mnt/android_sys/lib/modules/marlin_fm.ko</code></td>
+<td>The same copy loaded on this device</td>
+</tr>
+</tbody></table>
+<h3 id="4-1-The-Audio-Architecture-Read-from-libFMHalSource-so"><a href="#4-1-The-Audio-Architecture-Read-from-libFMHalSource-so" class="headerlink" title="4.1 The Audio Architecture Read from libFMHalSource.so"></a>4.1 The Audio Architecture Read from <code>libFMHalSource.so</code></h3><p><code>nm -D</code> shows that the class holds:</p>
+<ul>
+<li><strong><code>pcmHandle</code></strong> (tinyalsa PCM handle)</li>
+<li><code>mSamplerate</code> &#x2F; <code>mPeriodSize</code> &#x2F; <code>mPeriodCount</code> &#x2F; <code>mChannel</code></li>
+<li>A background thread <code>FMHalThread::threadLoop()</code></li>
+<li>A <code>RingBuffer</code> (<code>GetData/PutData/GetBuf/PutBuf/BufCount</code>)</li>
+</ul>
+<p><strong>Conclusion</strong>: the Android side is a typical audio pipeline that <strong>starts a thread to read data from PCM, passes it through a ring buffer, and then hands it to the audio output</strong>.<br>The daemon we write ourselves on Alpine essentially has to replicate this same chain (though a simpler implementation can be used).</p>
+<h3 id="4-2-Why-These-Libraries-Cannot-Be-Directly-Reused"><a href="#4-2-Why-These-Libraries-Cannot-Be-Directly-Reused" class="headerlink" title="4.2 Why These Libraries Cannot Be Directly Reused"></a>4.2 Why These Libraries <strong>Cannot Be Directly Reused</strong></h3><p>They depend on the Android runtime (Android infrastructure such as binder, <code>sp&lt;&gt;</code> smart pointers, <code>ALooper</code>, and <code>RingBuffer</code>),<br>and <strong>cannot run when dynamically loaded</strong> on Alpine. They can only serve as a <strong>reference sample &#x2F; source of facts</strong>, not as reusable components.</p>
+<hr>
+<h2 id="5-Our-Approach-Replacing-an-Entire-Stack-with-Minimal-Code-on-Alpine"><a href="#5-Our-Approach-Replacing-an-Entire-Stack-with-Minimal-Code-on-Alpine" class="headerlink" title="5. Our Approach: Replacing an Entire Stack with Minimal Code on Alpine"></a>5. Our Approach: Replacing an Entire Stack with Minimal Code on Alpine</h2><h3 id="5-1-Design-Trade-offs"><a href="#5-1-Design-Trade-offs" class="headerlink" title="5.1 Design Trade-offs"></a>5.1 Design Trade-offs</h3><table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Choice</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Whether to rewrite the FM protocol stack</td>
+<td><strong>No</strong></td>
+<td>It is already implemented inside the chip; we only send commands</td>
+</tr>
+<tr>
+<td>Control channel</td>
+<td>Write an FM daemon that exclusively owns <code>/dev/fm</code></td>
+<td>Avoids multi-process contention; consistent with the approach of the Bluetooth daemon</td>
+</tr>
+<tr>
+<td>External interface</td>
+<td>unix socket + plain-text commands</td>
+<td>Fully mirrors the existing <code>bt_user_daemon</code> (<code>/tmp/bt_ctl.sock</code>), minimizing the team’s learning cost</td>
+</tr>
+<tr>
+<td>Audio output</td>
+<td>Try the internal codec passthrough first (<code>ANA_SWITCH</code>)</td>
+<td>I2S and Over-BT serve as alternatives, <strong>pending measurement</strong></td>
+</tr>
+<tr>
+<td>UI carrier</td>
+<td>LVGL radio page</td>
+<td>Homogeneous with the desktop’s other apps</td>
+</tr>
+</tbody></table>
+<h3 id="5-2-Why-“Mirroring-bt-user-daemon”-Is-the-Right-Choice"><a href="#5-2-Why-“Mirroring-bt-user-daemon”-Is-the-Right-Choice" class="headerlink" title="5.2 Why “Mirroring bt_user_daemon” Is the Right Choice"></a>5.2 Why “Mirroring bt_user_daemon” Is the Right Choice</h3><p>The Bluetooth daemon is already a pattern validated by the team:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">unix socket /tmp/bt_ctl.sock，文本命令，chmod 0666</span><br><span class="line">    发 &quot;state&quot;  → 回 &quot;OK ON&quot; / &quot;OK OFF&quot;</span><br><span class="line">    发 &quot;on&quot;     → 回 &quot;OK ON&quot;</span><br><span class="line">    发 &quot;off&quot;    → 回 &quot;OK OFF&quot;</span><br></pre></td></tr></table></figure>
+
+<p>FM copies this set exactly: <strong>it likewise reduces the cognitive burden of some inexplicable new protocol, and the pitfalls of socket timeouts and reconnection have already been encountered once</strong>.</p>
+<h3 id="5-3-The-Pitfall-You-Must-Remember-Socket-Timeout"><a href="#5-3-The-Pitfall-You-Must-Remember-Socket-Timeout" class="headerlink" title="5.3 The Pitfall You Must Remember: Socket Timeout"></a>5.3 The Pitfall You Must Remember: Socket Timeout</h3><blockquote>
+<p>🔒 When performing socket I&#x2F;O inside an LVGL timer callback, you <strong>must</strong> set <code>SO_RCVTIMEO</code> &#x2F; <code>SO_SNDTIMEO</code> (200ms recommended).<br>Otherwise, once the daemon stops responding, <strong>the entire UI thread freezes</strong>. This is a hard lesson already learned on this project’s Bluetooth page; FM must not step into it again.</p>
+</blockquote>
+<hr>
+<h2 id="6-Audio-Path-Three-Possibilities-One-Must-Be-Chosen-by-Measurement"><a href="#6-Audio-Path-Three-Possibilities-One-Must-Be-Chosen-by-Measurement" class="headerlink" title="6. Audio Path: Three Possibilities, One Must Be Chosen by Measurement"></a>6. Audio Path: Three Possibilities, One Must Be Chosen by Measurement</h2><p>Measured ALSA topology of this device:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">0 [alli2s]       00-00~00-03: i2s.0~i2s.3 null-codec-dai-N   playback + capture</span><br><span class="line">1 [sprdphone]    01-00 HiFi sprd-codec-i2s-0                  playback + capture</span><br><span class="line">                 01-01 Voice sprd-codec-vaudio-1              playback + capture</span><br><span class="line">                 01-02 AuxRecord                              capture</span><br><span class="line">                 01-03 AuxDSPCaptrue                          capture</span><br><span class="line">                 01-04 Dfm sprd-codec-fm-4                    playback  ← FM 专用！</span><br><span class="line">2 [saudiovoip]   ...</span><br><span class="line">3 [saudiolte]    ...</span><br></pre></td></tr></table></figure>
+
+<p>The three corresponding driver ioctls:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>ioctl</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Analog&#x2F;internal codec passthrough</td>
+<td><code>ANA_SWITCH</code></td>
+<td>Default candidate</td>
+</tr>
+<tr>
+<td>I2S</td>
+<td><code>I2S_SETTING</code> &#x2F; <code>GET_I2S_INFO</code></td>
+<td>Alternative</td>
+</tr>
+<tr>
+<td>FM audio over Bluetooth</td>
+<td><code>OVER_BT_ENABLE</code></td>
+<td>Semantics to be confirmed</td>
+</tr>
+</tbody></table>
+<p><strong>Current tooling</strong>: this device has <code>libasound.so.2</code>, but <strong>does not have</strong> <code>amixer</code> &#x2F; <code>tinymix</code> &#x2F; <code>aplay</code><br>→ <strong>mixer adjustments cannot be done from the command line; C code must be written</strong>.</p>
+<p><strong>Not yet confirmed</strong> (must not be treated as fact):</p>
+<ol>
+<li>Whether FM requires headphones to be plugged in as the antenna (the existence of <code>01-04</code> suggests it may not, but this needs measurement);</li>
+<li>The exact semantics of <code>OVER_BT_ENABLE</code>;</li>
+<li>Whether <code>SETVOL</code> is the FM module’s internal gain or the main output volume.</li>
+</ol>
+<hr>
+<h2 id="7-Three-Words-Uncertainty"><a href="#7-Three-Words-Uncertainty" class="headerlink" title="7. Three Words: Uncertainty"></a>7. Three Words: Uncertainty</h2><p>The key items in this Wiki that have <strong>not yet been measured</strong> must be confirmed one by one before formal work begins (listed together here for easy comparison):</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Item to confirm</th>
+<th>Impact</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>ioctl <strong>command numbers</strong></td>
+<td>Block the entire workflow; without them, no commands can be sent</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Whether it depends on the headphone antenna</td>
+<td>Determines whether the UI needs a “please insert headphones” state</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>OVER_BT_ENABLE</code> semantics</td>
+<td>Determines the channel arbitration logic</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>SETVOL</code> scope</td>
+<td>Determines the volume control chain</td>
+</tr>
+<tr>
+<td>5</td>
+<td>RSSI raw value units and thresholds</td>
+<td>Determines how the signal bar is drawn</td>
+</tr>
+<tr>
+<td>6</td>
+<td>FM behavior during system suspend</td>
+<td>Determines whether “continued listening with the screen off” is possible</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>This list is itself a deliverable: <strong>stating clearly “what is known and what is not” has more engineering value than pretending to know everything.</strong></p>
+</blockquote>
+<hr>
+<h2 id="8-Troubleshooting-Methodology-Follow-This-When-Migrating"><a href="#8-Troubleshooting-Methodology-Follow-This-When-Migrating" class="headerlink" title="8. Troubleshooting Methodology (Follow This When Migrating)"></a>8. Troubleshooting Methodology (Follow This When Migrating)</h2><ol>
+<li><strong>Layer first</strong>: ①② firmware&#x2F;power-up → ③ driver → ④ daemon → ⑤ UI. If any layer is not working, do not guess at the layers above.</li>
+<li><strong>Let the nodes speak</strong>: <code>lsmod</code> &#x2F; <code>ls /dev/fm</code> &#x2F; <code>/proc/misc</code> &#x2F; <code>sdio device</code> — these four commands determine life or death.</li>
+<li><strong>Whether ioctls are correct is seen in dmesg</strong>: the driver prints <code>----&lt;命令名&gt;----</code>, which is the only direct evidence for judging whether the command number mapping is correct.</li>
+<li><strong>Audio must not be judged from logs</strong>: it must be listened to by human ear.</li>
+<li><strong>When the UI freezes, first suspect socket blocking</strong>: check whether timeouts are set.</li>
+</ol>
+<hr>
+<h2 id="9-General-Checklist-for-Migrating-to-Similar-Devices"><a href="#9-General-Checklist-for-Migrating-to-Similar-Devices" class="headerlink" title="9. General Checklist for Migrating to Similar Devices"></a>9. General Checklist for Migrating to Similar Devices</h2><p>To migrate this FM solution to another similar device (Unisoc Marlin series), do the following in order:</p>
+<ol>
+<li><strong>Confirm SDIO enumeration</strong>: <code>cat /sys/bus/sdio/devices/*/device</code>, and check whether the device id matches.</li>
+<li><strong>Confirm the driver</strong>: <code>lsmod | grep &lt;fm driver name&gt;</code>, <code>ls /dev/&lt;fm node&gt;</code>.</li>
+<li><strong>Confirm the sharing relationship</strong>: <code>strings &lt;fm driver&gt;.ko | grep description=</code>, and find out whether it shares SDIO with WiFi&#x2F;BT.</li>
+<li><strong>Pull the command list</strong>: <code>strings &lt;driver&gt;.ko | grep -- &#39;----&#39;</code>, plus <code>nm &lt;driver&gt;.ko | grep &#39; T &#39;</code>.<br><strong>Going one step further — reverse-engineer the command numbers as well</strong>: use <code>file &lt;driver&gt;.ko</code> to see whether it is <code>not stripped</code>,<br>then <code>objdump -d --disassemble=&lt;ioctl function&gt;</code> and read the constants in the binary search tree.<br>If the driver prints <code>----&lt;命令名&gt;----</code>, confirm each one by measurement using “single-step calls with all-zero parameters + clearing the log with <code>dmesg -c</code>“.<br><strong>If you can figure it out yourself, do not list it as something “to be requested from the original manufacturer”.</strong></li>
+<li><strong>Confirm the audio topology</strong>: <code>cat /proc/asound/pcm | grep -i fm</code>.</li>
+<li><strong>Find the userspace gap</strong>: is there an off-the-shelf FM tool? (This device has none; you need to write your own daemon)</li>
+<li><strong>Mirror the existing daemon pattern</strong>: copy the usage of the socket daemon whose success has already been validated on this device.</li>
+<li><strong>Run through the six pending confirmation items in §7 again</strong> — the answers may differ on different devices, so <strong>do not copy this device’s conclusions verbatim</strong>.</li>
+</ol>
+<hr>
+<h2 id="10-What-This-Wiki-Wants-You-to-Remember"><a href="#10-What-This-Wiki-Wants-You-to-Remember" class="headerlink" title="10. What This Wiki Wants You to Remember"></a>10. What This Wiki Wants You to Remember</h2><blockquote>
+<p><strong>FM is “already there”, not “something to be built”.</strong></p>
+<p>FM is in the chip, FM is in the firmware, FM is lying in the driver, and even the RDS parser is already written —<br>there are only three engineering tasks we really have to do: <strong>wrap the operations on <code>/dev/fm</code> into a daemon, connect the audio to the codec, and draw a UI that can use RDS</strong>.</p>
+<p><strong>And the matter of “information gaps” is much easier to solve than imagined.</strong><br>Initially we listed “cannot obtain the ioctl command numbers” as the number one hard blocker, and were even prepared to beg the original manufacturer for the header file.<br>In the end we discovered: the <code>.ko</code> is <strong>not stripped</strong>, and the command numbers lie in plain sight in the machine code;<br>plus the driver prints each command’s name into the kernel log, so <strong>locating candidates via disassembly + single-step measurement with all-zero parameters</strong> nailed down all 47 commands.</p>
+<p>So the first priority is not “go ask for the header file”, but rather — <strong>first check whether it is needed at all</strong>.</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is an original work by whiteleibniz (organized with AI assistance). All rights reserved. Please credit the source and keep the original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HT0-FM-Radio-Principles-and-Porting-Study-Wiki"><span class="toc-number">1.</span> <span class="toc-text">HT0 FM Radio Principles and Porting Study Wiki</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#0-Build-Intuition-in-One-Sentence"><span class="toc-number">1.1.</span> <span class="toc-text">0. Build Intuition in One Sentence</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-What-the-Hardware-Looks-Like"><span class="toc-number">1.2.</span> <span class="toc-text">1. What the Hardware Looks Like</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-One-Chip-Three-Functions"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.1 One Chip, Three Functions</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-What-%E2%80%9CShared-SDIO%E2%80%9D-Means"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2 What “Shared SDIO” Means</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Software-Layering-Five-Layer-Model"><span class="toc-number">1.3.</span> <span class="toc-text">2. Software Layering (Five-Layer Model)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Boundary-of-Capabilities-Provided-by-the-Driver-Command-List-and-RDS"><span class="toc-number">1.4.</span> <span class="toc-text">3. The Boundary of Capabilities Provided by the Driver: Command List and RDS</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Control-Commands-from-the-Debug-Prints-of-strings-marlin-fm-ko"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 Control Commands (from the Debug Prints of strings marlin_fm.ko)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-AT-Command-Style-%E2%80%94-Confirmed-by-Measurement-and-It-Is-Real"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 AT Command Style — Confirmed by Measurement, and It Is Real</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-RDS-%E2%80%94-The-Differentiating-Value-of-This-Project"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3 RDS — The Differentiating Value of This Project</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-How-Native-Android-Does-It-Reference-Sample"><span class="toc-number">1.5.</span> <span class="toc-text">4. How Native Android Does It (Reference Sample)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-The-Audio-Architecture-Read-from-libFMHalSource-so"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 The Audio Architecture Read from libFMHalSource.so</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Why-These-Libraries-Cannot-Be-Directly-Reused"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 Why These Libraries Cannot Be Directly Reused</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Our-Approach-Replacing-an-Entire-Stack-with-Minimal-Code-on-Alpine"><span class="toc-number">1.6.</span> <span class="toc-text">5. Our Approach: Replacing an Entire Stack with Minimal Code on Alpine</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Design-Trade-offs"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 Design Trade-offs</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Why-%E2%80%9CMirroring-bt-user-daemon%E2%80%9D-Is-the-Right-Choice"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 Why “Mirroring bt_user_daemon” Is the Right Choice</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-The-Pitfall-You-Must-Remember-Socket-Timeout"><span class="toc-number">1.6.3.</span> <span class="toc-text">5.3 The Pitfall You Must Remember: Socket Timeout</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Audio-Path-Three-Possibilities-One-Must-Be-Chosen-by-Measurement"><span class="toc-number">1.7.</span> <span class="toc-text">6. Audio Path: Three Possibilities, One Must Be Chosen by Measurement</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Three-Words-Uncertainty"><span class="toc-number">1.8.</span> <span class="toc-text">7. Three Words: Uncertainty</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Troubleshooting-Methodology-Follow-This-When-Migrating"><span class="toc-number">1.9.</span> <span class="toc-text">8. Troubleshooting Methodology (Follow This When Migrating)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-General-Checklist-for-Migrating-to-Similar-Devices"><span class="toc-number">1.10.</span> <span class="toc-text">9. General Checklist for Migrating to Similar Devices</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-What-This-Wiki-Wants-You-to-Remember"><span class="toc-number">1.11.</span> <span class="toc-text">10. What This Wiki Wants You to Remember</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&text=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&title=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&is_video=false&description=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=HT0FM Radio Principles and Porting Study Wiki&body=Check out this article: https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&title=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&title=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&title=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&title=HT0FM Radio Principles and Porting Study Wiki"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/en/2026/09/23/fm-14-ht0fm-wiki-md/&name=HT0FM Radio Principles and Porting Study Wiki&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+<!-- search -->
+
+<script src="/js/search.js"></script>
+
+<script type="text/javascript">
+    (function () {
+        var search_path = "search.xml";
+        var path = "/" + search_path;
+        searchFunc(path, 'search-input', 'search-result');
+    })();
+</script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
