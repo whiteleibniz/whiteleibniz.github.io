@@ -9,6 +9,18 @@
   var PREFIX = { 'zh-CN': '', 'zh-TW': '/zh-tw', 'en': '/en' };
 
   var DICT = {
+    'zh-CN': {
+      nav: { home: '首页', about: '关于', article: '文章', Search: '搜索' },
+      pag: { prev: '上一页', next: '下一页', total: '（第 %d / %d 页）' },
+      search: {
+        placeholder: '搜索…',
+        noresult: '没有找到结果',
+        found: '共找到 %d 篇文章',
+        indexed: '已索引 %d 篇文章',
+        failed: '索引加载失败，请刷新页面'
+      }
+      /* 分类名在简体站即源中文名, 无需翻译 */
+    },
     'zh-TW': {
       nav: { home: '首頁', about: '關於', article: '文章', Search: '搜尋' },
       pag: { prev: '上一頁', next: '下一頁', total: '（第 %d / %d 頁）' },
