@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="把网络电视调通：从一天崩三次到连续播 4800 帧 设备：展讯 SC9832A（sc8830 系列），Alpine&#x2F;armv7l，720×1280 竖屏，LVGL 桌面。目标：HLS 直播流用 VSP 硬件解码输出到 framebuffer，达到安卓官方播放效果。最终：辽宁卫视《乡村财富》稳定播出，uptime 36 分钟零重启，4808 帧上屏。  起点：每轮必崩新版代码每跑必崩，崩在">
+<meta property="og:type" content="article">
+<meta property="og:title" content="把网络电视调通：从一天崩三次到连续播 4800 帧">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="把网络电视调通：从一天崩三次到连续播 4800 帧 设备：展讯 SC9832A（sc8830 系列），Alpine&#x2F;armv7l，720×1280 竖屏，LVGL 桌面。目标：HLS 直播流用 VSP 硬件解码输出到 framebuffer，达到安卓官方播放效果。最终：辽宁卫视《乡村财富》稳定播出，uptime 36 分钟零重启，4808 帧上屏。  起点：每轮必崩新版代码每跑必崩，崩在">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-18T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-19T07:53:17.907Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="展讯">
+<meta property="article:tag" content="framebuffer">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="vsp">
+<meta property="article:tag" content="sc9830">
+<meta property="article:tag" content="内核崩溃">
+<meta property="article:tag" content="调试方法论">
+<meta property="article:tag" content="绿屏">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>把网络电视调通：从一天崩三次到连续播 4800 帧</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/19/nettv-10-debug-code-is-the-crash-cause/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&text=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&title=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&is_video=false&description=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=把网络电视调通：从一天崩三次到连续播 4800 帧&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&title=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&title=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&title=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&title=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&name=把网络电视调通：从一天崩三次到连续播 4800 帧&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%8A%8A%E7%BD%91%E7%BB%9C%E7%94%B5%E8%A7%86%E8%B0%83%E9%80%9A%EF%BC%9A%E4%BB%8E%E4%B8%80%E5%A4%A9%E5%B4%A9%E4%B8%89%E6%AC%A1%E5%88%B0%E8%BF%9E%E7%BB%AD%E6%92%AD-4800-%E5%B8%A7"><span class="toc-number">1.</span> <span class="toc-text">把网络电视调通：从一天崩三次到连续播 4800 帧</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B5%B7%E7%82%B9%EF%BC%9A%E6%AF%8F%E8%BD%AE%E5%BF%85%E5%B4%A9"><span class="toc-number">1.1.</span> <span class="toc-text">起点：每轮必崩</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E4%B8%AA%E6%A0%B9%E5%9B%A0%EF%BC%8C%E4%BA%94%E6%AC%A1-A-B"><span class="toc-number">1.2.</span> <span class="toc-text">五个根因，五次 A&#x2F;B</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-1%EF%BC%9A%E8%B0%83%E8%AF%95%E4%BB%A3%E7%A0%81%E8%87%AA%E5%B7%B1%E5%B0%B1%E6%98%AF%E5%B4%A9%E5%9B%A0"><span class="toc-number">1.2.1.</span> <span class="toc-text">根因 1：调试代码自己就是崩因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-2%EF%BC%9ANAL-%E5%88%87%E7%A2%8E"><span class="toc-number">1.2.2.</span> <span class="toc-text">根因 2：NAL 切碎</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-3%EF%BC%9A%E8%99%9A%E6%8B%9F%E5%9C%B0%E5%9D%80%E5%BD%93%E6%88%90%E7%89%A9%E7%90%86%E5%9C%B0%E5%9D%80-%E2%86%92-%E4%B8%80%E7%89%87%E7%BB%BF"><span class="toc-number">1.2.3.</span> <span class="toc-text">根因 3：虚拟地址当成物理地址 → 一片绿</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-4%EF%BC%9AION-%E6%8A%A2%E4%B8%8D%E5%88%B0-%E4%B8%8D%E9%87%8A%E6%94%BE"><span class="toc-number">1.2.4.</span> <span class="toc-text">根因 4：ION 抢不到 + 不释放</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-5%EF%BC%9A%E6%9C%80%E8%B4%B5%E7%9A%84%E9%82%A3%E4%B8%AA%E2%80%94%E2%80%94%E6%98%AF%E6%88%91%E8%87%AA%E5%B7%B1"><span class="toc-number">1.2.5.</span> <span class="toc-text">根因 5：最贵的那个——是我自己</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%80%E5%90%8E%E4%B8%80%E5%B0%8F%E6%97%B6%EF%BC%9A%E6%8A%93%E5%B1%8F%E9%AA%97%E4%BA%86%E6%88%91%E4%B8%80%E5%B0%8F%E6%97%B6"><span class="toc-number">1.3.</span> <span class="toc-text">最后一小时：抓屏骗了我一小时</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%80%E7%BB%88%E9%AA%8C%E8%AF%81"><span class="toc-number">1.4.</span> <span class="toc-text">最终验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E8%AE%BA%E5%A4%8D%E7%9B%98"><span class="toc-number">1.5.</span> <span class="toc-text">方法论复盘</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        把网络电视调通：从一天崩三次到连续播 4800 帧
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-18T16:00:00.000Z" itemprop="datePublished">2026-10-19</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/framebuffer/" rel="tag">framebuffer</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/sc9830/" rel="tag">sc9830</a>, <a class="tag-link-link" href="/tags/vsp/" rel="tag">vsp</a>, <a class="tag-link-link" href="/tags/%E5%86%85%E6%A0%B8%E5%B4%A9%E6%BA%83/" rel="tag">内核崩溃</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF/" rel="tag">展讯</a>, <a class="tag-link-link" href="/tags/%E7%BB%BF%E5%B1%8F/" rel="tag">绿屏</a>, <a class="tag-link-link" href="/tags/%E8%B0%83%E8%AF%95%E6%96%B9%E6%B3%95%E8%AE%BA/" rel="tag">调试方法论</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="把网络电视调通：从一天崩三次到连续播-4800-帧"><a href="#把网络电视调通：从一天崩三次到连续播-4800-帧" class="headerlink" title="把网络电视调通：从一天崩三次到连续播 4800 帧"></a>把网络电视调通：从一天崩三次到连续播 4800 帧</h1><blockquote>
+<p>设备：展讯 SC9832A（sc8830 系列），Alpine&#x2F;armv7l，720×1280 竖屏，LVGL 桌面。<br>目标：HLS 直播流用 VSP 硬件解码输出到 framebuffer，达到安卓官方播放效果。<br>最终：辽宁卫视《乡村财富》稳定播出，uptime 36 分钟零重启，4808 帧上屏。</p>
+</blockquote>
+<h2 id="起点：每轮必崩"><a href="#起点：每轮必崩" class="headerlink" title="起点：每轮必崩"></a>起点：每轮必崩</h2><p>新版代码每跑必崩，崩在相位桩最后一行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt; fill(out)#1 开始 g_nout=1</span><br><span class="line">   fill(out) 交第0路 hdr=0xb6d8ec80 pBuffer=0xb6d9ba80</span><br><span class="line">                                    ← 没有下一行，设备重启</span><br></pre></td></tr></table></figure>
+
+<p><code>sigsetjmp</code> 拦不住，<code>dmesg</code> 无 OOM，内存还剩 882 MB。内核态崩溃。</p>
+<h2 id="五个根因，五次-A-B"><a href="#五个根因，五次-A-B" class="headerlink" title="五个根因，五次 A&#x2F;B"></a>五个根因，五次 A&#x2F;B</h2><h3 id="根因-1：调试代码自己就是崩因"><a href="#根因-1：调试代码自己就是崩因" class="headerlink" title="根因 1：调试代码自己就是崩因"></a>根因 1：调试代码自己就是崩因</h3><p>10-18 晚上我加了一套”挂死现场取证”：<code>vrp_hook()</code> hook 厂商的 VSP 寄存器写函数，<br>每次调用都从 <code>rb + 0x60901000</code> &#x2F; <code>rb + 0x60908000</code> <strong>直接读 MMIO 寄存器窗口</strong>；<br><code>tr_line()</code> 更狠，每次 DRIVE 前后各读一次。</p>
+<p><code>vrp_hook</code> 是每一轮轮询都会走的高频路径。于是 VSP 状态机被打乱，<br>崩在紧随其后的 <code>DRIVE fill(out)#1</code>。</p>
+<p><strong>崩溃点不在调试代码那行</strong>，所以栈、日志、信号处理全都指不到它。<br>旧版（能跑的）完全没有这段代码——这才让我想到去比。</p>
+<p>修法：<code>NETTV_TRACE_MMIO</code> 默认 0，直接 return 不碰 MMIO。<br>验证：跑到 AU[1100]+，564 次 fill 全返回，零重启。</p>
+<h3 id="根因-2：NAL-切碎"><a href="#根因-2：NAL-切碎" class="headerlink" title="根因 2：NAL 切碎"></a>根因 2：NAL 切碎</h3><p>三次崩溃现场的铁证——<strong>崩点永远紧跟一个被切成多片的 NAL</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">AU[109] sub1/4  4096B 后崩</span><br><span class="line">AU[369] sub1/2  4096B 后崩</span><br><span class="line">AU[36]  sub28/28 3048B 后崩</span><br><span class="line">而 sub1/1（未切碎）从不崩</span><br></pre></td></tr></table></figure>
+
+<p>A&#x2F;B 决定性：<code>NETTV_CHUNK=0</code> → 1200 帧跑到 AU[1100]+ 零重启；默认 4096 → 每轮必崩。</p>
+<p>机理推断：厂商库对”同一 NAL 分多次 nOffset 续投同一 buffer”的处理有缺陷。<br>（我最初查错了方向——<code>NETTV_SPLIT</code> 管的是拆 NAL 边界，切碎由 <code>g_chunk</code> 决定，两者不同。）</p>
+<h3 id="根因-3：虚拟地址当成物理地址-→-一片绿"><a href="#根因-3：虚拟地址当成物理地址-→-一片绿" class="headerlink" title="根因 3：虚拟地址当成物理地址 → 一片绿"></a>根因 3：虚拟地址当成物理地址 → 一片绿</h3><p>日志里两行并列就是铁证（同一个 fd&#x3D;12）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">登记 fd=12 → pa=0xb1ce6000            ← 虚拟地址（错）</span><br><span class="line">[ion] Get_phy_addr#1 fd=12 真PA=0x9fa00000   ← 真物理地址（对）</span><br></pre></td></tr></table></figure>
+
+<p>厂商 VSP 按 <code>handle-&gt;ints[12]</code> 当<strong>物理地址</strong>写帧，我填的却是 mmap 的虚拟地址。<br>硬件访问不到用户态虚拟地址 → 写不进真显存 → 屏上一片绿。</p>
+<p>修法：新增 <code>g_gh_pa[]</code> 存真 PA，4 处 <code>fh[12]</code> 全部改填 PA，VA 只留给 CPU 读帧。</p>
+<h3 id="根因-4：ION-抢不到-不释放"><a href="#根因-4：ION-抢不到-不释放" class="headerlink" title="根因 4：ION 抢不到 + 不释放"></a>根因 4：ION 抢不到 + 不释放</h3><p>自管 ION（heap mask&#x3D;8 <code>carveout_mm</code>，物理连续）抢到时一切正常，抢不到时<br><code>ghOut</code> 会退回 gralloc 的真 handle——而 gralloc 走 IOMMU heap，<strong>无物理连续 backing</strong>，<br>VSP 拿假 PA 写帧必崩内核。</p>
+<p>两个改动：重试 6 轮 + 120ms 退避 + 尺寸阶梯；仍抢不到就 <code>_exit(12)</code> 让看门狗重生，<br><strong>宁可不出画面也不打飞内核</strong>。另外退出前调 <code>ION_IOC_FREE</code>(0xc0044901) 主动释放。</p>
+<h3 id="根因-5：最贵的那个——是我自己"><a href="#根因-5：最贵的那个——是我自己" class="headerlink" title="根因 5：最贵的那个——是我自己"></a>根因 5：最贵的那个——是我自己</h3><p><code>ps | grep -c nettv_player</code> 显示堆了 <strong>12~23 个僵尸进程</strong>。</p>
+<p>每轮调试我都 <code>nohup</code> 起一个脚本，而 monitor 内部还会自己重生 worker&#x2F;worker-dl&#x2F;mplayer，<br>每轮实验多留一整套，每个抢 2MB C1 缓冲 → 池被撑爆 → 后续起不来。</p>
+<p><code>pgrep -x nettv_player</code> 只数主进程，看不到这些，所以我一度误判成”内核泄漏”，<br>还专门写了个 <code>ion_release()</code> 去救火。</p>
+<p><code>pkill -f nettv_player</code> 全清后，池立刻回到 <code>total 0</code>，<strong>立刻就能正常播</strong>。</p>
+<blockquote>
+<p>这一条最值钱：**症状和真因差了十万八千里，而唯一的分界线是”多问一句 ps”**。</p>
+</blockquote>
+<h2 id="最后一小时：抓屏骗了我一小时"><a href="#最后一小时：抓屏骗了我一小时" class="headerlink" title="最后一小时：抓屏骗了我一小时"></a>最后一小时：抓屏骗了我一小时</h2><p>画面明明上屏了，我抓屏看到的却是旧的 WiFi 设置页，连抓 4 张内容一模一样。</p>
+<p>真因：<code>/sys/class/graphics/fb0/virtual_size = 720,3840</code> —— fb 有 4 页，<br>我的抓屏脚本只读<strong>第 0 页</strong>。而 <code>fb_render()</code> 每帧写 <code>g_fbpg*720*1280*4</code> 偏移<br>并 <code>fb_pan()</code> 翻页，内容在第 1&#x2F;2 页。</p>
+<p><strong>抓屏看到旧画面 ≠ 没上屏。</strong> 先查 <code>virtual_size</code>，再下结论。</p>
+<p>顺手把抓屏脚本改成自动：驱动 <code>pan_offset</code> 恒 0 读不到当前页，于是逐页统计<br><strong>色彩种类数</strong>取最多者（实测 page0&#x3D;55 色残留旧页 vs page1&#x3D;617 色真实画面）。<br>中间试过”采样求和”，结果选反了——求和反映亮度不反映多样性。</p>
+<h2 id="最终验证"><a href="#最终验证" class="headerlink" title="最终验证"></a>最终验证</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">uptime 36min  零重启</span><br><span class="line">上屏 4808 帧</span><br><span class="line">画面: 辽宁卫视《乡村财富》  人物清晰 / 字幕可读 / 台标正常 / 色彩正确</span><br></pre></td></tr></table></figure>
+
+<h2 id="方法论复盘"><a href="#方法论复盘" class="headerlink" title="方法论复盘"></a>方法论复盘</h2><p><strong>1. 「调试代码自己就是崩因」是一类独立故障模式。</strong><br>它不会崩在自己那行，所以栈和日志全都指不到它。<br>只有把能跑的旧版和崩的新版<strong>摆在一起</strong>，逐字段比对运行时状态，才看得出”旧版没有这段”。</p>
+<p><strong>2. 崩点模式比”猜假设”有力得多。</strong><br>根因 2 是靠”崩点永远紧跟 subN&#x2F;M”这个模式一眼看出来的，<br>而不是靠推理。<strong>拿到多次崩溃现场，第一件事是找它们的共同模式。</strong></p>
+<p><strong>3. 排查期必须有绝对可靠的取证通道。</strong><br>这个项目 stdout 被自定义 stdio 的 4KB 块缓冲吞掉，崩溃时缓冲区全丢——<br>我一度靠空日志误判过三次。后来改用 <code>O_SYNC</code> 直写的相位桩，<br>每次脚本上传都 <code>md5sum</code> 校验（踩过 3 次 0 字节脚本导致误判”新版不崩”）。</p>
+<p><strong>4. 「跑不起来」先 <code>ps</code> 一遍。</strong><br>真的，这个成本 1 秒，能省掉一小时的错误归因。</p>
+<p><strong>5. A&#x2F;B 是唯一诚实的实验。</strong><br>本文五个根因，每一个都是”改一个变量、跑一次、对比”定出来的。<br>凭推理猜出来的假设，我试了八个，全错。</p>
+<hr>
+<p><em>相关阅读：<a href="nettv-10-debug-code-is-the-crash-cause.md">调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪</a>（根因 1 的详细拆解）</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%8A%8A%E7%BD%91%E7%BB%9C%E7%94%B5%E8%A7%86%E8%B0%83%E9%80%9A%EF%BC%9A%E4%BB%8E%E4%B8%80%E5%A4%A9%E5%B4%A9%E4%B8%89%E6%AC%A1%E5%88%B0%E8%BF%9E%E7%BB%AD%E6%92%AD-4800-%E5%B8%A7"><span class="toc-number">1.</span> <span class="toc-text">把网络电视调通：从一天崩三次到连续播 4800 帧</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B5%B7%E7%82%B9%EF%BC%9A%E6%AF%8F%E8%BD%AE%E5%BF%85%E5%B4%A9"><span class="toc-number">1.1.</span> <span class="toc-text">起点：每轮必崩</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E4%B8%AA%E6%A0%B9%E5%9B%A0%EF%BC%8C%E4%BA%94%E6%AC%A1-A-B"><span class="toc-number">1.2.</span> <span class="toc-text">五个根因，五次 A&#x2F;B</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-1%EF%BC%9A%E8%B0%83%E8%AF%95%E4%BB%A3%E7%A0%81%E8%87%AA%E5%B7%B1%E5%B0%B1%E6%98%AF%E5%B4%A9%E5%9B%A0"><span class="toc-number">1.2.1.</span> <span class="toc-text">根因 1：调试代码自己就是崩因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-2%EF%BC%9ANAL-%E5%88%87%E7%A2%8E"><span class="toc-number">1.2.2.</span> <span class="toc-text">根因 2：NAL 切碎</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-3%EF%BC%9A%E8%99%9A%E6%8B%9F%E5%9C%B0%E5%9D%80%E5%BD%93%E6%88%90%E7%89%A9%E7%90%86%E5%9C%B0%E5%9D%80-%E2%86%92-%E4%B8%80%E7%89%87%E7%BB%BF"><span class="toc-number">1.2.3.</span> <span class="toc-text">根因 3：虚拟地址当成物理地址 → 一片绿</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-4%EF%BC%9AION-%E6%8A%A2%E4%B8%8D%E5%88%B0-%E4%B8%8D%E9%87%8A%E6%94%BE"><span class="toc-number">1.2.4.</span> <span class="toc-text">根因 4：ION 抢不到 + 不释放</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-5%EF%BC%9A%E6%9C%80%E8%B4%B5%E7%9A%84%E9%82%A3%E4%B8%AA%E2%80%94%E2%80%94%E6%98%AF%E6%88%91%E8%87%AA%E5%B7%B1"><span class="toc-number">1.2.5.</span> <span class="toc-text">根因 5：最贵的那个——是我自己</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%80%E5%90%8E%E4%B8%80%E5%B0%8F%E6%97%B6%EF%BC%9A%E6%8A%93%E5%B1%8F%E9%AA%97%E4%BA%86%E6%88%91%E4%B8%80%E5%B0%8F%E6%97%B6"><span class="toc-number">1.3.</span> <span class="toc-text">最后一小时：抓屏骗了我一小时</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%80%E7%BB%88%E9%AA%8C%E8%AF%81"><span class="toc-number">1.4.</span> <span class="toc-text">最终验证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E8%AE%BA%E5%A4%8D%E7%9B%98"><span class="toc-number">1.5.</span> <span class="toc-text">方法论复盘</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&text=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&title=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&is_video=false&description=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=把网络电视调通：从一天崩三次到连续播 4800 帧&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&title=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&title=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&title=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&title=把网络电视调通：从一天崩三次到连续播 4800 帧"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/&name=把网络电视调通：从一天崩三次到连续播 4800 帧&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

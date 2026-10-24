@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇把”治拖影”的翻页线程钉死之后（默认关掉，21.9fps 保平安），自然的问题就是：帧率还有提升空间吗？ 账本摆在那儿——每帧 41.3ms &#x3D; 厂商同步解码 14.1ms（硬底线）+ 读帧 2.7ms + 渲染 23.9ms。解码侧已经拆无可拆，唯一的便宜是把渲染搬到第二">
+<meta property="og:type" content="article">
+<meta property="og:title" content="展讯 SC9832A 网络电视攻坚（二十三）：三次&quot;线程必崩&quot;同一病根——clone 不设 TLS，父子共用一个 errno">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇把”治拖影”的翻页线程钉死之后（默认关掉，21.9fps 保平安），自然的问题就是：帧率还有提升空间吗？ 账本摆在那儿——每帧 41.3ms &#x3D; 厂商同步解码 14.1ms（硬底线）+ 读帧 2.7ms + 渲染 23.9ms。解码侧已经拆无可拆，唯一的便宜是把渲染搬到第二">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-22T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-22T07:22:15.755Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="展讯">
+<meta property="article:tag" content="SIGSEGV">
+<meta property="article:tag" content="裸clone线程">
+<meta property="article:tag" content="clone">
+<meta property="article:tag" content="TLS">
+<meta property="article:tag" content="fork">
+<meta property="article:tag" content="流水线">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&text=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&title=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&is_video=false&description=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno&body=Check out this article: https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&title=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&title=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&title=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&title=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&name=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%B4%A6%E6%9C%AC%E4%B8%8E%E7%9B%AE%E6%A0%87"><span class="toc-number">1.</span> <span class="toc-text">一、账本与目标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%AC%AC%E4%B8%80%E7%89%88%EF%BC%9A%E8%A3%B8-clone-%E8%B5%B7%E6%B8%B2%E6%9F%93%E7%BA%BF%E7%A8%8B%E2%80%94%E2%80%94%E5%BF%85%E5%B4%A9"><span class="toc-number">2.</span> <span class="toc-text">二、第一版：裸 clone 起渲染线程——必崩</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%97%85%E6%A0%B9%EF%BC%9Aclone-%E4%B8%8D%E4%BC%A0-CLONE-SETTLS%EF%BC%8C%E7%88%B6%E5%AD%90%E5%85%B1%E7%94%A8%E4%B8%80%E4%B8%AA-TLS"><span class="toc-number">3.</span> <span class="toc-text">三、病根：clone 不传 CLONE_SETTLS，父子共用一个 TLS</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E5%8F%A3%E6%B0%94%E8%A7%A3%E9%87%8A%E4%B8%89%E6%AC%A1%E6%82%AC%E6%A1%88"><span class="toc-number">3.1.</span> <span class="toc-text">一口气解释三次悬案</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%96%B9%E6%A1%88%EF%BC%9Afork-%E6%9B%BF%E4%BB%A3-clone"><span class="toc-number">4.</span> <span class="toc-text">四、方案：fork 替代 clone</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%89%E4%B8%AA%E5%80%BC%E5%BE%97%E8%AE%B0%E7%9A%84%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82"><span class="toc-number">5.</span> <span class="toc-text">五、三个值得记的实现细节</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81A-B-%E5%AE%9E%E6%B5%8B%EF%BC%9Afork-%E8%B5%A2%E4%BA%86%E7%A8%B3%E5%AE%9A%E6%80%A7%EF%BC%8C%E8%BE%93%E4%BA%86%E5%B8%A7%E7%8E%87"><span class="toc-number">6.</span> <span class="toc-text">六、A&#x2F;B 实测：fork 赢了稳定性，输了帧率</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E7%9C%9F%E6%AD%A3%E7%9A%84%E7%BA%A2%E5%88%A9%EF%BC%9A%E6%8B%96%E5%BD%B1%E6%9C%89%E6%95%91%E4%BA%86"><span class="toc-number">7.</span> <span class="toc-text">七、真正的红利：拖影有救了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E7%BB%8F%E9%AA%8C"><span class="toc-number">8.</span> <span class="toc-text">八、经验</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-22T06:00:00.000Z" itemprop="datePublished">2026-10-22</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/SIGSEGV/" rel="tag">SIGSEGV</a>, <a class="tag-link-link" href="/tags/TLS/" rel="tag">TLS</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/clone/" rel="tag">clone</a>, <a class="tag-link-link" href="/tags/fork/" rel="tag">fork</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF/" rel="tag">展讯</a>, <a class="tag-link-link" href="/tags/%E6%B5%81%E6%B0%B4%E7%BA%BF/" rel="tag">流水线</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>, <a class="tag-link-link" href="/tags/%E8%A3%B8clone%E7%BA%BF%E7%A8%8B/" rel="tag">裸clone线程</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。</p>
+</blockquote>
+<p>上一篇把”治拖影”的翻页线程钉死之后（默认关掉，21.9fps 保平安），自然的问题就是：<strong>帧率还有提升空间吗？</strong> 账本摆在那儿——每帧 41.3ms &#x3D; 厂商同步解码 14.1ms（硬底线）+ 读帧 2.7ms + 渲染 23.9ms。解码侧已经拆无可拆，唯一的便宜是把<strong>渲染搬到第二个执行单元上和解码流水线化</strong>：worker 侧只要 16.8ms，渲染侧 24.1ms，稳态帧率 &#x3D; max(两者) ≈ 24ms ≈ 理论上限 41fps。这篇讲这个”档 2”方案的第一版实现——<strong>又是必崩</strong>，以及这次挖出来的、能一口气解释三次历史悬案的病根。</p>
+<h2 id="一、账本与目标"><a href="#一、账本与目标" class="headerlink" title="一、账本与目标"></a>一、账本与目标</h2><p>10-21&#x2F;22 定稿的帧率账（泸县 1080p 源，60s 采样）：</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>耗时</th>
+<th>性质</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>bsOnMsg（厂商同步解码）</td>
+<td>14.1 ms</td>
+<td>硬底线，828 次采样全是 14ms，拆不掉</td>
+</tr>
+<tr>
+<td>读帧（ION cached memcpy）</td>
+<td>2.7 ms</td>
+<td>已优化过（44.3→2.6）</td>
+</tr>
+<tr>
+<td>渲染（yuv2rgb + 几何合成 + 落 fb）</td>
+<td>23.9 ms</td>
+<td>剖析过：访存 10 &#x2F; 算术 13 &#x2F; 散写≈0 &#x2F; 拷贝 2，无便宜变量</td>
+</tr>
+<tr>
+<td><strong>合计</strong></td>
+<td><strong>41.3 ms → 21.9 fps</strong></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>渲染那 24ms 是纯 CPU 活（NEON 已经吃满），但它跟解码<strong>没有数据依赖之外的顺序依赖</strong>——解出第 n 帧再渲染第 n 帧，和第 n-1 帧的渲染完全可以同时进行。所以档 2 的形态很明确：<strong>双缓冲 + 生产者&#x2F;消费者</strong>，worker 解出帧 memcpy 进 staging 就发布，渲染侧慢慢渲。</p>
+<h2 id="二、第一版：裸-clone-起渲染线程——必崩"><a href="#二、第一版：裸-clone-起渲染线程——必崩" class="headerlink" title="二、第一版：裸 clone 起渲染线程——必崩"></a>二、第一版：裸 clone 起渲染线程——必崩</h2><p>最初实现就是最直觉的那种：<code>clone()</code> 起一个渲染线程，双缓冲 + 原子序号握手。逻辑跑通了，一上真机：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">*** monitor: 子进程自退 st=0xb ***        （SIGSEGV，无限重启，0 帧）</span><br></pre></td></tr></table></figure>
+
+<p>phase.log（<code>O_APPEND|O_SYNC</code>，崩溃不丢）显示每一代死法完全一样：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">t=... DRIVE empty(in) 喂 IDR+SPS+PPS (Annex-B 全序列, nFlags=0)</span><br><span class="line">t=... mon-child-signal=11 st=0xb        （60~300ms 后）</span><br></pre></td></tr></table></figure>
+
+<p><strong>每一代 worker 都在”喂 IDR”之后猝死</strong>——跟上一篇翻页线程的现象一模一样，连死亡相位都一致。</p>
+<h2 id="三、病根：clone-不传-CLONE-SETTLS，父子共用一个-TLS"><a href="#三、病根：clone-不传-CLONE-SETTLS，父子共用一个-TLS" class="headerlink" title="三、病根：clone 不传 CLONE_SETTLS，父子共用一个 TLS"></a>三、病根：clone 不传 CLONE_SETTLS，父子共用一个 TLS</h2><p><code>clone()</code> 的 flags 里没有 <code>CLONE_SETTLS</code>，会发生一件很隐蔽的事：<strong>子线程的 TPIDRURO 寄存器原样继承父线程的值</strong>——也就是父子两个线程<strong>共用同一块 TLS（线程本地存储）</strong>。</p>
+<p>在裸 bionic（<code>nostdlib</code>）环境里这意味着：</p>
+<ol>
+<li>子线程调任何一个<strong>失败的系统调用</strong>，glibc&#x2F;bionic 的 <code>__errno_location()</code> 会去写 errno——而 errno 就藏在 TLS 里的固定偏移；</li>
+<li>这一写，<strong>父线程的 errno 被顺手改掉了</strong>；</li>
+<li>父线程紧接着的”喂 IDR”逻辑依赖 errno 做分支判断 → 逻辑走错 → 拿着错的状态继续跑 → 野指针 SIGSEGV。</li>
+</ol>
+<p>崩溃地址 <code>0x747474</code> &#x3D; ASCII <code>&quot;ttt&quot;</code>，也符合”某块串数据被当指针解引用”的特征。</p>
+<h3 id="一口气解释三次悬案"><a href="#一口气解释三次悬案" class="headerlink" title="一口气解释三次悬案"></a>一口气解释三次悬案</h3><p>把历史笔记翻出来对表，全中：</p>
+<table>
+<thead>
+<tr>
+<th>历史悬案</th>
+<th>当时的归因</th>
+<th>真相</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>10-15「第二个 IDR 必崩」</td>
+<td>ION 池干 → 次生崩溃</td>
+<td>clone 线程踩坏父线程 errno</td>
+</tr>
+<tr>
+<td>10-22「vsync 翻页线程治拖影必崩」</td>
+<td>未定论（已默认关）</td>
+<td>同一个病</td>
+</tr>
+<tr>
+<td>本次 v16h&#x2F;v16i 渲染线程必崩</td>
+<td>——</td>
+<td>同一个病</td>
+</tr>
+</tbody></table>
+<p>项目记忆里其实早就写了一条”<strong>禁裸 clone 子线程内用 libc</strong>（TLS 踩坏）”——但一直停留在”子线程自己别调 libc”的层面，<strong>没有把”errno 别名会反杀父线程”和崩溃现象连起来</strong>，所以前两次都去 ION 池里找答案了。这就是笔记的代价：规则写得太窄，下次换个姿势踩进来还是不认识。</p>
+<h2 id="四、方案：fork-替代-clone"><a href="#四、方案：fork-替代-clone" class="headerlink" title="四、方案：fork 替代 clone"></a>四、方案：fork 替代 clone</h2><p>既然病根是”共享地址空间导致互相踩”，解法就干脆做绝：<strong>渲染侧改用 <code>fork()</code> 子进程</strong>。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">worker(父进程)                        渲染子进程</span><br><span class="line">─────────────                        ─────────────</span><br><span class="line">DRIVE 解一帧</span><br><span class="line">memcpy → g_st[wn &amp; 1]   (MAP_SHARED)</span><br><span class="line">g_ps-&gt;wn++  ───────────发布────────▶  看到 wn &gt; rn</span><br><span class="line">                                      取 g_st[rn &amp; 1]</span><br><span class="line">                                      fb_render()（判重已在父进程做过）</span><br><span class="line">                                      g_ps-&gt;rn++</span><br></pre></td></tr></table></figure>
+
+<p>结构上的好处：</p>
+<ul>
+<li><strong>子进程有独立地址空间</strong>（私有 TLS、堆、栈），它爱怎么出错都出不到父进程头上，父子只共享<strong>显式</strong>的 MAP_SHARED 区域：一个 4KB 握手区（<code>wn/rn/rstop/rexited</code> 四个 volatile 字段）+ 两块 3MB 双 staging；</li>
+<li>子进程把 SIGSEGV&#x2F;SIGBUS&#x2F;SIGILL <strong>复位成默认动作</strong>——真出了野指针，死自己一个，父进程 <code>waitpid(WNOHANG)</code> 发现后置 <code>g_pipe_on=0</code>，<strong>自动回退单线程</strong>，播放不中断；</li>
+<li>子进程设 <code>PR_SET_PDEATHSIG(SIGKILL)</code>，父进程猝死不会留下孤儿渲染进程抱着 fb 不放。</li>
+</ul>
+<h2 id="五、三个值得记的实现细节"><a href="#五、三个值得记的实现细节" class="headerlink" title="五、三个值得记的实现细节"></a>五、三个值得记的实现细节</h2><p><strong>1. 判重必须留在父进程。</strong> 去重判据 <code>g_filled</code>（厂商每解出真帧回调递增）是<strong>父进程地址空间里的量</strong>；fork 之后子进程拿到的是 fork 那一刻的冻结副本，在子进程里判重会永远判”这是旧帧”，结果一帧都不渲。所以发布门放在父进程：<code>g_filled != filled_seen_p</code> 才 memcpy + <code>wn++</code>。</p>
+<p><strong>2. 帧实宽 1920×1088×3&#x2F;2 &#x3D; 0x2FC400，staging 必须 ≥ 0x300000。</strong> 旧代码按”宽×高×1.5 取整到 0x1000”算成 0x2FC000，memcpy 也只拷 0x2FC000——渲染侧读 chroma 平面时<strong>越界 12KB</strong>。malloc 后面有堆兜底所以从来不崩，但这是”画面左缘色带”的高度嫌疑；换成 mmap 定尺会直接 SIGBUS。修成 <code>ST_SIZE=0x300000</code> + 全帧拷贝。</p>
+<p><strong>3. 收尾排空比 Kill 重要。</strong> 退出时先 <code>rstop=1</code> 通知子进程”渲完手里这帧就退”，等 ≤3s 看 <code>rexited</code>；超时才对渲染子进程 <code>SIGKILL</code>——<strong>这是全项目唯一允许 KILL 的场景</strong>，因为此时 VSP DMA 早已在 worker 侧排空（<code>usleep(800ms)</code>），纯 CPU 渲染过程被杀没有任何硬件状态风险。反过来，解码进行中 KILL 播放器是会内核崩的（旧教训，两次实证）。</p>
+<h2 id="六、A-B-实测：fork-赢了稳定性，输了帧率"><a href="#六、A-B-实测：fork-赢了稳定性，输了帧率" class="headerlink" title="六、A&#x2F;B 实测：fork 赢了稳定性，输了帧率"></a>六、A&#x2F;B 实测：fork 赢了稳定性，输了帧率</h2><p>v17 构建部署后（<code>NETTV_PIPE=1</code> 开启、默认关），冒烟 45s：<strong>signal&#x3D;11 &#x3D; 0</strong>，<code>流水线: fork渲染子进程(v17)</code> + <code>已 fork(pid=19839, 双staging=MAP_SHARED 0x300000)</code> 确认生效。然后 ABBA 四组（泸县 1080p，各 60s，唯一变量 NETTV_PIPE）：</p>
+<table>
+<thead>
+<tr>
+<th>组</th>
+<th>env</th>
+<th>signal&#x3D;11</th>
+<th>真帧</th>
+<th>fps</th>
+<th>worker 墙钟构成</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A1</td>
+<td>默认（单线程）</td>
+<td>0</td>
+<td>1154</td>
+<td><strong>21.8</strong></td>
+<td>41.5 &#x3D; bsOnMsg 14.2 + 读帧 2.6 + 渲染 24.2</td>
+</tr>
+<tr>
+<td>B1</td>
+<td><code>NETTV_PIPE=1</code></td>
+<td>0</td>
+<td>929</td>
+<td>17.5</td>
+<td>36.6 &#x3D; bsOnMsg 10.1 + 读帧 3.1 + 10.2 + ~13ms 等 render</td>
+</tr>
+<tr>
+<td>B2</td>
+<td><code>NETTV_PIPE=1</code></td>
+<td>0</td>
+<td>918</td>
+<td>17.4</td>
+<td>同 B1</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>默认（单线程）</td>
+<td>0</td>
+<td>1130</td>
+<td><strong>21.8</strong></td>
+<td>41.6 &#x3D; 14.2 + 2.7 + 24.0</td>
+</tr>
+</tbody></table>
+<p>稳定性目标满分（<strong>fork 后 0 崩溃，渲染侧线程必崩的病根真被拔掉了</strong>），但帧率 **-20%**。查根因一句话就够了：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /sys/devices/system/cpu/cpu1/online    <span class="comment"># 1</span></span><br><span class="line"><span class="built_in">cat</span> /sys/devices/system/cpu/cpu2/online    <span class="comment"># 0  ← 四个核 offline 了两个</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>在线 CPU 只有 2 个。</strong> 流水线的前提是”渲染与解码在两个执行单元上真并行”，在只有 2 个在线核、还要分给 monitor&#x2F;dl&#x2F;mplayer 的机器上，worker 和渲染子进程大部分时间在<strong>分时复用同一个核</strong>，外加每帧 3MB 的 staging 在两核间来回搬（L1 每核私有，cache line 通过 L2 迁移），内存总线和调度开销全部变成净损失。worker 墙钟确实从 41.5 降到 36.6ms，但总吞吐是 57ms&#x2F;帧——<strong>并行没有发生</strong>。</p>
+<p>所以定案：**<code>NETTV_PIPE</code> 默认关保持不动**，v17 的单线程路径零退化（A1&#x2F;A2 与历史基线逐项一致）。但这个方向并没有被证伪到底——留了两个便宜的后续：</p>
+<ul>
+<li><strong>taskset 亲和性</strong>：把渲染子进程钉在 cpu1、worker 留在 cpu0，排除调度分散因素再测一次；</li>
+<li><strong>online cpu2&#x2F;cpu3</strong>：四个核都在线的话，流水线的账本就真的能算了（写 <code>/sys</code> 热插拔节点属于改全局配置，要按项目铁律先确认再动）。</li>
+</ul>
+<h2 id="七、真正的红利：拖影有救了"><a href="#七、真正的红利：拖影有救了" class="headerlink" title="七、真正的红利：拖影有救了"></a>七、真正的红利：拖影有救了</h2><p>回头盘点，v17 最大的价值不是帧率，是<strong>把”渲染侧起线程”这个能力洗白了</strong>。10-22 凌晨因为 clone 线程必崩而默认关掉的 vsync 翻页线程（治拖影），当时的嫌疑方向是”ioctl 和 VSP 并发踩 fb 锁”——<strong>错了，真凶是 TLS 别名</strong>。翻页线程本身只做 <code>WAITFORVSYNC</code> + <code>PAN_DRAW</code> + 等一小块共享状态，用 fork 子进程实现结构上不可能踩父进程，病根没了，功能可以回来了。这是下一篇的事。</p>
+<h2 id="八、经验"><a href="#八、经验" class="headerlink" title="八、经验"></a>八、经验</h2><ol>
+<li><strong><code>clone</code> 起线程在没有 <code>CLONE_SETTLS</code> 时是父子 TLS 别名，不是”轻量进程”。</strong> 凡是要跑 libc（尤其是碰 errno）的工作线程，要么规规矩矩传 TLS，要么直接 fork——fork 的隔离性是结构保证，不依赖”记得传哪个 flag”。</li>
+<li><strong>“子线程自己出事”和”子线程把父线程搞死”是两回事。</strong> 后者防不住，因为犯罪现场不在自己身上；隔离边界要画在地址空间上，不是画在”我觉得它不会碰”上。</li>
+<li><strong>状态判断要放在状态的所有者那一侧。</strong> 判重放在子进程看着挺自然（”谁消费谁判断”），但状态量在父进程——跨了 fork，判断就必须留在父进程。</li>
+<li><strong>尺寸常量要按”实宽”算，不要按”取整到好看”算。</strong> 0x2FC000 和 0x2FC400 只差 1KB，换来 12KB 的越界读；这种 bug 靠 malloc 兜底一辈子不暴露，换 allocator 就炸。</li>
+<li><strong>并行化之前先数核。</strong> 这次档 2 的整份账本（”渲染 24ms 和解码 16.8ms 流水线化 ⇒ 上限 41fps”）在单核上是个笑话，在两核上也是个惨案——<code>cat /sys/devices/system/cpu/cpu*/online</code> 只要三秒钟，应该在写第一行流水线代码之前就看。顺带记住：**”理论上限”四个字，前提是执行单元真实存在**。</li>
+</ol>
+<hr>
+<p><strong>本文涉及的文件</strong>（设备端仓库 <code>/home/lvgl_demo/lvgl_demo</code>）：<code>deploy/nettv_player/sprd_msg_np.c</code>（<code>render_child()</code> &#x2F; <code>pipe_child_died()</code> &#x2F; <code>struct pipe_sh</code> &#x2F; worker 发布块），构建脚本 <code>deploy/nettv_player/build.sh</code>。本地调试脚本：<code>outputs/_pipe_smoke_1022.sh</code>（冒烟）、<code>outputs/_pipe_ab3_1022.sh</code>（ABBA A&#x2F;B）。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%B4%A6%E6%9C%AC%E4%B8%8E%E7%9B%AE%E6%A0%87"><span class="toc-number">1.</span> <span class="toc-text">一、账本与目标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%AC%AC%E4%B8%80%E7%89%88%EF%BC%9A%E8%A3%B8-clone-%E8%B5%B7%E6%B8%B2%E6%9F%93%E7%BA%BF%E7%A8%8B%E2%80%94%E2%80%94%E5%BF%85%E5%B4%A9"><span class="toc-number">2.</span> <span class="toc-text">二、第一版：裸 clone 起渲染线程——必崩</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%97%85%E6%A0%B9%EF%BC%9Aclone-%E4%B8%8D%E4%BC%A0-CLONE-SETTLS%EF%BC%8C%E7%88%B6%E5%AD%90%E5%85%B1%E7%94%A8%E4%B8%80%E4%B8%AA-TLS"><span class="toc-number">3.</span> <span class="toc-text">三、病根：clone 不传 CLONE_SETTLS，父子共用一个 TLS</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E5%8F%A3%E6%B0%94%E8%A7%A3%E9%87%8A%E4%B8%89%E6%AC%A1%E6%82%AC%E6%A1%88"><span class="toc-number">3.1.</span> <span class="toc-text">一口气解释三次悬案</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%96%B9%E6%A1%88%EF%BC%9Afork-%E6%9B%BF%E4%BB%A3-clone"><span class="toc-number">4.</span> <span class="toc-text">四、方案：fork 替代 clone</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%89%E4%B8%AA%E5%80%BC%E5%BE%97%E8%AE%B0%E7%9A%84%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82"><span class="toc-number">5.</span> <span class="toc-text">五、三个值得记的实现细节</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81A-B-%E5%AE%9E%E6%B5%8B%EF%BC%9Afork-%E8%B5%A2%E4%BA%86%E7%A8%B3%E5%AE%9A%E6%80%A7%EF%BC%8C%E8%BE%93%E4%BA%86%E5%B8%A7%E7%8E%87"><span class="toc-number">6.</span> <span class="toc-text">六、A&#x2F;B 实测：fork 赢了稳定性，输了帧率</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E7%9C%9F%E6%AD%A3%E7%9A%84%E7%BA%A2%E5%88%A9%EF%BC%9A%E6%8B%96%E5%BD%B1%E6%9C%89%E6%95%91%E4%BA%86"><span class="toc-number">7.</span> <span class="toc-text">七、真正的红利：拖影有救了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E7%BB%8F%E9%AA%8C"><span class="toc-number">8.</span> <span class="toc-text">八、经验</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&text=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&title=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&is_video=false&description=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno&body=Check out this article: https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&title=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&title=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&title=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&title=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/&name=展讯 SC9832A 网络电视攻坚（二十三）：三次&#34;线程必崩&#34;同一病根——clone 不设 TLS，父子共用一个 errno&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

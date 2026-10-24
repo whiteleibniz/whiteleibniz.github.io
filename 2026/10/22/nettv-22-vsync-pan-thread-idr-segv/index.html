@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇我们把帧率从 14.3fps 推到 21.8fps，顺手还塞进两个”用户体验修复”：curl 抗弱网（治卡顿）和独立 vsync 翻页线程（治拖影）。结果第二天一跑——零帧，每次喂 IDR 就 SIGSEGV，看门狗无限重启。这篇讲怎么用一次干净的背靠背 A&#x2F;B 把真凶钉死">
+<meta property="og:type" content="article">
+<meta property="og:title" content="展讯 SC9832A 网络电视攻坚（二十二）：一个&quot;治拖影&quot;的翻页线程，让每个 IDR 都崩">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇我们把帧率从 14.3fps 推到 21.8fps，顺手还塞进两个”用户体验修复”：curl 抗弱网（治卡顿）和独立 vsync 翻页线程（治拖影）。结果第二天一跑——零帧，每次喂 IDR 就 SIGSEGV，看门狗无限重启。这篇讲怎么用一次干净的背靠背 A&#x2F;B 把真凶钉死">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-21T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-21T18:26:44.696Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="LVGL">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="展讯">
+<meta property="article:tag" content="SIGSEGV">
+<meta property="article:tag" content="framebuffer">
+<meta property="article:tag" content="vsync">
+<meta property="article:tag" content="裸clone线程">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&text=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&title=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&is_video=false&description=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩&body=Check out this article: https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&title=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&title=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&title=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&title=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&name=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8E%B0%E8%B1%A1%EF%BC%9A0-%E5%B8%A7-%E6%97%A0%E9%99%90%E9%87%8D%E5%90%AF"><span class="toc-number">1.</span> <span class="toc-text">一、现象：0 帧 + 无限重启</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%AC%AC%E4%B8%80%E5%B1%82%E8%AF%AF%E5%88%A4%EF%BC%9A%E7%9C%8B-child-log-%E4%BC%9A%E8%A2%AB%E9%AA%97%E5%BE%97%E5%BE%88%E6%83%A8"><span class="toc-number">2.</span> <span class="toc-text">二、第一层误判：看 child.log 会被骗得很惨</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%AC%AC%E4%BA%8C%E5%B1%82%E8%AF%AF%E5%88%A4%EF%BC%9Ag-gh-n-0-%E4%B8%8D%E6%98%AF%E2%80%9DION-%E6%B1%A0%E8%A2%AB%E5%90%83%E5%B9%B2%E2%80%9D"><span class="toc-number">3.</span> <span class="toc-text">三、第二层误判：g_gh_n&#x3D;0 不是”ION 池被吃干”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E7%9C%9F%E5%87%B6%EF%BC%9A%E4%B8%80%E4%B8%AA%E5%88%9A%E5%8A%A0%E7%9A%84%E2%80%9D%E6%B2%BB%E6%8B%96%E5%BD%B1%E2%80%9D%E7%BA%BF%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">四、真凶：一个刚加的”治拖影”线程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%83%E8%B7%9F%E2%80%9D%E7%AC%AC%E4%BA%8C%E4%B8%AA-IDR-%E5%BF%85%E5%B4%A9%E2%80%9D%E6%98%AF%E5%90%8C%E4%B8%80%E4%BB%B6%E4%BA%8B"><span class="toc-number">4.1.</span> <span class="toc-text">它跟”第二个 IDR 必崩”是同一件事</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%A4%84%E7%BD%AE%EF%BC%9A%E4%B8%80%E8%A1%8C%EF%BC%8C%E6%8A%8A%E9%BB%98%E8%AE%A4%E5%80%BC%E7%BF%BB%E5%88%B0%E5%AE%89%E5%85%A8%E4%BE%A7"><span class="toc-number">5.</span> <span class="toc-text">五、处置：一行，把默认值翻到安全侧</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%89%E6%9D%A1%E5%8F%AF%E5%A4%8D%E7%94%A8%E7%9A%84%E7%BB%8F%E9%AA%8C"><span class="toc-number">6.</span> <span class="toc-text">六、三条可复用的经验</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">7.</span> <span class="toc-text">七、下一步</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-21T18:00:00.000Z" itemprop="datePublished">2026-10-22</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/LVGL/" rel="tag">LVGL</a>, <a class="tag-link-link" href="/tags/SIGSEGV/" rel="tag">SIGSEGV</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/framebuffer/" rel="tag">framebuffer</a>, <a class="tag-link-link" href="/tags/vsync/" rel="tag">vsync</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF/" rel="tag">展讯</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>, <a class="tag-link-link" href="/tags/%E8%A3%B8clone%E7%BA%BF%E7%A8%8B/" rel="tag">裸clone线程</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。</p>
+</blockquote>
+<p>上一篇我们把帧率从 14.3fps 推到 21.8fps，顺手还塞进两个”用户体验修复”：curl 抗弱网（治卡顿）和<strong>独立 vsync 翻页线程</strong>（治拖影）。结果第二天一跑——<strong>零帧，每次喂 IDR 就 SIGSEGV，看门狗无限重启</strong>。这篇讲怎么用一次干净的背靠背 A&#x2F;B 把真凶钉死，以及一个更值钱的教训：<strong>崩溃现场的日志，往往是最会骗人的那一层</strong>。</p>
+<h2 id="一、现象：0-帧-无限重启"><a href="#一、现象：0-帧-无限重启" class="headerlink" title="一、现象：0 帧 + 无限重启"></a>一、现象：0 帧 + 无限重启</h2><p>默认配置跑泸县 1080p 源，父进程日志只有这些：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">*** monitor: 子进程自退 st=0xb ***</span><br><span class="line">*** monitor: 重启 (子进程 @0 帧)</span><br><span class="line">（重复 6 次）</span><br></pre></td></tr></table></figure>
+
+<p><code>st=0xb</code> &#x3D; 子进程被 11 号信号（SIGSEGV）打死。子进程日志 <code>/tmp/nettv_child.log</code> 里只有 16 行，看起来”连解码器都没起来”。</p>
+<h2 id="二、第一层误判：看-child-log-会被骗得很惨"><a href="#二、第一层误判：看-child-log-会被骗得很惨" class="headerlink" title="二、第一层误判：看 child.log 会被骗得很惨"></a>二、第一层误判：看 child.log 会被骗得很惨</h2><p>先说结论：<strong>这个场景下唯一可信的轨迹是 <code>/tmp/phase.log</code>，不是子进程 stdout。</strong></p>
+<p>原因有三个，叠在一起：</p>
+<ol>
+<li>裸 bionic（<code>nostdlib -Wl,--entry=main</code>）下 <code>_exit()</code> <strong>不 flush stdio</strong>，进程一崩缓冲区里的东西全丢；</li>
+<li>stdout 是 4KB 全缓冲，只有写满 4KB 才会落盘一次——所以你看到的往往只是”第一个 4KB”；</li>
+<li>monitor 每次重启子进程都会 <code>O_TRUNC</code> 截断 child.log，前面几代的全部线索直接抹掉。</li>
+</ol>
+<p>而 <code>ph()</code> &#x2F; <code>phx()</code> 这两个诊断函数是 <code>open(O_APPEND|O_SYNC)</code> 直接 write 的，崩了也不丢一行。于是判崩溃点的正确姿势是：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grep -B3 <span class="string">&#x27;mon-child-signal=11&#x27;</span> /tmp/phase.log</span><br></pre></td></tr></table></figure>
+
+<p>一查，七次崩溃<strong>完全同构</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">t=... DRIVE empty(in) 喂 IDR+SPS+PPS (Annex-B 全序列, nFlags=0)</span><br><span class="line">t=... mon-child-signal=11 st=0xb</span><br></pre></td></tr></table></figure>
+
+<p>崩溃点 100% 落在”投喂 IDR”之后。</p>
+<h2 id="三、第二层误判：g-gh-n-0-不是”ION-池被吃干”"><a href="#三、第二层误判：g-gh-n-0-不是”ION-池被吃干”" class="headerlink" title="三、第二层误判：g_gh_n=0 不是”ION 池被吃干”"></a>三、第二层误判：<code>g_gh_n=0</code> 不是”ION 池被吃干”</h2><p>日志里有这么一行，很容易被当成铁证：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[earlyion] 可用输出路数 g_nout=1 (g_gh_n=0)</span><br></pre></td></tr></table></figure>
+
+<p>我以前的笔记里也确实把它写成了”ION 池被泄漏吃干 ⇒ 必须重启设备”。<strong>这是误读。</strong> 看代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> early = <span class="number">0</span>;                      <span class="comment">/* NETTV_EARLY 默认 0 */</span></span><br><span class="line"><span class="keyword">for</span> (<span class="type">char</span> **ep = environ; *ep; ep++)</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">strncmp</span>(*ep, <span class="string">&quot;NETTV_EARLY=&quot;</span>, <span class="number">12</span>)) early = atoi(*ep + <span class="number">12</span>);</span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; early; i++) &#123; ... g_gh_n++; &#125;</span><br></pre></td></tr></table></figure>
+
+<p>默认 <code>early=0</code>，循环一次都不跑，<code>g_gh_n</code> <strong>必然是 0</strong>——这是”组件先拿足内存、输出缓冲在组件 init 后再分配”这条 10-18 定案的正常表现，跟池子空不空没关系。</p>
+<p>顺手把”池到底空不空”也证伪掉了，这两条命令值得记下来：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /sys/kernel/debug/ion/clients          <span class="comment"># 空 ⇒ 没有进程持 ION</span></span><br><span class="line"><span class="built_in">cat</span> /sys/kernel/debug/dma_buf/bufinfo      <span class="comment"># Total 0 objects ⇒ 没有泄漏的 dma_buf</span></span><br></pre></td></tr></table></figure>
+
+<p>两个都是干净的，所以这次<strong>不是</strong>“池被吃干 → 重启设备”，别急着按老药方抓药。</p>
+<h2 id="四、真凶：一个刚加的”治拖影”线程"><a href="#四、真凶：一个刚加的”治拖影”线程" class="headerlink" title="四、真凶：一个刚加的”治拖影”线程"></a>四、真凶：一个刚加的”治拖影”线程</h2><p>4f2f17f 里新增了两处：curl 限速参数（跟解码无关），以及<strong>独立 vsync 翻页线程</strong>——等 <code>FBIO_WAITFORVSYNC</code> 消隐期再 <code>FBIO_PAN_DRAW</code>，把翻页从”随机扫描相位”改成”消隐期内翻页”，治运动画面的撕裂。</p>
+<p>它有 env 逃生门 <code>NETTV_VSYNCPAN=0</code>，于是这就是一次天然的单变量 A&#x2F;B。同一份二进制、同一段 TS、背靠背跑：</p>
+<table>
+<thead>
+<tr>
+<th>组</th>
+<th>env</th>
+<th>signal&#x3D;11 次数</th>
+<th>真帧</th>
+<th>fps</th>
+<th>墙钟</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>默认（翻页线程开）</td>
+<td><strong>6</strong></td>
+<td>0</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>B</td>
+<td><code>NETTV_VSYNCPAN=0</code></td>
+<td>0</td>
+<td>1094</td>
+<td>21.6</td>
+<td>41.9 ms</td>
+</tr>
+<tr>
+<td>A2（复测）</td>
+<td>默认</td>
+<td><strong>6</strong></td>
+<td>0</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>B2（复测）</td>
+<td><code>NETTV_VSYNCPAN=0</code></td>
+<td>0</td>
+<td>1094</td>
+<td>21.6</td>
+<td>41.9 ms</td>
+</tr>
+</tbody></table>
+<p>四组数据，A 侧两次全崩、B 侧两次全活，帧率还正好是我们熟悉的 21.6fps。<strong>同二进制、唯一变量、双向复现</strong>——这就不用再吵了。</p>
+<h3 id="它跟”第二个-IDR-必崩”是同一件事"><a href="#它跟”第二个-IDR-必崩”是同一件事" class="headerlink" title="它跟”第二个 IDR 必崩”是同一件事"></a>它跟”第二个 IDR 必崩”是同一件事</h3><p>有个反直觉的细节：翻页线程是 <code>vspan_publish()</code> 在<strong>第一帧渲染之后</strong>才创建的，那为什么崩溃发生在”第一个 IDR”？</p>
+<p>因为崩溃的是 monitor 重启后的<strong>后续代</strong>。每一代跑起来 → 出几帧 → 创建翻页线程 → 喂下一个 IDR → 崩；而 child.log 被 O_TRUNC 抹掉了前几代的帧输出，只剩下最后一代那几行”还没出帧就死了”的假象。</p>
+<p>翻回历史笔记——10-15 那篇”第二个 IDR 必崩”[当时归因为 ION 池干掉的次生崩溃]，10-21 那篇”第二个 IDR 必崩已否证”——<strong>真正的答案既不是”IDR 有毒”，也不是”池子漏了”，而是这条线程</strong>。它是在 10-21 晚上才加进去的，时间线也对得上。</p>
+<h2 id="五、处置：一行，把默认值翻到安全侧"><a href="#五、处置：一行，把默认值翻到安全侧" class="headerlink" title="五、处置：一行，把默认值翻到安全侧"></a>五、处置：一行，把默认值翻到安全侧</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">void</span> <span class="title function_">vspan_publish</span><span class="params">(<span class="type">int</span> pg)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (g_pan_off) <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">if</span> (g_vspan &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="type">const</span> <span class="type">char</span> *e = getenv(<span class="string">&quot;NETTV_VSYNCPAN&quot;</span>);</span><br><span class="line">-       g_vspan = (e &amp;&amp; e[<span class="number">0</span>] == <span class="string">&#x27;0&#x27;</span>) ? <span class="number">0</span> : <span class="number">1</span>;</span><br><span class="line">+       g_vspan = (e &amp;&amp; e[<span class="number">0</span>] == <span class="string">&#x27;1&#x27;</span>) ? <span class="number">1</span> : <span class="number">0</span>;   <span class="comment">/* 10-22: 默认关(必崩), =1 才开 */</span></span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重建部署后，默认（<strong>不设任何 env</strong>）跑 60s 验收：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">signal=11 次数 = 0</span><br><span class="line">末 STAT   = [STAT] frames=2150 real=1022 elapsed=46533ms fps_x10=219</span><br><span class="line">末 perf   = [perf] AU#1000 均值: 墙钟=41.3 段循环=14.0 (bsOnMsg=14.1 睡眠=0.0)</span><br><span class="line">            snap=0.0 读帧=2.6 渲染=23.8 (ms) pan=0</span><br></pre></td></tr></table></figure>
+
+<p>0 崩溃、1022 真帧、<strong>21.9fps</strong>，墙钟构成跟 10-21 的 21.8fps 基线完全一致 ⇒ 帧率没有退化，只是把翻页线程关掉了。</p>
+<p>代价是：<strong>拖影问题回到未修状态</strong>。这是取舍——先保”能播”，再谈”好看”。</p>
+<h2 id="六、三条可复用的经验"><a href="#六、三条可复用的经验" class="headerlink" title="六、三条可复用的经验"></a>六、三条可复用的经验</h2><ol>
+<li><strong>崩溃现场最可信的那层日志，往往不是 stdout。</strong> 给关键路径留一个 <code>O_APPEND|O_SYNC</code> 的 phase 轨迹，它会救你很多次；反过来，靠”看起来什么都没打”去判断”死在哪一行”，基本是在掷骰子。</li>
+<li><strong>不要用”某个变量等于 0”当结论，要看它为什么等于 0。</strong> <code>g_gh_n=0</code> 我误读了两个星期；顺手查 <code>ion/clients</code> + <code>dma_buf/bufinfo</code> 只要十秒，就能省掉一次”重启设备再说”。</li>
+<li><strong>加了新特性就一定要留 env 逃生门，而且要双向都跑一遍。</strong> 这次如果没有 <code>NETTV_VSYNCPAN=0</code>，就只能靠”编译上一版二进制”去二分，代价高一个数量级。默认值该选”用户能用的那一侧”，不是”技术上更优的那一侧”。</li>
+</ol>
+<h2 id="七、下一步"><a href="#七、下一步" class="headerlink" title="七、下一步"></a>七、下一步</h2><p>翻页线程还得修，只是不再挡着播放。候选方案：</p>
+<ul>
+<li>查崩因：裸 clone（无 <code>CLONE_SETTLS</code>）线程里调 <code>ioctl(WAITFORVSYNC/PAN_DRAW)</code>、栈上放 <code>struct fb_var_screeninfo</code>，与 VSP 解码并发时到底踩了什么；</li>
+<li>降级方案：不单独起线程，改在主线程内”等 vsync → 同步 PAN”，代价是每帧多 0~18ms（均值约 9ms），21.9fps 大概掉到 17fps 左右。</li>
+</ul>
+<p>先等用户目视确认”拖影到底明不明显”，再决定要不要为它付这笔帧率。</p>
+<hr>
+<p><strong>本文涉及的文件</strong>（设备端仓库 <code>/home/lvgl_demo/lvgl_demo</code>）：<code>deploy/nettv_player/sprd_msg_np.c</code>（<code>vspan_publish()</code> &#x2F; <code>pan_thread()</code> &#x2F; <code>thread_start()</code>），构建脚本 <code>deploy/nettv_player/build.sh</code>。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8E%B0%E8%B1%A1%EF%BC%9A0-%E5%B8%A7-%E6%97%A0%E9%99%90%E9%87%8D%E5%90%AF"><span class="toc-number">1.</span> <span class="toc-text">一、现象：0 帧 + 无限重启</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%AC%AC%E4%B8%80%E5%B1%82%E8%AF%AF%E5%88%A4%EF%BC%9A%E7%9C%8B-child-log-%E4%BC%9A%E8%A2%AB%E9%AA%97%E5%BE%97%E5%BE%88%E6%83%A8"><span class="toc-number">2.</span> <span class="toc-text">二、第一层误判：看 child.log 会被骗得很惨</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%AC%AC%E4%BA%8C%E5%B1%82%E8%AF%AF%E5%88%A4%EF%BC%9Ag-gh-n-0-%E4%B8%8D%E6%98%AF%E2%80%9DION-%E6%B1%A0%E8%A2%AB%E5%90%83%E5%B9%B2%E2%80%9D"><span class="toc-number">3.</span> <span class="toc-text">三、第二层误判：g_gh_n&#x3D;0 不是”ION 池被吃干”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E7%9C%9F%E5%87%B6%EF%BC%9A%E4%B8%80%E4%B8%AA%E5%88%9A%E5%8A%A0%E7%9A%84%E2%80%9D%E6%B2%BB%E6%8B%96%E5%BD%B1%E2%80%9D%E7%BA%BF%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">四、真凶：一个刚加的”治拖影”线程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%83%E8%B7%9F%E2%80%9D%E7%AC%AC%E4%BA%8C%E4%B8%AA-IDR-%E5%BF%85%E5%B4%A9%E2%80%9D%E6%98%AF%E5%90%8C%E4%B8%80%E4%BB%B6%E4%BA%8B"><span class="toc-number">4.1.</span> <span class="toc-text">它跟”第二个 IDR 必崩”是同一件事</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%A4%84%E7%BD%AE%EF%BC%9A%E4%B8%80%E8%A1%8C%EF%BC%8C%E6%8A%8A%E9%BB%98%E8%AE%A4%E5%80%BC%E7%BF%BB%E5%88%B0%E5%AE%89%E5%85%A8%E4%BE%A7"><span class="toc-number">5.</span> <span class="toc-text">五、处置：一行，把默认值翻到安全侧</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%89%E6%9D%A1%E5%8F%AF%E5%A4%8D%E7%94%A8%E7%9A%84%E7%BB%8F%E9%AA%8C"><span class="toc-number">6.</span> <span class="toc-text">六、三条可复用的经验</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">7.</span> <span class="toc-text">七、下一步</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&text=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&title=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&is_video=false&description=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩&body=Check out this article: https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&title=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&title=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&title=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&title=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/&name=展讯 SC9832A 网络电视攻坚（二十二）：一个&#34;治拖影&#34;的翻页线程，让每个 IDR 都崩&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前面十篇一直在跟「崩」死磕：内核崩、挂死、绿屏、黑屏。等这些都解决了，能连续播 4800 帧之后，剩下的最后一个字是——卡。240 秒只上屏 19 帧，约 0.08fps，画面基本是幻灯片。 这篇讲怎么把这个数字抬到 6.3fps（约 80 倍），以及中间怎样用一次诊断实验否证了追了三天的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前面十篇一直在跟「崩」死磕：内核崩、挂死、绿屏、黑屏。等这些都解决了，能连续播 4800 帧之后，剩下的最后一个字是——卡。240 秒只上屏 19 帧，约 0.08fps，画面基本是幻灯片。 这篇讲怎么把这个数字抬到 6.3fps（约 80 倍），以及中间怎样用一次诊断实验否证了追了三天的">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-19T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-19T18:20:56.316Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="展讯">
+<meta property="article:tag" content="性能优化">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="PTS">
+<meta property="article:tag" content="音视频同步">
+<meta property="article:tag" content="正反馈">
+<meta property="article:tag" content="A&#x2F;B测试">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&text=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&title=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&is_video=false&description=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&title=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&title=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&title=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&title=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&name=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E8%AF%81%E4%BC%AA%EF%BC%9A%E4%B8%8D%E6%98%AF-IDR-%E7%9A%84%E9%94%85"><span class="toc-number">1.</span> <span class="toc-text">一、先证伪：不是 IDR 的锅</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%9C%9F%E5%87%B6%EF%BC%9A%E4%B8%80%E4%B8%AA%E5%8F%AA%E4%BC%9A%E5%87%8F%E9%80%9F%E7%9A%84-A-V-%E5%90%8C%E6%AD%A5"><span class="toc-number">2.</span> <span class="toc-text">二、真凶：一个只会减速的 A-V 同步</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81A-B%EF%BC%9A%E4%B8%80%E4%B8%AA-env-%E7%9A%84%E5%B7%AE%E8%B7%9D"><span class="toc-number">3.</span> <span class="toc-text">三、A&#x2F;B：一个 env 的差距</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%BF%AE%E5%A4%8D"><span class="toc-number">4.</span> <span class="toc-text">四、修复</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%9B%9B%E6%9D%A1%E6%95%99%E8%AE%AD"><span class="toc-number">5.</span> <span class="toc-text">五、四条教训</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-19T18:00:00.000Z" itemprop="datePublished">2026-10-20</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/A-B%E6%B5%8B%E8%AF%95/" rel="tag">A/B测试</a>, <a class="tag-link-link" href="/tags/PTS/" rel="tag">PTS</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF/" rel="tag">展讯</a>, <a class="tag-link-link" href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag">性能优化</a>, <a class="tag-link-link" href="/tags/%E6%AD%A3%E5%8F%8D%E9%A6%88/" rel="tag">正反馈</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>, <a class="tag-link-link" href="/tags/%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/" rel="tag">音视频同步</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。</p>
+</blockquote>
+<p>前面十篇一直在跟「崩」死磕：内核崩、挂死、绿屏、黑屏。等这些都解决了，能连续播 4800 帧之后，剩下的最后一个字是——<strong>卡</strong>。240 秒只上屏 19 帧，约 0.08fps，画面基本是幻灯片。</p>
+<p>这篇讲怎么把这个数字抬到 6.3fps（约 80 倍），以及中间怎样用一次诊断实验<strong>否证了追了三天的错误假设</strong>。</p>
+<h2 id="一、先证伪：不是-IDR-的锅"><a href="#一、先证伪：不是-IDR-的锅" class="headerlink" title="一、先证伪：不是 IDR 的锅"></a>一、先证伪：不是 IDR 的锅</h2><p>之前一直有个假设：<strong>「喂第二个 IDR 必挂死」</strong>。日志里每代进程都止于 GOP#2 的 IDR 附近，三种流一致，看起来铁证如山。</p>
+<p>要区分两种可能：</p>
+<ul>
+<li><strong>A</strong>：流式状态下解码器见到任何第二个 IDR 就挂 → 修法是 GOP 边界软复位</li>
+<li><strong>B</strong>：前面 36 轮累积了漂移&#x2F;泄漏 → 修法是查资源泄漏</li>
+</ul>
+<p>这两条修法完全不同，猜错就是白干一周。所以 10-19 在播放器里埋了个诊断开关 <code>NETTV_IDRREPLAY=K</code>：捕获第一个 IDR 之后，<strong>连投 K 次同一份 IDR</strong>（零累积，排掉所有漂移因素）。</p>
+<p>10-20 凌晨第一次真正跑起来（上一轮脚本上传时变成 0 字节，白等了一天——这条后面单独说）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[diag] NETTV_IDRREPLAY=3 (首 IDR 连投次数)</span><br><span class="line">[diag] 捕获首 IDR 106336B(t=5), 之后连投 3 次</span><br><span class="line">[diag] AU[4] 重投首 IDR 106336B(t=24), 剩 2 次</span><br><span class="line">[diag] AU[5] 重投首 IDR 106336B(t=24), 剩 1 次</span><br><span class="line">[diag] AU[6] 重投首 IDR 106336B(t=24), 剩 0 次</span><br><span class="line">★ 帧#20 已上屏 @4887ms</span><br><span class="line">★ 帧#21 已上屏 @5028ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>连投三次，一次没挂，帧还在继续出。</strong></p>
+<p>假设 A 直接出局。IDR 本身无罪，”第二个 IDR 必挂”这个说法从根上就是错的——它只是<strong>表象</strong>，真正的问题是 IDR 到达前后那段时间里发生的另一件事。</p>
+<h2 id="二、真凶：一个只会减速的-A-V-同步"><a href="#二、真凶：一个只会减速的-A-V-同步" class="headerlink" title="二、真凶：一个只会减速的 A-V 同步"></a>二、真凶：一个只会减速的 A-V 同步</h2><p>同一份日志往下翻，有一行反复刷：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[ptsync] 视频落后, 暂缓解码 (累计 960)</span><br></pre></td></tr></table></figure>
+
+<p>240 秒里出现了 138 次（每 16 次丢帧打一行），换算下来丢了两千多次帧。</p>
+<p>对应的代码长这样：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* 返回 1=要等(视频超前), -1=要丢(视频落后太多), 0=正常 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">pts_should_skip_or_wait</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> diff = (<span class="type">long</span> <span class="type">long</span>)vp - (<span class="type">long</span> <span class="type">long</span>)target;</span><br><span class="line">    <span class="keyword">if</span> (diff &lt; -(<span class="type">long</span> <span class="type">long</span>)thresh) <span class="keyword">return</span> <span class="number">-1</span>;   <span class="comment">/* 落后太多 → 丢帧 */</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意函数签名承诺了两件事：「超前就等」和「落后就丢」。但** <code>return 1</code> 这个分支从来没被实现过**——整个函数只有两种结局：丢帧，或者什么都不做。</p>
+<p>于是逻辑变成了单向的：</p>
+<ol>
+<li>视频落后 → 丢帧</li>
+<li>丢帧 &#x3D; 消费得更慢（代码里是 <code>rb_take</code> 扔掉一个 NAL 然后 <code>continue</code>）</li>
+<li>更慢 &#x3D; 更落后</li>
+<li>回到第 1 步</li>
+</ol>
+<p><strong>这是个正反馈。</strong> 触发之后只会越来越卡，永远不会收敛。更要命的是触发条件极易满足：直播流的 <code>video_pts_ms</code> 每 6 秒（一个 TS 段）才更新一次，而墙钟 <code>target</code> 每毫秒都在涨，中间那 6 秒里 <code>diff</code> 一路走负，只要超过阈值（当时已放宽到 5000ms）就必然触发。</p>
+<p>顺便说，拿它当 A-V 同步基准本身也不成立：音频走的是独立的 mplayer + <code>bt_audio.fifo</code>，跟视频根本不是一个时钟源。</p>
+<h2 id="三、A-B：一个-env-的差距"><a href="#三、A-B：一个-env-的差距" class="headerlink" title="三、A&#x2F;B：一个 env 的差距"></a>三、A&#x2F;B：一个 env 的差距</h2><p>不改代码，只加一个环境变量，同一份二进制、同一个源（泸县 1080p）、同样 240 秒：</p>
+<table>
+<thead>
+<tr>
+<th>轮次</th>
+<th>NETTV_PTSSYNC</th>
+<th>上屏帧数</th>
+<th>AU 推进</th>
+<th>ptsync 丢帧</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>v13</td>
+<td>默认开</td>
+<td>19</td>
+<td>AU[27] 后停滞</td>
+<td>累计 960</td>
+</tr>
+<tr>
+<td>v14</td>
+<td><code>=0</code> 关</td>
+<td>1191（63.6s 就跑满 400 帧上限）</td>
+<td>AU[441]</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p><strong>约 80 倍。</strong> 而且关掉之后 AU 一路推到 441，之前”止于 AU[36]”的现象也一并消失了——那同样是丢帧风暴造成的假象，不是解码器崩了。</p>
+<h2 id="四、修复"><a href="#四、修复" class="headerlink" title="四、修复"></a>四、修复</h2><p>结论既然是”这条逻辑在当前架构下有害无益”，修复就是把已验证的 env 行为固化成默认值，代码和开关都留着：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">g_ptssync = (e &amp;&amp; e[<span class="number">0</span>] == <span class="string">&#x27;1&#x27;</span>) ? <span class="number">1</span> : <span class="number">0</span>;   <span class="comment">/* 10-20: 默认关 */</span></span><br></pre></td></tr></table></figure>
+
+<p>并在注释里写清楚为什么。整轮改动只有这一个字符级别的差异，构建产物大小完全没变（还是 128028 字节）——<strong>这也说明这次不能靠二进制大小判版本，得看时间戳和行为</strong>。</p>
+<h2 id="五、四条教训"><a href="#五、四条教训" class="headerlink" title="五、四条教训"></a>五、四条教训</h2><p><strong>1. 单向的反馈环比没有反馈更危险。</strong><br>有减速没加速的控制器，一旦进入负向区间就是单程票。写”A-V 同步”这类闭环逻辑时，先确认两个方向都真的实现了，别让函数签名骗了自己。</p>
+<p><strong>2. 表象会伪装成根因，而且伪装得很像。</strong><br>“第二个 IDR 必挂”追了三天，真相是 IDR 到达前后恰好触发了丢帧风暴。<strong>先设计能一刀切开两种假设的实验（IDRREPLAY），再动手修。</strong></p>
+<p><strong>3. 上传完一定要 md5。</strong><br>上一轮 &#x2F;tmp&#x2F;r26.sh 是 0 字节却显示 PUSHED，导致”实验跑过、结论没拿到”被误记成”实验失败”。这次改掉了流程，每一步都 <code>md5sum</code> 对照。</p>
+<p><strong>4. 卡和崩要用同一套严谨度对待。</strong><br>崩有 backtrace，卡什么都没有，很容易靠猜。但卡的定位其实更便宜——一个 env 开关，四分钟就有答案。</p>
+<hr>
+<p><em>相关阅读：<a href="nettv-09-sigkill-vsp-kernel-reboot.md">展讯 SC9832A 网络电视攻坚（九）：一次 SIGKILL 把设备打成重启</a></em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E8%AF%81%E4%BC%AA%EF%BC%9A%E4%B8%8D%E6%98%AF-IDR-%E7%9A%84%E9%94%85"><span class="toc-number">1.</span> <span class="toc-text">一、先证伪：不是 IDR 的锅</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%9C%9F%E5%87%B6%EF%BC%9A%E4%B8%80%E4%B8%AA%E5%8F%AA%E4%BC%9A%E5%87%8F%E9%80%9F%E7%9A%84-A-V-%E5%90%8C%E6%AD%A5"><span class="toc-number">2.</span> <span class="toc-text">二、真凶：一个只会减速的 A-V 同步</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81A-B%EF%BC%9A%E4%B8%80%E4%B8%AA-env-%E7%9A%84%E5%B7%AE%E8%B7%9D"><span class="toc-number">3.</span> <span class="toc-text">三、A&#x2F;B：一个 env 的差距</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%BF%AE%E5%A4%8D"><span class="toc-number">4.</span> <span class="toc-text">四、修复</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%9B%9B%E6%9D%A1%E6%95%99%E8%AE%AD"><span class="toc-number">5.</span> <span class="toc-text">五、四条教训</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&text=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&title=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&is_video=false&description=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&title=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&title=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&title=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&title=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/&name=展讯 SC9832A 网络电视攻坚（十二）：80 倍提速——一个「越卡越丢」的 PTS 同步死循环&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

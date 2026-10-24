@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前一篇把厂商库 libstagefright_sprd_h264dec.so 里那个”每 GOP 边界必踩坏链表节点”的 UAF 定性了，我兴冲冲地打了个二进制补丁：三处链表遍历加节点合法性校验。结果部署上去——一张帧都出不来了。这篇记录翻车原因（活寄存器被我当成了临时变量）和 v2 补丁">
+<meta property="og:type" content="article">
+<meta property="og:title" content="展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前一篇把厂商库 libstagefright_sprd_h264dec.so 里那个”每 GOP 边界必踩坏链表节点”的 UAF 定性了，我兴冲冲地打了个二进制补丁：三处链表遍历加节点合法性校验。结果部署上去——一张帧都出不来了。这篇记录翻车原因（活寄存器被我当成了临时变量）和 v2 补丁">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-17T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-18T03:04:02.821Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="h264dec">
+<meta property="article:tag" content="UAF">
+<meta property="article:tag" content="ARM汇编">
+<meta property="article:tag" content="二进制补丁">
+<meta property="article:tag" content="展讯">
+<meta property="article:tag" content="SIGSEGV">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/17/nettv-07-fb-render-single-pass/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&text=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&title=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&is_video=false&description=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的&body=Check out this article: https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&title=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&title=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&title=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&title=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&name=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8E%B0%E8%B1%A1%EF%BC%9Aconfig-%E9%98%B6%E6%AE%B5%E5%B0%B1%E5%B4%A9%EF%BC%8C0-%E5%B8%A7"><span class="toc-number">1.</span> <span class="toc-text">一、现象：config 阶段就崩，0 帧</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%85%88%E5%81%9A-A-B%EF%BC%8C%E5%88%AB%E6%80%A5%E7%9D%80%E6%94%B9%E4%BB%A3%E7%A0%81"><span class="toc-number">2.</span> <span class="toc-text">二、先做 A&#x2F;B，别急着改代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%8F%8D%E6%B1%87%E7%BC%96%EF%BC%9Aip-%E6%98%AF%E6%B4%BB%E7%9A%84%EF%BC%8C%E6%88%91%E6%8A%8A%E5%AE%83%E5%BD%93%E4%B8%B4%E6%97%B6%E5%AF%84%E5%AD%98%E5%99%A8%E7%94%A8%E4%BA%86"><span class="toc-number">3.</span> <span class="toc-text">三、反汇编：ip 是活的，我把它当临时寄存器用了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81v2-%E6%80%8E%E4%B9%88%E5%86%99%EF%BC%9A%E6%89%BE%E4%B8%80%E6%AE%B5%E2%80%9D%E6%AD%BB%E2%80%9D%E7%9A%84%E5%AF%84%E5%AD%98%E5%99%A8"><span class="toc-number">4.</span> <span class="toc-text">四、v2 怎么写：找一段”死”的寄存器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%AE%9E%E6%B5%8B%E7%BB%93%E6%9E%9C%EF%BC%882026-10-18-%E8%A1%A5%E6%B5%8B%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">六、实测结果（2026-10-18 补测）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">6.</span> <span class="toc-text">七、下一步</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E8%A1%A5%E4%B8%81%E8%90%BD%E5%9C%B0%E5%89%8D%E7%9A%84%E4%B8%89%E6%9D%A1%E7%BA%AA%E5%BE%8B%EF%BC%88%E9%83%BD%E6%98%AF%E8%B8%A9%E5%87%BA%E6%9D%A5%E7%9A%84%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">八、补丁落地前的三条纪律（都是踩出来的）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%BD%93%E5%89%8D%E7%8A%B6%E6%80%81%E4%B8%8E%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">8.</span> <span class="toc-text">六、当前状态与下一步</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-17T18:00:00.000Z" itemprop="datePublished">2026-10-18</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/ARM%E6%B1%87%E7%BC%96/" rel="tag">ARM汇编</a>, <a class="tag-link-link" href="/tags/SIGSEGV/" rel="tag">SIGSEGV</a>, <a class="tag-link-link" href="/tags/UAF/" rel="tag">UAF</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/h264dec/" rel="tag">h264dec</a>, <a class="tag-link-link" href="/tags/%E4%BA%8C%E8%BF%9B%E5%88%B6%E8%A1%A5%E4%B8%81/" rel="tag">二进制补丁</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF/" rel="tag">展讯</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。</p>
+</blockquote>
+<p>前一篇把厂商库 <code>libstagefright_sprd_h264dec.so</code> 里那个”每 GOP 边界必踩坏链表节点”的 UAF 定性了，我兴冲冲地打了个二进制补丁：三处链表遍历加节点合法性校验。结果部署上去——<strong>一张帧都出不来了</strong>。这篇记录翻车原因（活寄存器被我当成了临时变量）和 v2 补丁的写法，顺带把 <code>addr=0x747474</code> 这个悬了半天的崩溃签名给结案了。</p>
+<h2 id="一、现象：config-阶段就崩，0-帧"><a href="#一、现象：config-阶段就崩，0-帧" class="headerlink" title="一、现象：config 阶段就崩，0 帧"></a>一、现象：config 阶段就崩，0 帧</h2><p>补丁版二进制跑起来，子进程日志停在：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">SPS NAL=[0,30) len=30   PPS NAL=[30,37) len=7 (rb cfg=106381)</span><br><span class="line">config 字节: SPS 30(首=0x00)  PPS 7(首=0x00)</span><br><span class="line">  DRIVE empty(SPS) 崩溃</span><br></pre></td></tr></table></figure>
+
+<p>SEGV 处理器抓到的现场：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">*** SIGSEGV sig=0000000b addr=00747474 step: DRIVE empty(cfg) 喂 SPS 与 PPS, 各一次(裸 NAL)</span><br><span class="line">    pc=00636363 lr=5f347644 sp=706d616c</span><br></pre></td></tr></table></figure>
+
+<p><code>addr=0x747474</code>（”ttt”）、<code>pc=0x636363</code>（”ccc”）、<code>sp=0x706d616c</code>（”lamp”）——三个都是 ASCII。10-17 晚上我就是被这个签名带偏的：一看全是 ASCII，就推断”我们的 NAL&#x2F;环形缓冲拷贝路径有越界写，把码流数据写进了栈和堆”，然后花了一整晚审 <code>rb_put</code> &#x2F; <code>load_chunk_local</code> &#x2F; <code>cfg memcpy</code> 的长度来源，一无所获。</p>
+<h2 id="二、先做-A-B，别急着改代码"><a href="#二、先做-A-B，别急着改代码" class="headerlink" title="二、先做 A&#x2F;B，别急着改代码"></a>二、先做 A&#x2F;B，别急着改代码</h2><p>这次学乖了，先用环境变量把”补丁库”和”原库”切成两半各跑 40 秒：</p>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>补丁库（自动启用）</td>
+<td><code>stat_lines=0</code>、<code>segv=1</code>、<code>cfg_crash=1</code> —— 一张帧都没有</td>
+</tr>
+<tr>
+<td>原库 <code>NETTV_H264DEC_SO=/system/lib/...</code></td>
+<td>config 通过，出帧（27&#x2F;22&#x2F;4 帧一轮），但仍卡在 <code>AU[102]</code>（GOP 边界 116686B 大 IDR）挂死 → monitor 重启</td>
+</tr>
+</tbody></table>
+<p>结论一句话：<strong>补丁本身是坏的</strong>，原库的行为才是对的（能出帧，只是 GOP 边界还会挂）。0x747474 是补丁自己的产物，不是什么”流数据越界写”。之前那个”统一病根”假设作废。</p>
+<blockquote>
+<p>教训：崩溃签名长得像”内存被数据砸烂”时，先别去审自己的拷贝路径。<strong>先 A&#x2F;B 排除自己刚改动的东西</strong>——这次改动（补丁库）就在最可疑的位置，我却先假设是老代码的问题。</p>
+</blockquote>
+<h2 id="三、反汇编：ip-是活的，我把它当临时寄存器用了"><a href="#三、反汇编：ip-是活的，我把它当临时寄存器用了" class="headerlink" title="三、反汇编：ip 是活的，我把它当临时寄存器用了"></a>三、反汇编：ip 是活的，我把它当临时寄存器用了</h2><p>把原始 <code>.so</code> 的 <code>findCodecConfigData</code>（0x7b80 起）相关片段扒出来（ARM 32 位，不是 Thumb）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">7de8: ldr  r8,  [r10, #4]      ; r8 = 链表哨兵 head</span><br><span class="line">7dec: ldr  ip,  [r8, #8]       ; ip = head-&gt;next = 首节点</span><br><span class="line">7e04: mov  lr,  ip             ; lr = 当前外层节点</span><br><span class="line">7e1c: mov  r2,  ip             ; ← 外层回边目标：每轮都从 ip 重新取首节点</span><br><span class="line">7e20: mov  fp,  #0</span><br><span class="line">7e24: ldr  r2,  [r2, #8]       ; 内层：数节点（site A）</span><br><span class="line">7e28: add  fp,  fp, #1</span><br><span class="line">7e2c: cmp  r2,  r8</span><br><span class="line">7e30: bne  7e24</span><br><span class="line">7e34: cmp  fp,  r3</span><br><span class="line">7e38: bls  0x83e4              ; 计数不符 → 兜底路径（site C）</span><br><span class="line">7e3c: ldr  r1,  [lr]</span><br><span class="line">7e44: ldr  r0,  [fp, #0x24]</span><br><span class="line">7e58: ldr  lr,  [lr, #8]       ; 外层推进（site B）</span><br><span class="line">7e5c: cmp  r2,  #0</span><br><span class="line">7e60: bne  7e1c                ; 回外层</span><br></pre></td></tr></table></figure>
+
+<p>看到 <code>7e1c: mov r2, ip</code> 了吗？**<code>ip</code>（r12）在整个双层循环期间是恒定值——首节点**，外层每轮回边都要从它重新起步。</p>
+<p>而我 v1 补丁为了把节点指针传进 thunk，在两个 site 都写了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">7e24: mov  ip, lr      ; ← 把 ip 覆盖成当前外层节点！</span><br><span class="line">7e28: bl   t_cnt</span><br></pre></td></tr></table></figure>
+
+<p>以及 site B 的 <code>7e58: mov ip, lr</code>。这一下子把 <code>ip</code> 变成了”上一次的外层节点”，下一轮 <code>mov r2, ip</code> 拿到的根本不是首节点，内层计数 <code>fp</code>、比较 <code>cmp fp, r3</code> 全错，最后走到某个虚调用就踩到了垃圾指针——于是 <code>pc=0x636363</code>、<code>addr=0x747474</code>。</p>
+<p>顺带还查出 v1 第二个 bug：site C 的 thunk 里 <code>add r4, r4, #1</code> 紧跟 <code>pop &#123;r4, pc&#125;</code>，栈上弹回来的旧值把刚加的 1 覆盖掉，<strong>r4 永远加不上去</strong>。</p>
+<h2 id="四、v2-怎么写：找一段”死”的寄存器"><a href="#四、v2-怎么写：找一段”死”的寄存器" class="headerlink" title="四、v2 怎么写：找一段”死”的寄存器"></a>四、v2 怎么写：找一段”死”的寄存器</h2><p>补丁 thunk 必须借一个寄存器传参（因为 <code>bl</code> 会冲掉 <code>lr</code>），但 <code>ip</code> 不能用。逐条看这段循环的寄存器生命周期后发现：**<code>r0</code> 在 <code>0x7e1c</code> 到 <code>0x7e44</code> 之间是死的**——它上一次的定义在 <code>7e00~7e14</code>，下一次使用在 <code>7e44 ldr r0,[fp,#0x24]</code> 被重新赋值。于是：</p>
+<ul>
+<li>site 上写 <code>mov r0, lr</code>（把外层节点指针塞进死寄存器 r0）；</li>
+<li>thunk 里用 <code>r0</code> 取 next &#x2F; 做合法性校验，临走用 <code>mov lr, r0</code> 把 lr 还原；</li>
+<li>thunk 只 <code>push &#123;lr&#125;</code> … <code>pop &#123;pc&#125;</code>，<strong>不弹 r4</strong>，不碰 ip；</li>
+<li>坏节点处置：内层 site 置 <code>r2 = r8</code>（哨兵）让 <code>cmp r2,r8</code> 立即相等退出；外层 site 置 <code>r2 = 0</code> 让 <code>7e60 bne</code> 不成立退出——比 v1 的 <code>mov lr, r8</code> 安全，不再去解引用哨兵。</li>
+<li>干脆不碰 site C（0x83e8 兜底路径，收益低风险高）。</li>
+</ul>
+<p>生成的补丁一共只改 85 字节（两个 site 各 8 字节 + 洞里 60 字节 thunk）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">7e24: e1a0000e  mov r0, lr</span><br><span class="line">7e28: eb0013f4  bl  0xce00</span><br><span class="line">7e58: e1a0000e  mov r0, lr</span><br><span class="line">7e5c: eb0013f3  bl  0xce30</span><br></pre></td></tr></table></figure>
+
+<h2 id="六、实测结果（2026-10-18-补测）"><a href="#六、实测结果（2026-10-18-补测）" class="headerlink" title="六、实测结果（2026-10-18 补测）"></a>六、实测结果（2026-10-18 补测）</h2><p>v2 补丁推到设备后跑了 75 秒，结论有点扎心但很有价值：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>v1 补丁</th>
+<th>原库</th>
+<th>v2 补丁</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DRIVE empty(SPS) 崩溃</code></td>
+<td>1</td>
+<td>0</td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>出帧</td>
+<td>0 帧</td>
+<td>正常（8.6fps）</td>
+<td>正常（8.8fps）</td>
+</tr>
+<tr>
+<td>SIGSEGV</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>monitor 重启</td>
+<td>0（因为压根没帧）</td>
+<td>每轮固定 @27 帧</td>
+<td>每轮固定 @27 帧</td>
+</tr>
+</tbody></table>
+<p>三件事：</p>
+<ol>
+<li><strong>v2 确实修好了 v1 的 bug</strong> —— config 阶段不再崩，说明”用 r0 代替 ip”这个修法是对的。补丁本身现在无害。</li>
+<li><strong>但它没治住 GOP 边界挂死</strong> —— 原库和 v2 一样，都是每轮精确停在 27 帧。</li>
+<li>推论很重要：<strong>当前这个 GOP 挂死不是 site A&#x2F;B 那种链表 UAF 崩溃，而是”卡住不返回”的死循环形态</strong>。给指针加合法性校验，对无限循环一点用没有——我之前把这两件事当成同一件事，这是个概念错误。</li>
+</ol>
+<p>所以 v2 就不上生产了（没收益还多一份改动面），保持原库。</p>
+<h2 id="七、下一步"><a href="#七、下一步" class="headerlink" title="七、下一步"></a>七、下一步</h2><p>放弃”加固厂商遍历”这条路，改做<strong>进程内解码器重生</strong>：在 GOP 边界检测到挂死后，不退出整个进程（保住 m3u8 下载进度和环形缓冲里的码流），只重建解码器组件本身（Loaded→Idle→Executing 重新走一遍 allocateBuffer + config）。这样既避开厂商库的累积性损坏，又不会重播上一段。</p>
+<p>顺带记一条：设备重启后磁盘从 348M 掉到 203M 可用，&#x2F;tmp 日志清理收益很小，说明还有别的长期增长源，得查一下。</p>
+<h2 id="八、补丁落地前的三条纪律（都是踩出来的）"><a href="#八、补丁落地前的三条纪律（都是踩出来的）" class="headerlink" title="八、补丁落地前的三条纪律（都是踩出来的）"></a>八、补丁落地前的三条纪律（都是踩出来的）</h2><ol>
+<li><strong>洞必须在可执行映射内</strong>。10-17 首版把 thunk 写到了 0xdd18 —— 那是 <code>.got</code>&#x2F;<code>.data</code>，linker 把机器码当动态表项解析，解码直接全瘫。可用区间是 <code>.rodata</code> 段尾的零洞 <code>0xcdc4..0xd000</code>（落在 LOAD1 R+X 映射内）。</li>
+<li><strong>改 so 前先把原始指令逐条扒出来</strong>，确认被替换的指令宽度与语义（<code>add fp,fp,#1</code> 这类副作用要在 thunk 里补做）。</li>
+<li><strong>补丁一定要能用环境变量一键回退</strong>。这次能 5 分钟定位到”补丁是坏的”，全靠 <code>NETTV_H264DEC_SO</code> 这个逃生门。</li>
+</ol>
+<h2 id="六、当前状态与下一步"><a href="#六、当前状态与下一步" class="headerlink" title="六、当前状态与下一步"></a>六、当前状态与下一步</h2><p>v2 补丁（<code>outputs/patch_h264dec_uaf_v2.py</code> → <code>h264dec_uaf_v2.so</code>）已经生成并推到设备，但验收跑之前设备的 sshd 会话被耗尽了（22 端口 banner 直断，只能断电重启），<strong>实测数据下次补</strong>。</p>
+<p>重启后的验收判据：</p>
+<ul>
+<li><code>DRIVE empty(SPS) 崩溃</code> 计数 &#x3D; 0（config 不再被补丁搞崩）；</li>
+<li><code>[STAT]</code> 帧数能单调涨过 31（不再每轮停在同一帧数）；</li>
+<li>monitor 重启明细里不再出现”卡在 AU[102] 附近”的固定模式。</li>
+</ul>
+<p>如果 v2 也压不住 GOP 边界挂死，那就说明遍历加固这条路不对，得换思路：在进程内做解码器重生（保住 m3u8 进度），或者干脆按 GOP 配额只喂到边界前、用下一个 IDR 重置解码器状态。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8E%B0%E8%B1%A1%EF%BC%9Aconfig-%E9%98%B6%E6%AE%B5%E5%B0%B1%E5%B4%A9%EF%BC%8C0-%E5%B8%A7"><span class="toc-number">1.</span> <span class="toc-text">一、现象：config 阶段就崩，0 帧</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%85%88%E5%81%9A-A-B%EF%BC%8C%E5%88%AB%E6%80%A5%E7%9D%80%E6%94%B9%E4%BB%A3%E7%A0%81"><span class="toc-number">2.</span> <span class="toc-text">二、先做 A&#x2F;B，别急着改代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%8F%8D%E6%B1%87%E7%BC%96%EF%BC%9Aip-%E6%98%AF%E6%B4%BB%E7%9A%84%EF%BC%8C%E6%88%91%E6%8A%8A%E5%AE%83%E5%BD%93%E4%B8%B4%E6%97%B6%E5%AF%84%E5%AD%98%E5%99%A8%E7%94%A8%E4%BA%86"><span class="toc-number">3.</span> <span class="toc-text">三、反汇编：ip 是活的，我把它当临时寄存器用了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81v2-%E6%80%8E%E4%B9%88%E5%86%99%EF%BC%9A%E6%89%BE%E4%B8%80%E6%AE%B5%E2%80%9D%E6%AD%BB%E2%80%9D%E7%9A%84%E5%AF%84%E5%AD%98%E5%99%A8"><span class="toc-number">4.</span> <span class="toc-text">四、v2 怎么写：找一段”死”的寄存器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%AE%9E%E6%B5%8B%E7%BB%93%E6%9E%9C%EF%BC%882026-10-18-%E8%A1%A5%E6%B5%8B%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">六、实测结果（2026-10-18 补测）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">6.</span> <span class="toc-text">七、下一步</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E8%A1%A5%E4%B8%81%E8%90%BD%E5%9C%B0%E5%89%8D%E7%9A%84%E4%B8%89%E6%9D%A1%E7%BA%AA%E5%BE%8B%EF%BC%88%E9%83%BD%E6%98%AF%E8%B8%A9%E5%87%BA%E6%9D%A5%E7%9A%84%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">八、补丁落地前的三条纪律（都是踩出来的）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%BD%93%E5%89%8D%E7%8A%B6%E6%80%81%E4%B8%8E%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">8.</span> <span class="toc-text">六、当前状态与下一步</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&text=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&title=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&is_video=false&description=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的&body=Check out this article: https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&title=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&title=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&title=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&title=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/&name=展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

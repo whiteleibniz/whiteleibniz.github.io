@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="系列第 14 篇。上一篇（十三）把「O_SYNC 日志」定为隐形帧率杀手并默认关掉了它，本篇回答：关掉之后到底跑多少帧？结论是 17fps——以及我是怎么被 dup2误导、差点把”能跑”误判成”0 帧”的。  一、先纠正上一篇遗留的一个悬案上一篇结尾说 A&#x2F;B 实验被用户桌面播放占着 ION 池挡住，重跑之后拿到了真实数据。但重跑第一步就撞上一个诡异现象：A 组、B 组日志都只有 27">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&quot;有没有出帧&quot;不能只看主日志">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="系列第 14 篇。上一篇（十三）把「O_SYNC 日志」定为隐形帧率杀手并默认关掉了它，本篇回答：关掉之后到底跑多少帧？结论是 17fps——以及我是怎么被 dup2误导、差点把”能跑”误判成”0 帧”的。  一、先纠正上一篇遗留的一个悬案上一篇结尾说 A&#x2F;B 实验被用户桌面播放占着 ION 池挡住，重跑之后拿到了真实数据。但重跑第一步就撞上一个诡异现象：A 组、B 组日志都只有 27">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-20T06:45:00.000Z">
+<meta property="article:modified_time" content="2026-10-20T01:22:08.252Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="framebuffer">
+<meta property="article:tag" content="性能分析">
+<meta property="article:tag" content="HLS">
+<meta property="article:tag" content="H.264 硬解">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/21/nettv-18-dl-child-exec-ld-library-path/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/20/nettv-13-o-sync-logging-bottleneck/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&text=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&title=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&is_video=false&description=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&title=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&title=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&title=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&title=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&name=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%BA%A0%E6%AD%A3%E4%B8%8A%E4%B8%80%E7%AF%87%E9%81%97%E7%95%99%E7%9A%84%E4%B8%80%E4%B8%AA%E6%82%AC%E6%A1%88"><span class="toc-number">1.</span> <span class="toc-text">一、先纠正上一篇遗留的一个悬案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E8%AF%8A%E6%96%AD%E9%BB%98%E8%AE%A4%E5%85%B3%E4%B9%8B%E5%90%8E%E7%9A%84%E7%9C%9F%E5%AE%9E%E5%9F%BA%E7%BA%BF"><span class="toc-number">2.</span> <span class="toc-text">二、诊断默认关之后的真实基线</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E8%B4%A6%E7%AE%97%E6%B8%85%E6%A5%9A%EF%BC%9A25fps-%E7%9A%84%E9%A2%84%E7%AE%97%E5%A4%9F%E4%B8%8D%E5%A4%9F"><span class="toc-number">3.</span> <span class="toc-text">三、账算清楚：25fps 的预算够不够</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5%EF%BC%88%E5%8D%95%E5%8F%98%E9%87%8F%E9%A1%BA%E5%BA%8F%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">四、下一步（单变量顺序）</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-20T06:45:00.000Z" itemprop="datePublished">2026-10-20</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/H-264-%E7%A1%AC%E8%A7%A3/" rel="tag">H.264 硬解</a>, <a class="tag-link-link" href="/tags/HLS/" rel="tag">HLS</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/framebuffer/" rel="tag">framebuffer</a>, <a class="tag-link-link" href="/tags/%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90/" rel="tag">性能分析</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>系列第 14 篇。上一篇（十三）把「O_SYNC 日志」定为隐形帧率杀手并默认关掉了它，<br>本篇回答：关掉之后到底跑多少帧？结论是 <strong>17fps</strong>——以及我是怎么被 <code>dup2</code><br>误导、差点把”能跑”误判成”0 帧”的。</p>
+</blockquote>
+<h2 id="一、先纠正上一篇遗留的一个悬案"><a href="#一、先纠正上一篇遗留的一个悬案" class="headerlink" title="一、先纠正上一篇遗留的一个悬案"></a>一、先纠正上一篇遗留的一个悬案</h2><p>上一篇结尾说 A&#x2F;B 实验被用户桌面播放占着 ION 池挡住，重跑之后拿到了真实数据。<br>但重跑第一步就撞上一个诡异现象：A 组、B 组日志都只有 <strong>271~291 字节、6 行</strong>，<br>帧数为 0、心跳 0、性能汇总 0——和上一次”池被占”的表现一模一样。</p>
+<p>但这次 ION 池是空的（我的实例 <code>earlyion g_nout=1</code>、<code>out[0]</code> 拿到了 3.2MB 真物理地址）。<br>于是做单变量复现：**只加 <code>NETTV_VLOG=1</code>**（开详细日志，其他全部不动）——<br>12 秒出了 48 帧，一切正常。</p>
+<p>也就是说：<strong>VLOG&#x3D;0 不出帧，VLOG&#x3D;1 出帧。</strong> 一个环境变量怎么可能控制出不出帧？<br>顺着源码查 <code>vlog_on()</code> 的全部引用，在 193 行抓到了真凶：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">child_log_bound</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (vlog_on()) <span class="keyword">return</span>;   <span class="comment">/* 调试模式: 保留调用方重定向 */</span></span><br><span class="line">    <span class="type">int</span> f = open(<span class="string">&quot;/tmp/nettv_child.log&quot;</span>, O_WRONLY | O_CREAT | O_TRUNC, <span class="number">0644</span>);</span><br><span class="line">    <span class="keyword">if</span> (f &lt; <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">    dup2(f, <span class="number">1</span>); dup2(f, <span class="number">2</span>);  <span class="comment">/* ← 子进程 stdout 被换成了文件 */</span></span><br><span class="line">    <span class="keyword">if</span> (f &gt; <span class="number">2</span>) close(f);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这是 10-16 加的”限磁盘占用”设计：非调试模式下，把子进程的 stdout 重定向到<br><code>/tmp/nettv_child.log</code>，防止每帧的库内打印把 <code>/tmp/lvgl_demo.log</code> 撑到 131MB。<br>**重定向之后，帧统计 <code>[STAT]</code>、每 200 条 AU 的性能汇总 <code>[perf]</code>、帧上屏标记，<br>全部写进了 <code>nettv_child.log</code>**——而主日志只剩启动横幅那几行。</p>
+<blockquote>
+<p>A 组和 B 组其实一直正常出帧。271 字节的主日志 ≠ 0 帧。<br>我看到 <code>nettv_child.log</code> 里出现 <code>FilledDone 解码帧</code> 时，还判断那是”用户会话的输出”。</p>
+</blockquote>
+<p><strong>教训（已立为项目铁律）</strong>：判”播放器有没有出帧、帧率多少”，必须<br><code>grep /tmp/nettv_child.log</code>（<code>FilledDone</code> &#x2F; <code>已上屏</code> &#x2F; <code>[STAT]</code> &#x2F; <code>[perf]</code>），<br>不能看主 log。凡是 stdout 被 <code>dup2</code> 过的进程，主日志的行数说明不了任何事。<br>另外注意源码 191 行 <code>kdiag_on()</code> 的实现是 <code>g_kdiag || vlog_on()</code>——<br><strong>设 <code>NETTV_VLOG=1</code> 会连带打开全部 kdiag 诊断</strong>，调试时这个耦合要注意。</p>
+<h2 id="二、诊断默认关之后的真实基线"><a href="#二、诊断默认关之后的真实基线" class="headerlink" title="二、诊断默认关之后的真实基线"></a>二、诊断默认关之后的真实基线</h2><p>修正判据后重跑（泸县 1080p 源，完全新默认环境，60 秒）：</p>
+<ul>
+<li><strong>825 帧 &#x2F; 48.4 秒，<code>[STAT] fps_x10=170</code>，即 17fps</strong></li>
+<li>对比上一篇 v15（诊断全开）的 13.2fps：**+29%**，诊断默认关的修复确认有效、无回归</li>
+</ul>
+<p><code>[perf]</code> 每 AU 分账（墙钟均值 112ms）：</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>耗时</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>段循环 &#x2F; DRIVE</td>
+<td><strong>32.4ms</strong></td>
+<td>硬件解码 14ms（厂商自报）+ 库侧约 18ms（phys ioctl 查地址、bind&#x2F;unbind、双份 FilledDone）</td>
+</tr>
+<tr>
+<td>snap_state</td>
+<td>0ms</td>
+<td>kdiag 门控生效 ✓</td>
+</tr>
+<tr>
+<td>读帧</td>
+<td><strong>45.5ms</strong></td>
+<td>3MB memcpy 到缓存暂存 ~20ms + 内容签名扫描 ~25ms</td>
+</tr>
+<tr>
+<td>fb_render</td>
+<td><strong>30.5ms</strong></td>
+<td>CPU 单遍几何合成（缩放 + 旋转 + NV12→ARGB），采样均值 34ms</td>
+</tr>
+<tr>
+<td>其余</td>
+<td>~3.6ms</td>
+<td>尾部 fill(out) 补队列等</td>
+</tr>
+</tbody></table>
+<h2 id="三、账算清楚：25fps-的预算够不够"><a href="#三、账算清楚：25fps-的预算够不够" class="headerlink" title="三、账算清楚：25fps 的预算够不够"></a>三、账算清楚：25fps 的预算够不够</h2><p>25fps 需要 ≤40ms&#x2F;AU，现在 112ms。分段砍：</p>
+<ol>
+<li><strong>签名扫描裁掉&#x2F;降频</strong>（读帧 45.5→约 22ms）：签名本来用于”画面不变不重复渲染”判重，<br>但厂商 <code>FilledDone</code> 回调每帧必达（心跳就是用它做的），判重完全可以改成回调计数，<br>不需要 CPU 扫 8K 个采样点；Y 非零判空只留前几帧即可。</li>
+<li><strong>fb_render NEON 化</strong>（30.5→约 10ms）：几何合成是规则的定点运算，<br>ARMv7 NEON 有成熟写法。</li>
+<li><strong>DRIVE 库侧缓存</strong>（32.4→约 24ms）：phys ioctl 每 AU 重查 fd→PA，<br>按 fd 缓存可省一半。</li>
+<li>三项全砍完：24 + 22 + 10 &#x3D; <strong>56ms ≈ 18fps，仍然不够。</strong></li>
+</ol>
+<p><strong>结论：光靠”砍”到不了 25fps，唯一的路是流水线。</strong> 现在 worker 是纯串行：<br>解码的 32ms 里 CPU 在等；渲染的 30ms 里 VSP 在闲着。只要把”读帧+渲染”挪到<br>解码下一帧的<strong>并行时段</strong>（安卓的 BufferQueue 模型），单 AU 墙钟就趋近<br><code>max(解码, 渲染) ≈ 35ms</code>，<strong>约 28fps</strong>。</p>
+<p>流水线的硬约束是老问题：<strong>双缓冲要 2×3.1MB 输出 + mbinfo 653KB + 输入 256KB<br>≈ 7.1MB，而 CMA 池名义只有 ~7MB</strong>。要么先扩池（内核 cmdline），<br>要么赌池子实际比标称松一点（厂商 init 抢的是 C1 池，不一定全在 CMA 里）。<br>这也是下一篇要实验的第一件事。</p>
+<h2 id="四、下一步（单变量顺序）"><a href="#四、下一步（单变量顺序）" class="headerlink" title="四、下一步（单变量顺序）"></a>四、下一步（单变量顺序）</h2><ol>
+<li>签名扫描降频（读帧 45.5→~22ms，最稳的一刀，先动）</li>
+<li>fb_render NEON 几何合成（30.5→~10ms）</li>
+<li>双缓冲流水线（CMA 池挤 2 路）—— 决定能否到 25fps+</li>
+<li>DRIVE 内 fd→PA 缓存</li>
+<li>更远的路：recon 显示驱动 overlay 能力，NV12 直送显示层 + 硬件旋转，<br>把整个 CPU 合成省掉（对标安卓 HWComposer）</li>
+</ol>
+<hr>
+<p><em>本系列文章与实验脚本随项目同步维护，仅代表个人嵌入式学习与调试过程记录。</em><br><em>本文为原创技术总结，转载请注明出处，禁止商业用途。</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%BA%A0%E6%AD%A3%E4%B8%8A%E4%B8%80%E7%AF%87%E9%81%97%E7%95%99%E7%9A%84%E4%B8%80%E4%B8%AA%E6%82%AC%E6%A1%88"><span class="toc-number">1.</span> <span class="toc-text">一、先纠正上一篇遗留的一个悬案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E8%AF%8A%E6%96%AD%E9%BB%98%E8%AE%A4%E5%85%B3%E4%B9%8B%E5%90%8E%E7%9A%84%E7%9C%9F%E5%AE%9E%E5%9F%BA%E7%BA%BF"><span class="toc-number">2.</span> <span class="toc-text">二、诊断默认关之后的真实基线</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E8%B4%A6%E7%AE%97%E6%B8%85%E6%A5%9A%EF%BC%9A25fps-%E7%9A%84%E9%A2%84%E7%AE%97%E5%A4%9F%E4%B8%8D%E5%A4%9F"><span class="toc-number">3.</span> <span class="toc-text">三、账算清楚：25fps 的预算够不够</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5%EF%BC%88%E5%8D%95%E5%8F%98%E9%87%8F%E9%A1%BA%E5%BA%8F%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">四、下一步（单变量顺序）</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&text=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&title=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&is_video=false&description=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&title=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&title=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&title=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&title=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/&name=netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&#34;有没有出帧&#34;不能只看主日志&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

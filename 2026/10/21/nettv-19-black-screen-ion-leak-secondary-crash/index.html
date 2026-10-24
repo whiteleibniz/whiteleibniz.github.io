@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="用户推门进来就一句：”网络电视黑屏无反应了。” 设备 ping 通、SSH 正常、桌面进程 lvgl_demo 还活着——但播放器 nettv_player 的 monitor 看门狗正在无限重启循环，每一轮 worker 都以 exit 11 收场，屏幕自然永远黑着。 这篇记录这次排查，重点不是”修了什么代码”，而是一个反复咬人的教训：你盯了半个月的”必崩”结论，可能只是另一场崩溃的次生现象。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nettv-19：黑屏无反应？——当&quot;必崩&quot;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="用户推门进来就一句：”网络电视黑屏无反应了。” 设备 ping 通、SSH 正常、桌面进程 lvgl_demo 还活着——但播放器 nettv_player 的 monitor 看门狗正在无限重启循环，每一轮 worker 都以 exit 11 收场，屏幕自然永远黑着。 这篇记录这次排查，重点不是”修了什么代码”，而是一个反复咬人的教训：你盯了半个月的”必崩”结论，可能只是另一场崩溃的次生现象。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-21T01:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-21T01:13:07.491Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="SIGSEGV">
+<meta property="article:tag" content="sprd">
+<meta property="article:tag" content="ION">
+<meta property="article:tag" content="carveout">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/21/nettv-18-dl-child-exec-ld-library-path/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&text=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&title=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&is_video=false&description=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）&body=Check out this article: https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&title=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&title=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&title=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&title=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&name=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8E%B0%E5%9C%BA%EF%BC%9A%E8%BF%9B%E7%A8%8B%E6%B4%BB%E7%9D%80%EF%BC%8C%E5%B8%A7%E6%95%B0%E4%B8%BA%E9%9B%B6"><span class="toc-number">1.</span> <span class="toc-text">一、现场：进程活着，帧数为零</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%8F%92%E6%9B%B2%EF%BC%9A%E4%B8%80%E4%B8%AA%E2%80%9D%E5%86%85%E5%AD%98%E5%81%A5%E5%BA%B7%E6%8E%A2%E9%92%88%E2%80%9D"><span class="toc-number">2.</span> <span class="toc-text">二、插曲：一个”内存健康探针”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%87%8D%E8%B7%91%E5%9F%BA%E7%BA%BF%EF%BC%8C%E2%80%9D%E5%BF%85%E5%B4%A9%E2%80%9D%E7%BB%93%E8%AE%BA%E5%A1%8C%E4%BA%86"><span class="toc-number">3.</span> <span class="toc-text">三、重跑基线，”必崩”结论塌了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%96%B9%E6%B3%95%E8%AE%BA%E6%B2%89%E6%B7%80"><span class="toc-number">4.</span> <span class="toc-text">四、方法论沉淀</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">5.</span> <span class="toc-text">五、下一步</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-21T01:30:00.000Z" itemprop="datePublished">2026-10-21</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/ION/" rel="tag">ION</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/SIGSEGV/" rel="tag">SIGSEGV</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/carveout/" rel="tag">carveout</a>, <a class="tag-link-link" href="/tags/sprd/" rel="tag">sprd</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>用户推门进来就一句：”网络电视黑屏无反应了。”</p>
+<p>设备 ping 通、SSH 正常、桌面进程 <code>lvgl_demo</code> 还活着——但播放器 <code>nettv_player</code> 的 monitor 看门狗正在无限重启循环，每一轮 worker 都以 <code>exit 11</code> 收场，屏幕自然永远黑着。</p>
+<p>这篇记录这次排查，重点不是”修了什么代码”，而是一个反复咬人的教训：<strong>你盯了半个月的”必崩”结论，可能只是另一场崩溃的次生现象。</strong></p>
+<h2 id="一、现场：进程活着，帧数为零"><a href="#一、现场：进程活着，帧数为零" class="headerlink" title="一、现场：进程活着，帧数为零"></a>一、现场：进程活着，帧数为零</h2><p>先看三件套：进程树、日志尾部、dmesg。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ps | grep -E <span class="string">&quot;[n]ettv|[l]vgl_demo&quot;</span>      <span class="comment"># 桌面活着, 播放器在, 但零帧</span></span><br><span class="line"><span class="built_in">tail</span> /tmp/nettv.log                     <span class="comment"># *** monitor: 重启 (子进程 @0 帧) × 7 轮</span></span><br><span class="line">dmesg | <span class="built_in">tail</span>                            <span class="comment"># 最后一条是 33 分钟前的 CPU 热插拔, 之后无新记录</span></span><br></pre></td></tr></table></figure>
+
+<p>三个信息拼出来一个判断：</p>
+<ol>
+<li><strong>不是内核崩</strong>——dmesg 没有新记录，纯用户态问题；</li>
+<li><strong>不是桌面死</strong>——<code>lvgl_demo</code> 主进程健在，按键有响应；</li>
+<li><strong>是播放器空转</strong>——monitor 每轮拉起 worker，worker 拿不到输出 buffer，<code>_exit(11)</code>，monitor 再拉，无限循环。ION&#x2F;carveout 池被这个循环一口一口吃掉，越循环越抢不到。</li>
+</ol>
+<p><code>exit 11</code> 在代码里对应得很清楚（<code>sprd_msg_np.c</code> 4673&#x2F;4674 行）：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&#125; <span class="keyword">else</span> &#123; P(<span class="string">&quot;  alloc 崩溃\n&quot;</span>); which_lib(g_fault); _exit(<span class="number">11</span>); &#125;</span><br><span class="line"><span class="keyword">if</span> (!bhIn || !bhOut) &#123; P(<span class="string">&quot;&gt;&gt;&gt; buffer 分配失败\n&quot;</span>); _exit(<span class="number">11</span>); &#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>恢复只需一步</strong>：<code>pkill -f [n]ettv_player</code>（SIGTERM，让进程走正常的退出路径——退出前有 800ms 的 DMA 排空，异常退出才不回收 ION）。两秒后进程清零，桌面立刻回来了。</p>
+<h2 id="二、插曲：一个”内存健康探针”"><a href="#二、插曲：一个”内存健康探针”" class="headerlink" title="二、插曲：一个”内存健康探针”"></a>二、插曲：一个”内存健康探针”</h2><p>清完场顺手探了一下编译：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&quot;int main()&#123;return 0;&#125;&quot;</span> &gt; /tmp/t.c</span><br><span class="line">gcc -O0 -o /tmp/t.out /tmp/t.c</span><br></pre></td></tr></table></figure>
+
+<p>凌晨这台设备的 gcc 还是坏的——<code>Error relocating /usr/lib/libisl.so.23: &lt;乱码符号&gt;: symbol not found</code>，可文件本身 md5 两次一致、ELF 头正常、readelf 能读出真符号名。当时定的案：<strong>不是文件损坏，是内存被 VSP&#x2F;ION 的 DMA 踩坏了页缓存</strong>。设备上午重启后，同一条命令一次通过。</p>
+<p>于是得到一个零成本探针，以后开工先跑它：</p>
+<blockquote>
+<p><strong><code>gcc -O0</code> 编不过 + libisl 报乱码符号 ⇒ 设备内存被 DMA 踩坏，该重启，别硬修包。</strong></p>
+</blockquote>
+<h2 id="三、重跑基线，”必崩”结论塌了"><a href="#三、重跑基线，”必崩”结论塌了" class="headerlink" title="三、重跑基线，”必崩”结论塌了"></a>三、重跑基线，”必崩”结论塌了</h2><p>清场、探针通过，那就把 UI 链路的真实场景复跑一遍——m3u8 直播流、不设任何调优 env、甚至故意带上会触发旧 bug 的毒环境变量，跑 40 秒：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[STAT] frames=125 elapsed=7219ms fps_x10=173</span><br><span class="line">[dl] NAL 直方图: g_nau=297 | slice(1)=522 IDR(5)=18 SPS(7)=18 PPS(7)=18</span><br></pre></td></tr></table></figure>
+
+<p><strong>125 帧、17.3fps、18 个 IDR、0 次 SIGSEGV。</strong></p>
+<p>这直接推翻了项目记忆里挂了一个多月的定案——“1080p 直播流第一个 GOP 出 4 帧后，喂第二个 IDR 必 SIGSEGV（addr&#x3D;0x747474）”。为了这条结论，先后试过 GOT patch、二分连投、UAF 补丁，全都白绕了。</p>
+<p>真相是：那个 <code>0x747474</code>（ASCII 的 “ttt”，一看就像被 TS 码流数据填进去的地址）从来不是 IDR 的问题，而是 <strong>ION 池被 monitor 重启循环泄漏吃干之后，<code>alloc</code> 返回坏指针的次生崩溃</strong>。第一轮 init 时组件就要抢 2MB carveout，输出 buffer 再要 3.2MB，池子总共才个位数 MB；worker 异常退出（<code>_exit(11)</code>&#x2F;信号打死）时 ION 不回收，于是每一轮重启都从剩下的池子里刮一层，刮到某一次 alloc 落到了脏内存上——恰好那次正在喂第二个 IDR。</p>
+<p><strong>根因、次生、巧合，三者在时间线上排成了同一条直线，看起来就像因果。</strong> 这是这次排查最贵的教训。</p>
+<p>顺带一提：凌晨想给播放器加”stdout 无缓冲”（崩溃前最后 4KB 日志不再丢）两次构建都失败，当时也差点归因成”代码问题”——实际是 gcc 已经被 DMA 踩坏，跟代码一毛钱关系没有。<strong>同一类”环境&#x2F;链接”症状，连续栽了两次，可见这个反射弧有多难改。</strong></p>
+<h2 id="四、方法论沉淀"><a href="#四、方法论沉淀" class="headerlink" title="四、方法论沉淀"></a>四、方法论沉淀</h2><p>把这次的做法固化成三条，下次遇到”黑屏&#x2F;必崩”直接按这个走：</p>
+<p><strong>1. 黑屏三查（按顺序，一步一结论）</strong></p>
+<ul>
+<li><code>ps</code> 看桌面进程死没死——死没死决定是”救桌面”还是”救播放器”；</li>
+<li>播放器日志看是不是空转循环——monitor 重启计数是最刺眼的信号；</li>
+<li><code>dmesg</code> 看有没有新内核记录——没有，就老老实实在用户态找，别往内核甩锅。</li>
+</ul>
+<p><strong>2. SIGTERM 才能回收 ION</strong><br><code>pkill -f nettv_player</code> 而不是 <code>-9</code>。播放器退出路径里有 DMA 排空和 ION 释放；被信号硬杀等于把池子永久漏掉一块，只能重启设备。池子小（个位数 MB）的项目，<strong>看门狗的每一轮重启都是真金白银的内存</strong>——所以”无新帧就斩杀”这种看门狗策略在小内存池设备上要格外小心，段间隔（~10s）比斩杀阈值长的时候，看门狗杀的就是自己人。</p>
+<p><strong>3. “必崩”结论要过三关</strong><br>一条崩溃结论在写进记忆之前，先问自己：</p>
+<ul>
+<li>换过输入吗？（单 TS 直连 vs m3u8 直播，路径不同）</li>
+<li>换过资源状态吗？（ION 池满 vs 被泄漏吃干）</li>
+<li>崩溃地址像什么？（<code>0x747474</code> &#x3D; “ttt” 这种像数据的地址，先怀疑 buffer 被踩，别先怀疑算法）</li>
+</ul>
+<p>三关有一关没过的”必崩”，都只是”在当前这一堆前提下的必崩”。</p>
+<h2 id="五、下一步"><a href="#五、下一步" class="headerlink" title="五、下一步"></a>五、下一步</h2><ul>
+<li>**空帧率 53%**：这次日志里 60 个真帧（<code>filled=3133440</code>）对 68 个空帧（<code>filled=0</code>）。解码器在 EOS 之后还在被投喂空转，与 <code>g_nout=1</code>（只抢到 1 路输出，官方基线 5 路）的单队列结构有关。砍掉空转轮次约等于直接 +50% 有效吞吐，比继续抠 memcpy 划算。</li>
+<li><strong>UI 首轮失败 vs 手动首轮成功的差异</strong>：同样条件，内核重启后从 UI 点开就 exit 11，手动跑却能出帧。怀疑桌面 <code>lvgl_demo</code> 先占了一部分内存&#x2F;ION，待复现确认。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版权声明</strong>：本文为原创技术笔记，作者保留所有权利。转载请注明出处（whiteleibniz.github.io），禁止未授权商业用途。<br>文中涉及的设备、源码与结论来自个人嵌入式项目实战记录（展讯 SC9832A &#x2F; Alpine Linux &#x2F; LVGL），数据均为实测。</p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8E%B0%E5%9C%BA%EF%BC%9A%E8%BF%9B%E7%A8%8B%E6%B4%BB%E7%9D%80%EF%BC%8C%E5%B8%A7%E6%95%B0%E4%B8%BA%E9%9B%B6"><span class="toc-number">1.</span> <span class="toc-text">一、现场：进程活着，帧数为零</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%8F%92%E6%9B%B2%EF%BC%9A%E4%B8%80%E4%B8%AA%E2%80%9D%E5%86%85%E5%AD%98%E5%81%A5%E5%BA%B7%E6%8E%A2%E9%92%88%E2%80%9D"><span class="toc-number">2.</span> <span class="toc-text">二、插曲：一个”内存健康探针”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%87%8D%E8%B7%91%E5%9F%BA%E7%BA%BF%EF%BC%8C%E2%80%9D%E5%BF%85%E5%B4%A9%E2%80%9D%E7%BB%93%E8%AE%BA%E5%A1%8C%E4%BA%86"><span class="toc-number">3.</span> <span class="toc-text">三、重跑基线，”必崩”结论塌了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%96%B9%E6%B3%95%E8%AE%BA%E6%B2%89%E6%B7%80"><span class="toc-number">4.</span> <span class="toc-text">四、方法论沉淀</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">5.</span> <span class="toc-text">五、下一步</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&text=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&title=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&is_video=false&description=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）&body=Check out this article: https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&title=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&title=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&title=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&title=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/&name=nettv-19：黑屏无反应？——当&#34;必崩&#34;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

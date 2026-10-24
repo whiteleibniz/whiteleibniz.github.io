@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="上一轮刚把”UI 点频道黑屏”修完，用户就丢了一句：**”播放效果有改进，但完全达不到正常观看标准。”** 这句话的价值在于它逼我回头看那些”已经优化过很多轮”的数字。结果一查不要紧——我们盯了三个月的帧率，从头到尾都是错的。 这篇记录两件事：一个是统计口径的陷阱（数字骗人），一个是真正的性能突破（读帧 17 倍提速），以及一个被推翻的方案（差点把设备搞崩）。 一、先看数字：16.9fps 是假的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="上一轮刚把”UI 点频道黑屏”修完，用户就丢了一句：**”播放效果有改进，但完全达不到正常观看标准。”** 这句话的价值在于它逼我回头看那些”已经优化过很多轮”的数字。结果一查不要紧——我们盯了三个月的帧率，从头到尾都是错的。 这篇记录两件事：一个是统计口径的陷阱（数字骗人），一个是真正的性能突破（读帧 17 倍提速），以及一个被推翻的方案（差点把设备搞崩）。 一、先看数字：16.9fps 是假的">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-21T03:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-21T03:29:01.668Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="framebuffer">
+<meta property="article:tag" content="性能优化">
+<meta property="article:tag" content="sprd">
+<meta property="article:tag" content="ION">
+<meta property="article:tag" content="统计口径">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&text=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&title=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&is_video=false&description=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）&body=Check out this article: https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&title=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&title=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&title=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&title=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&name=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%9C%8B%E6%95%B0%E5%AD%97%EF%BC%9A16-9fps-%E6%98%AF%E5%81%87%E7%9A%84"><span class="toc-number">1.</span> <span class="toc-text">一、先看数字：16.9fps 是假的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%9C%9F%E6%AD%A3%E7%9A%84%E7%93%B6%E9%A2%88%EF%BC%9A88-%E7%9A%84%E6%97%B6%E9%97%B4%E4%B8%8D%E5%9C%A8%E8%A7%A3%E7%A0%81%E4%B8%8A"><span class="toc-number">2.</span> <span class="toc-text">二、真正的瓶颈：88% 的时间不在解码上</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%AA%81%E7%A0%B4%EF%BC%9Auncached-%E5%86%85%E5%AD%98%E6%98%AF%E5%85%83%E5%87%B6"><span class="toc-number">3.</span> <span class="toc-text">三、突破：uncached 内存是元凶</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E8%A2%AB%E6%8E%A8%E7%BF%BB%E7%9A%84%E6%96%B9%E6%A1%88%EF%BC%9A%E6%8D%A2%E4%B8%AA%E5%A0%86%E6%9D%A5%E8%BA%B2%E6%B1%A0%E5%AD%90"><span class="toc-number">4.</span> <span class="toc-text">四、被推翻的方案：换个堆来躲池子</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E8%BF%98%E6%9C%89%E4%B8%80%E4%B8%AA%E5%9D%91%EF%BC%9Acached-%E6%B1%A0%E6%98%AF%E7%A9%BA%E7%9A%84"><span class="toc-number">5.</span> <span class="toc-text">五、还有一个坑：cached 池是空的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%86%8D%E8%BF%9B%E4%B8%80%E6%AD%A5%EF%BC%9A%E6%8A%8A%E6%B8%B2%E6%9F%93%E7%9A%84-30ms-%E4%B9%9F%E6%8B%86%E5%BC%80"><span class="toc-number">6.</span> <span class="toc-text">六、再进一步：把渲染的 30ms 也拆开</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E8%BF%99%E4%B8%80%E8%BD%AE%E7%9A%84%E8%B4%A6"><span class="toc-number">7.</span> <span class="toc-text">七、这一轮的账</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E8%BF%99%E8%BD%AE%E8%BF%98%E8%B8%A9%E4%BA%86%E4%B8%A4%E4%B8%AA%E5%9D%91%EF%BC%8C%E5%80%BC%E5%BE%97%E5%8D%95%E7%8B%AC%E8%AE%B0%E4%B8%80%E7%AC%94"><span class="toc-number">8.</span> <span class="toc-text">八、这轮还踩了两个坑，值得单独记一笔</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9D%91%E4%B8%80%EF%BC%9A%E6%8A%8A%E2%80%9D%E6%9B%B4%E7%9C%81%E5%86%85%E5%AD%98%E2%80%9D%E5%BD%93%E6%88%90%E2%80%9D%E6%9B%B4%E5%A5%BD%E5%AF%B9%E9%BD%90%E2%80%9D"><span class="toc-number">8.1.</span> <span class="toc-text">坑一：把”更省内存”当成”更好对齐”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9D%91%E4%BA%8C%EF%BC%9Aperf-%E9%87%87%E6%A0%B7%E7%B3%BB%E6%95%B0%E5%86%99%E6%AD%BB%EF%BC%8C%E4%B8%A4%E4%B8%AA%E6%8C%87%E6%A0%87%E5%BC%80%E5%A7%8B%E4%BA%92%E7%9B%B8%E6%89%93%E6%9E%B6"><span class="toc-number">8.2.</span> <span class="toc-text">坑二：perf 采样系数写死，两个指标开始互相打架</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">9.</span> <span class="toc-text">九、下一步</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-21T03:30:00.000Z" itemprop="datePublished">2026-10-21</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/ION/" rel="tag">ION</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/framebuffer/" rel="tag">framebuffer</a>, <a class="tag-link-link" href="/tags/sprd/" rel="tag">sprd</a>, <a class="tag-link-link" href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag">性能优化</a>, <a class="tag-link-link" href="/tags/%E7%BB%9F%E8%AE%A1%E5%8F%A3%E5%BE%84/" rel="tag">统计口径</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>上一轮刚把”UI 点频道黑屏”修完，用户就丢了一句：**”播放效果有改进，但完全达不到正常观看标准。”**</p>
+<p>这句话的价值在于它逼我回头看那些”已经优化过很多轮”的数字。结果一查不要紧——<strong>我们盯了三个月的帧率，从头到尾都是错的。</strong></p>
+<p>这篇记录两件事：一个是统计口径的陷阱（数字骗人），一个是真正的性能突破（读帧 17 倍提速），以及一个被推翻的方案（差点把设备搞崩）。</p>
+<h2 id="一、先看数字：16-9fps-是假的"><a href="#一、先看数字：16-9fps-是假的" class="headerlink" title="一、先看数字：16.9fps 是假的"></a>一、先看数字：16.9fps 是假的</h2><p>播放器里有个心跳，每 25 帧打一条：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[STAT] frames=12825 elapsed=759074ms fps_x10=168</span><br></pre></td></tr></table></figure>
+
+<p>759 秒、12825 帧、<strong>16.9fps</strong>。看起来挺正常对吧？源是 1080p&#x2F;25fps 的直播流，差得不算太多。</p>
+<p>但我去数了一下回调：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">grep -c <span class="string">&#x27;filled=3133440&#x27;</span> /tmp/nettv_child.log   <span class="comment"># 真帧: 6776</span></span><br><span class="line">grep -c <span class="string">&#x27;filled=0 out=0&#x27;</span>  /tmp/nettv_child.log   <span class="comment"># 空事件: 7471</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>6776 真帧 + 7471 空事件。</strong></p>
+<p>厂商库在吐出一个真帧之后，必然紧跟一个 <code>filled=0</code> 的空事件——<code>drainAllOutputBuffers</code> 把同一个 output header 回收复用，<code>nFilledLen</code> 被清零，于是又回调了一次 <code>BufferFilledDone</code>。</p>
+<p>而我们的代码在 <code>BufferFilledDone</code> 回调里无差别地 <code>g_filled++</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> OMX_ERRORTYPE <span class="title function_">bfd</span><span class="params">(OMX_PTR a,OMX_PTR b,OMX_BUFFERHEADERTYPE_PT h)</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">    g_filled++; frame_beat(); <span class="keyword">return</span> <span class="number">0</span>;   <span class="comment">/* ← 真帧和空事件一起算 */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>于是<strong>帧数统计凭空翻了一倍</strong>。真实画面更新率是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">6776 / 759s = 8.9 fps</span><br></pre></td></tr></table></figure>
+
+<p>不是 16.9，是 <strong>8.9</strong>。</p>
+<p>这个数字后来还污染了另外两处：</p>
+<ul>
+<li><strong>判重逻辑</strong>：<code>is_new = (g_filled != filled_seen)</code> —— 空事件也算”有新帧”，触发一次完整的读帧+渲染（77ms），而画面内容根本没变。</li>
+<li><strong>perf 采样</strong>：<code>[perf] AU#7400</code> 的各种均值，都是按”回调数”而不是”真帧数”归一的。</li>
+</ul>
+<p><strong>教训一：性能计数器必须先问清楚”它数的是什么”。</strong> 一个把两种语义混在一起的计数器，会同时污染统计、判重、采样三个地方，而且因为数字看起来合理，谁也不会去怀疑。</p>
+<p>修法很直接——把真帧单独计数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* ★★ 2026-10-21 真帧判定: 厂商每吐一个真帧必跟一个 filled=0 的空事件。</span></span><br><span class="line"><span class="comment"> *   实测真帧 filled=3133440/out=0, 空事件 filled=0/out=0 ⇒</span></span><br><span class="line"><span class="comment"> *   (nFilledLen||nOutputLen) 非 0 才是真帧。</span></span><br><span class="line"><span class="comment"> *   ★ g_filled 保持&quot;全部回调&quot;语义(monitor 存活心跳 shm[3] 依赖它),</span></span><br><span class="line"><span class="comment"> *     真帧单独用 g_filled_real 计数 ⇒ [STAT] 帧率不再虚高一倍。 */</span></span><br><span class="line"><span class="keyword">if</span> (h &amp;&amp; (h-&gt;nFilledLen || h-&gt;nOutputLen)) g_filled_real++;</span><br></pre></td></tr></table></figure>
+
+<p>注意这里刻意<strong>没有</strong>改 <code>g_filled</code> 的语义——monitor 的存活看门狗靠 <code>shm[3] = g_filled</code> 判断厂商还在不在吐回调，那个必须保持”所有回调”的宽口径。<strong>同一个计数器承担两种语义时，宁可拆成两个，也不要改原有的那个。</strong></p>
+<h2 id="二、真正的瓶颈：88-的时间不在解码上"><a href="#二、真正的瓶颈：88-的时间不在解码上" class="headerlink" title="二、真正的瓶颈：88% 的时间不在解码上"></a>二、真正的瓶颈：88% 的时间不在解码上</h2><p>知道真实帧率是 8.9fps 之后，我需要知道时间去哪了。播放器里早就有分段计时：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[perf] AU#7400 均值: 墙钟=113.0 段循环=32.6 snap=0.0 读帧=44.3 渲染=33.0 (ms)</span><br></pre></td></tr></table></figure>
+
+<p>113ms 出一帧，对应 8.85fps——和实测的 8.9 完全吻合。这三段耗时拆开看：</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>耗时</th>
+<th>占比</th>
+<th>是什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>段循环</td>
+<td>32.6ms</td>
+<td>29%</td>
+<td>投喂 AU + 等厂商排空</td>
+</tr>
+<tr>
+<td><strong>读帧</strong></td>
+<td><strong>44.3ms</strong></td>
+<td><strong>39%</strong></td>
+<td><strong>3MB memcpy（ION → staging）</strong></td>
+</tr>
+<tr>
+<td>渲染</td>
+<td>33.0ms</td>
+<td>29%</td>
+<td>NV12 → ARGB → 旋转 → 写 fb</td>
+</tr>
+</tbody></table>
+<p>而厂商自己的解码耗时，828 次采样<strong>全部是 14ms</strong>，纹丝不动。</p>
+<p><strong>换句话说：VSP 硬件解码只占了 12%，88% 的时间是我们的后处理。</strong> 硬件完全不是瓶颈，瓶颈在”把解码好的帧搬到屏幕上”这段路上。</p>
+<p>这个认知很重要——它意味着所有”优化硬解性能”的方向都是错的，方向应该是”优化数据搬运”。</p>
+<h2 id="三、突破：uncached-内存是元凶"><a href="#三、突破：uncached-内存是元凶" class="headerlink" title="三、突破：uncached 内存是元凶"></a>三、突破：uncached 内存是元凶</h2><p>读帧段 44.3ms 干的事就一件：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">memcpy</span>(g_stage, q, <span class="number">0x2FC000</span>);   <span class="comment">/* 3MB，从 ION VA 拷到 staging */</span></span><br></pre></td></tr></table></figure>
+
+<p>3MB &#x2F; 44.3ms &#x3D; <strong>68MB&#x2F;s</strong>。这个带宽低得离谱——正常 DDR 内存 memcpy 能到 1GB&#x2F;s 以上。</p>
+<p>原因在 ION 分配的 <code>flags</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ad.len = FSZ; ad.align = <span class="number">0x1000</span>; ad.mask = <span class="number">8</span>;   <span class="comment">/* flags 默认为 0 */</span></span><br></pre></td></tr></table></figure>
+
+<p><code>flags=0</code> 意味着 <strong>uncached 映射</strong>。在 uncached 映射上，每读一个 cache line 都要独立发起一次总线事务，硬件预取完全帮不上忙，68MB&#x2F;s 就是这么来的。</p>
+<p>改成 <code>flags=1</code>（cached），CPU 侧走普通 load&#x2F;store：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (cached_mode()) ad.flags = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>但这里有个<strong>必须配套的 DMA 一致性处理</strong>：VSP 是用 DMA 往这块内存写帧的，CPU cache 里可能还留着 DMA 之前的旧数据。所以读之前必须先 invalidate：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* ION_IOC_INV = _IOW(&#x27;I&#x27;,14,void*) = 0xc0104914 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">ion_inv_out</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; g_gh_n; i++)</span><br><span class="line">        <span class="keyword">if</span> (g_ion_handle[i])</span><br><span class="line">            ioctl(g_ionfd, <span class="number">0xc0104914</span>, &amp;g_ion_handle[i]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>这里踩了一个坑，位置很关键</strong>：invalidate 必须在 staging memcpy <strong>之前</strong>。因为 memcpy 的源就是那块 DMA 区，先拷后 invalidate 等于白做。原来的代码只在 pipeline 路径的渲染线程里做了一次 invalidate，而且是在 memcpy 之后——单线程路径开着 cached 就会读到脏数据（花屏）。</p>
+<p>A&#x2F;B 实测（同源、同长度、只切一个变量）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">读帧=44.3ms  →  读帧=2.6ms        （17 倍）</span><br><span class="line">墙钟=113.0ms →  墙钟=71.4ms</span><br><span class="line">真实帧率 8.45fps → 12.7fps</span><br></pre></td></tr></table></figure>
+
+<p>画面质量同时验证过：前三帧的 Y 平面抽稀非零计数是 8151&#x2F;8150&#x2F;8154，三帧的签名哈希互不相同——说明是真实变化的画面，不是黑屏也不是花屏。</p>
+<p><strong>教训二：当一个数字明显偏离物理常识时（68MB&#x2F;s），先怀疑映射属性，再怀疑算法。</strong> 同样的 memcpy，改一个 flag 就快 17 倍。</p>
+<h2 id="四、被推翻的方案：换个堆来躲池子"><a href="#四、被推翻的方案：换个堆来躲池子" class="headerlink" title="四、被推翻的方案：换个堆来躲池子"></a>四、被推翻的方案：换个堆来躲池子</h2><p>改完 cached 之后我遇到一个新问题：厂商解码器的 C1 缓冲区分配开始报 OOM：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ioctl c0144900 failed with code -1: Out of memory</span><br></pre></td></tr></table></figure>
+
+<p>更糟的是，厂商拿不到 C1 之后会<strong>退回到 CPU 虚拟地址</strong>当物理地址用（”三级取址全失败 → 退回 CPU VA(假PA, 花帧风险!)”），然后 VSP 往一个无效地址写帧 → SIGSEGV。</p>
+<p>诊断后发现是<strong>同池竞争</strong>：我们的输出 buffer 是 3.2MB，必须 order-8 连续块；而厂商那 5 块 638KB 的 C1 DPB 也要 order-8（它的 <code>align=8</code>）。carveout 池里的 order-8 大块总数只有 4 块（8MB），我们占 1 块，厂商就不够了。</p>
+<p>我的第一反应是：<strong>那我们换个池子不就行了</strong>——把输出 buffer 改用 <code>mask=2</code>（System RAM）而不是 <code>mask=8</code>（carveout_mm）。厂商自己的 2MB C1 本来就用 mask&#x3D;2，看起来完全可行。</p>
+<p>于是我改代码、编译、部署、跑验证。<strong>然后设备直接重启了。</strong></p>
+<p>没有 oops，没有 panic，<code>/proc/sys/kernel/watchdog</code> &#x3D; 1，dmesg 是一堆 <code>powerdown_cpus</code>。查物理地址才发现原因：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">厂商 2MB C1 (mask=2):  真PA = 0x9f800000   ← carveout 窗口内</span><br><span class="line">我们的输出 (mask=8):   真PA = 0x9fa00000   ← carveout 窗口内</span><br></pre></td></tr></table></figure>
+
+<p><strong>mask&#x3D;2 和 mask&#x3D;8 拿到的是同一个 carveout 区域</strong>（0x9f8xxxxx），并不是”System RAM”。而真正的 System RAM 在 0x80000000-0xbfffffff，mask&#x3D;2 抢到的是那里的高地址——<strong>超出了 VSP 硬件能访问的地址窗口</strong>，VSP 往那儿写就飞了，硬件看门狗直接复位。</p>
+<p><strong>教训三：同一个 mask 名字在不同上下文里可能完全不是一回事。</strong> 我看到”厂商用 mask&#x3D;2 能成功”，就以为 mask&#x3D;2 &#x3D; System RAM &#x3D; 安全的另一块池子——但那两个 mask&#x3D;2 的分配落到了完全不同的物理区域，一个是 0x9f8xxxxx（carveout），一个是 0x8xxxxxxx（真 RAM）。<strong>参数名相同不等于语义相同，必须看实际物理地址。</strong></p>
+<p>好在这个方案在造成硬件复位之前就被测出来了，没有造成更大后果。回滚到 <code>mask=8</code>。</p>
+<h2 id="五、还有一个坑：cached-池是空的"><a href="#五、还有一个坑：cached-池是空的" class="headerlink" title="五、还有一个坑：cached 池是空的"></a>五、还有一个坑：cached 池是空的</h2><p>顺带查池子的时候还发现：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">carveout_mm:  10 order 4 highmem pages in uncached pool = 655360 total</span><br><span class="line">               0 order 4 highmem pages in   cached pool =       0 total</span><br></pre></td></tr></table></figure>
+
+<p><strong>cached pool 一页都没有。</strong> 也就是说 <code>flags=1</code> 的分配在 carveout 上是去一个空池子抢页，抢不到就失败。如果不处理，一次分配失败就会让厂商后面所有的 C1 分配连锁 OOM。</p>
+<p>所以 cached 分配必须带退路：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (ioctl(g_ionfd, <span class="number">0xc0144900</span>, &amp;ad) != <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (ad.flags) &#123;</span><br><span class="line">        ad.flags = <span class="number">0</span>;                          <span class="comment">/* 回退 uncached */</span></span><br><span class="line">        <span class="keyword">if</span> (ioctl(g_ionfd, <span class="number">0xc0144900</span>, &amp;ad) != <span class="number">0</span>) <span class="keyword">continue</span>;</span><br><span class="line">        g_cached_mode = <span class="number">0</span>;                     <span class="comment">/* 全局关掉 cached */</span></span><br><span class="line">        P(<span class="string">&quot;  [ion] cached 分配失败, 回退 uncached\n&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">continue</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>教训四：优化开关必须自带降级路径。</strong> 同一个开关，开&#x2F;关是两种都能跑的状态，而不是”开了就快、不开就慢”的二选一。</p>
+<h2 id="六、再进一步：把渲染的-30ms-也拆开"><a href="#六、再进一步：把渲染的-30ms-也拆开" class="headerlink" title="六、再进一步：把渲染的 30ms 也拆开"></a>六、再进一步：把渲染的 30ms 也拆开</h2><p>改完 cached，我给 <code>fb_render</code> 加了分段计时（转换 vs 写 fb）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[perf] fb_render 均值 32ms (换算上限 31 fps) | 转换 30ms 写fb 1ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>写 fb 只占 1ms</strong>——3.6MB 写进 mmap 的 framebuffer 几乎不花钱（内存带宽足够）。30ms 全在”NV12 → ARGB + 旋转 + 3&#x2F;2 降采样”这段纯算术上。</p>
+<p>但纯算术不该这么慢。算一下：92 万像素，每像素 3 次乘法 + 6 次移位 + 6 次分支 clamp，<strong>总共 200 多万次乘加</strong>，在 Cortex-A7 上撑死 1~2ms。差的 28ms 去哪了？</p>
+<p><strong>cache miss。</strong> 渲染的访存模式是转置的——输出第 (oy, ox) 像素取源图的 <code>[1079-ox*3/2][oy*3/2]</code>，源行随输出列走、源列随输出行走，每个源像素的相邻输出像素在源图里隔了 1.5 像素。源图 3MB，一帧要跨 1080 个源行各取 720 个点，<strong>每次换行都是一次新的 cache line 拉取</strong>。</p>
+<p>这解释了为什么之前”查表化”反而更慢（39.3ms vs 32.5ms）——查表把 miss 从源侧搬到了表侧，净收益为零。</p>
+<p>解法不是改算法，是<strong>改分组粒度</strong>：原来的实现每次处理 16 个输出行（一个”带”），每个源行只读 24 字节（约 37% 条 cache line）。改成 64 行后，每个源行读 96 字节，而相邻带读的正是同一批 cache line 的相邻段——<strong>在 L2 里就能复用</strong>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> BANDH 64     <span class="comment">/* 16 → 64, 几何公式完全不变, 只改分组 */</span></span></span><br></pre></td></tr></table></figure>
+
+<p>实测：渲染 34.3 → <strong>30.3ms</strong>，真实帧率 12.4 → <strong>13.1fps</strong>。抓屏确认画面几何无任何变形（台标位置、字幕、色彩全部正常）。</p>
+<p><strong>教训五：算术便宜不代表访存便宜。</strong> 同样是 200 万次乘加，标量和 NEON 差不多；但”每个源像素拉一次 cache line”和”每 4 个源像素拉一次”，差 10 倍。</p>
+<h2 id="七、这一轮的账"><a href="#七、这一轮的账" class="headerlink" title="七、这一轮的账"></a>七、这一轮的账</h2><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>改前</th>
+<th>改后</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>真实画面更新率</td>
+<td>8.45 fps</td>
+<td><strong>13.1 fps</strong></td>
+</tr>
+<tr>
+<td>读帧段耗时</td>
+<td>44.3 ms</td>
+<td><strong>2.7 ms</strong></td>
+</tr>
+<tr>
+<td>渲染段耗时</td>
+<td>33.0 ms</td>
+<td><strong>30.3 ms</strong></td>
+</tr>
+<tr>
+<td>每帧墙钟</td>
+<td>113.0 ms</td>
+<td><strong>70.6 ms</strong></td>
+</tr>
+<tr>
+<td><code>[STAT]</code> 帧率口径</td>
+<td>虚高 2 倍</td>
+<td>真实帧数</td>
+</tr>
+</tbody></table>
+<p>厂商解码 14ms 是硬底线，理论上限 1000&#x2F;(14+30) ≈ 23fps。</p>
+<h2 id="八、这轮还踩了两个坑，值得单独记一笔"><a href="#八、这轮还踩了两个坑，值得单独记一笔" class="headerlink" title="八、这轮还踩了两个坑，值得单独记一笔"></a>八、这轮还踩了两个坑，值得单独记一笔</h2><h3 id="坑一：把”更省内存”当成”更好对齐”"><a href="#坑一：把”更省内存”当成”更好对齐”" class="headerlink" title="坑一：把”更省内存”当成”更好对齐”"></a>坑一：把”更省内存”当成”更好对齐”</h3><p>我们的输出 buffer 是 3.25MB，精确帧尺寸是 3.13MB——我以为首选精确尺寸能省 140KB、给厂商的 C1 多留点空间。结果 <strong>OOM 从 1 次涨到 28 次</strong>。</p>
+<p>原因很朴素：3.13MB 凑不出 order-8 的整块，3.25MB 能凑。<strong>尺寸阶梯的第一项不是”最省的”，是”最好对齐的”。</strong></p>
+<h3 id="坑二：perf-采样系数写死，两个指标开始互相打架"><a href="#坑二：perf-采样系数写死，两个指标开始互相打架" class="headerlink" title="坑二：perf 采样系数写死，两个指标开始互相打架"></a>坑二：perf 采样系数写死，两个指标开始互相打架</h3><p>把带高从 16 改成 64 之后，<code>[perf] fb_render 均值</code> 报 133ms，而 <code>[perf] AU</code> 里的”渲染&#x3D;”报 30.3ms——<strong>同一份代码，两个指标差 4 倍</strong>。</p>
+<p>采样换算系数是写死的 <code>* 20</code>（80 个带、每 20 个采样一次）。带高变 64 之后变成 20 个带、每 5 个采样一次，系数应该改成 <code>* 5</code>。这种”魔法数字”一旦和结构参数脱钩，指标就废了。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> FB_SAMPLE_MUL (1280 / BANDH / 5)   <span class="comment">/* 系数必须跟结构参数联动 */</span></span></span><br></pre></td></tr></table></figure>
+
+<p><strong>教训六：性能工具本身也是需要维护的代码。</strong> 它的常量跟被测对象耦合得越紧，改一边就要改另一边。</p>
+<h2 id="九、下一步"><a href="#九、下一步" class="headerlink" title="九、下一步"></a>九、下一步</h2><ol>
+<li><strong>带高继续加大</strong>（64 → 128 &#x2F; 256）：验证 DRAM 流量是否还能降，直到渲染段不再随带高变化</li>
+<li><strong>NEON 化 YUV→ARGB</strong>：设备 CPU（ARMv7 rev5）<strong>支持 neon</strong>，编译链也已带 <code>-mfpu=neon-vfpv4</code>，<br>之前只是没人写 intrinsics。算术部分（3 乘法 + clamp）用饱和指令 <code>vqmovun</code> 可以压到 1&#x2F;4</li>
+<li><strong>换转置的实现方式</strong>：当前是”读源侧顺序、写输出侧转置”，天然的 cache 灾难。<br>改成”双线性缩放 + 先缩到 720×1280 再转置”可能让访存变连续</li>
+<li><strong>fb 直写优化</strong>：当前是 mmap 写 3 页 fb + PAN，有没有硬件 overlay 路径</li>
+<li><strong>池冲突根治</strong>：让我们的输出分配排在厂商 C1 之后</li>
+</ol>
+<hr>
+<p><strong>最后一句</strong>：这轮最有价值的产出不是那 17 倍，而是<strong>把”16.9fps”这个假数字变成了”8.9fps”这个真数字</strong>。一个虚高的指标会让你以为”再优化一点就够了”，而真实数字告诉你：还差得远，但方向明确——不在解码，在搬运。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%9C%8B%E6%95%B0%E5%AD%97%EF%BC%9A16-9fps-%E6%98%AF%E5%81%87%E7%9A%84"><span class="toc-number">1.</span> <span class="toc-text">一、先看数字：16.9fps 是假的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%9C%9F%E6%AD%A3%E7%9A%84%E7%93%B6%E9%A2%88%EF%BC%9A88-%E7%9A%84%E6%97%B6%E9%97%B4%E4%B8%8D%E5%9C%A8%E8%A7%A3%E7%A0%81%E4%B8%8A"><span class="toc-number">2.</span> <span class="toc-text">二、真正的瓶颈：88% 的时间不在解码上</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%AA%81%E7%A0%B4%EF%BC%9Auncached-%E5%86%85%E5%AD%98%E6%98%AF%E5%85%83%E5%87%B6"><span class="toc-number">3.</span> <span class="toc-text">三、突破：uncached 内存是元凶</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E8%A2%AB%E6%8E%A8%E7%BF%BB%E7%9A%84%E6%96%B9%E6%A1%88%EF%BC%9A%E6%8D%A2%E4%B8%AA%E5%A0%86%E6%9D%A5%E8%BA%B2%E6%B1%A0%E5%AD%90"><span class="toc-number">4.</span> <span class="toc-text">四、被推翻的方案：换个堆来躲池子</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E8%BF%98%E6%9C%89%E4%B8%80%E4%B8%AA%E5%9D%91%EF%BC%9Acached-%E6%B1%A0%E6%98%AF%E7%A9%BA%E7%9A%84"><span class="toc-number">5.</span> <span class="toc-text">五、还有一个坑：cached 池是空的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%86%8D%E8%BF%9B%E4%B8%80%E6%AD%A5%EF%BC%9A%E6%8A%8A%E6%B8%B2%E6%9F%93%E7%9A%84-30ms-%E4%B9%9F%E6%8B%86%E5%BC%80"><span class="toc-number">6.</span> <span class="toc-text">六、再进一步：把渲染的 30ms 也拆开</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E8%BF%99%E4%B8%80%E8%BD%AE%E7%9A%84%E8%B4%A6"><span class="toc-number">7.</span> <span class="toc-text">七、这一轮的账</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E8%BF%99%E8%BD%AE%E8%BF%98%E8%B8%A9%E4%BA%86%E4%B8%A4%E4%B8%AA%E5%9D%91%EF%BC%8C%E5%80%BC%E5%BE%97%E5%8D%95%E7%8B%AC%E8%AE%B0%E4%B8%80%E7%AC%94"><span class="toc-number">8.</span> <span class="toc-text">八、这轮还踩了两个坑，值得单独记一笔</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9D%91%E4%B8%80%EF%BC%9A%E6%8A%8A%E2%80%9D%E6%9B%B4%E7%9C%81%E5%86%85%E5%AD%98%E2%80%9D%E5%BD%93%E6%88%90%E2%80%9D%E6%9B%B4%E5%A5%BD%E5%AF%B9%E9%BD%90%E2%80%9D"><span class="toc-number">8.1.</span> <span class="toc-text">坑一：把”更省内存”当成”更好对齐”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9D%91%E4%BA%8C%EF%BC%9Aperf-%E9%87%87%E6%A0%B7%E7%B3%BB%E6%95%B0%E5%86%99%E6%AD%BB%EF%BC%8C%E4%B8%A4%E4%B8%AA%E6%8C%87%E6%A0%87%E5%BC%80%E5%A7%8B%E4%BA%92%E7%9B%B8%E6%89%93%E6%9E%B6"><span class="toc-number">8.2.</span> <span class="toc-text">坑二：perf 采样系数写死，两个指标开始互相打架</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">9.</span> <span class="toc-text">九、下一步</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&text=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&title=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&is_video=false&description=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）&body=Check out this article: https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&title=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&title=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&title=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&title=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/&name=nettv-21：16.9fps 是假的——帧率统计口径骗了我们三个月，以及一个 17 倍的读帧提速（SC9832A 硬解排查实录）&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
