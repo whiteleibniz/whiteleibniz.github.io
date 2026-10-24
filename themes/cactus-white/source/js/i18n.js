@@ -9,6 +9,18 @@
   var PREFIX = { 'zh-CN': '', 'zh-TW': '/zh-tw', 'en': '/en' };
 
   var DICT = {
+    'zh-CN': {
+      nav: { home: '首页', about: '关于', article: '文章', Search: '搜索' },
+      pag: { prev: '上一页', next: '下一页', total: '（第 %d / %d 页）' },
+      search: {
+        placeholder: '搜索…',
+        noresult: '没有找到结果',
+        found: '共找到 %d 篇文章',
+        indexed: '已索引 %d 篇文章',
+        failed: '索引加载失败，请刷新页面'
+      }
+      /* 分类名在简体站即源中文名, 无需翻译 */
+    },
     'zh-TW': {
       nav: { home: '首頁', about: '關於', article: '文章', Search: '搜尋' },
       pag: { prev: '上一頁', next: '下一頁', total: '（第 %d / %d 頁）' },
@@ -53,17 +65,19 @@
     }
   };
 
+  /* 兼容带/不带尾斜杠: /en 与 /en/ 都识别为 en */
   function detect(path) {
-    if (path.indexOf('/en/') === 0) return 'en';
-    if (path.indexOf('/zh-tw/') === 0) return 'zh-TW';
+    if (/^\/en(\/|$)/.test(path)) return 'en';
+    if (/^\/zh-tw(\/|$)/.test(path)) return 'zh-TW';
     return 'zh-CN';
   }
 
   /* 关于页各语言 slug 不同(中文站 /关于/, 英文站 /en/about/) */
   var ABOUT = { 'zh-CN': '/关于/', 'zh-TW': '/zh-tw/关于/', 'en': '/en/about/' };
 
+  /* 兼容带/不带尾斜杠的前缀剥离 */
   function stripPrefix(path) {
-    return path.replace(/^\/(en|zh-tw)\//, '/');
+    return path.replace(/^\/(en|zh-tw)(\/|$)/, '/');
   }
 
   function switchUrl(path, target) {
@@ -92,7 +106,10 @@
     return s.replace(/%d/g, function () { return args[i++]; });
   }
 
-  /* ① 语言切换器 */
+  /* ① 语言切换器: 模板里的 a 初始为 javascript:void(0), 此处改写为真实目标 URL。
+        即便 header.ejs 已服务端直出正确 href(双保险), 这里再设一次也是幂等;
+        且对尚未部署服务端直出版本的旧页面(void(0))正是修复切换的关键。
+        localizeLink 已对 .lang-switch 内链接做 closest 防御, 不会篡改本段结果。 */
   var switches = document.querySelectorAll('.lang-switch a[data-lang]');
   Array.prototype.forEach.call(switches, function (a) {
     var target = a.getAttribute('data-lang');
@@ -103,13 +120,18 @@
   /* ② 站内链接加语言前缀(导航/分类下拉/正文内链; 资源路径除外) */
   var ASSET = /^\/(images|lib|css|js|downloads|favicon[^/]*)/;
   function localizeLink(a) {
+    /* 语言切换器链接由 header.ejs 服务端直出, 勿被 .content a 等本地化逻辑改写
+       (header 被包在 .content 内, 否则会把 zh-CN 的 "/" 误加成 "/en/") */
+    if (a.closest && a.closest('.lang-switch')) return;
     var href = a.getAttribute('href');
     if (!href || href.charAt(0) !== '/' || href.indexOf('//') === 0) return;
     if (ASSET.test(href)) return;
     if (href.indexOf('/en/') === 0 || href.indexOf('/zh-tw/') === 0) return;
-    if (href === '/关于/' || href.indexOf('/关于/') === 0) {
-      if (lang === 'en') { a.setAttribute('href', href.replace('/关于/', '/en/about/')); return; }
-      if (lang === 'zh-TW') { a.setAttribute('href', href.replace('/关于/', '/zh-tw/关于/')); return; }
+    /* about 链接可能已被 url_for 编码为 /%E5%85%B3%E4%BA%8E/ , 需解码后匹配 */
+    var dec = decodeURIComponent(href);
+    if (dec === '/关于/' || dec.indexOf('/关于/') === 0) {
+      if (lang === 'en') { a.setAttribute('href', '/en/about/'); return; }
+      if (lang === 'zh-TW') { a.setAttribute('href', '/zh-tw/关于/'); return; }
       return;
     }
     if (pre === '') return;

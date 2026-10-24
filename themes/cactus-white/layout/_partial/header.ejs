@@ -1,3 +1,21 @@
+<%
+/* 服务端直出语言切换链接(不依赖 JS, 兼容带/不带尾斜杠) */
+function _toPN(p){ if(!p || p==='index.html') return '/'; return '/' + String(p).replace(/index\.html$/,'').replace(/\/$/,'') + '/'; }
+function _langOf(pn){ if(pn.indexOf('/en/')===0) return 'en'; if(pn.indexOf('/zh-tw/')===0) return 'zh-TW'; return 'zh-CN'; }
+var _curPN = _toPN(page.path);
+var _curLang = _langOf(_curPN);
+var _ABOUT = { 'zh-CN':'/关于/', 'zh-TW':'/zh-tw/关于/', 'en':'/en/about/' };
+function _sw(pn, target){
+  var cur = _langOf(pn);
+  if (cur === target) return pn;
+  if (pn === _ABOUT[cur] || pn.replace(/index\.html$/,'') === _ABOUT[cur].replace(/index\.html$/,'') ) return _ABOUT[target];
+  var base = pn.replace(/^\/(en|zh-tw)\//, '/');
+  var pre = target==='en' ? '/en' : target==='zh-TW' ? '/zh-tw' : '';
+  if (base === '/' || base === '') return pre === '' ? '/' : pre + '/';
+  return pre + base;
+}
+var _LANGS = [['zh-CN','简体'],['zh-TW','繁體'],['en','EN']];
+%>
 <header id="header">
     <a href="<%- url_for("/") %>">
         <% if (theme.customize.logo && theme.customize.logo.enabled) { %>
@@ -35,7 +53,9 @@
             <% } %>
             <% } %>
             <li class="lang-switch">
-                <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+                <% _LANGS.forEach(function (L, k) { var _code = L[0]; var _href = _sw(_curPN, _code); var _cls = (_code === _curLang) ? 'current' : ''; %>
+                <a href="<%= _href %>" data-lang="<%= _code %>" class="<%= _cls %>"><%= L[1] %></a><% if (k < _LANGS.length - 1) { %><span class="lang-sep">/</span><% } %>
+                <% }); %>
             </li>
         </ul>
     </div>
