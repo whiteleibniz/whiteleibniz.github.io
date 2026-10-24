@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Part 14 of the series. The previous part (13) identified the “O_SYNC logging” as the invisible frame-rate killer and turned it off by default.This part answers:">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Part 14 of the series. The previous part (13) identified the “O_SYNC logging” as the invisible frame-rate killer and turned it off by default.This part answers:">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-20T06:45:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:38:08.060Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="framebuffer">
+<meta property="article:tag" content="Performance Profiling">
+<meta property="article:tag" content="HLS">
+<meta property="article:tag" content="H.264 Hardware Decoding">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/21/nettv-18-dl-child-exec-ld-library-path/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&text=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&title=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&title=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&title=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&title=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&title=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&name=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-First-Settling-a-Loose-End-from-the-Previous-Part"><span class="toc-number">1.</span> <span class="toc-text">1. First, Settling a Loose End from the Previous Part</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Real-Baseline-After-Diagnostics-Off-by-Default"><span class="toc-number">2.</span> <span class="toc-text">2. The Real Baseline After Diagnostics-Off by Default</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Math-Is-25fps-Within-Budget"><span class="toc-number">3.</span> <span class="toc-text">3. The Math: Is 25fps Within Budget</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Next-Steps-Single-Variable-Order"><span class="toc-number">4.</span> <span class="toc-text">4. Next Steps (Single-Variable Order)</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-20T06:45:00.000Z" itemprop="datePublished">2026-10-20</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/H-264-Hardware-Decoding/" rel="tag">H.264 Hardware Decoding</a>, <a class="tag-link-link" href="/tags/HLS/" rel="tag">HLS</a>, <a class="tag-link-link" href="/tags/Performance-Profiling/" rel="tag">Performance Profiling</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/framebuffer/" rel="tag">framebuffer</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Part 14 of the series. The previous part (13) identified the “O_SYNC logging” as the invisible frame-rate killer and turned it off by default.<br>This part answers: with it off, how many frames do we actually get? The answer is <strong>17fps</strong> — and how <code>dup2</code><br>misled me into almost judging “running fine” as “0 frames”.</p>
+</blockquote>
+<h2 id="1-First-Settling-a-Loose-End-from-the-Previous-Part"><a href="#1-First-Settling-a-Loose-End-from-the-Previous-Part" class="headerlink" title="1. First, Settling a Loose End from the Previous Part"></a>1. First, Settling a Loose End from the Previous Part</h2><p>The previous part ended with the A&#x2F;B experiment blocked by the user’s desktop playback occupying the ION pool; the rerun finally produced real data.<br>But the very first rerun hit something bizarre: both group A and group B logs were only <strong>271~291 bytes, 6 lines</strong>,<br>with frame count 0, heartbeat 0, and perf summary 0 — identical to the last time the “pool was occupied”.</p>
+<p>But this time the ION pool was empty (my instance ran <code>earlyion g_nout=1</code>, and <code>out[0]</code> obtained a real 3.2MB physical address).<br>So we did a single-variable reproduction: <strong>add only <code>NETTV_VLOG=1</code></strong> (enable verbose logging, change nothing else) —<br>48 frames in 12 seconds, everything normal.</p>
+<p>In other words: <strong>VLOG&#x3D;0, no frames; VLOG&#x3D;1, frames.</strong> How could a single environment variable control whether frames come out?<br>Tracing every reference to <code>vlog_on()</code> in the source, we caught the culprit at line 193:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">child_log_bound</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (vlog_on()) <span class="keyword">return</span>;   <span class="comment">/* debug mode: keep the caller&#x27;s redirection */</span></span><br><span class="line">    <span class="type">int</span> f = open(<span class="string">&quot;/tmp/nettv_child.log&quot;</span>, O_WRONLY | O_CREAT | O_TRUNC, <span class="number">0644</span>);</span><br><span class="line">    <span class="keyword">if</span> (f &lt; <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">    dup2(f, <span class="number">1</span>); dup2(f, <span class="number">2</span>);  <span class="comment">/* ← the child&#x27;s stdout is swapped to a file */</span></span><br><span class="line">    <span class="keyword">if</span> (f &gt; <span class="number">2</span>) close(f);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This is the “cap disk usage” design added on 10-16: in non-debug mode, the child process’s stdout is redirected to<br><code>/tmp/nettv_child.log</code>, preventing the library’s per-frame prints from bloating <code>/tmp/lvgl_demo.log</code> to 131MB.<br><strong>After the redirection, the frame stats <code>[STAT]</code>, the per-200-AU perf summary <code>[perf]</code>, and the frame-on-screen markers<br>all go into <code>nettv_child.log</code></strong> — while the main log is left with only the startup banner lines.</p>
+<blockquote>
+<p>Groups A and B were producing frames normally all along. A 271-byte main log ≠ 0 frames.<br>When I saw <code>FilledDone decoded frame</code> appear in <code>nettv_child.log</code>, I still judged it to be “output from the user session”.</p>
+</blockquote>
+<p><strong>Lesson (now a project iron rule)</strong>: to judge “is the player producing frames, and at what frame rate”, you must<br><code>grep /tmp/nettv_child.log</code> (<code>FilledDone</code> &#x2F; <code>on-screen</code> &#x2F; <code>[STAT]</code> &#x2F; <code>[perf]</code>);<br>never look at the main log. For any process whose stdout has been through <code>dup2</code>, the main log’s line count tells you nothing.<br>Also note that at source line 191, <code>kdiag_on()</code> is implemented as <code>g_kdiag || vlog_on()</code> —<br><strong>setting <code>NETTV_VLOG=1</code> turns on all kdiag diagnostics as a side effect</strong>; watch for this coupling when debugging.</p>
+<h2 id="2-The-Real-Baseline-After-Diagnostics-Off-by-Default"><a href="#2-The-Real-Baseline-After-Diagnostics-Off-by-Default" class="headerlink" title="2. The Real Baseline After Diagnostics-Off by Default"></a>2. The Real Baseline After Diagnostics-Off by Default</h2><p>Rerun with the corrected criterion (Luxian 1080p source, completely fresh default environment, 60 seconds):</p>
+<ul>
+<li><strong>825 frames &#x2F; 48.4 seconds, <code>[STAT] fps_x10=170</code>, i.e. 17fps</strong></li>
+<li>vs the previous part’s v15 (diagnostics all on) at 13.2fps: <strong>+29%</strong> — the diagnostics-off-by-default fix is confirmed effective, no regression</li>
+</ul>
+<p><code>[perf]</code> per-AU breakdown (wall-clock mean 112ms):</p>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>Time</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>segment loop &#x2F; DRIVE</td>
+<td><strong>32.4ms</strong></td>
+<td>hardware decode 14ms (vendor self-report) + ~18ms library-side (phys ioctl address lookup, bind&#x2F;unbind, double FilledDone)</td>
+</tr>
+<tr>
+<td>snap_state</td>
+<td>0ms</td>
+<td>kdiag gating in effect ✓</td>
+</tr>
+<tr>
+<td>frame readback</td>
+<td><strong>45.5ms</strong></td>
+<td>3MB memcpy to cached staging ~20ms + content signature scan ~25ms</td>
+</tr>
+<tr>
+<td>fb_render</td>
+<td><strong>30.5ms</strong></td>
+<td>CPU single-pass geometric composition (scale + rotate + NV12→ARGB), sampled mean 34ms</td>
+</tr>
+<tr>
+<td>rest</td>
+<td>~3.6ms</td>
+<td>tail fill(out) requeue, etc.</td>
+</tr>
+</tbody></table>
+<h2 id="3-The-Math-Is-25fps-Within-Budget"><a href="#3-The-Math-Is-25fps-Within-Budget" class="headerlink" title="3. The Math: Is 25fps Within Budget"></a>3. The Math: Is 25fps Within Budget</h2><p>25fps requires ≤40ms&#x2F;AU; we’re at 112ms. Cut segment by segment:</p>
+<ol>
+<li><strong>Cut &#x2F; down-rate the signature scan</strong> (frame readback 45.5→~22ms): the signature exists to dedupe “unchanged picture, don’t re-render”,<br>but the vendor’s <code>FilledDone</code> callback fires every frame (the heartbeat is built on it), so dedupe can switch to callback counting entirely —<br>no need for the CPU to scan 8K sample points; for the Y-nonzero emptiness check, keep only the first few frames.</li>
+<li><strong>NEON-ize fb_render</strong> (30.5→~10ms): geometric composition is regular fixed-point arithmetic,<br>and ARMv7 NEON has mature idioms.</li>
+<li><strong>Cache the DRIVE library side</strong> (32.4→~24ms): phys ioctl re-queries fd→PA every AU;<br>caching by fd saves half.</li>
+<li>All three cuts applied: 24 + 22 + 10 &#x3D; <strong>56ms ≈ 18fps — still not enough.</strong></li>
+</ol>
+<p><strong>Conclusion: cutting alone cannot reach 25fps; the only way is pipelining.</strong> Today the worker is purely serial:<br>during the 32ms of decoding the CPU waits; during the 30ms of rendering the VSP idles. Just move “frame readback + render” into<br>the <strong>parallel window</strong> while the next frame decodes (Android’s BufferQueue model), and the single-AU wall clock approaches<br><code>max(decode, render) ≈ 35ms</code>, <strong>about 28fps</strong>.</p>
+<p>The pipeline’s hard constraint is the old one: <strong>double buffering needs 2×3.1MB output + mbinfo 653KB + 256KB input<br>≈ 7.1MB, while the CMA pool is nominally only ~7MB</strong>. Either grow the pool first (kernel cmdline),<br>or bet the pool is actually looser than nominal (the vendor init grabs the C1 pool, not necessarily all inside CMA).<br>That’s also the first thing the next part will experiment on.</p>
+<h2 id="4-Next-Steps-Single-Variable-Order"><a href="#4-Next-Steps-Single-Variable-Order" class="headerlink" title="4. Next Steps (Single-Variable Order)"></a>4. Next Steps (Single-Variable Order)</h2><ol>
+<li>Down-rate the signature scan (frame readback 45.5→~22ms; the safest cut, do it first)</li>
+<li>NEON geometric composition in fb_render (30.5→~10ms)</li>
+<li>Double-buffered pipeline (squeeze 2 channels out of the CMA pool) — decides whether 25fps+ is reachable</li>
+<li>fd→PA cache inside DRIVE</li>
+<li>Farther out: recon the display driver’s overlay capability — NV12 sent straight to the display layer + hardware rotation,<br>eliminating the entire CPU composition (benchmark against Android’s HWComposer)</li>
+</ol>
+<hr>
+<p><em>The articles and experiment scripts in this series are maintained alongside the project; they represent only a personal record of embedded learning and debugging.</em><br><em>This article is an original technical summary. Please credit the source when reposting; commercial use is prohibited.</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-First-Settling-a-Loose-End-from-the-Previous-Part"><span class="toc-number">1.</span> <span class="toc-text">1. First, Settling a Loose End from the Previous Part</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Real-Baseline-After-Diagnostics-Off-by-Default"><span class="toc-number">2.</span> <span class="toc-text">2. The Real Baseline After Diagnostics-Off by Default</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Math-Is-25fps-Within-Budget"><span class="toc-number">3.</span> <span class="toc-text">3. The Math: Is 25fps Within Budget</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Next-Steps-Single-Variable-Order"><span class="toc-number">4.</span> <span class="toc-text">4. Next Steps (Single-Variable Order)</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&text=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&title=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&title=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&title=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&title=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&title=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/&name=netTV Hardware Decoding Deep Dive (14): The 17fps Baseline and a dup2 Misjudgment — Judging Whether Frames Are Coming Out Can&#39;t Rely on the Main Log Alone&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

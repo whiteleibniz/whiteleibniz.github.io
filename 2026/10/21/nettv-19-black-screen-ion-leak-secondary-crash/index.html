@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="用户推门进来就一句：”网络电视黑屏无反应了。” 设备 ping 通、SSH 正常、桌面进程 lvgl_demo 还活着——但播放器 nettv_player 的 monitor 看门狗正在无限重启循环，每一轮 worker 都以 exit 11 收场，屏幕自然永远黑着。 这篇记录这次排查，重点不是”修了什么代码”，而是一个反复咬人的教训：你盯了半个月的”必崩”结论，可能只是另一场崩溃的次生现象。">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English  用户推门进来就一句：”网络电视黑屏无反应了。” 设备 ping 通、SSH 正常、桌面进程 lvgl_demo 还活着——但播放器 nettv_player 的 monitor 看门狗正在无限重启循环，每一轮 worker 都以 exit 11 收场，屏幕自然永远黑着。 这篇记录这次排查，重点不是”修了什么代码”，而是一个反复咬人的教训：">
 <meta property="og:type" content="article">
 <meta property="og:title" content="nettv-19：黑屏无反应？——当&quot;必崩&quot;结论撞上 ION 泄漏的次生崩溃（SC9832A 硬解排查实录）">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="用户推门进来就一句：”网络电视黑屏无反应了。” 设备 ping 通、SSH 正常、桌面进程 lvgl_demo 还活着——但播放器 nettv_player 的 monitor 看门狗正在无限重启循环，每一轮 worker 都以 exit 11 收场，屏幕自然永远黑着。 这篇记录这次排查，重点不是”修了什么代码”，而是一个反复咬人的教训：你盯了半个月的”必崩”结论，可能只是另一场崩溃的次生现象。">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English  用户推门进来就一句：”网络电视黑屏无反应了。” 设备 ping 通、SSH 正常、桌面进程 lvgl_demo 还活着——但播放器 nettv_player 的 monitor 看门狗正在无限重启循环，每一轮 worker 都以 exit 11 收场，屏幕自然永远黑着。 这篇记录这次排查，重点不是”修了什么代码”，而是一个反复咬人的教训：">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-21T01:30:00.000Z">
-<meta property="article:modified_time" content="2026-10-21T01:13:07.491Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:04.240Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="SC9832A">
 <meta property="article:tag" content="VSP">
@@ -79,10 +79,10 @@
   <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/2026/10/21/nettv-18-dl-child-exec-ld-library-path/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -148,7 +148,10 @@
   
 
   <div class="content" itemprop="articleBody">
-    <p>用户推门进来就一句：”网络电视黑屏无反应了。”</p>
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash-en/">English</a></p>
+</blockquote>
+<p>用户推门进来就一句：”网络电视黑屏无反应了。”</p>
 <p>设备 ping 通、SSH 正常、桌面进程 <code>lvgl_demo</code> 还活着——但播放器 <code>nettv_player</code> 的 monitor 看门狗正在无限重启循环，每一轮 worker 都以 <code>exit 11</code> 收场，屏幕自然永远黑着。</p>
 <p>这篇记录这次排查，重点不是”修了什么代码”，而是一个反复咬人的教训：<strong>你盯了半个月的”必崩”结论，可能只是另一场崩溃的次生现象。</strong></p>
 <h2 id="一、现场：进程活着，帧数为零"><a href="#一、现场：进程活着，帧数为零" class="headerlink" title="一、现场：进程活着，帧数为零"></a>一、现场：进程活着，帧数为零</h2><p>先看三件套：进程树、日志尾部、dmesg。</p>

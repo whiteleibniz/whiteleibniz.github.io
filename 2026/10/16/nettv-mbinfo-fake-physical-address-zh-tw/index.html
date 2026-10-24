@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  前面三篇把 VSP 硬解從「切軟解」裡救了回來，畫面也出來了。但真機上還有兩個症狀沒解決：抓螢幕有 1&#x2F;3 的塊狀馬賽克，以及播到第 3 個 GOP 的 IDR 時解碼器永久掛死。這篇記錄怎麼把這兩件事收斂到同一個嫌">
+<meta property="og:type" content="article">
+<meta property="og:title" content="展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1&#x2F;3 馬賽克與 IDR 掛死的共同嫌疑">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  前面三篇把 VSP 硬解從「切軟解」裡救了回來，畫面也出來了。但真機上還有兩個症狀沒解決：抓螢幕有 1&#x2F;3 的塊狀馬賽克，以及播到第 3 個 GOP 的 IDR 時解碼器永久掛死。這篇記錄怎麼把這兩件事收斂到同一個嫌">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-15T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:25:29.920Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="展訊">
+<meta property="article:tag" content="DMA">
+<meta property="article:tag" content="ION">
+<meta property="article:tag" content="m3u8">
+<meta property="article:tag" content="CMA">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/16/nettv-mbinfo-fake-physical-address-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/16/nettv-mbinfo-fake-physical-address/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&text=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&title=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&is_video=false&description=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑&body=Check out this article: https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&title=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&title=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&title=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&title=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&name=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%B8%89%E6%A2%9D%E8%AD%89%E6%93%9A%E6%8C%87%E5%90%91%E5%90%8C%E4%B8%80%E8%99%95"><span class="toc-number">1.</span> <span class="toc-text">一、三條證據指向同一處</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%A8%8B%E5%BC%8F%E7%A2%BC%E8%A3%A1%E7%9A%84%E4%B8%8D%E5%B0%8D%E7%A8%B1%EF%BC%9A%E5%90%8C%E4%B8%80%E5%80%8B%E5%87%BD%E5%BC%8F%E5%BA%AB%EF%BC%8C%E5%85%A9%E6%A2%9D%E8%B7%AF%E5%BE%91"><span class="toc-number">2.</span> <span class="toc-text">二、程式碼裡的不對稱：同一個函式庫，兩條路徑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%9A%E4%B8%89%E7%B4%9A%E5%85%9C%E5%BA%95-%E9%80%A3%E7%BA%8C%E6%80%A7%E6%8A%BD%E9%A9%97-%E9%87%8D%E7%94%A8%E5%A1%8A%E6%8C%91%E9%81%B8"><span class="toc-number">3.</span> <span class="toc-text">三、修法：三級兜底 + 連續性抽驗 + 重用塊挑選</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%8E%E9%BA%BC%E5%88%A4%E6%96%B7%E4%BF%AE%E6%B2%92%E4%BF%AE%E5%A5%BD"><span class="toc-number">4.</span> <span class="toc-text">四、怎麼判斷修沒修好</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%80%E5%8F%A5%E8%A9%B1%E6%95%99%E8%A8%93"><span class="toc-number">5.</span> <span class="toc-text">五、一句話教訓</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%8A%E6%A9%9F%E9%A9%97%E8%AD%89%E7%B5%90%E6%9E%9C%EF%BC%882026-10-16-%E6%99%9A%E9%96%93%EF%BC%89"><span class="toc-number">6.</span> <span class="toc-text">六、上機驗證結果（2026-10-16 晚間）</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-15T18:00:00.000Z" itemprop="datePublished">2026-10-16</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/CMA/" rel="tag">CMA</a>, <a class="tag-link-link" href="/tags/DMA/" rel="tag">DMA</a>, <a class="tag-link-link" href="/tags/ION/" rel="tag">ION</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/m3u8/" rel="tag">m3u8</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A/" rel="tag">展訊</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。</p>
+</blockquote>
+<p>前面三篇把 VSP 硬解從「切軟解」裡救了回來，畫面也出來了。但真機上還有兩個症狀沒解決：<strong>抓螢幕有 1&#x2F;3 的塊狀馬賽克</strong>，以及<strong>播到第 3 個 GOP 的 IDR 時解碼器永久掛死</strong>。這篇記錄怎麼把這兩件事收斂到同一個嫌疑——mbinfo 緩衝的<strong>假物理位址</strong>，以及對應的修法。</p>
+<h2 id="一、三條證據指向同一處"><a href="#一、三條證據指向同一處" class="headerlink" title="一、三條證據指向同一處"></a>一、三條證據指向同一處</h2><table>
+<thead>
+<tr>
+<th>證據</th>
+<th>觀察</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>日誌</td>
+<td><code>复用块#n/5 (pa=0x00000000)</code> —— 重用的 mbinfo 塊實體位址是 0</td>
+</tr>
+<tr>
+<td>抓螢幕</td>
+<td>畫面 2&#x2F;3 乾淨、1&#x2F;3 塊狀馬賽克，邊界整齊，像「一部分資料沒寫到」</td>
+</tr>
+<tr>
+<td>時序</td>
+<td>掛死點每次都出現在餵 IDR 時 <code>DRIVE empty(全量)</code> 永不返回</td>
+</tr>
+</tbody></table>
+<p>VSP 是 DMA 設備，它寫宏塊資訊用的位址來自 <code>Get_phy_addr_from_ion</code> &#x2F; <code>Get_iova</code>。如果這塊位址是 0（或者乾脆是 CPU 虛擬位址），DMA 就寫到實體位址 0 附近的亂七八糟的地方——馬賽克和掛死都能解釋。</p>
+<h2 id="二、程式碼裡的不對稱：同一個函式庫，兩條路徑"><a href="#二、程式碼裡的不對稱：同一個函式庫，兩條路徑" class="headerlink" title="二、程式碼裡的不對稱：同一個函式庫，兩條路徑"></a>二、程式碼裡的不對稱：同一個函式庫，兩條路徑</h2><p>翻原始碼才發現一個很隱蔽的不對稱：<strong>靜態版 <code>Get_iova</code> 有三層兜底，建構路徑 <code>MemoryHeapIon::C1</code> 只有兩層</strong>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Get_iova：真查 → 查表 → mmap + pagemap    ← 有第三招 */</span></span><br><span class="line"><span class="keyword">if</span> (ion_phys(buf_fd, iova, sz) == <span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"><span class="keyword">if</span> (map_get(buf_fd, &amp;base, &amp;size) != <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="type">void</span> *m = mmap(<span class="literal">NULL</span>, <span class="number">0x400000</span>, PROT_READ, MAP_SHARED, buf_fd, <span class="number">0</span>);</span><br><span class="line">    base = pa_of(m);                       <span class="comment">/* /proc/self/pagemap */</span></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* C1：0xc008602a → cmd0 → 直接把 CPU VA 當 PA 用   ← 缺了 pagemap */</span></span><br><span class="line">map_add(buf_fd, (<span class="type">unsigned</span> <span class="type">long</span>)base, size);  <span class="comment">/* 假 PA */</span></span><br></pre></td></tr></table></figure>
+
+<p><code>0xc008602a</code> 與 <code>cmd0(0xc0084906)</code> 對某些 ION heap 恆返回 EINVAL（比如非 CMA 的 system heap），於是 mbinfo 一路走到「退回 CPU VA」分支——<strong>假 PA 就是這麼來的</strong>。10-15 的日誌裡所有 mbinfo 塊都在走這條分支。</p>
+<h2 id="三、修法：三級兜底-連續性抽驗-重用塊挑選"><a href="#三、修法：三級兜底-連續性抽驗-重用塊挑選" class="headerlink" title="三、修法：三級兜底 + 連續性抽驗 + 重用塊挑選"></a>三、修法：三級兜底 + 連續性抽驗 + 重用塊挑選</h2><p>第一層補上 pagemap，第二層判斷這塊記憶體到底能不能給 DMA 用，第三層保證重用時不挑到壞塊。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* ① 抽驗實體連續性：非連續 = 系統堆，VSP DMA 必壞 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">pa_contiguous</span><span class="params">(<span class="type">void</span> *base, <span class="type">unsigned</span> size)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> prev = pa_of(base);</span><br><span class="line">    <span class="keyword">if</span> (!prev) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">unsigned</span> off = <span class="number">4096</span>; off &lt; size; off += <span class="number">4096</span>) &#123;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> p = pa_of((<span class="type">char</span> *)base + off);</span><br><span class="line">        <span class="keyword">if</span> (!p || p != prev + <span class="number">4096</span>) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        prev = p;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* ② 三級定址：0xc008602a → cmd0 → pagemap(+連續性) */</span></span><br><span class="line"><span class="type">static</span> <span class="type">unsigned</span> <span class="type">long</span> <span class="title function_">buf_real_pa</span><span class="params">(<span class="type">int</span> buf_fd, <span class="type">void</span> *base, <span class="type">unsigned</span> size, <span class="type">int</span> *contig)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> pa = <span class="number">0</span>; <span class="type">unsigned</span> sz = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (buf_fd &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (ion_phys_sprd(buf_fd, &amp;pa, &amp;sz) == <span class="number">0</span> &amp;&amp; pa) &#123; *contig = <span class="number">1</span>; <span class="keyword">return</span> pa; &#125;</span><br><span class="line">        <span class="keyword">if</span> (ion_phys(buf_fd, &amp;pa, &amp;sz) == <span class="number">0</span> &amp;&amp; pa)       &#123; *contig = <span class="number">1</span>; <span class="keyword">return</span> pa; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (base &amp;&amp; pa_contiguous(base, size)) &#123; *contig = <span class="number">1</span>; <span class="keyword">return</span> pa_of(base); &#125;</span><br><span class="line">    <span class="keyword">if</span> (base) &#123; <span class="type">unsigned</span> <span class="type">long</span> p0 = pa_of(base); <span class="keyword">if</span> (p0) <span class="keyword">return</span> p0; &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重用側再加兩條紀律：</p>
+<ul>
+<li><strong>絕不把 0 登記進 fd→PA 表</strong>：<code>map_add(fd, pa ? pa : (unsigned long)base, size)</code>。以前寫進 0，後面 <code>map_get</code> 命中就把 0 當實體位址用。</li>
+<li><strong>優先重用「有真 PA 且連續」的塊</strong>，重用時如果某塊 <code>pa==0</code>，當場用三級定址再查一遍（成本極低，萬一是 transient 失敗）。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> k = <span class="number">0</span>; k &lt; g_c1r_n; k++) &#123;</span><br><span class="line">    <span class="type">int</span> i = (g_c1r_next + k) % g_c1r_n;</span><br><span class="line">    <span class="keyword">if</span> (!g_c1r[i].pa) &#123;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> pa = buf_real_pa(g_c1r[i].buf_fd, g_c1r[i].base, size, &amp;cg);</span><br><span class="line">        <span class="keyword">if</span> (pa) &#123; g_c1r[i].pa = pa; g_c1r[i].contig = cg; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (g_c1r[i].pa &amp;&amp; g_c1r[i].contig) &#123; s = i; <span class="keyword">break</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>另外留了個<strong>預設關閉</strong>的實驗開關 <code>NETTV_MBINFO_HEAP=1,2,3</code>，用來手動試探其它 ION heap id 能不能拿到 CMA 連續塊。預設不試是有代價的教訓：早期試過 mask8 裸分配，直接<strong>核心崩潰、設備重啟</strong>。</p>
+<h2 id="四、怎麼判斷修沒修好"><a href="#四、怎麼判斷修沒修好" class="headerlink" title="四、怎麼判斷修沒修好"></a>四、怎麼判斷修沒修好</h2><p>補丁改完還沒上機（當晚設備離線），判據先寫死在腳本裡，上機後按這個 grep 收：</p>
+<table>
+<thead>
+<tr>
+<th>判據</th>
+<th>期望</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>grep -c &#39;真PA=&#39;</code></td>
+<td>&gt; 0（拿到真實體位址）</td>
+</tr>
+<tr>
+<td><code>grep -c &#39;三级取址全失败&#39;</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>grep -c &#39;非连续&#39;</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>grep &#39;复用块&#39; | tail -5</code></td>
+<td>pa 非 0 且標「連續」</td>
+</tr>
+<tr>
+<td><code>grep -c &#39;change to sw decoder&#39;</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>grep -c &#39;\[STAT\]&#39;</code></td>
+<td>條數 × 25 ≈ 總影格數，末條給平均 fps</td>
+</tr>
+</tbody></table>
+<h2 id="五、一句話教訓"><a href="#五、一句話教訓" class="headerlink" title="五、一句話教訓"></a>五、一句話教訓</h2><blockquote>
+<p><strong>同一件事在一個函式庫裡往往有兩份實作，改了一份別忘了另一份。</strong> 這次 <code>Get_iova</code> 早就補過 pagemap 兜底，而分配路徑一直把 CPU 虛擬位址當實體位址餵給 DMA——兩邊差一層，症狀就是「偶爾花畫面 + 偶發掛死」這種最難查的東西。</p>
+</blockquote>
+<h2 id="六、上機驗證結果（2026-10-16-晚間）"><a href="#六、上機驗證結果（2026-10-16-晚間）" class="headerlink" title="六、上機驗證結果（2026-10-16 晚間）"></a>六、上機驗證結果（2026-10-16 晚間）</h2><p>設備重啟後重新聯機，按上面的腳本上機實測（編譯 <code>DEPLOY OK 83092B</code>，播放器帶 UA+Referer 過 CloudWAF 拿到 m3u8，連續解碼 150s）：</p>
+<table>
+<thead>
+<tr>
+<th>判據</th>
+<th>期望</th>
+<th>實測</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>真PA=</code></td>
+<td>&gt; 0</td>
+<td><strong>270</strong> ✅</td>
+</tr>
+<tr>
+<td><code>三级取址全失败</code></td>
+<td>0</td>
+<td><strong>0</strong> ✅</td>
+</tr>
+<tr>
+<td><code>复用块</code> 末行</td>
+<td>pa 非 0 且連續</td>
+<td><code>pa=0x9fdc1000,连续</code> ✅</td>
+</tr>
+<tr>
+<td><code>change to sw decoder</code></td>
+<td>0</td>
+<td><strong>0</strong> ✅</td>
+</tr>
+<tr>
+<td><code>SIGSEGV</code></td>
+<td>0</td>
+<td><strong>0</strong> ✅</td>
+</tr>
+<tr>
+<td><code>FAILED rc=</code></td>
+<td>0</td>
+<td><strong>0</strong> ✅</td>
+</tr>
+<tr>
+<td><code>[STAT]</code></td>
+<td>持續</td>
+<td>20 條（≈500 影格）✅</td>
+</tr>
+</tbody></table>
+<p><strong>兩個核心症狀都消失了</strong>：① 第二個 IDR 的 <code>SIGSEGV(addr=0x747474)</code> 不再出現——假 PA（DMA 寫到 CPU VA）正是崩的根因；② mbinfo 不再因 OOM 走 <code>change to sw decoder</code> 單向門，硬解鏈路保住了。</p>
+<p><strong>但 GOP#3 的 <code>DRIVE empty(全量)</code> 掛死還在</strong>：餵第 3 個 IDR 時解碼器仍卡在「全量 DRIVE」不返回，只是現在被 monitor 父行程的停滯看門狗（2.2s 寬限）兜底重生，不再永久卡死。<strong>這反過來證明：假 PA 不是 IDR 掛死的根因</strong>——真兇是 IDR 切換時全量 DRIVE 呼叫的內部死鎖，下一篇主攻它。</p>
+<blockquote>
+<p>實測還有 10 處 <code>非连续</code> 塊（CMA 給到的非連續記憶體），量級小、未觸發花畫面&#x2F;掛死，留待後續抽驗。</p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%B8%89%E6%A2%9D%E8%AD%89%E6%93%9A%E6%8C%87%E5%90%91%E5%90%8C%E4%B8%80%E8%99%95"><span class="toc-number">1.</span> <span class="toc-text">一、三條證據指向同一處</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%A8%8B%E5%BC%8F%E7%A2%BC%E8%A3%A1%E7%9A%84%E4%B8%8D%E5%B0%8D%E7%A8%B1%EF%BC%9A%E5%90%8C%E4%B8%80%E5%80%8B%E5%87%BD%E5%BC%8F%E5%BA%AB%EF%BC%8C%E5%85%A9%E6%A2%9D%E8%B7%AF%E5%BE%91"><span class="toc-number">2.</span> <span class="toc-text">二、程式碼裡的不對稱：同一個函式庫，兩條路徑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%9A%E4%B8%89%E7%B4%9A%E5%85%9C%E5%BA%95-%E9%80%A3%E7%BA%8C%E6%80%A7%E6%8A%BD%E9%A9%97-%E9%87%8D%E7%94%A8%E5%A1%8A%E6%8C%91%E9%81%B8"><span class="toc-number">3.</span> <span class="toc-text">三、修法：三級兜底 + 連續性抽驗 + 重用塊挑選</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%8E%E9%BA%BC%E5%88%A4%E6%96%B7%E4%BF%AE%E6%B2%92%E4%BF%AE%E5%A5%BD"><span class="toc-number">4.</span> <span class="toc-text">四、怎麼判斷修沒修好</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%80%E5%8F%A5%E8%A9%B1%E6%95%99%E8%A8%93"><span class="toc-number">5.</span> <span class="toc-text">五、一句話教訓</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%8A%E6%A9%9F%E9%A9%97%E8%AD%89%E7%B5%90%E6%9E%9C%EF%BC%882026-10-16-%E6%99%9A%E9%96%93%EF%BC%89"><span class="toc-number">6.</span> <span class="toc-text">六、上機驗證結果（2026-10-16 晚間）</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&text=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&title=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&is_video=false&description=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑&body=Check out this article: https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&title=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&title=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&title=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&title=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/&name=展訊 SC9832A 網路電視攻堅（四）：mbinfo 的「假物理位址」——畫面 1/3 馬賽克與 IDR 掛死的共同嫌疑&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

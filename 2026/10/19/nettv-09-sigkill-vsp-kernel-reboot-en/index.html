@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-18T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:00:07.862Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Hardware Decoding">
+<meta property="article:tag" content="Spreadtrum">
+<meta property="article:tag" content="DMA">
+<meta property="article:tag" content="SIGKILL">
+<meta property="article:tag" content="Kernel Crash">
+<meta property="article:tag" content="OpenRC">
+<meta property="article:tag" content="stdio Buffering">
+<meta property="article:tag" content="nettv">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/20/nettv-12-ptsync-positive-feedback-stall-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&text=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&title=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&title=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&title=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&title=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&title=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&name=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Scene-of-the-Incident"><span class="toc-number">1.</span> <span class="toc-text">1. Scene of the Incident</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Root-Cause-VSP%E2%80%99s-DMA-Must-Be-Allowed-to-Drain-Itself"><span class="toc-number">2.</span> <span class="toc-text">2. Root Cause: VSP’s DMA Must Be Allowed to Drain Itself</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Collateral-Pit-1-The-Log-Is-4KB-Fully-Buffered-%E2%80%94-the-%E2%80%9CLine-Buffered%E2%80%9D-Comment-Lied-to-Me"><span class="toc-number">3.</span> <span class="toc-text">3. Collateral Pit 1: The Log Is 4KB Fully Buffered — the “Line-Buffered” Comment Lied to Me</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Collateral-Pit-2-An-OpenRC-Service-Without-start-Is-Silently-Skipped"><span class="toc-number">4.</span> <span class="toc-text">4. Collateral Pit 2: An OpenRC Service Without start() Is Silently Skipped</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-The-Experiment-I-Actually-Wanted-Bisect-%E2%80%9Cthe-Second-IDR-Hang%E2%80%9D"><span class="toc-number">5.</span> <span class="toc-text">5. The Experiment I Actually Wanted: Bisect “the Second IDR Hang”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Three-Disciplines-for-the-Next-Session"><span class="toc-number">6.</span> <span class="toc-text">6. Three Disciplines for the Next Session</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-18T18:00:00.000Z" itemprop="datePublished">2026-10-19</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/DMA/" rel="tag">DMA</a>, <a class="tag-link-link" href="/tags/Hardware-Decoding/" rel="tag">Hardware Decoding</a>, <a class="tag-link-link" href="/tags/Kernel-Crash/" rel="tag">Kernel Crash</a>, <a class="tag-link-link" href="/tags/OpenRC/" rel="tag">OpenRC</a>, <a class="tag-link-link" href="/tags/SIGKILL/" rel="tag">SIGKILL</a>, <a class="tag-link-link" href="/tags/Spreadtrum/" rel="tag">Spreadtrum</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/stdio-Buffering/" rel="tag">stdio Buffering</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.</p>
+</blockquote>
+<p>The earlier parts kept grinding away at “the second IDR always hangs”, with log gaps and evidence repeatedly lost. This time I only wanted to add a diagnostic switch and run 60 seconds — and instead <strong>rebooted the device twice in a row</strong>. In the post-mortem, the incident itself is the most valuable conclusion: <strong>interrupting nettv_player with <code>kill -9</code> during decoding is equivalent to letting the kernel clean up VSP’s undrained DMA — it just crashes</strong>. Along the way, two long-standing misjudgments were also cleared up.</p>
+<h2 id="1-Scene-of-the-Incident"><a href="#1-Scene-of-the-Incident" class="headerlink" title="1. Scene of the Incident"></a>1. Scene of the Incident</h2><p>The experiment script was written the old way: start the player, <code>( sleep 75; pkill -9 ... ) &amp;</code> as a fallback, <code>timeout -s KILL 90</code> for a hard stop. After the run, one look:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ uptime</span><br><span class="line"> 02:28:42 up 1 min,  0 users        ← the device rebooted</span><br><span class="line">$ wc -c /tmp/v11.log</span><br><span class="line">4096                                 ← log only 4KB, and mostly NUL</span><br></pre></td></tr></table></figure>
+
+<p>Not exhausted sshd sessions, not a “hang” — <strong>the device really rebooted</strong>. ping stayed alive (the protocol stack is interrupt-driven), SSH was unreachable (processes couldn’t be scheduled); it was the same thing as that evening of 10-18 when “ping worked but sshd was unresponsive” — I had judged the direction wrong then.</p>
+<h2 id="2-Root-Cause-VSP’s-DMA-Must-Be-Allowed-to-Drain-Itself"><a href="#2-Root-Cause-VSP’s-DMA-Must-Be-Allowed-to-Drain-Itself" class="headerlink" title="2. Root Cause: VSP’s DMA Must Be Allowed to Drain Itself"></a>2. Root Cause: VSP’s DMA Must Be Allowed to Drain Itself</h2><p>The player’s exit path has always contained <code>usleep(800000)</code>, annotated “drain DMA, prevent kernel crash”. This is a pit stepped into as far back as 10-09: while VSP hardware is still writing frames into ion contiguous memory, if the process is killed by outside force, the driver side gets no chance to reclaim that DMA — what follows is a kernel crash.</p>
+<p>The key point: <strong><code>SIGKILL</code> runs none of the user-space exit paths</strong>. Neither does <code>_exit()</code>. So</p>
+<ul>
+<li><code>pkill -9 -f nettv_player</code> ✗</li>
+<li><code>timeout -s KILL 90 ...</code> ✗</li>
+<li>not one line of that 800ms drain code executes after SIGKILL ✓ (crash for your viewing pleasure)</li>
+</ul>
+<p>There are only two correct ways to stop:</p>
+<ol>
+<li><strong>Let it exit on its own</strong>: the player’s second parameter is the “total frame cap” (<code>g_arg2</code>, 0 &#x3D; unlimited); reaching it triggers the normal exit flow:<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/local/bin/nettv_player &lt;m3u8-url&gt; 400 &gt; /tmp/v12.<span class="built_in">log</span> 2&gt;&amp;1</span><br></pre></td></tr></table></figure></li>
+<li><strong>Send SIGTERM only</strong>: the player installs a SIGTERM handler that stops feeding, drains DMA, then exits. SIGKILL is reserved as the fallback after 3 seconds, but <strong>under normal circumstances it should never fire</strong>.</li>
+</ol>
+<p>After the change the script looks like this (<code>outputs/r26.sh</code>): no <code>-9</code> anywhere, relying on the frame cap for self-exit.</p>
+<h2 id="3-Collateral-Pit-1-The-Log-Is-4KB-Fully-Buffered-—-the-“Line-Buffered”-Comment-Lied-to-Me"><a href="#3-Collateral-Pit-1-The-Log-Is-4KB-Fully-Buffered-—-the-“Line-Buffered”-Comment-Lied-to-Me" class="headerlink" title="3. Collateral Pit 1: The Log Is 4KB Fully Buffered — the “Line-Buffered” Comment Lied to Me"></a>3. Collateral Pit 1: The Log Is 4KB Fully Buffered — the “Line-Buffered” Comment Lied to Me</h2><p>The most bewildering point during triage: the process clearly ran for 75 seconds, yet the log file stayed at 4096 bytes forever and <code>grep</code> found nothing.</p>
+<p>The reason is plain: <strong>after stdout is redirected to a file it is 4KB fully buffered</strong>, and the code comment’s “line buffering enabled (<code>setvbuf _IOLBF</code>)” did not take effect on this path. Process gets SIGKILLed → the buffer never flushes → what you see are several 4KB blocks with the last chunk entirely lost.</p>
+<p>Therefore:</p>
+<ul>
+<li>Experiment logs <strong>must be read after the process exits normally</strong>; don’t count on a killed process to spit out its tail;</li>
+<li>to judge “is the program stuck”, don’t look at log size alone (jumping in 4KB steps) — look at <code>pgrep</code> and <code>/proc/&lt;pid&gt;/stat</code>.</li>
+</ul>
+<h2 id="4-Collateral-Pit-2-An-OpenRC-Service-Without-start-Is-Silently-Skipped"><a href="#4-Collateral-Pit-2-An-OpenRC-Service-Without-start-Is-Silently-Skipped" class="headerlink" title="4. Collateral Pit 2: An OpenRC Service Without start() Is Silently Skipped"></a>4. Collateral Pit 2: An OpenRC Service Without <code>start()</code> Is Silently Skipped</h2><p>At the very start the experiment threw a scary-looking error:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CANNOT LINK EXECUTABLE: library &quot;libc.so&quot; not found</span><br></pre></td></tr></table></figure>
+
+<p>Digging in, every <code>/system/lib/*.so</code> was a dangling symlink — they point at <code>/mnt/android_sys/lib/</code>, and <strong>the android_sys partition is simply not mounted</strong>.</p>
+<p>The hardening script <code>/etc/init.d/00_android_sys</code> exists, and <code>rc-update show</code> also shows it in the default runlevel, yet it just never runs at boot. The reason: an OpenRC runscript <strong>must define <code>start()</code></strong> (or use <code>command=</code> &#x2F; <code>start_stop_daemon</code>); a bare stretch of shell is silently skipped. Rewriting it as a standard runscript fixed it immediately:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/sbin/openrc-run</span></span><br><span class="line"><span class="function"><span class="title">depend</span></span>() &#123; need localmount; &#125;</span><br><span class="line"><span class="function"><span class="title">start</span></span>() &#123;</span><br><span class="line">    mount | grep -q android_sys || mount -t ext4 -o ro /dev/mmcblk0p17 /mnt/android_sys</span><br><span class="line">    <span class="built_in">printf</span> <span class="string">&#x27;nameserver 8.8.8.8\nnameserver 114.114.114.114\n&#x27;</span> &gt; /etc/resolv.conf</span><br><span class="line">    ip route | grep -q default || route add default gw &lt;RNDIS-GW&gt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>rc-service 00_android_sys start</code> → <code>mnt=304</code>, problem solved. From now on, seeing <code>library &quot;libc.so&quot; not found</code>, check <code>ls /mnt/android_sys/lib | wc -l</code> first; don’t touch the compile flags.</p>
+<h2 id="5-The-Experiment-I-Actually-Wanted-Bisect-“the-Second-IDR-Hang”"><a href="#5-The-Experiment-I-Actually-Wanted-Bisect-“the-Second-IDR-Hang”" class="headerlink" title="5. The Experiment I Actually Wanted: Bisect “the Second IDR Hang”"></a>5. The Experiment I Actually Wanted: Bisect “the Second IDR Hang”</h2><p>Incident aside, the diagnostic switch is already in the source (<code>outputs/sprd_msg_np_v2.c</code>, environment variable <code>NETTV_IDRREPLAY</code>, default 0 &#x3D; off):</p>
+<p><strong>Idea</strong>: the current symptom is that every generation of worker lives to AU[36] (GOP#2’s IDR), then DRIVE hangs for 5~10 seconds. Two possibilities:</p>
+<ul>
+<li><strong>A. Component-state theory</strong>: in streaming state, <em>any</em> IDR hangs, regardless of how many rounds have been fed → the fix is a decoder soft reset at the GOP boundary (flush + rebuild buffers), no process restart needed;</li>
+<li><strong>B. Cumulative-drift theory</strong>: the first 35 rounds consumed some resource (ion&#x2F;CMA, offsets, reference counts), and the IDR just happened to hit the blowup point → the fix is entirely different: investigate the leak across those 36 rounds.</li>
+</ul>
+<p><strong>Method</strong>: after capturing the first IDR, <strong>immediately feed the same IDR K times in a row</strong> (zero accumulation, component state identical to AU[36]). If the first replay hangs, A holds; if 3 replays all pass and it still takes until round 36 to hang, B holds.</p>
+<p>Just two criteria:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">grep -n &quot;\[diag\]&quot; /tmp/v12.log      # IDR lines captured/replayed</span><br><span class="line">grep -n &quot;超时逃生\|alarm 超时&quot; ...    # any hang right after</span><br></pre></td></tr></table></figure>
+
+<p>The binary is already built and deployed (<code>nettv_player</code> 118788 bytes, the old build backed up as <code>.bak_1019</code>), but <strong>no live-run data this time</strong> — cut short by the two reboots above.</p>
+<h2 id="6-Three-Disciplines-for-the-Next-Session"><a href="#6-Three-Disciplines-for-the-Next-Session" class="headerlink" title="6. Three Disciplines for the Next Session"></a>6. Three Disciplines for the Next Session</h2><ol>
+<li>Before starting an experiment, <code>pgrep</code> to confirm no other playback processes; <strong>wrap up with SIGTERM or the frame cap only</strong> — any <code>-9</code> is equivalent to rebooting the device.</li>
+<li>After each run, check <code>uptime</code> first; any data from a rebooted device is void (incomplete logs, scene gone).</li>
+<li>Before running the player manually, stop the desktop first (lvgl_demo holds the fb; double-write conflict), otherwise the symptoms get contaminated.</li>
+</ol>
+<p>This one is last because it is the most expensive: a single reboot zeroes out the previous half hour of forensics.</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Scene-of-the-Incident"><span class="toc-number">1.</span> <span class="toc-text">1. Scene of the Incident</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Root-Cause-VSP%E2%80%99s-DMA-Must-Be-Allowed-to-Drain-Itself"><span class="toc-number">2.</span> <span class="toc-text">2. Root Cause: VSP’s DMA Must Be Allowed to Drain Itself</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Collateral-Pit-1-The-Log-Is-4KB-Fully-Buffered-%E2%80%94-the-%E2%80%9CLine-Buffered%E2%80%9D-Comment-Lied-to-Me"><span class="toc-number">3.</span> <span class="toc-text">3. Collateral Pit 1: The Log Is 4KB Fully Buffered — the “Line-Buffered” Comment Lied to Me</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Collateral-Pit-2-An-OpenRC-Service-Without-start-Is-Silently-Skipped"><span class="toc-number">4.</span> <span class="toc-text">4. Collateral Pit 2: An OpenRC Service Without start() Is Silently Skipped</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-The-Experiment-I-Actually-Wanted-Bisect-%E2%80%9Cthe-Second-IDR-Hang%E2%80%9D"><span class="toc-number">5.</span> <span class="toc-text">5. The Experiment I Actually Wanted: Bisect “the Second IDR Hang”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Three-Disciplines-for-the-Next-Session"><span class="toc-number">6.</span> <span class="toc-text">6. Three Disciplines for the Next Session</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&text=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&title=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&title=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&title=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&title=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&title=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/&name=netTV Hardware Decoding Deep Dive (9): A Single SIGKILL Rebooted the Device — The Cost of Interrupting VSP Decoding, Plus Two Collateral Pits&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

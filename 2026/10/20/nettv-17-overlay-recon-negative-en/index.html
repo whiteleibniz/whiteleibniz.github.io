@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English  Background: One SentenceYesterday we pinpointed the frame rate (fps) bottleneck to exactly the “YUV→RGB→framebuffer” step (three completely different chains hitti">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English  Background: One SentenceYesterday we pinpointed the frame rate (fps) bottleneck to exactly the “YUV→RGB→framebuffer” step (three completely different chains hitti">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-20T05:10:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:41:03.514Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="Mali">
+<meta property="article:tag" content="sprd">
+<meta property="article:tag" content="fbdev">
+<meta property="article:tag" content="overlay">
+<meta property="article:tag" content="DPU">
+<meta property="article:tag" content="recon">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/20/nettv-17-overlay-recon-negative-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&text=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&title=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&is_video=false&description=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&title=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&title=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&title=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&title=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&name=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Background-One-Sentence"><span class="toc-number">1.</span> <span class="toc-text">Background: One Sentence</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Recon-Technique-kallsyms-First"><span class="toc-number">2.</span> <span class="toc-text">Recon Technique: kallsyms First</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Dead-End-One-The-Disassembly-Route-Is-Blocked"><span class="toc-number">3.</span> <span class="toc-text">Dead End One: The Disassembly Route Is Blocked</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Key-Evidence-fbdev-Capability-Probing"><span class="toc-number">4.</span> <span class="toc-text">Key Evidence: fbdev Capability Probing</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Why-Android-Can-and-We-Can%E2%80%99t"><span class="toc-number">5.</span> <span class="toc-text">Why Android Can and We Can’t</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Quantitative-Cap-The-CPU-Route%E2%80%99s-Ceiling"><span class="toc-number">6.</span> <span class="toc-text">Quantitative Cap: The CPU Route’s Ceiling</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#What%E2%80%99s-Left-Mali"><span class="toc-number">7.</span> <span class="toc-text">What’s Left: Mali</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Methodology-Three-Things-Learned-from-This-Recon"><span class="toc-number">8.</span> <span class="toc-text">Methodology: Three Things Learned from This Recon</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-Facts-Covered-in-This-Article"><span class="toc-number">9.</span> <span class="toc-text">Appendix: Facts Covered in This Article</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-20T05:10:00.000Z" itemprop="datePublished">2026-10-20</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/DPU/" rel="tag">DPU</a>, <a class="tag-link-link" href="/tags/Mali/" rel="tag">Mali</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/fbdev/" rel="tag">fbdev</a>, <a class="tag-link-link" href="/tags/overlay/" rel="tag">overlay</a>, <a class="tag-link-link" href="/tags/recon/" rel="tag">recon</a>, <a class="tag-link-link" href="/tags/sprd/" rel="tag">sprd</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/">English</a></p>
+</blockquote>
+<h2 id="Background-One-Sentence"><a href="#Background-One-Sentence" class="headerlink" title="Background: One Sentence"></a>Background: One Sentence</h2><p>Yesterday we pinpointed the frame rate (fps) bottleneck to exactly <strong>the “YUV→RGB→framebuffer” step</strong> (three completely different chains hitting the same wall), so I listed “the display controller’s hardware overlay consuming NV12 directly” as the only way out.</p>
+<p>Doubao’s proposal said the same:</p>
+<blockquote>
+<p>Drop Mali for YUV conversion; use the display controller’s hardware rotation + YUV conversion instead. The SC9832A’s display module natively supports YUV input and image rotation. Send NV12 frames directly to the display layer, and use Mali only to composite UI subtitles.</p>
+</blockquote>
+<p>Sounds right. The hardware is there, the chip supports it, and in theory it eliminates the entire CPU pixel path. <strong>This round is about verifying whether it can actually be done.</strong></p>
+<p>The verdict first: <strong>the hardware is indeed there, but there is not a single userspace interface. This road is sealed shut.</strong></p>
+<hr>
+<h2 id="Recon-Technique-kallsyms-First"><a href="#Recon-Technique-kallsyms-First" class="headerlink" title="Recon Technique: kallsyms First"></a>Recon Technique: kallsyms First</h2><p>No source, no driver binary, no root debugger. In this situation the first instinct is usually to dig through <code>dmesg</code>, or to <code>strings</code> the <code>.ko</code> files. <strong>Both are wrong.</strong></p>
+<p>All <code>dmesg</code> has is:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">c0 ###---- BIT_DISPC_EB still set ----###</span><br><span class="line">c0 sprdfb: [sprdfb_dispc_check_esd] (4590, 0, 0)</span><br></pre></td></tr></table></figure>
+
+<p><code>BIT_DISPC_EB</code> is a tantalizing clue, but this single bit proves nothing.</p>
+<p><strong>The correct entry point is <code>/proc/kallsyms</code>.</strong> The kernel symbol table tells you directly what the driver implements:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ grep sprdfb /proc/kallsyms | awk &#x27;&#123;print $3&#125;&#x27;</span><br><span class="line">sprdfb_pan_display</span><br><span class="line">sprdfb_ioctl                    ← the only userspace entry point</span><br><span class="line">sprdfb_check_var</span><br><span class="line">sprdfb_probe</span><br><span class="line">sprdfb_panel_change_fps</span><br><span class="line">sprdfb_dispc_enable_overlay      ★</span><br><span class="line">sprdfb_dispc_display_overlay     ★</span><br><span class="line">sprdfb_dispc_logo_proc</span><br><span class="line">sprdfb_dispc_ctrl</span><br><span class="line">sprdfb_dispc_refresh</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p><strong>The DPU overlay hardware does exist</strong> — <code>sprdfb_dispc_display_overlay</code> and <code>sprdfb_dispc_enable_overlay</code> are plainly there in the kernel.</p>
+<p>Good news so far. But the next question is the key one: <strong>can userspace call these two functions?</strong></p>
+<hr>
+<h2 id="Dead-End-One-The-Disassembly-Route-Is-Blocked"><a href="#Dead-End-One-The-Disassembly-Route-Is-Blocked" class="headerlink" title="Dead End One: The Disassembly Route Is Blocked"></a>Dead End One: The Disassembly Route Is Blocked</h2><p>To disassemble <code>sprdfb_ioctl</code> and see whether its ioctl dispatch table has overlay commands, kernel source is needed. There are three routes:</p>
+<table>
+<thead>
+<tr>
+<th>Means</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>find / -name &quot;sprdfb*.ko&quot;</code></td>
+<td><strong>empty</strong> — the driver is <strong>built into</strong> the kernel; there is no module file</td>
+</tr>
+<tr>
+<td><code>dd if=/proc/kcore</code></td>
+<td><strong>0 bytes</strong> — the kernel hasn’t opened <code>CONFIG_KCORE</code> read permission</td>
+</tr>
+<tr>
+<td><code>dd if=/dev/mem</code></td>
+<td><strong>No such file</strong> — the device doesn’t create this node at all</td>
+</tr>
+</tbody></table>
+<p>All three are dead ends.</p>
+<p>A mid-course detour worth mentioning: I originally wrote a “blind ioctl scan” program — iterating <code>/dev/fb0</code> over four magics <code>&#39;S&#39;/&#39;D&#39;/&#39;F&#39;/&#39;s&#39;</code> × 96 nrs × three encodings, trying all ~700 custom ioctls to see which one isn’t EINVAL.</p>
+<p><strong>The moment I finished it, I killed the idea.</strong> Display driver ioctl branches usually dereference user pointers directly, and I was passing it an all-zero fake struct. This is the same class of error as the “FBIOPAN with a fake short struct crashing the kernel” we hit before — <strong>probing with a means that can trigger a kernel crash costs too much, and if it fails you learn nothing.</strong></p>
+<p>Later I switched to read-only means (<code>GET_VSCREENINFO</code> &#x2F; <code>GET_FSCREENINFO</code> &#x2F; rejected <code>PUT</code> → check errno): zero risk, and more accurate information. That’s the right approach.</p>
+<hr>
+<h2 id="Key-Evidence-fbdev-Capability-Probing"><a href="#Key-Evidence-fbdev-Capability-Probing" class="headerlink" title="Key Evidence: fbdev Capability Probing"></a>Key Evidence: fbdev Capability Probing</h2><p>Since fbdev interfaces are the only way to infer, measure honestly. The device has gcc, so just compile a probe program directly (by the way, this kernel’s <code>fb.h</code> is an old version where the <code>FB_ROTATE_90</code> and <code>FB_ACTIVATE_ROTATE</code> macros don’t exist and you have to use literal values; <code>fb_fix_screeninfo</code> also has no <code>flags</code> field, only <code>capabilities</code> — details like these only surface if you actually compile):</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ioctl(fd, FBIOGET_VSCREENINFO, &amp;v);</span><br><span class="line">ioctl(fd, FBIOGET_FSCREENINFO, &amp;f);</span><br><span class="line"><span class="comment">/* try hardware rotation */</span></span><br><span class="line">r.activate = FB_ACTIVATE_NOW | <span class="number">0x100</span>;  r.rotate = <span class="number">1</span>;</span><br><span class="line">ioctl(fd, FBIOPUT_VSCREENINFO, &amp;r);</span><br><span class="line"><span class="comment">/* try various pixel formats */</span></span><br></pre></td></tr></table></figure>
+
+<p>Result:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[VAR] 720x1280 virt 720x3840 bpp=32</span><br><span class="line">[VAR] rotate=0 colorspace=0 nonstd=0</span><br><span class="line">[VAR] rgb: 0/8 8/8 16/8 transp=0/0</span><br><span class="line">[FIX] id=&quot;sprdfb&quot; smem_start=0x9ed74000 smem_len=11059200 line_len=2880</span><br><span class="line">[FIX] type=0 visual=2 accel=0x0 capabilities=0x0</span><br><span class="line">[FIX] mmio_start=0x0 mmio_len=0</span><br><span class="line">[FIX] panstep x=0 y=1 ywrap=0</span><br><span class="line"></span><br><span class="line">ROTATE_90 : rejected (errno=22)</span><br><span class="line">bpp=16 : accepted    bpp=32 : accepted    bpp=24 : accepted</span><br><span class="line">bpp=12 : accepted    bpp=15 : accepted</span><br></pre></td></tr></table></figure>
+
+<p>Read line by line:</p>
+<table>
+<thead>
+<tr>
+<th>Line</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ROTATE_90 : rejected (errno=22)</code></td>
+<td><strong>no hardware rotation at the fbdev layer</strong>. EINVAL is the driver explicitly saying “I don’t support this parameter combination”</td>
+</tr>
+<tr>
+<td><code>capabilities=0x0</code></td>
+<td>the driver <strong>declares not a single capability bit</strong> (no MMIO, no hardware acceleration, no overlay)</td>
+</tr>
+<tr>
+<td><code>mmio_start=0x0 mmio_len=0</code></td>
+<td><strong>fatal</strong> — userspace can’t get the DPU register base address, so “configuring overlay yourself” is impossible</td>
+</tr>
+<tr>
+<td><code>accel=0x0</code></td>
+<td>same as above, no hardware acceleration flag</td>
+</tr>
+<tr>
+<td><code>bpp=12 : accepted</code></td>
+<td>this line is a <strong>trap</strong>. The driver doesn’t validate pixel formats at all; it nods at any bpp. <strong>It can’t be used as evidence that “NV12 is available”</strong></td>
+</tr>
+<tr>
+<td><code>virt 720x3840</code></td>
+<td>3840 &#x3D; 1280 × 3, <strong>triple buffering</strong> — the FBIOPAN dual&#x2F;triple buffering we’ve always used is it</td>
+</tr>
+<tr>
+<td><code>smem_len=11.06MB line_len=2880</code></td>
+<td>2880 &#x3D; 720 × 4 bytes, ARGB8888, fully consistent with our understanding</td>
+</tr>
+</tbody></table>
+<p><strong><code>mmio_start = 0</code> basically passes the sentence.</strong> Even with the overlay hardware present, without register access userspace can’t change a single bit.</p>
+<hr>
+<h2 id="Why-Android-Can-and-We-Can’t"><a href="#Why-Android-Can-and-We-Can’t" class="headerlink" title="Why Android Can and We Can’t"></a>Why Android Can and We Can’t</h2><p>Android’s NV12 direct-to-display-layer is implemented like this:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">MediaCodec → output to gralloc buffer (NV12)</span><br><span class="line">  → BufferQueue hands over GraphicBuffer(fd)</span><br><span class="line">    → SurfaceFlinger receives it, hands it to HWC</span><br><span class="line">      → libhwcomposer decides which display layer to use</span><br><span class="line">        → DPU does NV12→RGB + scaling + compositing in hardware</span><br></pre></td></tr></table></figure>
+
+<p>Every link in this chain is <strong>userspace code</strong>: SurfaceFlinger, libhwcomposer, gralloc. We have none of them.</p>
+<p>I confirmed in the Android image:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ls /mnt/android_sys/lib | grep -iE &quot;hwc|composer|display|overlay&quot;</span><br><span class="line">(empty)</span><br></pre></td></tr></table></figure>
+
+<p>This image carries media-related things only (<code>libomx_avcdec_hw_sprd.so</code>, <code>libmedia*.so</code> and 304 other libraries), <strong>with no display composition stack at all</strong>. Its original design purpose was “providing LVGL with musl libc and bionic libraries”, not running full Android.</p>
+<p>So items 1, 2, and 4 of Doubao’s proposal share the same problem on this device: <strong>it assumes a userspace infrastructure we don’t have.</strong> Item 1 says “VSP outputs dma-buf shared with Mali”, yet our player has no GL context at all right now; item 4 says “don’t bind fb0 directly with glReadPixels”, yet we never used it — that was the PSP line’s historical problem.</p>
+<hr>
+<h2 id="Quantitative-Cap-The-CPU-Route’s-Ceiling"><a href="#Quantitative-Cap-The-CPU-Route’s-Ceiling" class="headerlink" title="Quantitative Cap: The CPU Route’s Ceiling"></a>Quantitative Cap: The CPU Route’s Ceiling</h2><p>Three <strong>completely independent</strong> chains, all measured hitting the same wall:</p>
+<table>
+<thead>
+<tr>
+<th>Chain</th>
+<th>End-to-end fps</th>
+<th>Where it hits</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>in-house VSP hw decoding</td>
+<td>15.7</td>
+<td>uncached ION memcpy 43.4ms + fb_render 31.8ms</td>
+</tr>
+<tr>
+<td>ffmpeg 4 threads + rgba</td>
+<td>10.2</td>
+<td>YUV→RGB ≈ 25ms + rotate&#x2F;scale ≈ 45ms</td>
+</tr>
+<tr>
+<td>mplayer y4m chain</td>
+<td>7.9</td>
+<td>y4m disk write + scale filter</td>
+</tr>
+</tbody></table>
+<p><strong>The decode side is already squeezed dry</strong> — ffmpeg multithreaded <code>-threads 4 -f null</code> can run <strong>34.9fps</strong> (150 frames decoded in 4.3s, 2.5x faster than single-threaded 10.7s), the highest decode throughput in the whole project. But add <code>-vf scale,transpose -pix_fmt rgba</code> and it immediately drops to 10.2fps.</p>
+<p><strong>The 2.5x bought by multithreading is entirely eaten by CPU pixel conversion.</strong></p>
+<p>That’s the conclusion: <strong>as long as the picture must pass through the CPU pixel path — software or hardware decoding, any number of threads — the ceiling is 13-16fps.</strong> This isn’t “not optimized enough”; it’s determined by the physical path.</p>
+<hr>
+<h2 id="What’s-Left-Mali"><a href="#What’s-Left-Mali" class="headerlink" title="What’s Left: Mali"></a>What’s Left: Mali</h2><p>With overlay sealed, the only GPU route is <strong>Mali</strong>:</p>
+<ul>
+<li>the <code>/dev/mali0</code> device node is there</li>
+<li><code>insmod mali.ko</code> works (verified)</li>
+<li><code>gpu_env_ensure()</code> in the project’s <code>lv_hardware/gpu_env.c</code> is <strong>already implemented</strong> (not committed)</li>
+<li>known pitfall: pbuffer’s <code>glReadPixels</code> is unreliable on TBDR architecture; you must <strong>render directly to a window surface</strong></li>
+</ul>
+<p>The approach: use a GLES shader for NV12→RGB + rotation, then draw straight into the window surface. This way the picture no longer passes through the CPU’s YUV→RGB scalar computation, and in theory the 45-70ms overhead can be shifted to the GPU.</p>
+<p><strong>But let me be honest: this route isn’t guaranteed either.</strong> VRAM must fit 1080p NV12 (3.1MB), Mali’s actual bandwidth and shader throughput on this board are still unknowns, and the shader compilation&#x2F;driver pitfalls haven’t been crossed. It’s worth trying, but its current status is “the only option”, not “confirmed feasible”.</p>
+<p><strong>The other honest option is adjusting the acceptance criteria.</strong> If the GPU route also fails, set the frame-rate target at 15-20fps, then do ION cached mapping (memcpy 43→10ms) to push hardware decoding stably to around 20fps, and squeeze the remaining 20ms of fb_render with loop unrolling and 8-pixel prefetch. <strong>This is a deliverable plan that doesn’t gamble.</strong></p>
+<hr>
+<h2 id="Methodology-Three-Things-Learned-from-This-Recon"><a href="#Methodology-Three-Things-Learned-from-This-Recon" class="headerlink" title="Methodology: Three Things Learned from This Recon"></a>Methodology: Three Things Learned from This Recon</h2><p><strong>1. “The hardware is there” doesn’t mean “you can use it”.</strong><br>kallsyms has <code>sprdfb_dispc_display_overlay</code>, so the hardware exists. But <code>mmio_start=0</code>, no ioctl, <code>capabilities=0x0</code> — userspace can’t use it. <strong>Judging a capability usable must be verified down to the “interface reachable from userspace” layer</strong>; the symbol table only proves the first layer.</p>
+<p><strong>2. “The driver nodded” is the least trustworthy evidence.</strong><br><code>bpp=12 : accepted</code> looks like “NV12 supported”. But the driver doesn’t even validate its own formats, which means it isn’t managing formats at all. <strong>An interface that doesn’t validate — none of its “yes” answers constitute evidence.</strong> By contrast, <code>ROTATE_90 : rejected (errno=22)</code> is hard evidence — the driver explicitly stated its position.</p>
+<p><strong>3. Don’t probe with means that can crash.</strong><br>The plan to blindly fire 700 ioctls looks clever, but it can crash the kernel and doesn’t buy much information. Read-only ioctls (GET_*) plus “probe + check errno” is an equivalent scheme with zero risk. <strong>The value of probing doesn’t depend on how bold you are, but on how precise you are.</strong></p>
+<hr>
+<h2 id="Appendix-Facts-Covered-in-This-Article"><a href="#Appendix-Facts-Covered-in-This-Article" class="headerlink" title="Appendix: Facts Covered in This Article"></a>Appendix: Facts Covered in This Article</h2><ul>
+<li>kernel symbols: <code>sprdfb_dispc_display_overlay</code>@0xc024adcc, <code>sprdfb_dispc_enable_overlay</code>@0xc0249db4, <code>sprdfb_dispc_ctrl</code>@0xc088c1cc</li>
+<li>driver is built in (no <code>sprdfb.ko</code>); neither <code>/proc/kcore</code> nor <code>/dev/mem</code> is readable</li>
+<li>fbdev: <code>rotate=90</code> rejected (EINVAL), <code>capabilities=0x0</code>, <code>mmio_start=0</code>, <code>accel=0x0</code></li>
+<li>fbdev actual params: 720×1280, virt 720×3840 (triple buffering), bpp32 ARGB8888, <code>smem_len=11.06MB</code>, <code>line_len=2880</code></li>
+<li><code>/mnt/android_sys/lib</code> has no hwcomposer&#x2F;libcomposer; the image contains media libraries only</li>
+<li>three chains end-to-end: hw decoding 15.7fps &#x2F; ffmpeg 4 threads+rgba 10.2fps &#x2F; mplayer y4m 7.9fps</li>
+<li>ffmpeg <code>-threads 4</code> pure decoding 34.9fps (decode-side ceiling)</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright Notice</strong>: This article is an original work by whiteleibniz (organized with AI assistance). Copyright belongs to whiteleibniz. Please credit the source and link to the original article when reposting: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Background-One-Sentence"><span class="toc-number">1.</span> <span class="toc-text">Background: One Sentence</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Recon-Technique-kallsyms-First"><span class="toc-number">2.</span> <span class="toc-text">Recon Technique: kallsyms First</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Dead-End-One-The-Disassembly-Route-Is-Blocked"><span class="toc-number">3.</span> <span class="toc-text">Dead End One: The Disassembly Route Is Blocked</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Key-Evidence-fbdev-Capability-Probing"><span class="toc-number">4.</span> <span class="toc-text">Key Evidence: fbdev Capability Probing</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Why-Android-Can-and-We-Can%E2%80%99t"><span class="toc-number">5.</span> <span class="toc-text">Why Android Can and We Can’t</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Quantitative-Cap-The-CPU-Route%E2%80%99s-Ceiling"><span class="toc-number">6.</span> <span class="toc-text">Quantitative Cap: The CPU Route’s Ceiling</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#What%E2%80%99s-Left-Mali"><span class="toc-number">7.</span> <span class="toc-text">What’s Left: Mali</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Methodology-Three-Things-Learned-from-This-Recon"><span class="toc-number">8.</span> <span class="toc-text">Methodology: Three Things Learned from This Recon</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-Facts-Covered-in-This-Article"><span class="toc-number">9.</span> <span class="toc-text">Appendix: Facts Covered in This Article</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&text=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&title=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&is_video=false&description=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&title=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&title=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&title=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&title=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/&name=nettv-17: Overlay Recon Rules Negative — What Remains When the Only Way Out Is Falsified&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

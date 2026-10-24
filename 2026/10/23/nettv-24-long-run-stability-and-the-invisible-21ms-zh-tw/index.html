@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  前面二十幾篇基本都在跟「崩潰」和「影格率（fps）」纏鬥，而且絕大多數結論只跑過 60 秒。60 秒能證明「能出影格」，證明不了「能一直看」。這次把窗口拉到 6 分鐘，量一批以前沒量過的東西：ION 有沒有緩慢洩漏、影格率會不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  前面二十幾篇基本都在跟「崩潰」和「影格率（fps）」纏鬥，而且絕大多數結論只跑過 60 秒。60 秒能證明「能出影格」，證明不了「能一直看」。這次把窗口拉到 6 分鐘，量一批以前沒量過的東西：ION 有沒有緩慢洩漏、影格率會不">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-22T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:19:42.728Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="展訊">
+<meta property="article:tag" content="影格率">
+<meta property="article:tag" content="ION">
+<meta property="article:tag" content="rb_take">
+<meta property="article:tag" content="穩定性">
+<meta property="article:tag" content="CPU 熱插拔">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&text=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&title=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&is_video=false&description=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」&body=Check out this article: https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&title=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&title=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&title=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&title=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&name=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%9C%8B%E7%B5%90%E8%AB%96"><span class="toc-number">1.</span> <span class="toc-text">一、先看結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%BF%BB%E6%A1%88%EF%BC%9Asysfs-%E7%9A%84-online-%E6%AA%94%E6%A1%88%E5%9C%A8%E9%A8%99%E4%BA%BA"><span class="toc-number">2.</span> <span class="toc-text">二、翻案：sysfs 的 online 檔案在騙人</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%96%B0%E5%B8%B3%E6%9C%AC%EF%BC%9A62-6ms-%E8%A3%A1%E6%9C%89-21-6ms-%E4%B8%8D%E5%9C%A8%E4%BB%BB%E4%BD%95%E8%A8%88%E6%99%82%E5%99%A8%E8%A3%A1"><span class="toc-number">3.</span> <span class="toc-text">三、新帳本：62.6ms 裡有 21.6ms 不在任何計時器裡</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%8F%AF%E4%BB%A5%E7%AB%8B%E5%88%BB%E5%81%9A%E7%9A%84%E4%B8%89%E4%BB%B6%E4%BA%8B%EF%BC%88%E6%8C%89%E6%80%A7%E5%83%B9%E6%AF%94%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">四、可以立刻做的三件事（按性價比）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%96%B9%E6%B3%95%E8%AB%96%E6%B2%89%E6%BE%B1"><span class="toc-number">5.</span> <span class="toc-text">五、方法論沉澱</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">6.</span> <span class="toc-text">六、下一步</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-22T18:00:00.000Z" itemprop="datePublished">2026-10-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/CPU-%E7%86%B1%E6%8F%92%E6%8B%94/" rel="tag">CPU 熱插拔</a>, <a class="tag-link-link" href="/tags/ION/" rel="tag">ION</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/rb-take/" rel="tag">rb_take</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A/" rel="tag">展訊</a>, <a class="tag-link-link" href="/tags/%E5%BD%B1%E6%A0%BC%E7%8E%87/" rel="tag">影格率</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>, <a class="tag-link-link" href="/tags/%E7%A9%A9%E5%AE%9A%E6%80%A7/" rel="tag">穩定性</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。</p>
+</blockquote>
+<p>前面二十幾篇基本都在跟「崩潰」和「影格率（fps）」纏鬥，而且<strong>絕大多數結論只跑過 60 秒</strong>。60 秒能證明「能出影格」，證明不了「能一直看」。這次把窗口拉到 6 分鐘，量一批以前沒量過的東西：ION 有沒有緩慢洩漏、影格率會不會隨時間衰減、熱不熱，以及一個意外翻案——<strong>這台機器到底有幾個核在幹活</strong>。</p>
+<h2 id="一、先看結論"><a href="#一、先看結論" class="headerlink" title="一、先看結論"></a>一、先看結論</h2><table>
+<thead>
+<tr>
+<th>指標</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>連續播放時長</td>
+<td>386 s（SIGTERM 主動收尾，非崩潰）</td>
+</tr>
+<tr>
+<td>回呼數 &#x2F; 真影格數</td>
+<td>11700 &#x2F; 5571</td>
+</tr>
+<tr>
+<td>穩態影格率</td>
+<td><strong>14.4 fps</strong>（<code>fps_x10</code> 全程 143~150，無衰減）</td>
+</tr>
+<tr>
+<td>SIGSEGV</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ION 用戶端</td>
+<td>播放中恆為 3，退出後歸 0（<strong>無洩漏</strong>）</td>
+</tr>
+<tr>
+<td>溫度 &#x2F; 主頻</td>
+<td>27.7 ℃ &#x2F; 1.3 GHz（<strong>無熱降頻</strong>）</td>
+</tr>
+<tr>
+<td>桌面 &#x2F; framebuffer</td>
+<td>桌面存活，收尾後 fb 恢復正常</td>
+</tr>
+</tbody></table>
+<p><strong>長時間穩定性這項目前是達標的。</strong> 剩下的真問題是：為什麼長時間穩態只有 14.4fps，而 10-22 單段 60s 測試是 21.8fps。</p>
+<h2 id="二、翻案：sysfs-的-online-檔案在騙人"><a href="#二、翻案：sysfs-的-online-檔案在騙人" class="headerlink" title="二、翻案：sysfs 的 online 檔案在騙人"></a>二、翻案：sysfs 的 online 檔案在騙人</h2><p>10-22 我給「檔 2（fork 渲染管線）判負」找的根因是「線上 CPU 只有 2 核」。這次複查，讀到的是更極端的東西：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/sys/devices/system/cpu/online  = [0]</span><br><span class="line">/sys/devices/system/cpu/offline = [1-3]</span><br><span class="line">/proc/cpuinfo 里 processor 只列了 1 个</span><br></pre></td></tr></table></figure>
+
+<p>照這個讀數，機器是<strong>單核</strong>。但順手寫了個固定工作量的平行基準（每個行程 1.5 億次整數乘加，用 <code>CLOCK_MONOTONIC</code> 自計時），結果完全對不上：</p>
+<table>
+<thead>
+<tr>
+<th>並行路數</th>
+<th>各路耗時</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 路</td>
+<td>2080 ms</td>
+</tr>
+<tr>
+<td>2 路</td>
+<td>2080 &#x2F; 2080 ms</td>
+</tr>
+<tr>
+<td>3 路</td>
+<td>2080 &#x2F; 2087 &#x2F; 2110 ms</td>
+</tr>
+<tr>
+<td>4 路</td>
+<td>2085 &#x2F; 2095 &#x2F; 2098 &#x2F; 2135 ms</td>
+</tr>
+</tbody></table>
+<p><strong>四路同時跑，每路耗時和單路幾乎一樣</strong>——這是教科書級的「真·多核」曲線。單核上四路平行應該各花 8 秒左右。而且基準跑完再讀 <code>online</code>，值變成了 <code>[0-3]</code>。</p>
+<p>所以：</p>
+<ul>
+<li><strong>sysfs 的 <code>online</code>&#x2F;<code>offline</code> 和 <code>/proc/cpuinfo</code> 在這台機器上都不可信</strong>，它們是 hotplug 記帳，不等於「有沒有核在跑」。</li>
+<li>判核數的可靠辦法是<strong>吞吐量反推</strong>，不是讀檔案。</li>
+<li>順帶推翻 10-22 的定案：<strong>檔 2 判負不是因為核不夠</strong>，那個 -20% 得重新找原因（大概率是 3MB 影格在跨行程共享記憶體裡來回搬 + 握手粒度）。</li>
+</ul>
+<p>另外順手試了熱插拔寫入，<code>echo 1 &gt; cpu1/online</code> 傳回失敗、但狀態確實在動——這個核心的 hotplug sysfs 行為很怪，<strong>別拿它當實驗變數</strong>。</p>
+<h2 id="三、新帳本：62-6ms-裡有-21-6ms-不在任何計時器裡"><a href="#三、新帳本：62-6ms-裡有-21-6ms-不在任何計時器裡" class="headerlink" title="三、新帳本：62.6ms 裡有 21.6ms 不在任何計時器裡"></a>三、新帳本：62.6ms 裡有 21.6ms 不在任何計時器裡</h2><p>長時間穩態的 perf 行長這樣：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[perf] AU#5400 均值: 墙钟=62.6 段循环=14.1 (bsOnMsg=14.1 睡眠=0.0[refill=0.0 aux=0.0] 9c等=0.0)</span><br><span class="line">                     snap=0.0 读帧=2.5 渲染=23.8 (ms) pan=0</span><br></pre></td></tr></table></figure>
+
+<p>把已剖析項加起來：14.1 + 2.5 + 23.8 &#x3D; <strong>40.4ms</strong>。牆鐘 62.6ms，<strong>差 21.6ms 沒人認領</strong>。對比單段檔案模式（10-22）：牆鐘 41.5ms ≈ 剖析和 41.3ms，一毫秒都不差。</p>
+<p>差額只在「邊下邊播」的直播模式下出現，方向很明確：<strong>卡在等資料上</strong>。看 <code>rb_take</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">rb_take</span><span class="params">(<span class="type">unsigned</span> *len, <span class="type">unsigned</span> <span class="type">char</span> *flags, <span class="type">int</span> *eof)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="type">unsigned</span> w = g_rb-&gt;wpos, r = g_rb-&gt;rpos;</span><br><span class="line">        <span class="keyword">if</span> (r != w) &#123; <span class="comment">/* 取走一個 NAL */</span> <span class="keyword">return</span> ...; &#125;</span><br><span class="line">        <span class="keyword">if</span> (g_rb-&gt;dl_done) &#123; *eof = <span class="number">1</span>; <span class="keyword">return</span> <span class="number">0</span>; &#125;</span><br><span class="line">        usleep(<span class="number">2000</span>);          <span class="comment">/* ★ 環形緩衝空：2ms 粒度空轉，不計入任何計時器 */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>環形緩衝一空就 2ms 一睡地輪詢，這段等待<strong>沒有落到 <code>g_t_slp</code>&#x2F;<code>g_t_read</code>&#x2F;<code>g_t_ren</code> 任何一項裡</strong>，於是就成了「牆鐘裡憑空多出來的 21.6ms」。它佔掉整影格時間的三分之一還多。</p>
+<p>這也解釋了穩態 14.4fps 的來源：供給側（下載 + 解多工 + 寫環）跟不上消費側，消費者有三分之一的時間在空轉等米下鍋。<strong>這時候再去最佳化渲染那 23.8ms，性價比已經不高了</strong>——先讓米下鍋。</p>
+<h2 id="四、可以立刻做的三件事（按性價比）"><a href="#四、可以立刻做的三件事（按性價比）" class="headerlink" title="四、可以立刻做的三件事（按性價比）"></a>四、可以立刻做的三件事（按性價比）</h2><ol>
+<li><strong>給 <code>rb_take</code> 的空轉加計時</strong>（新增 <code>g_t_wait</code>，10 行以內）。現在 21.6ms 是「推算」出來的，必須變成「量」出來的，否則後面所有最佳化都是在猜。</li>
+<li><strong>量化 dl 側供數能力</strong>：單次 <code>curl</code> 拿一段的平均耗時、段間隙多長、rb 深度曲線。如果段間隙是大頭，就把「提前拉下一段」做成預設（雙槽預取的邏輯在，但沒驗過它在真實 CDN 上的效果）。</li>
+<li><strong>把 <code>usleep(2000)</code> 的粒度降下來</strong>（200~500us，或換成 futex&#x2F;條件變數）。2ms 粒度意味著平均每次白白多睡 1ms，一影格裡若空轉十次就是 10ms。</li>
+</ol>
+<h2 id="五、方法論沉澱"><a href="#五、方法論沉澱" class="headerlink" title="五、方法論沉澱"></a>五、方法論沉澱</h2><ul>
+<li><strong>「穩定」必須單獨測</strong>：60 秒的 A&#x2F;B 和 6 分鐘的連續播放是兩件事。這次如果不是拉長窗口，就看不到「牆鐘 55ms → 63ms」的爬升，也看不到 ION 恆 3 不漲這種好消息。</li>
+<li><strong>剖析項加不滿牆鐘，本身就是最大的線索</strong>。帳對不上時，先找「沒被計時的路徑」（阻塞讀、輪詢睡、隱式同步），別急著懷疑硬體。</li>
+<li><strong>不要用 sysfs&#x2F;<code>/proc</code> 的記帳值當硬體事實</strong>。能反推就反推：固定工作量 + 不同並行度，看耗時拐點。</li>
+<li>收尾繼續用 SIGTERM + <code>usleep(800ms)</code> 排空 DMA，全程沒碰過 SIGKILL，設備零重啟。</li>
+</ul>
+<h2 id="六、下一步"><a href="#六、下一步" class="headerlink" title="六、下一步"></a>六、下一步</h2><p>先把 <code>g_t_wait</code> 計時加上重建一版，把 21.6ms 坐實；然後看它是不是真的大頭——是的話，提影格率的主戰場就從「渲染」換到「供數」，目標 14.4 → 20fps 以上。</p>
+<hr>
+<p><strong>相關閱讀</strong>：<a href="nettv-23-clone-tls-alias-fork-render-pipeline.md">（二十三）clone 不設 TLS：三次「執行緒必崩」同一病根</a></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%9C%8B%E7%B5%90%E8%AB%96"><span class="toc-number">1.</span> <span class="toc-text">一、先看結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%BF%BB%E6%A1%88%EF%BC%9Asysfs-%E7%9A%84-online-%E6%AA%94%E6%A1%88%E5%9C%A8%E9%A8%99%E4%BA%BA"><span class="toc-number">2.</span> <span class="toc-text">二、翻案：sysfs 的 online 檔案在騙人</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%96%B0%E5%B8%B3%E6%9C%AC%EF%BC%9A62-6ms-%E8%A3%A1%E6%9C%89-21-6ms-%E4%B8%8D%E5%9C%A8%E4%BB%BB%E4%BD%95%E8%A8%88%E6%99%82%E5%99%A8%E8%A3%A1"><span class="toc-number">3.</span> <span class="toc-text">三、新帳本：62.6ms 裡有 21.6ms 不在任何計時器裡</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%8F%AF%E4%BB%A5%E7%AB%8B%E5%88%BB%E5%81%9A%E7%9A%84%E4%B8%89%E4%BB%B6%E4%BA%8B%EF%BC%88%E6%8C%89%E6%80%A7%E5%83%B9%E6%AF%94%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">四、可以立刻做的三件事（按性價比）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%96%B9%E6%B3%95%E8%AB%96%E6%B2%89%E6%BE%B1"><span class="toc-number">5.</span> <span class="toc-text">五、方法論沉澱</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">6.</span> <span class="toc-text">六、下一步</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&text=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&title=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&is_video=false&description=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」&body=Check out this article: https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&title=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&title=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&title=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&title=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/&name=展訊 SC9832A 網路電視攻堅（二十四）：6 分鐘連續播放不崩不漏，以及 sysfs 騙我說「只有 1 個核」&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

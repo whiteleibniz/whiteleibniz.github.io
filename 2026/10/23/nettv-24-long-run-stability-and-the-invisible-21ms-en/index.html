@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-22T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:20:27.181Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Hardware Decoding">
+<meta property="article:tag" content="Spreadtrum">
+<meta property="article:tag" content="Frame Rate">
+<meta property="article:tag" content="ION">
+<meta property="article:tag" content="Stability">
+<meta property="article:tag" content="CPU Hotplug">
+<meta property="article:tag" content="rb_take">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&text=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&title=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&is_video=false&description=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;&body=Check out this article: https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&title=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&title=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&title=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&title=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&name=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Conclusions-First"><span class="toc-number">1.</span> <span class="toc-text">1. Conclusions First</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Reversal-sysfs%E2%80%99s-online-File-Is-Lying"><span class="toc-number">2.</span> <span class="toc-text">2. The Reversal: sysfs’s online File Is Lying</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-New-Ledger-of-the-62-6ms-21-6ms-Is-in-No-Timer-at-All"><span class="toc-number">3.</span> <span class="toc-text">3. New Ledger: of the 62.6ms, 21.6ms Is in No Timer at All</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Three-Things-That-Can-Be-Done-Immediately-by-Cost-Effectiveness"><span class="toc-number">4.</span> <span class="toc-text">4. Three Things That Can Be Done Immediately (by Cost-Effectiveness)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Methodology-Takeaways"><span class="toc-number">5.</span> <span class="toc-text">5. Methodology Takeaways</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Next-Steps"><span class="toc-number">6.</span> <span class="toc-text">6. Next Steps</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-22T18:00:00.000Z" itemprop="datePublished">2026-10-23</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/CPU-Hotplug/" rel="tag">CPU Hotplug</a>, <a class="tag-link-link" href="/tags/Frame-Rate/" rel="tag">Frame Rate</a>, <a class="tag-link-link" href="/tags/Hardware-Decoding/" rel="tag">Hardware Decoding</a>, <a class="tag-link-link" href="/tags/ION/" rel="tag">ION</a>, <a class="tag-link-link" href="/tags/Spreadtrum/" rel="tag">Spreadtrum</a>, <a class="tag-link-link" href="/tags/Stability/" rel="tag">Stability</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/rb-take/" rel="tag">rb_take</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.</p>
+</blockquote>
+<p>The previous twenty-odd parts have basically been wrestling with “crashes” and “frame rate”, and <strong>the vast majority of conclusions were only run for 60 seconds</strong>. 60 seconds can prove “it outputs frames”; it cannot prove “you can keep watching”. This time I stretched the window to 6 minutes and measured a batch of things never measured before: whether ION leaks slowly, whether the frame rate decays over time, whether it gets hot, and an unexpected reversal — <strong>how many cores on this machine are actually doing work</strong>.</p>
+<h2 id="1-Conclusions-First"><a href="#1-Conclusions-First" class="headerlink" title="1. Conclusions First"></a>1. Conclusions First</h2><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Continuous playback duration</td>
+<td>386 s (SIGTERM for a clean finish, not a crash)</td>
+</tr>
+<tr>
+<td>Callback count &#x2F; real frame count</td>
+<td>11700 &#x2F; 5571</td>
+</tr>
+<tr>
+<td>Steady-state frame rate</td>
+<td><strong>14.4 fps</strong> (<code>fps_x10</code> stayed 143~150 throughout, no decay)</td>
+</tr>
+<tr>
+<td>SIGSEGV</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ION clients</td>
+<td>constant 3 during playback, back to 0 after exit (<strong>no leak</strong>)</td>
+</tr>
+<tr>
+<td>Temperature &#x2F; clock frequency</td>
+<td>27.7 ℃ &#x2F; 1.3 GHz (<strong>no thermal throttling</strong>)</td>
+</tr>
+<tr>
+<td>Desktop &#x2F; framebuffer</td>
+<td>desktop survived; fb returned to normal after the finish</td>
+</tr>
+</tbody></table>
+<p><strong>Long-run stability currently passes.</strong> The remaining real question is: why is the long-run steady state only 14.4fps, when the single-segment 60s test of 10-22 was 21.8fps.</p>
+<h2 id="2-The-Reversal-sysfs’s-online-File-Is-Lying"><a href="#2-The-Reversal-sysfs’s-online-File-Is-Lying" class="headerlink" title="2. The Reversal: sysfs’s online File Is Lying"></a>2. The Reversal: sysfs’s online File Is Lying</h2><p>The root cause I found on 10-22 for “case 2 (the fork render pipeline) loses” was “only 2 CPUs online”. This recheck reads something even more extreme:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/sys/devices/system/cpu/online  = [0]</span><br><span class="line">/sys/devices/system/cpu/offline = [1-3]</span><br><span class="line">/proc/cpuinfo 里 processor 只列了 1 个</span><br></pre></td></tr></table></figure>
+
+<p>By this reading, the machine is <strong>single-core</strong>. But I casually wrote a fixed-workload parallel benchmark (150 million integer multiply-adds per process, self-timed with <code>CLOCK_MONOTONIC</code>), and the results completely disagree:</p>
+<table>
+<thead>
+<tr>
+<th>Concurrency</th>
+<th>Per-lane elapsed time</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 lane</td>
+<td>2080 ms</td>
+</tr>
+<tr>
+<td>2 lanes</td>
+<td>2080 &#x2F; 2080 ms</td>
+</tr>
+<tr>
+<td>3 lanes</td>
+<td>2080 &#x2F; 2087 &#x2F; 2110 ms</td>
+</tr>
+<tr>
+<td>4 lanes</td>
+<td>2085 &#x2F; 2095 &#x2F; 2098 &#x2F; 2135 ms</td>
+</tr>
+</tbody></table>
+<p><strong>Four lanes running simultaneously, each taking about the same time as a single lane</strong> — a textbook-grade “true multi-core” curve. On a single core, four-way parallelism should take about 8 seconds each. And after the benchmark finished, reading <code>online</code> again, the value had become <code>[0-3]</code>.</p>
+<p>So:</p>
+<ul>
+<li><strong>sysfs’s <code>online</code>&#x2F;<code>offline</code> and <code>/proc/cpuinfo</code> are both untrustworthy on this machine</strong>; they are hotplug bookkeeping, not equivalent to “whether a core is running”.</li>
+<li>The reliable way to judge core count is <strong>throughput back-calculation</strong>, not reading files.</li>
+<li>This also overturns the 10-22 verdict: <strong>case 2 did not lose because of insufficient cores</strong>; that -20% needs a new explanation (most likely 3MB frames shuttling back and forth in cross-process shared memory + handshake granularity).</li>
+</ul>
+<p>I also casually tried hotplug writes: <code>echo 1 &gt; cpu1/online</code> returns failure, but the state does move — this kernel’s hotplug sysfs behavior is very strange, <strong>don’t use it as an experimental variable</strong>.</p>
+<h2 id="3-New-Ledger-of-the-62-6ms-21-6ms-Is-in-No-Timer-at-All"><a href="#3-New-Ledger-of-the-62-6ms-21-6ms-Is-in-No-Timer-at-All" class="headerlink" title="3. New Ledger: of the 62.6ms, 21.6ms Is in No Timer at All"></a>3. New Ledger: of the 62.6ms, 21.6ms Is in No Timer at All</h2><p>The perf line in the long-run steady state looks like this:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[perf] AU#5400 均值: 墙钟=62.6 段循环=14.1 (bsOnMsg=14.1 睡眠=0.0[refill=0.0 aux=0.0] 9c等=0.0)</span><br><span class="line">                     snap=0.0 读帧=2.5 渲染=23.8 (ms) pan=0</span><br></pre></td></tr></table></figure>
+
+<p>Summing the profiled items: 14.1 + 2.5 + 23.8 &#x3D; <strong>40.4ms</strong>. Wall clock 62.6ms, <strong>a 21.6ms difference nobody claims</strong>. Compare with the single-file mode (10-22): wall clock 41.5ms ≈ profiled sum 41.3ms, not a single millisecond off.</p>
+<p>The discrepancy only appears in the “download-while-playing” live mode, and the direction is clear: <strong>stuck waiting for data</strong>. Look at <code>rb_take</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">rb_take</span><span class="params">(<span class="type">unsigned</span> *len, <span class="type">unsigned</span> <span class="type">char</span> *flags, <span class="type">int</span> *eof)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="type">unsigned</span> w = g_rb-&gt;wpos, r = g_rb-&gt;rpos;</span><br><span class="line">        <span class="keyword">if</span> (r != w) &#123; <span class="comment">/* take one NAL */</span> <span class="keyword">return</span> ...; &#125;</span><br><span class="line">        <span class="keyword">if</span> (g_rb-&gt;dl_done) &#123; *eof = <span class="number">1</span>; <span class="keyword">return</span> <span class="number">0</span>; &#125;</span><br><span class="line">        usleep(<span class="number">2000</span>);          <span class="comment">/* ★ ring buffer empty: 2ms-granularity busy wait, counted in no timer */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Whenever the ring buffer empties it polls with a 2ms sleep, and this wait <strong>does not land in any of <code>g_t_slp</code>&#x2F;<code>g_t_read</code>&#x2F;<code>g_t_ren</code></strong>, so it becomes the “21.6ms appearing out of nowhere in the wall clock”. It eats up more than a third of the whole frame time.</p>
+<p>This also explains where the 14.4fps steady state comes from: the supply side (download + demux + ring write) cannot keep up with the consumption side, and the consumer spends a third of its time idling, waiting for rice to be served. <strong>Optimizing that 23.8ms of rendering any further is no longer worth the effort</strong> — first let the rice be served.</p>
+<h2 id="4-Three-Things-That-Can-Be-Done-Immediately-by-Cost-Effectiveness"><a href="#4-Three-Things-That-Can-Be-Done-Immediately-by-Cost-Effectiveness" class="headerlink" title="4. Three Things That Can Be Done Immediately (by Cost-Effectiveness)"></a>4. Three Things That Can Be Done Immediately (by Cost-Effectiveness)</h2><ol>
+<li><strong>Add timing to <code>rb_take</code>‘s busy wait</strong> (new <code>g_t_wait</code>, under 10 lines). The 21.6ms is currently “inferred”; it must become “measured”, otherwise every subsequent optimization is guesswork.</li>
+<li><strong>Quantify the dl side’s data-supply capability</strong>: the average time for a single <code>curl</code> fetch, how long the segment gaps are, the rb depth curve. If the segment gaps are the bulk, make “prefetch the next segment” the default (the dual-slot prefetch logic exists, but its effect on a real CDN has not been verified).</li>
+<li><strong>Reduce the granularity of <code>usleep(2000)</code></strong> (200~500us, or switch to futex&#x2F;condition variables). A 2ms granularity means an average of 1ms wasted per sleep; ten idle spins in a frame is 10ms.</li>
+</ol>
+<h2 id="5-Methodology-Takeaways"><a href="#5-Methodology-Takeaways" class="headerlink" title="5. Methodology Takeaways"></a>5. Methodology Takeaways</h2><ul>
+<li><strong>“Stable” must be tested separately</strong>: a 60-second A&#x2F;B and 6 minutes of continuous playback are two different things. Without stretching the window this time, we would not have seen the “wall clock 55ms → 63ms” climb, nor the good news of ION holding steady at 3.</li>
+<li><strong>Profiled items not adding up to the wall clock is itself the biggest clue</strong>. When the books don’t balance, first look for the “untimed paths” (blocking reads, polling sleeps, implicit synchronization); don’t rush to suspect the hardware.</li>
+<li><strong>Don’t treat sysfs&#x2F;<code>/proc</code> bookkeeping values as hardware facts</strong>. Back-calculate where possible: fixed workload + different concurrency levels, and look at the elbow in the elapsed time.</li>
+<li>The finish continues to use SIGTERM + <code>usleep(800ms)</code> to drain DMA; SIGKILL was never touched throughout, and the device was rebooted zero times.</li>
+</ul>
+<h2 id="6-Next-Steps"><a href="#6-Next-Steps" class="headerlink" title="6. Next Steps"></a>6. Next Steps</h2><p>First add the <code>g_t_wait</code> timing and rebuild a version to pin down the 21.6ms; then see whether it really is the bulk — if so, the main battlefield for raising the frame rate shifts from “rendering” to “data supply”, with a target of 14.4 → above 20fps.</p>
+<hr>
+<p><strong>Related reading</strong>: <a href="nettv-23-clone-tls-alias-fork-render-pipeline.md">(23) clone without TLS: three “thread must crash” cases, one root cause</a></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Conclusions-First"><span class="toc-number">1.</span> <span class="toc-text">1. Conclusions First</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Reversal-sysfs%E2%80%99s-online-File-Is-Lying"><span class="toc-number">2.</span> <span class="toc-text">2. The Reversal: sysfs’s online File Is Lying</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-New-Ledger-of-the-62-6ms-21-6ms-Is-in-No-Timer-at-All"><span class="toc-number">3.</span> <span class="toc-text">3. New Ledger: of the 62.6ms, 21.6ms Is in No Timer at All</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Three-Things-That-Can-Be-Done-Immediately-by-Cost-Effectiveness"><span class="toc-number">4.</span> <span class="toc-text">4. Three Things That Can Be Done Immediately (by Cost-Effectiveness)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Methodology-Takeaways"><span class="toc-number">5.</span> <span class="toc-text">5. Methodology Takeaways</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Next-Steps"><span class="toc-number">6.</span> <span class="toc-text">6. Next Steps</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&text=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&title=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&is_video=false&description=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;&body=Check out this article: https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&title=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&title=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&title=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&title=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/&name=Spreadtrum SC9832A Network TV Deep Dive (24): 6 Minutes of Continuous Playback Without Crashes or Leaks, and sysfs Lying to Me That &#39;There Is Only 1 Core&#39;&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

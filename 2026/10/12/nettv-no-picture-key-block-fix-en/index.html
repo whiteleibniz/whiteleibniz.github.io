@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-12T13:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:24:03.771Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="VSP Hardware Decoding">
+<meta property="article:tag" content="Bug Fix">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/12/nettv-no-picture-key-block-fix-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/12/nettv-no-picture-key-block-fix/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&text=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&title=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&is_video=false&description=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever&body=Check out this article: https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&title=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&title=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&title=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&title=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&name=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Fixing-the-nettv-Player%E2%80%99s-No-Picture-and-Key-Blocking-Failures"><span class="toc-number">1.</span> <span class="toc-text">Fixing the nettv Player’s No-Picture and Key Blocking Failures</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptoms"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptoms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Root-Cause-Chain-Three-Layers-Each-Deeper-Than-the-Last"><span class="toc-number">1.2.</span> <span class="toc-text">2. The Root-Cause Chain (Three Layers, Each Deeper Than the Last)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-Direct-Cause-All-Channel-Sources-Dead"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 Direct Cause: All Channel Sources Dead</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Deeper-Cause-The-Player%E2%80%99s-Handling-of-%E2%80%9CSource-Unreachable%E2%80%9D-Is-Infinite-Restarts"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 Deeper Cause: The Player’s Handling of “Source Unreachable” Is Infinite Restarts</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-The-Deepest-Pit-Three-Timing-Races-in-a-Row-While-Fixing-%E2%80%9CExit-on-Unreachable-Source%E2%80%9D"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 The Deepest Pit: Three Timing Races in a Row While Fixing “Exit on Unreachable Source”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Fix"><span class="toc-number">1.3.</span> <span class="toc-text">3. The Fix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Player-Side-sprd-msg-np-c-4-places"><span class="toc-number">1.3.1.</span> <span class="toc-text">Player Side (sprd_msg_np.c, 4 places)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UI-Page-Side-nettv-page-c"><span class="toc-number">1.3.2.</span> <span class="toc-text">UI Page Side (nettv_page.c)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Channel-Table"><span class="toc-number">1.3.3.</span> <span class="toc-text">Channel Table</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Verification-Results"><span class="toc-number">1.4.</span> <span class="toc-text">4. Verification Results</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Lessons-Learned"><span class="toc-number">1.5.</span> <span class="toc-text">5. Lessons Learned</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Remaining-Issues"><span class="toc-number">1.6.</span> <span class="toc-text">6. Remaining Issues</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-12T13:00:00.000Z" itemprop="datePublished">2026-10-12</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Bug-Fix/" rel="tag">Bug Fix</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/VSP-Hardware-Decoding/" rel="tag">VSP Hardware Decoding</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.</p>
+</blockquote>
+<h1 id="Fixing-the-nettv-Player’s-No-Picture-and-Key-Blocking-Failures"><a href="#Fixing-the-nettv-Player’s-No-Picture-and-Key-Blocking-Failures" class="headerlink" title="Fixing the nettv Player’s No-Picture and Key Blocking Failures"></a>Fixing the nettv Player’s No-Picture and Key Blocking Failures</h1><h2 id="1-Symptoms"><a href="#1-Symptoms" class="headerlink" title="1. Symptoms"></a>1. Symptoms</h2><p>After a user taps a channel under “Network TV” on the desktop:</p>
+<ul>
+<li><code>nettv_player</code> can be seen running in the background, sometimes even with several leftover processes from history at the same time;</li>
+<li>the frontend shows no picture;</li>
+<li>all navigation keys are dead (only the “buy single” key works; the UI looks frozen).</li>
+</ul>
+<h2 id="2-The-Root-Cause-Chain-Three-Layers-Each-Deeper-Than-the-Last"><a href="#2-The-Root-Cause-Chain-Three-Layers-Each-Deeper-Than-the-Last" class="headerlink" title="2. The Root-Cause Chain (Three Layers, Each Deeper Than the Last)"></a>2. The Root-Cause Chain (Three Layers, Each Deeper Than the Last)</h2><h3 id="2-1-Direct-Cause-All-Channel-Sources-Dead"><a href="#2-1-Direct-Cause-All-Channel-Sources-Dead" class="headerlink" title="2.1 Direct Cause: All Channel Sources Dead"></a>2.1 Direct Cause: All Channel Sources Dead</h3><p>On-device measurement of the channel table: 8 sources, with <code>curl</code> returning <code>000</code> for all of them (connection timeout). Public live sources (voc, regional P2P streams) have an average lifetime of only a few weeks; dying is the norm.</p>
+<h3 id="2-2-Deeper-Cause-The-Player’s-Handling-of-“Source-Unreachable”-Is-Infinite-Restarts"><a href="#2-2-Deeper-Cause-The-Player’s-Handling-of-“Source-Unreachable”-Is-Infinite-Restarts" class="headerlink" title="2.2 Deeper Cause: The Player’s Handling of “Source Unreachable” Is Infinite Restarts"></a>2.2 Deeper Cause: The Player’s Handling of “Source Unreachable” Is Infinite Restarts</h3><p>The structure of <code>nettv_player</code> (sprd_msg baseline) is “monitor parent + decoder child”:</p>
+<ul>
+<li>the child fails to pull the m3u8 → <code>load_chunk</code> fails → <code>_exit(10)</code>;</li>
+<li>the monitor parent <strong>ignores the exit code</strong>, re-forks after 150ms → fails again → restarts again…</li>
+</ul>
+<p>So the process never exits and never decodes a frame. This directly produces two user-visible symptoms:</p>
+<ul>
+<li><strong>No picture</strong>: no frame is ever decoded;</li>
+<li><strong>Key blocking</strong>: the UI page (<code>nettv_page.c</code>) pauses the LVGL main loop when it starts the player and installs a key interceptor, with a waiter thread blocked in <code>waitpid</code> to reap the corpse — the player doesn’t exit, so the waiter thread never returns, and the UI and keys never recover.</li>
+</ul>
+<h3 id="2-3-The-Deepest-Pit-Three-Timing-Races-in-a-Row-While-Fixing-“Exit-on-Unreachable-Source”"><a href="#2-3-The-Deepest-Pit-Three-Timing-Races-in-a-Row-While-Fixing-“Exit-on-Unreachable-Source”" class="headerlink" title="2.3 The Deepest Pit: Three Timing Races in a Row While Fixing “Exit on Unreachable Source”"></a>2.3 The Deepest Pit: Three Timing Races in a Row While Fixing “Exit on Unreachable Source”</h3><p>The first patch was straightforward — 3 consecutive failures to pull the playlist &#x3D; death sentence, exit code 98, and the monitor doesn’t restart on 98. But on-device testing showed it <strong>completely didn’t work</strong>; the log still showed infinite restarts. Peeling it apart layer by layer revealed three races:</p>
+<ol>
+<li><strong>The stall watchdog kills the source-fetching phase by mistake</strong>: the watchdog’s logic is “8s grace at startup + kill and restart if no new frame for 5s after that”. But VSP component init alone takes several seconds, and 3 curl retries take another 15~25s — the watchdog kills the child before it even reaches “pull the list”, so exit code 98 never gets a chance to be produced.</li>
+<li><strong>The gap between two fetches</strong>: even with the “pulling list” shared flag added, the flag is only set inside <code>hls_pick()</code>; during the inter-segment <code>sleep(1)</code> and the curl fork gap the flag is 0, and the watchdog fires anyway.</li>
+<li><strong>Startup grace conflated with playback grace</strong>: “never output a frame” (startup) and “hung after outputting frames” (VSP hung) share the same 8s grace, while the legitimate startup cost (component init + source fetch + 25s download) should be much longer.</li>
+</ol>
+<h2 id="3-The-Fix"><a href="#3-The-Fix" class="headerlink" title="3. The Fix"></a>3. The Fix</h2><h3 id="Player-Side-sprd-msg-np-c-4-places"><a href="#Player-Side-sprd-msg-np-c-4-places" class="headerlink" title="Player Side (sprd_msg_np.c, 4 places)"></a>Player Side (<code>sprd_msg_np.c</code>, 4 places)</h3><ol>
+<li><code>hls_pick()</code> return-value semantics: <code>1</code> &#x3D; got a new segment, <code>0</code> &#x3D; live hasn’t refreshed yet, <code>-1</code> &#x3D; can’t even pull the playlist (source unreachable);</li>
+<li><code>load_chunk()</code>: 3 consecutive <code>-1</code> &#x3D; death sentence, set <code>g_src_dead</code> and <strong>notify the monitor immediately via the shared-memory flag <code>shm[1]=98</code></strong> (no need to wait for the exit code; responds within 0.4s);</li>
+<li>monitor parent: sees flag 98 → kills the child → <code>_exit(98)</code>, never restarts; the exit-code 98 path is kept as a second line of judgment;</li>
+<li><strong>stall watchdog tiered by semantics</strong>: <code>prev&gt;0</code> (has output frames, VSP hung) keeps the 8s+5s fast restart; <code>prev==0</code> (never output a frame &#x3D; startup) gets 90s grace. During source fetching (including sleep&#x2F;curl gaps) <code>shm[2]=1</code> is set throughout to suppress the watchdog, with a 60s consecutive playlist-pull timeout as the backstop.</li>
+</ol>
+<h3 id="UI-Page-Side-nettv-page-c"><a href="#UI-Page-Side-nettv-page-c" class="headerlink" title="UI Page Side (nettv_page.c)"></a>UI Page Side (<code>nettv_page.c</code>)</h3><p>The waiter thread routes by exit code after reaping: when <code>WEXITSTATUS(status)==98</code>, it uses <code>lv_async_call</code> to change the status bar on the main thread to “Channel source unreachable, returned automatically (switch channels or edit the channel table)”. LVGL objects may only be touched on the main thread; cross-thread notifications must go through <code>lv_async_call</code>.</p>
+<h3 id="Channel-Table"><a href="#Channel-Table" class="headerlink" title="Channel Table"></a>Channel Table</h3><p>After all 8 sources died, the on-device replacement is 4 live sources (Qianjiang Metro &#x2F; Shangyu &#x2F; Songpan &#x2F; Luxian, all returning valid m3u8), with the old table backed up as <code>stations.m3u.bak_20261012</code>.</p>
+<h2 id="4-Verification-Results"><a href="#4-Verification-Results" class="headerlink" title="4. Verification Results"></a>4. Verification Results</h2><table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Before the Fix</th>
+<th>After the Fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Tapping a dead-source channel</td>
+<td>player restarts forever, UI frozen permanently, only a power cut left</td>
+<td>exits automatically in ~40s (exit code 98), UI and keys recover, status bar shows source unreachable</td>
+</tr>
+<tr>
+<td>Tapping a live-source channel</td>
+<td>—</td>
+<td>decodes frames normally (Qianjiang Metro measured: 4 frames per round before hitting the known “second IDR hang”, monitor restart loop; a legacy issue)</td>
+</tr>
+</tbody></table>
+<h2 id="5-Lessons-Learned"><a href="#5-Lessons-Learned" class="headerlink" title="5. Lessons Learned"></a>5. Lessons Learned</h2><ol>
+<li><strong>“A background process is running” does not mean “it is working”</strong>: in this case, the process running is precisely the fault itself — an infinite restart loop. To judge health, look at functional truth values (frame count, exit code), not process existence.</li>
+<li><strong>Watchdog grace must be tiered by semantics</strong>: the legitimate time cost of startup (including network source fetching) and of a runtime hang differ by an order of magnitude; sharing one 8s grace will kill by mistake during startup, turning “a flow that would have exited on its own” into “infinite restarts”.</li>
+<li><strong>When fixing a “should exit” class of bug, first confirm there is no deeper “kill early” mechanism</strong>: no matter how right the exit-code design is, if the watchdog SIGKILLs first it can never get through. Parent-child communication should prefer the shared-memory flag (immediate); the exit code is only the backstop.</li>
+<li><strong>Idempotent operations should not have preconditions, and waiting conditions should not use timers</strong>: in this case the watchdog’s exit condition is nominally the “no new frame” event but actually smuggles in an “8s timer”, and the moment you mix them it’s wrong (the mirror image of “a loop waiting on a child process with no time limit”).</li>
+<li><strong>For UI blocking failures, first ask “who is waiting for an event that will never come”</strong>: here it is <code>waitpid</code> waiting on a player that never exits. Make the child process guaranteed to exit (exit code 98 + SIGKILL backstop), and a blocking wait is safe.</li>
+</ol>
+<h2 id="6-Remaining-Issues"><a href="#6-Remaining-Issues" class="headerlink" title="6. Remaining Issues"></a>6. Remaining Issues</h2><ul>
+<li><strong>Second IDR hang</strong> (<code>addr=0x747474</code> segfault or permanent hang): after the first GOP of a 1080p live stream outputs ~4 frames, feeding the second IDR always triggers it; monitor restarts only buy a “4 frames per round” slideshow mode. This is the last obstacle to smooth nettv playback, and it is already on the daily scheduled task list.</li>
+<li>Live sources need periodic inspection and replacement; the channel table goes stale every few weeks on average.</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is original work by whiteleibniz (with AI-assisted editing). Copyright belongs to whiteleibniz. Please credit the source and link to the original article when reposting: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Fixing-the-nettv-Player%E2%80%99s-No-Picture-and-Key-Blocking-Failures"><span class="toc-number">1.</span> <span class="toc-text">Fixing the nettv Player’s No-Picture and Key Blocking Failures</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptoms"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptoms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Root-Cause-Chain-Three-Layers-Each-Deeper-Than-the-Last"><span class="toc-number">1.2.</span> <span class="toc-text">2. The Root-Cause Chain (Three Layers, Each Deeper Than the Last)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-Direct-Cause-All-Channel-Sources-Dead"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 Direct Cause: All Channel Sources Dead</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Deeper-Cause-The-Player%E2%80%99s-Handling-of-%E2%80%9CSource-Unreachable%E2%80%9D-Is-Infinite-Restarts"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 Deeper Cause: The Player’s Handling of “Source Unreachable” Is Infinite Restarts</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-The-Deepest-Pit-Three-Timing-Races-in-a-Row-While-Fixing-%E2%80%9CExit-on-Unreachable-Source%E2%80%9D"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 The Deepest Pit: Three Timing Races in a Row While Fixing “Exit on Unreachable Source”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Fix"><span class="toc-number">1.3.</span> <span class="toc-text">3. The Fix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Player-Side-sprd-msg-np-c-4-places"><span class="toc-number">1.3.1.</span> <span class="toc-text">Player Side (sprd_msg_np.c, 4 places)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UI-Page-Side-nettv-page-c"><span class="toc-number">1.3.2.</span> <span class="toc-text">UI Page Side (nettv_page.c)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Channel-Table"><span class="toc-number">1.3.3.</span> <span class="toc-text">Channel Table</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Verification-Results"><span class="toc-number">1.4.</span> <span class="toc-text">4. Verification Results</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Lessons-Learned"><span class="toc-number">1.5.</span> <span class="toc-text">5. Lessons Learned</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Remaining-Issues"><span class="toc-number">1.6.</span> <span class="toc-text">6. Remaining Issues</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&text=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&title=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&is_video=false&description=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever&body=Check out this article: https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&title=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&title=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&title=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&title=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/&name=Fixing the nettv Player&#39;s No-Picture and Key Blocking Failures: When a Source Is Unreachable, Exit — Don&#39;t Restart Forever&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

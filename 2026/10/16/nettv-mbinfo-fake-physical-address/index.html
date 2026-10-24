@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前面三篇把 VSP 硬解从「切软解」里救了回来，画面也出来了。但真机上还有两个症状没解决：抓屏有 1&#x2F;3 的块状马赛克，以及播到第 3 个 GOP 的 IDR 时解码器永久挂死。这篇记录怎么把这两件事收敛到同一个嫌疑——mbinfo 缓冲的假物理地址，以及对应的修法。 一、三条证">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前面三篇把 VSP 硬解从「切软解」里救了回来，画面也出来了。但真机上还有两个症状没解决：抓屏有 1&#x2F;3 的块状马赛克，以及播到第 3 个 GOP 的 IDR 时解码器永久挂死。这篇记录怎么把这两件事收敛到同一个嫌疑——">
 <meta property="og:type" content="article">
 <meta property="og:title" content="展讯 SC9832A 网络电视攻坚（四）：mbinfo 的「假物理地址」——画面 1&#x2F;3 马赛克与 IDR 挂死的共同嫌疑">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前面三篇把 VSP 硬解从「切软解」里救了回来，画面也出来了。但真机上还有两个症状没解决：抓屏有 1&#x2F;3 的块状马赛克，以及播到第 3 个 GOP 的 IDR 时解码器永久挂死。这篇记录怎么把这两件事收敛到同一个嫌疑——mbinfo 缓冲的假物理地址，以及对应的修法。 一、三条证">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前面三篇把 VSP 硬解从「切软解」里救了回来，画面也出来了。但真机上还有两个症状没解决：抓屏有 1&#x2F;3 的块状马赛克，以及播到第 3 个 GOP 的 IDR 时解码器永久挂死。这篇记录怎么把这两件事收敛到同一个嫌疑——">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-15T18:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-16T07:47:21.578Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:25.758Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="VSP">
 <meta property="article:tag" content="硬解">
@@ -80,10 +80,10 @@
   <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/2026/10/16/nettv-log-flood-and-source-quality/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/2026/10/15/nettv-workaround-poison-gop-restart/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/15/nettv-workaround-poison-gop-restart-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -150,6 +150,9 @@
 
   <div class="content" itemprop="articleBody">
     <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/16/nettv-mbinfo-fake-physical-address-en/">English</a></p>
+</blockquote>
+<blockquote>
 <p>版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。</p>
 </blockquote>
 <p>前面三篇把 VSP 硬解从「切软解」里救了回来，画面也出来了。但真机上还有两个症状没解决：<strong>抓屏有 1&#x2F;3 的块状马赛克</strong>，以及<strong>播到第 3 个 GOP 的 IDR 时解码器永久挂死</strong>。这篇记录怎么把这两件事收敛到同一个嫌疑——mbinfo 缓冲的<strong>假物理地址</strong>，以及对应的修法。</p>

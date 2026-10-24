@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-16T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:54:05.631Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Hardware Decoding">
+<meta property="article:tag" content="framebuffer">
+<meta property="article:tag" content="NV12">
+<meta property="article:tag" content="Rotation">
+<meta property="article:tag" content="Performance Optimization">
+<meta property="article:tag" content="Spreadtrum">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/17/nettv-07-fb-render-single-pass-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&text=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&title=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition&body=Check out this article: https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&title=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&title=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&title=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&title=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&name=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-What-the-Old-Renderer-Looked-Like"><span class="toc-number">1.</span> <span class="toc-text">1. What the Old Renderer Looked Like</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Key-Insight-The-Full-Resolution-Middle-Layer-Is-Pure-Waste"><span class="toc-number">2.</span> <span class="toc-text">2. The Key Insight: The Full-Resolution Middle Layer Is Pure Waste</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Quantified-From-4fps-to-12fps"><span class="toc-number">3.</span> <span class="toc-text">3. Quantified: From 4fps to 12fps</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-A-Near-Miss-Did-the-Speedup-Detonate-the-Vendor-Library-Crash"><span class="toc-number">4.</span> <span class="toc-text">4. A Near-Miss: Did the Speedup Detonate the Vendor Library Crash?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-A-Few-Pits-Stepped-Into-Along-the-Way"><span class="toc-number">5.</span> <span class="toc-text">5. A Few Pits Stepped Into Along the Way</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Current-State-and-Next-Steps"><span class="toc-number">6.</span> <span class="toc-text">6. Current State and Next Steps</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-16T18:00:00.000Z" itemprop="datePublished">2026-10-17</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Hardware-Decoding/" rel="tag">Hardware Decoding</a>, <a class="tag-link-link" href="/tags/NV12/" rel="tag">NV12</a>, <a class="tag-link-link" href="/tags/Performance-Optimization/" rel="tag">Performance Optimization</a>, <a class="tag-link-link" href="/tags/Rotation/" rel="tag">Rotation</a>, <a class="tag-link-link" href="/tags/Spreadtrum/" rel="tag">Spreadtrum</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/framebuffer/" rel="tag">framebuffer</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.</p>
+</blockquote>
+<p>The earlier parts filled in the potholes of VSP hardware decoding, mbinfo fake physical addresses, and GOP replay — the picture comes out, but <strong>only at 4fps</strong>. One sampler run showed 100% CPU burned inside <code>fb_render</code> — either a vendor-library deadlock or our own NV12→ARGB + 90° rotation + scaling. This part documents how I took it from 250ms&#x2F;frame down to 19-21ms&#x2F;frame.</p>
+<h2 id="1-What-the-Old-Renderer-Looked-Like"><a href="#1-What-the-Old-Renderer-Looked-Like" class="headerlink" title="1. What the Old Renderer Looked Like"></a>1. What the Old Renderer Looked Like</h2><p>VSP decode output is NV12 1920x1088; the screen is a 720x1280 portrait panel, so each frame needs three things: NV12→ARGB conversion, 90° rotation, and scaling to 720x1280. The old implementation was a proper three-pass affair:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* pass1: full-resolution NV12 → ARGB */</span></span><br><span class="line"><span class="keyword">for</span> (iy = <span class="number">0</span>; iy &lt; <span class="number">1080</span>; iy++)</span><br><span class="line">    <span class="keyword">for</span> (ix = <span class="number">0</span>; ix &lt; <span class="number">1920</span>; ix += <span class="number">2</span>) &#123;</span><br><span class="line">        uu = Cl[ix] - <span class="number">128</span>; vv = Cl[ix+<span class="number">1</span>] - <span class="number">128</span>;</span><br><span class="line">        dr[ix]   = yuv2px(Yl[ix],   uu, vv);</span><br><span class="line">        dr[ix+<span class="number">1</span>] = yuv2px(Yl[ix+<span class="number">1</span>], uu, vv);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">/* pass2a: 16x16 block transpose + vertical flip → g_targb */</span></span><br><span class="line"><span class="comment">/* pass2b: targb 1080x1920 → fb 720x1280 (NN 3/2 sampling) */</span></span><br></pre></td></tr></table></figure>
+
+<p>The two intermediate buffers <code>g_argb</code> &#x2F; <code>g_targb</code> are 8.3MB each; together they eat roughly 25MB of memory traffic per frame (2.07M pixels × 4B × several read-modify-write rounds). On a Cortex-A7 that is 250ms.</p>
+<h2 id="2-The-Key-Insight-The-Full-Resolution-Middle-Layer-Is-Pure-Waste"><a href="#2-The-Key-Insight-The-Full-Resolution-Middle-Layer-Is-Pure-Waste" class="headerlink" title="2. The Key Insight: The Full-Resolution Middle Layer Is Pure Waste"></a>2. The Key Insight: The Full-Resolution Middle Layer Is Pure Waste</h2><p>One glance at the output size and it clicked: <strong>only 720×1280 &#x3D; 921,600 pixels are needed in the end, yet the middle layer computed a full 1920×1080 &#x3D; 2,073,600 pixels</strong>. In other words, 56% of the pixels so painstakingly computed would never be sampled — thrown away directly.</p>
+<p>So why not compute only “the 44% that will actually be used”?</p>
+<p>Compose the three geometric transforms (transpose + vertical flip + 3&#x2F;2 nearest-neighbor sampling) into one, and you get a direct mapping:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fb[oy][ox] = src_argb[1079 - ox*3/2][oy*3/2]</span><br></pre></td></tr></table></figure>
+
+<p>Derivation: <code>targb[tx][ty] = argb[1079-ty][tx]</code>, and <code>fb[oy][ox] = targb[oy*3/2][ox*3/2]</code>; substitute and out it comes. <strong>Mind you don’t swap the row&#x2F;column roles</strong> — my first version had them backwards: the whole picture transposed, with an extra blank strip at the bottom, only caught by frame-grab comparison (details below).</p>
+<p>There is also an unavoidable tension: <strong>in a transpose problem, “write in output-row order” and “read in source-row order” can never hold at the same time</strong>. Writing in output-row order forces column reads from the source (stride 1920 bytes, one cache line per pixel); reading in source-row order forces column writes to the output. The fix is tiling: split the output into 16-row bands, compute into a <code>band[16][720]</code> staging buffer, then memcpy whole rows into the framebuffer:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">unsigned</span> band[<span class="number">16</span>][<span class="number">720</span>];</span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> oy0 = <span class="number">0</span>; oy0 &lt; <span class="number">1280</span>; oy0 += <span class="number">16</span>) &#123;</span><br><span class="line">    <span class="type">int</span> c0 = oy0*<span class="number">3</span>/<span class="number">2</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">720</span>; i++) &#123;          <span class="comment">/* ox = i, source row fixed */</span></span><br><span class="line">        <span class="type">int</span> r = <span class="number">1079</span> - i*<span class="number">3</span>/<span class="number">2</span>;</span><br><span class="line">        <span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *Yl = Y + (<span class="type">size_t</span>)r*<span class="number">1920</span>;</span><br><span class="line">        <span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *Cl = C + (<span class="type">size_t</span>)(r&gt;&gt;<span class="number">1</span>)*<span class="number">1920</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; <span class="number">16</span>; j++) &#123;       <span class="comment">/* oy = oy0+j, contiguous source-column window */</span></span><br><span class="line">            <span class="type">int</span> c  = c0 + j*<span class="number">3</span>/<span class="number">2</span>;</span><br><span class="line">            <span class="type">int</span> cb = c &amp; ~<span class="number">1</span>;                 <span class="comment">/* NV12 interleave: u in even columns, v right after */</span></span><br><span class="line">            <span class="type">int</span> uu = Cl[cb] - <span class="number">128</span>, vv = Cl[cb+<span class="number">1</span>] - <span class="number">128</span>;</span><br><span class="line">            band[j][i] = yuv2px(Yl[c], uu, vv);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; <span class="number">16</span>; j++)</span><br><span class="line">        <span class="built_in">memcpy</span>(dst + (<span class="type">size_t</span>)(oy0+j)*<span class="number">720</span>, band[j], <span class="number">720</span>*<span class="number">4</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Now each source line touches only 1~2 cache lines on the read side (24-byte window), and each output line is a single 2880-byte contiguous burst on the write side — both sides happy.</p>
+<p>Three details worth recording:</p>
+<ul>
+<li><strong>UV must be sampled at even columns.</strong> <code>c</code> can be odd (3&#x2F;2 sampling yields column indices 0,1,3,4,6…); in NV12, u&#x2F;v are stored interleaved in pairs, so align to even columns with <code>cb = c &amp; ~1</code>, then take <code>Cl[cb]</code> and <code>Cl[cb+1]</code>. Get it wrong and half the picture shifts color.</li>
+<li><strong>Access locality.</strong> Output rows are written sequentially; the input Y row index <code>r</code> advances only 1~2 rows per row with sequential column reads — cache friendly. Far healthier than the “transpose the whole frame” approach that jumps 4.3KB to write 4 bytes.</li>
+</ul>
+<p>While at it, delete both 8.3MB intermediate buffers too, saving 16.6MB of memory — no small number on a device with only a few hundred MB.</p>
+<h2 id="3-Quantified-From-4fps-to-12fps"><a href="#3-Quantified-From-4fps-to-12fps" class="headerlink" title="3. Quantified: From 4fps to 12fps"></a>3. Quantified: From 4fps to 12fps</h2><p>The player has a <code>bench</code> self-test entry (30 renders, timed individually); the first version (wrong geometry, no transpose tension) ran 19-21ms&#x2F;frame. After fixing the geometry and adding banded staging, the end-to-end measurement was <strong>25 frames &#x2F; 2057ms &#x3D; 12.1fps</strong> — 3x the old 4fps. Along the way I also stepped into an invisible pit:</p>
+<p><strong>The real reason “no video visible” was not the renderer — it was page flipping.</strong> The player kept writing the picture into page 1&#x2F;2 of the framebuffer (double buffering), but <code>fb_pan()</code> contained a single <code>return; /* no-pan experiment */</code> — FBIOPAN was never actually issued, and the screen stayed frozen on page 0 used by the LVGL desktop. In other words: <strong>decoding, rendering, and writing to the screen were all working; only the last step — “switch the visible window over” — was missing</strong>, so the user saw a stone-still desktop. The fix uses the safe posture (a hard-won decision after the earlier kernel crash): trust only the real struct returned by <code>FBIOGET_VSCREENINFO</code>, validate <code>yres_virtual &gt;= 3840</code>, change <code>yoffset</code>, then <code>ioctl(FBIOPAN_DISPLAY)</code>. Along the way, add <code>fb_sys_home()</code> to the monitor process — when a child is SIGKILLed it has no time to pan back to page 0 itself, the screen freezes on the last frame, so the monitor must switch the picture back.</p>
+<p>The lesson is plain: <strong>after changing a geometric mapping, grab a framebuffer frame and bit-compare it against a verified reference frame before talking about shipping.</strong> I had trusted the bench timings because they looked good, but the direction was wrong — good performance and a correct picture are two different things.</p>
+<h2 id="4-A-Near-Miss-Did-the-Speedup-Detonate-the-Vendor-Library-Crash"><a href="#4-A-Near-Miss-Did-the-Speedup-Detonate-the-Vendor-Library-Crash" class="headerlink" title="4. A Near-Miss: Did the Speedup Detonate the Vendor Library Crash?"></a>4. A Near-Miss: Did the Speedup Detonate the Vendor Library Crash?</h2><p>There was an interlude. Right after switching to the new renderer on a live source: 91 SIGSEGVs in 20 seconds, 124 monitor restarts. Reading the scene logs, the crash came right after the vendor library <code>libstagefright_sprd_h264dec.so</code> finished processing a frame — indistinguishable from the earlier confirmed “OMX input queue use-after-free”.</p>
+<p>First instinct: <strong>the renderer got 12x faster → the bitstream is fed faster → the vendor library’s race&#x2F;UAF was forced out</strong>. It sounded perfectly plausible, and I almost wrote it into the conclusion.</p>
+<p>But a single observation proves nothing. So I added an environment-variable switch <code>NETTV_RENDER=0</code> to fall back to the old three-pass path, running an A&#x2F;B <strong>with the same binary</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Render path</th>
+<th>Duration</th>
+<th>SIGSEGV</th>
+<th>monitor restarts</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Slow (three-pass)</td>
+<td>40s</td>
+<td>0</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Fast (single-pass)</td>
+<td>40s</td>
+<td><strong>0</strong></td>
+<td>3</td>
+</tr>
+</tbody></table>
+<p>Not only did the fast path not crash, it restarted fewer times. <strong>Those crashes were a state problem of the device&#x2F;source at the time</strong> (ION&#x2F;CMA state after repeated kills, plus a dried-up early-morning live source), unrelated to the render path.</p>
+<p>The lesson is plain: the first batch of anomalies after a performance optimization easily gets attributed to “the optimization changed the timing”. Before concluding, run an A&#x2F;B that switches only the optimization and changes nothing else — low cost, and it saves a wrong verdict.</p>
+<h2 id="5-A-Few-Pits-Stepped-Into-Along-the-Way"><a href="#5-A-Few-Pits-Stepped-Into-Along-the-Way" class="headerlink" title="5. A Few Pits Stepped Into Along the Way"></a>5. A Few Pits Stepped Into Along the Way</h2><ol>
+<li><p><strong>Under bare bionic, <code>_exit</code> does not flush stdio.</strong> We enter main directly with <code>-nostdlib -Wl,--entry=main</code>, so the bench timings and frame-rate heartbeats never print — <code>_exit</code> just leaves, and the stdio buffers never hit the disk. Every measurement point needs an <code>fflush(0)</code> after it, otherwise “no log” gets misread as “never executed”.</p>
+</li>
+<li><p><strong>Child-process logs get O_TRUNC-truncated when the monitor process respawns them.</strong> The monitor respawns the child every few seconds, wiping the log each time, so the crash scene cannot be preserved. Change to appending an independent file <code>/tmp/nettv_segv.log</code> from the SIGSEGV handler, surviving restarts.</p>
+</li>
+<li><p><strong>GCC’s block-partitioning reorder bug.</strong> After adding some code, the compiler errored out:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">.size expression for c1_reuse.part.0 does not evaluate to a constant</span><br><span class="line">Error: junk at end of line, first unrecognized character valued 0x4</span><br></pre></td></tr></table></figure>
+
+<p>GCC split the function into <code>.part.0</code> and then handed the assembler an illegal <code>.size</code>. Adding <code>-fno-reorder-blocks-and-partition</code> to the build script fixes it.</p>
+</li>
+<li><p><strong>Using <code>&amp;</code> to start a background process inside a single SSH command is unreliable</strong> — subsequent commands get truncated by session teardown, and even the redirect file fails to appear. Long tasks always go into a script uploaded first, then <code>nohup sh xxx.sh &amp;</code>.</p>
+</li>
+<li><p><strong>The child stopping at exactly 31 frames each round is not a crash.</strong> The frame-cap parameter defaults to 0 (unlimited); the real reason is that <code>load_chunk()</code> cleanly exits at an m3u8 segment boundary because no new segment can be fetched (the source dried up). Seeing “the same frame count every round” — don’t jump to “hung”.</p>
+</li>
+</ol>
+<h2 id="6-Current-State-and-Next-Steps"><a href="#6-Current-State-and-Next-Steps" class="headerlink" title="6. Current State and Next Steps"></a>6. Current State and Next Steps</h2><p>Rendering is no longer the bottleneck (20ms). But the end-to-end frame rate has not gone up yet — because the source itself dries up, each round’s child lives only to 31 frames, so the real fps cannot be measured. Next, use a local multi-GOP <code>.ts</code> file source to keep the decoder fully fed, eliminating source interference, then clean up what remains: the 3MB <code>memcpy</code> per round, the <code>usleep(20ms)</code> in the <code>slice</code> loop, and the signature scan.</p>
+<p><strong>One-sentence summary of this class of optimization</strong>: don’t rush to NEON-ize or hand-assemble a hot function; first ask “of these pixels I compute, how many will actually be seen in the end”. Often cutting out the middle layer pays an order of magnitude more than instruction-level optimization.</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-What-the-Old-Renderer-Looked-Like"><span class="toc-number">1.</span> <span class="toc-text">1. What the Old Renderer Looked Like</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Key-Insight-The-Full-Resolution-Middle-Layer-Is-Pure-Waste"><span class="toc-number">2.</span> <span class="toc-text">2. The Key Insight: The Full-Resolution Middle Layer Is Pure Waste</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Quantified-From-4fps-to-12fps"><span class="toc-number">3.</span> <span class="toc-text">3. Quantified: From 4fps to 12fps</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-A-Near-Miss-Did-the-Speedup-Detonate-the-Vendor-Library-Crash"><span class="toc-number">4.</span> <span class="toc-text">4. A Near-Miss: Did the Speedup Detonate the Vendor Library Crash?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-A-Few-Pits-Stepped-Into-Along-the-Way"><span class="toc-number">5.</span> <span class="toc-text">5. A Few Pits Stepped Into Along the Way</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Current-State-and-Next-Steps"><span class="toc-number">6.</span> <span class="toc-text">6. Current State and Next Steps</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&text=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&title=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition&body=Check out this article: https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&title=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&title=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&title=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&title=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/&name=netTV Hardware Decoding Deep Dive (7): Squeezing 250ms-Per-Frame Rendering Down to 20ms — Killing Three Full-Resolution Passes with Geometric Composition&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

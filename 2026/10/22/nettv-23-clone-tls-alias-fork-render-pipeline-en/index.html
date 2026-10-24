@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-22T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:23:56.017Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Hardware Decoding">
+<meta property="article:tag" content="Spreadtrum">
+<meta property="article:tag" content="SIGSEGV">
+<meta property="article:tag" content="Bare clone Thread">
+<meta property="article:tag" content="clone">
+<meta property="article:tag" content="TLS">
+<meta property="article:tag" content="fork">
+<meta property="article:tag" content="Pipeline">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&text=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&title=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&is_video=false&description=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno&body=Check out this article: https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&title=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&title=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&title=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&title=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&name=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-The-Ledger-and-the-Goal"><span class="toc-number">1.</span> <span class="toc-text">1. The Ledger and the Goal</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Version-One-A-Bare-clone-Render-Thread-%E2%80%94-Always-Crashes"><span class="toc-number">2.</span> <span class="toc-text">2. Version One: A Bare clone Render Thread — Always Crashes</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Root-Cause-clone-Without-CLONE-SETTLS-Parent-and-Child-Sharing-One-TLS"><span class="toc-number">3.</span> <span class="toc-text">3. The Root Cause: clone Without CLONE_SETTLS, Parent and Child Sharing One TLS</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Three-Historical-Mysteries-Explained-in-One-Breath"><span class="toc-number">3.1.</span> <span class="toc-text">Three Historical Mysteries Explained in One Breath</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-The-Plan-fork-Instead-of-clone"><span class="toc-number">4.</span> <span class="toc-text">4. The Plan: fork Instead of clone</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Three-Implementation-Details-Worth-Recording"><span class="toc-number">5.</span> <span class="toc-text">5. Three Implementation Details Worth Recording</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-A-B-Reality-Check-fork-Won-Stability-Lost-Frame-Rate"><span class="toc-number">6.</span> <span class="toc-text">6. A&#x2F;B Reality Check: fork Won Stability, Lost Frame Rate</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-The-Real-Dividend-Smearing-Can-Be-Saved"><span class="toc-number">7.</span> <span class="toc-text">7. The Real Dividend: Smearing Can Be Saved</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Lessons"><span class="toc-number">8.</span> <span class="toc-text">8. Lessons</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-22T06:00:00.000Z" itemprop="datePublished">2026-10-22</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Bare-clone-Thread/" rel="tag">Bare clone Thread</a>, <a class="tag-link-link" href="/tags/Hardware-Decoding/" rel="tag">Hardware Decoding</a>, <a class="tag-link-link" href="/tags/Pipeline/" rel="tag">Pipeline</a>, <a class="tag-link-link" href="/tags/SIGSEGV/" rel="tag">SIGSEGV</a>, <a class="tag-link-link" href="/tags/Spreadtrum/" rel="tag">Spreadtrum</a>, <a class="tag-link-link" href="/tags/TLS/" rel="tag">TLS</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/clone/" rel="tag">clone</a>, <a class="tag-link-link" href="/tags/fork/" rel="tag">fork</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.</p>
+</blockquote>
+<p>In the last part we pinned down the page-flipping thread for “curing smearing” (off by default, 21.9fps for safety), so the natural question is: <strong>is there any room left to raise the frame rate?</strong> The ledger is right there — 41.3ms per frame &#x3D; vendor synchronous decode 14.1ms (the hard floor) + frame read 2.7ms + render 23.9ms. The decode side has nothing left to shave, so the only cheap move is to <strong>move rendering onto a second execution unit and pipeline it with decoding</strong>: the worker side needs only 16.8ms and the render side 24.1ms, so the steady-state frame rate &#x3D; max(both) ≈ 24ms ≈ a theoretical ceiling of 41fps. This part covers the first implementation of that “tier 2” plan — <strong>crashing again</strong> — plus the root cause dug up this time, one that explains three historical mysteries in a single breath.</p>
+<h2 id="1-The-Ledger-and-the-Goal"><a href="#1-The-Ledger-and-the-Goal" class="headerlink" title="1. The Ledger and the Goal"></a>1. The Ledger and the Goal</h2><p>The frame-rate ledger finalized on 10-21&#x2F;22 (Luxian 1080p source, 60s sampling):</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Time</th>
+<th>Nature</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>bsOnMsg (vendor synchronous decode)</td>
+<td>14.1 ms</td>
+<td>Hard floor; all 828 samples are 14ms, cannot be shaved</td>
+</tr>
+<tr>
+<td>Frame read (ION cached memcpy)</td>
+<td>2.7 ms</td>
+<td>Already optimized (44.3→2.6)</td>
+</tr>
+<tr>
+<td>Render (yuv2rgb + geometry compositing + fb write)</td>
+<td>23.9 ms</td>
+<td>Profiled: memory access 10 &#x2F; arithmetic 13 &#x2F; scattered writes ≈0 &#x2F; copy 2, no cheap variables</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>41.3 ms → 21.9 fps</strong></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Those 24ms of rendering are pure CPU work (NEON is already saturated), but beyond the data dependency it has <strong>no ordering dependency on decoding</strong> — decoding frame n and then rendering frame n can proceed fully in parallel with rendering frame n-1. So the shape of tier 2 is clear: <strong>double buffering + producer&#x2F;consumer</strong> — the worker memcpys each decoded frame into staging and publishes it, while the render side renders at its own pace.</p>
+<h2 id="2-Version-One-A-Bare-clone-Render-Thread-—-Always-Crashes"><a href="#2-Version-One-A-Bare-clone-Render-Thread-—-Always-Crashes" class="headerlink" title="2. Version One: A Bare clone Render Thread — Always Crashes"></a>2. Version One: A Bare clone Render Thread — Always Crashes</h2><p>The most intuitive first implementation: start a render thread with <code>clone()</code>, double buffering plus an atomic sequence-number handshake. The logic ran fine — until it hit real hardware:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">*** monitor: 子进程自退 st=0xb ***        （SIGSEGV，无限重启，0 帧）</span><br></pre></td></tr></table></figure>
+
+<p>phase.log (with <code>O_APPEND|O_SYNC</code>, crash-proof) shows every generation dying in exactly the same way:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">t=... DRIVE empty(in) 喂 IDR+SPS+PPS (Annex-B 全序列, nFlags=0)</span><br><span class="line">t=... mon-child-signal=11 st=0xb        （60~300ms 后）</span><br></pre></td></tr></table></figure>
+
+<p><strong>Every generation of the worker dies abruptly right after “feeding the IDR”</strong> — identical to the page-flipping thread symptom from the last part, down to the death phase.</p>
+<h2 id="3-The-Root-Cause-clone-Without-CLONE-SETTLS-Parent-and-Child-Sharing-One-TLS"><a href="#3-The-Root-Cause-clone-Without-CLONE-SETTLS-Parent-and-Child-Sharing-One-TLS" class="headerlink" title="3. The Root Cause: clone Without CLONE_SETTLS, Parent and Child Sharing One TLS"></a>3. The Root Cause: clone Without CLONE_SETTLS, Parent and Child Sharing One TLS</h2><p>When <code>clone()</code>‘s flags lack <code>CLONE_SETTLS</code>, something very hidden happens: <strong>the child thread’s TPIDRURO register inherits the parent thread’s value verbatim</strong> — that is, the parent and child threads <strong>share the same TLS (thread-local storage)</strong>.</p>
+<p>In the bare bionic (<code>nostdlib</code>) environment this means:</p>
+<ol>
+<li>whenever the child thread makes a <strong>failed system call</strong>, glibc&#x2F;bionic’s <code>__errno_location()</code> writes errno — and errno hides at a fixed offset inside TLS;</li>
+<li>that write <strong>clobbers the parent thread’s errno in passing</strong>;</li>
+<li>the parent’s immediately following “feed IDR” logic branches on errno → the logic goes wrong → it keeps running with a wrong state → wild pointer SIGSEGV.</li>
+</ol>
+<p>The crash address <code>0x747474</code> &#x3D; ASCII <code>&quot;ttt&quot;</code>, consistent with “some chunk of string data dereferenced as a pointer”.</p>
+<h3 id="Three-Historical-Mysteries-Explained-in-One-Breath"><a href="#Three-Historical-Mysteries-Explained-in-One-Breath" class="headerlink" title="Three Historical Mysteries Explained in One Breath"></a>Three Historical Mysteries Explained in One Breath</h3><p>Flipping back through the historical notes, every one hits:</p>
+<table>
+<thead>
+<tr>
+<th>Historical mystery</th>
+<th>Attribution at the time</th>
+<th>Truth</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>10-15 “the second IDR always crashes”</td>
+<td>ION pool drained → secondary crash</td>
+<td>A clone thread trampling the parent thread’s errno</td>
+</tr>
+<tr>
+<td>10-22 “vsync page-flip thread for curing smearing always crashes”</td>
+<td>Undetermined (off by default)</td>
+<td>Same disease</td>
+</tr>
+<tr>
+<td>This time: v16h&#x2F;v16i render thread always crashes</td>
+<td>——</td>
+<td>Same disease</td>
+</tr>
+</tbody></table>
+<p>The project memory actually recorded one rule long ago — <strong>bare clone child threads must not use libc (TLS trampling)</strong> — but it stayed at the level of “the child thread itself shouldn’t call libc” and <strong>never connected “errno aliasing can back-kill the parent” with the crash symptoms</strong>, which is why the first two times we went hunting in the ION pool. This is the cost of notes: rules written too narrowly; next time you step in from a different angle you still won’t recognize it.</p>
+<h2 id="4-The-Plan-fork-Instead-of-clone"><a href="#4-The-Plan-fork-Instead-of-clone" class="headerlink" title="4. The Plan: fork Instead of clone"></a>4. The Plan: fork Instead of clone</h2><p>Since the root cause is “a shared address space lets them trample each other”, the fix is decisive: <strong>move the render side to a <code>fork()</code> child process</strong>.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">worker (parent process)                render child process</span><br><span class="line">─────────────                         ─────────────</span><br><span class="line">DRIVE decode one frame</span><br><span class="line">memcpy → g_st[wn &amp; 1]   (MAP_SHARED)</span><br><span class="line">g_ps-&gt;wn++  ───────────publish────────▶  sees wn &gt; rn</span><br><span class="line">                                         takes g_st[rn &amp; 1]</span><br><span class="line">                                        fb_render() (dedup already done in parent)</span><br><span class="line">                                        g_ps-&gt;rn++</span><br></pre></td></tr></table></figure>
+
+<p>Structural benefits:</p>
+<ul>
+<li><strong>The child process has its own address space</strong> (private TLS, heap, stack) — however it screws up, it cannot reach the parent; parent and child share only <strong>explicit</strong> MAP_SHARED regions: one 4KB handshake area (<code>wn/rn/rstop/rexited</code>, four volatile fields) plus two 3MB double staging buffers;</li>
+<li>the child process <strong>resets SIGSEGV&#x2F;SIGBUS&#x2F;SIGILL to default actions</strong> — if a real wild pointer appears, it dies alone; the parent’s <code>waitpid(WNOHANG)</code> notices and sets <code>g_pipe_on=0</code>, <strong>automatically falling back to single-threaded</strong>, with playback uninterrupted;</li>
+<li>the child sets <code>PR_SET_PDEATHSIG(SIGKILL)</code>, so a sudden parent death leaves no orphan render process clinging to fb.</li>
+</ul>
+<h2 id="5-Three-Implementation-Details-Worth-Recording"><a href="#5-Three-Implementation-Details-Worth-Recording" class="headerlink" title="5. Three Implementation Details Worth Recording"></a>5. Three Implementation Details Worth Recording</h2><p><strong>1. Deduplication must stay in the parent process.</strong> The dedup criterion <code>g_filled</code> (incremented by the vendor callback for each real decoded frame) is a quantity <strong>in the parent process’s address space</strong>; after fork, the child gets a frozen copy from the fork instant, so deduplicating in the child would forever judge “this is an old frame” and render nothing. So the publish gate lives in the parent: memcpy + <code>wn++</code> only when <code>g_filled != filled_seen_p</code>.</p>
+<p><strong>2. A frame’s real width is 1920×1088×3&#x2F;2 &#x3D; 0x2FC400, so staging must be ≥ 0x300000.</strong> The old code computed 0x2FC000 via “width×height×1.5 rounded up to 0x1000”, and memcpy only copied 0x2FC000 — when the render side reads the chroma plane it goes <strong>12KB out of bounds</strong>. malloc has heap slack behind it so it never crashed, but this is the prime suspect for “color banding on the left edge of the picture”; switching to a fixed-size mmap would SIGBUS outright. Fixed as <code>ST_SIZE=0x300000</code> + full-frame copy.</p>
+<p><strong>3. Draining at shutdown matters more than Kill.</strong> On exit, first set <code>rstop=1</code> to tell the child “finish the frame in hand, then quit”, and wait ≤3s for <code>rexited</code>; only on timeout <code>SIGKILL</code> the render child — <strong>the only KILL scenario allowed anywhere in this project</strong>, because by then the VSP DMA has long drained on the worker side (<code>usleep(800ms)</code>), and killing a pure CPU render process carries no hardware state risk. Conversely, KILLing the player mid-decode crashes the kernel (an old lesson, empirically confirmed twice).</p>
+<h2 id="6-A-B-Reality-Check-fork-Won-Stability-Lost-Frame-Rate"><a href="#6-A-B-Reality-Check-fork-Won-Stability-Lost-Frame-Rate" class="headerlink" title="6. A&#x2F;B Reality Check: fork Won Stability, Lost Frame Rate"></a>6. A&#x2F;B Reality Check: fork Won Stability, Lost Frame Rate</h2><p>After building and deploying v17 (enabled with <code>NETTV_PIPE=1</code>, off by default), a 45s smoke test: <strong>signal&#x3D;11 &#x3D; 0</strong>, with <code>流水线: fork渲染子进程(v17)</code> + <code>已 fork(pid=19839, 双staging=MAP_SHARED 0x300000)</code> confirming it took effect. Then four ABBA groups (Luxian 1080p, 60s each, NETTV_PIPE the only variable):</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>env</th>
+<th>signal&#x3D;11</th>
+<th>Real frames</th>
+<th>fps</th>
+<th>Worker wall-clock breakdown</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A1</td>
+<td>default (single-threaded)</td>
+<td>0</td>
+<td>1154</td>
+<td><strong>21.8</strong></td>
+<td>41.5 &#x3D; bsOnMsg 14.2 + frame read 2.6 + render 24.2</td>
+</tr>
+<tr>
+<td>B1</td>
+<td><code>NETTV_PIPE=1</code></td>
+<td>0</td>
+<td>929</td>
+<td>17.5</td>
+<td>36.6 &#x3D; bsOnMsg 10.1 + frame read 3.1 + 10.2 + ~13ms waiting for render</td>
+</tr>
+<tr>
+<td>B2</td>
+<td><code>NETTV_PIPE=1</code></td>
+<td>0</td>
+<td>918</td>
+<td>17.4</td>
+<td>Same as B1</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>default (single-threaded)</td>
+<td>0</td>
+<td>1130</td>
+<td><strong>21.8</strong></td>
+<td>41.6 &#x3D; 14.2 + 2.7 + 24.0</td>
+</tr>
+</tbody></table>
+<p>Full marks on the stability goal (<strong>0 crashes after fork; the root cause behind render-side threads always crashing really pulled out</strong>), but the frame rate dropped <strong>-20%</strong>. One line suffices for the root cause:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /sys/devices/system/cpu/cpu1/online    <span class="comment"># 1</span></span><br><span class="line"><span class="built_in">cat</span> /sys/devices/system/cpu/cpu2/online    <span class="comment"># 0  ← two of the four cores are offline</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Only 2 CPUs are online.</strong> The premise of a pipeline is “rendering and decoding genuinely run in parallel on two execution units”; on a machine with only 2 online cores, which still have to serve monitor&#x2F;dl&#x2F;mplayer, the worker and the render child mostly <strong>time-share the same core</strong>, plus 3MB of staging shuffled between the two cores every frame (L1 is private to each core; cache lines migrate through L2), so the memory bus and scheduling overhead all turn into net loss. The worker’s wall clock did drop from 41.5 to 36.6ms, but total throughput is 57ms&#x2F;frame — <strong>parallelism never happened</strong>.</p>
+<p>So the verdict: <strong>keep <code>NETTV_PIPE</code> off by default</strong>, with v17’s single-threaded path showing zero regression (A1&#x2F;A2 match the historical baseline item by item). But this direction has not been thoroughly falsified — two cheap follow-ups remain:</p>
+<ul>
+<li><strong>taskset affinity</strong>: pin the render child to cpu1 and keep the worker on cpu0, then test again to rule out scheduling dispersion;</li>
+<li><strong>online cpu2&#x2F;cpu3</strong>: with all four cores online, the pipeline’s ledger can actually be computed (writing to <code>/sys</code> hotplug nodes is a global config change; per the project’s iron rule, confirm first).</li>
+</ul>
+<h2 id="7-The-Real-Dividend-Smearing-Can-Be-Saved"><a href="#7-The-Real-Dividend-Smearing-Can-Be-Saved" class="headerlink" title="7. The Real Dividend: Smearing Can Be Saved"></a>7. The Real Dividend: Smearing Can Be Saved</h2><p>Looking back, v17’s biggest value is not the frame rate — it <strong>vindicates the capability of “starting threads on the render side”</strong>. The vsync page-flip thread (curing smearing), switched off by default in the early hours of 10-22 because clone threads always crashed, was then suspected of “ioctl and VSP concurrently stepping on the fb lock” — <strong>wrong; the real culprit was TLS aliasing</strong>. The flip thread itself only does <code>WAITFORVSYNC</code> + <code>PAN_DRAW</code> + waiting on a small block of shared state; implementing it as a fork child makes stepping on the parent structurally impossible, the root cause is gone, and the feature can come back. That is the next part.</p>
+<h2 id="8-Lessons"><a href="#8-Lessons" class="headerlink" title="8. Lessons"></a>8. Lessons</h2><ol>
+<li><strong>A thread started with <code>clone</code> without <code>CLONE_SETTLS</code> is a parent-child TLS alias, not a “lightweight process”.</strong> Any work thread that needs to run libc (especially touching errno) should either pass TLS properly or just fork — fork’s isolation is a structural guarantee that does not depend on “remembering which flag to pass”.</li>
+<li><strong>“The child thread breaks itself” and “the child thread gets the parent killed” are two different things.</strong> The latter is unguardable, because the crime scene is not on yourself; the isolation boundary must be drawn at the address space, not at “I don’t think it will touch that”.</li>
+<li><strong>State judgments belong on the side of the state’s owner.</strong> Deduplication in the child looks natural (“whoever consumes judges”), but the state quantity lives in the parent — across a fork, the judgment must stay in the parent.</li>
+<li><strong>Size constants must be computed by “real width”, not “rounded to look nice”.</strong> 0x2FC000 and 0x2FC400 differ by only 1KB, bought with a 12KB out-of-bounds read; this kind of bug never surfaces relying on malloc’s slack, and explodes the moment you switch allocator.</li>
+<li><strong>Count the cores before parallelizing.</strong> This tier-2 ledger (“render 24ms pipelined with decode 16.8ms ⇒ ceiling of 41fps”) is a joke on a single core and a disaster on two — <code>cat /sys/devices/system/cpu/cpu*/online</code> takes three seconds and should have been run before writing the first line of pipeline code. And remember: <strong>the words “theoretical ceiling” presume the execution unit actually exists</strong>.</li>
+</ol>
+<hr>
+<p><strong>Files involved in this article</strong> (device-side repo <code>/home/lvgl_demo/lvgl_demo</code>): <code>deploy/nettv_player/sprd_msg_np.c</code> (<code>render_child()</code> &#x2F; <code>pipe_child_died()</code> &#x2F; <code>struct pipe_sh</code> &#x2F; worker publish block), build script <code>deploy/nettv_player/build.sh</code>. Local debug scripts: <code>outputs/_pipe_smoke_1022.sh</code> (smoke test), <code>outputs/_pipe_ab3_1022.sh</code> (ABBA A&#x2F;B).</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-The-Ledger-and-the-Goal"><span class="toc-number">1.</span> <span class="toc-text">1. The Ledger and the Goal</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Version-One-A-Bare-clone-Render-Thread-%E2%80%94-Always-Crashes"><span class="toc-number">2.</span> <span class="toc-text">2. Version One: A Bare clone Render Thread — Always Crashes</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Root-Cause-clone-Without-CLONE-SETTLS-Parent-and-Child-Sharing-One-TLS"><span class="toc-number">3.</span> <span class="toc-text">3. The Root Cause: clone Without CLONE_SETTLS, Parent and Child Sharing One TLS</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Three-Historical-Mysteries-Explained-in-One-Breath"><span class="toc-number">3.1.</span> <span class="toc-text">Three Historical Mysteries Explained in One Breath</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-The-Plan-fork-Instead-of-clone"><span class="toc-number">4.</span> <span class="toc-text">4. The Plan: fork Instead of clone</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Three-Implementation-Details-Worth-Recording"><span class="toc-number">5.</span> <span class="toc-text">5. Three Implementation Details Worth Recording</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-A-B-Reality-Check-fork-Won-Stability-Lost-Frame-Rate"><span class="toc-number">6.</span> <span class="toc-text">6. A&#x2F;B Reality Check: fork Won Stability, Lost Frame Rate</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-The-Real-Dividend-Smearing-Can-Be-Saved"><span class="toc-number">7.</span> <span class="toc-text">7. The Real Dividend: Smearing Can Be Saved</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Lessons"><span class="toc-number">8.</span> <span class="toc-text">8. Lessons</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&text=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&title=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&is_video=false&description=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno&body=Check out this article: https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&title=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&title=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&title=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&title=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/&name=Spreadtrum SC9832A Network TV Deep Dive (23): Three &#39;Thread Must-Crash&#39; Cases, One Root Cause — clone Without TLS Leaves Parent and Child Sharing One errno&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

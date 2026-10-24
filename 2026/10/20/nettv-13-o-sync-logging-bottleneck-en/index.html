@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-20T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:36:56.883Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Hardware Decoding">
+<meta property="article:tag" content="Spreadtrum">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="O_SYNC">
+<meta property="article:tag" content="fsync">
+<meta property="article:tag" content="Frame Rate">
+<meta property="article:tag" content="Logging Overhead">
+<meta property="article:tag" content="Performance Profiling">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/20/nettv-13-o-sync-logging-bottleneck/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/20/nettv-17-overlay-recon-negative-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&text=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&title=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&title=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&title=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&title=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&title=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&name=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Ledger-First-Then-the-Knife-140ms-Per-Frame-Broken-Into-Five"><span class="toc-number">1.</span> <span class="toc-text">1. Ledger First, Then the Knife: 140ms Per Frame, Broken Into Five</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-First-Suspect-O-SYNC-Once-Every-15ms"><span class="toc-number">2.</span> <span class="toc-text">2. The First Suspect: O_SYNC Once Every 15ms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Change-One-Variable-%E2%80%94-%E2%80%9CDiagnostics-Off-by-Default%E2%80%9D"><span class="toc-number">3.</span> <span class="toc-text">3. The Change: One Variable — “Diagnostics Off by Default”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Verification-Stuck-on-a-%E2%80%9CResource-Conflict%E2%80%9D"><span class="toc-number">4.</span> <span class="toc-text">4. Verification Stuck on a “Resource Conflict”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Three-Takeaways"><span class="toc-number">5.</span> <span class="toc-text">5. Three Takeaways</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-20T06:00:00.000Z" itemprop="datePublished">2026-10-20</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Frame-Rate/" rel="tag">Frame Rate</a>, <a class="tag-link-link" href="/tags/Hardware-Decoding/" rel="tag">Hardware Decoding</a>, <a class="tag-link-link" href="/tags/Logging-Overhead/" rel="tag">Logging Overhead</a>, <a class="tag-link-link" href="/tags/O-SYNC/" rel="tag">O_SYNC</a>, <a class="tag-link-link" href="/tags/Performance-Profiling/" rel="tag">Performance Profiling</a>, <a class="tag-link-link" href="/tags/Spreadtrum/" rel="tag">Spreadtrum</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/fsync/" rel="tag">fsync</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.</p>
+</blockquote>
+<p>After the previous part lifted the stutter from 0.08fps to 6.3fps (<strong>~80x</strong>), I briefly assumed what remained was the hardware decoder’s own limit — the log said in black and white “VSP single-frame decode 43ms, hardware ceiling ≈23fps”, and the monitoring samples also said fb_render takes 33ms. By that math, the 25fps ceiling was untouchable.</p>
+<p>But that was a grudging re-tally after comparing against Android: <strong>inside the 43ms “decode”, the vendor library itself reported the hardware only spent 14ms</strong>. What were the other 29ms? Digging down that thread, what eventually surfaced was nowhere near the decoder — it was <strong>the forensic logging I had added line by line myself</strong>.</p>
+<p>This part documents the full localization of this “logging eats frame rate (fps)” problem: the 140ms-per-frame breakdown, the measured cost of O_SYNC, and a counter-intuitive conclusion — <strong>the trace added to catch a hang made every decode 3x slower</strong>.</p>
+<h2 id="1-Ledger-First-Then-the-Knife-140ms-Per-Frame-Broken-Into-Five"><a href="#1-Ledger-First-Then-the-Knife-140ms-Per-Frame-Broken-Into-Five" class="headerlink" title="1. Ledger First, Then the Knife: 140ms Per Frame, Broken Into Five"></a>1. Ledger First, Then the Knife: 140ms Per Frame, Broken Into Five</h2><p>No code changes; first squeeze the timings out of the previous round’s complete log. The log already had enough instrumentation (AU header, DRIVE return, 9c wait exit, on-screen timestamp); a 30-line awk aligns them by AU:</p>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>Time</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DRIVE (empty sync submit)</td>
+<td><strong>43ms</strong></td>
+<td>vendor library self-report: <strong>hardware decode 14ms</strong></td>
+</tr>
+<tr>
+<td>snap_state + diagnostic printing</td>
+<td>~37ms</td>
+<td>4 lines of state snapshot + pa_of queries</td>
+</tr>
+<tr>
+<td>frame readback + render</td>
+<td>~62ms</td>
+<td>memcpy 3MB staging + signature scan + fb_render (33ms)</td>
+</tr>
+<tr>
+<td>tail</td>
+<td>~21ms</td>
+<td>fill(out)×2 + REFILL kick + status line</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>~140ms</strong></td>
+<td>≈7fps (monitoring [STAT] truth 13.2fps, pulled back by multi-frame batching)</td>
+</tr>
+</tbody></table>
+<p>Two numbers immediately failed to reconcile: <strong>the vendor library log plainly wrote <code>decRet: 0, 14ms</code></strong>, yet DRIVE took 43ms; existing samples said fb_render is 33ms, but the whole “frame readback + render” segment is 62ms. Where did the extra time go?</p>
+<h2 id="2-The-First-Suspect-O-SYNC-Once-Every-15ms"><a href="#2-The-First-Suspect-O-SYNC-Once-Every-15ms" class="headerlink" title="2. The First Suspect: O_SYNC Once Every 15ms"></a>2. The First Suspect: O_SYNC Once Every 15ms</h2><p>First measure the floor cost of flash writes. The device’s &#x2F;tmp sits on eMMC; use dd in a loop to write 128 bytes 60 times each:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">fsync  60×128B: 1110ms   ← ~18.5ms per write</span><br><span class="line">normal write 60×128B:  200ms   ← ~3.3ms per write (incl. fork/exec)</span><br></pre></td></tr></table></figure>
+
+<p>Then count how many synchronous writes are actually in the hot loop. For this project — “on a hang, stdout is lost entirely, but the phase log must survive” — two logging systems both carry <code>O_SYNC</code>:</p>
+<ul>
+<li><code>tr_line</code>: writes one line to vsp_trace.log before and after each DRIVE — <strong>2 writes per submit, 6+ per frame, and on by default</strong>. It was added on 10-19 to catch “the second IDR hang”; the register MMIO reads (the real culprit of that kernel crash) were later turned off by default, but <strong>the file writing was forgotten</strong>.</li>
+<li><code>phx</code>: 2 lines per REFILL_OUT channel, plus the kick requeue triggered on every AU — 3~5 times per frame.</li>
+<li><code>ph</code>: one line at the segment header.</li>
+</ul>
+<p><strong>About 11 O_SYNCs per frame.</strong> At 15ms each that’s 165ms — more than an entire frame; even if eMMC coalesces small writes and you count 3<del>5ms each, that’s still 30</del>55ms per frame. This halves the “43ms decode” twice over.</p>
+<p>The most ironic part: <code>tr_line</code>‘s comment says it was added to locate “which DRIVE it hung on”. But it is itself the thing that made DRIVE slow — <strong>the forensic instrument changed the system under investigation</strong>. This is already the third time in this project: debug code scrambled the VSP state machine and crashed the kernel; the rate limiter added to ptsync to cure the stutter became a stutter amplifier; the O_SYNC trace added to catch a hang slows every frame. Exactly the same pattern.</p>
+<h2 id="3-The-Change-One-Variable-—-“Diagnostics-Off-by-Default”"><a href="#3-The-Change-One-Variable-—-“Diagnostics-Off-by-Default”" class="headerlink" title="3. The Change: One Variable — “Diagnostics Off by Default”"></a>3. The Change: One Variable — “Diagnostics Off by Default”</h2><p>Per the project’s iron rule of one variable per change, this round’s diff is a single sentence: <strong>all hot-loop diagnostics off by default, restorable via env</strong>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* tr_line: default flips from &quot;on&quot; to &quot;off&quot;; only NETTV_TRACE=1 enables it */</span></span><br><span class="line"><span class="keyword">if</span> (!(e &amp;&amp; e[<span class="number">0</span>] == <span class="string">&#x27;1&#x27;</span>)) &#123; g_tr_off = <span class="number">1</span>; <span class="keyword">return</span>; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* phx / snap_state / [r%04d] / AU header / DRIVE return / [9c wait] all routed through kdiag_on() */</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">kdiag_on</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (g_kdiag &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="type">const</span> <span class="type">char</span> *e = getenv(<span class="string">&quot;NETTV_KDIAG&quot;</span>);</span><br><span class="line">        g_kdiag = (e &amp;&amp; *e &amp;&amp; *e != <span class="string">&#x27;0&#x27;</span>) ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> g_kdiag || vlog_on();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>At the same time we added a <strong>zero-I&#x2F;O-overhead bucketed aggregation timer</strong> (prints averages every 200 AUs): wall clock, segment loop, snap, frame readback, render. With diagnostics off, the ledger can’t go dark too — otherwise the next round starts with archaeology again.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123; <span class="type">long</span> _pw = sys_time_ms();</span><br><span class="line">  <span class="keyword">if</span> (p_au_prev) &#123; g_t_wall += _pw - p_au_prev; g_t_n++;</span><br><span class="line">      <span class="keyword">if</span> (g_t_n % <span class="number">200</span> == <span class="number">0</span>)</span><br><span class="line">          P(<span class="string">&quot;  [perf] AU#%d avg: wall=%.1f segloop=%.1f snap=%.1f read=%.1f render=%.1f (ms)\n&quot;</span>, ...);</span><br><span class="line">  &#125;</span><br><span class="line">  p_au_prev = _pw; &#125;</span><br></pre></td></tr></table></figure>
+
+<p>The new binary is 128256 bytes (the old build, 128028, is backed up as .bak_1020); build and deploy via the existing script.</p>
+<h2 id="4-Verification-Stuck-on-a-“Resource-Conflict”"><a href="#4-Verification-Stuck-on-a-“Resource-Conflict”" class="headerlink" title="4. Verification Stuck on a “Resource Conflict”"></a>4. Verification Stuck on a “Resource Conflict”</h2><p>The A&#x2F;B script was ready long ago (A &#x3D; new default, B &#x3D; <code>NETTV_STAGE=0</code> direct ION read, saving the 3MB memcpy), yet both rounds crashed into a <code>_exit(12)</code> restart loop within 20 seconds. Checking processes revealed it: <strong>the user’s desktop was playing TV</strong> — the ~7MB VSP&#x2F;ION pool was occupied, and my second instance kept backing off and retrying, never winning an output buffer.</p>
+<p>Both times the same exit code 12 (hardcoded in the code as “self-managed ION still has 0 channels; refusing to hand the IOMMU handle to VSP”); combined with “the change only touched logging and timers” and “the same time slot yesterday was normal with no other player running”, regression is ruled out. This adds another entry to project memory: <strong>frame-rate experiments and user playback are mutually exclusive</strong> — the ION pool is an exclusive resource; before starting an experiment, confirm there is no live playback session.</p>
+<p>So the verdict comes in two halves:</p>
+<ul>
+<li><strong>Confirmed</strong>: 11 O_SYNCs per frame, the 15ms-per-write floor, and only 14ms of the 43ms being hardware (all backed by logged measurements).</li>
+<li><strong>To be quantified</strong>: end-to-end fps after turning it off, and whether direct ION reads save that 20ms memcpy — the script <code>/tmp/v16_ab.sh</code> is already on the device; one command once the user stops playback.</li>
+</ul>
+<p>By the ledger: disabling diagnostics saves <del>30</del>55ms, plus direct ION reads save another ~20ms — 140ms → ~65ms ≈ <strong>15fps</strong>; getting to 25fps beyond that requires tackling fb_render’s 33ms (NEON-ize or use VSP scaling — confirmed unsupported on the decode side, CPU-only) and the 29ms of vendor-side overhead inside DRIVE (our Get_phy_addr hook re-queries the ion ioctl every frame; the fd→PA mapping can be cached).</p>
+<h2 id="5-Three-Takeaways"><a href="#5-Three-Takeaways" class="headerlink" title="5. Three Takeaways"></a>5. Three Takeaways</h2><ol>
+<li><strong>Logging is not free, and synchronous logging especially not.</strong> On flash where a normal write is 3ms and O_SYNC is 15ms, a single trace line costs half a frame decode. Any logging hanging in the hot loop: multiply by the frame count before keeping it.</li>
+<li><strong>Ask “is it really?” before believing any “hardware ceiling”.</strong> The vendor library’s own 14ms vs the 43ms outside DRIVE differ by 3x, and the difference lies entirely outside the library — mbinfo callbacks, phys ioctl, bind&#x2F;unbind, double FilledDone. Performance work should respect the vendor’s own timings; that ruler carries none of our bias.</li>
+<li><strong>Forensic code needs a “shelf life”.</strong> A trace added to catch one bug retires the day that bug is fixed. Better: when adding it, fix its default and its off-switch from the start; never let temporary code become the default path — this project has already paid tuition with three kernel crashes and one frame-rate disaster.</li>
+</ol>
+<hr>
+<p><em>Related reading: <a href="nettv-12-ptsync-positive-feedback-stall.md">netTV Hardware Decoding Deep Dive (12): 80x Speedup — a PTS sync deadlock of “the more it stalls, the more it drops”</a></em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Ledger-First-Then-the-Knife-140ms-Per-Frame-Broken-Into-Five"><span class="toc-number">1.</span> <span class="toc-text">1. Ledger First, Then the Knife: 140ms Per Frame, Broken Into Five</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-First-Suspect-O-SYNC-Once-Every-15ms"><span class="toc-number">2.</span> <span class="toc-text">2. The First Suspect: O_SYNC Once Every 15ms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Change-One-Variable-%E2%80%94-%E2%80%9CDiagnostics-Off-by-Default%E2%80%9D"><span class="toc-number">3.</span> <span class="toc-text">3. The Change: One Variable — “Diagnostics Off by Default”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Verification-Stuck-on-a-%E2%80%9CResource-Conflict%E2%80%9D"><span class="toc-number">4.</span> <span class="toc-text">4. Verification Stuck on a “Resource Conflict”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Three-Takeaways"><span class="toc-number">5.</span> <span class="toc-text">5. Three Takeaways</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&text=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&title=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&title=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&title=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&title=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&title=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/&name=netTV Hardware Decoding Deep Dive (13): 11 O_SYNCs Per Frame — the &#39;Forensic Logging&#39; Was the Frame-Rate Killer&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

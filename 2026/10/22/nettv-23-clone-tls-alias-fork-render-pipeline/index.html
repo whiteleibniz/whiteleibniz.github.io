@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇把”治拖影”的翻页线程钉死之后（默认关掉，21.9fps 保平安），自然的问题就是：帧率还有提升空间吗？ 账本摆在那儿——每帧 41.3ms &#x3D; 厂商同步解码 14.1ms（硬底线）+ 读帧 2.7ms + 渲染 23.9ms。解码侧已经拆无可拆，唯一的便宜是把渲染搬到第二">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇把”治拖影”的翻页线程钉死之后（默认关掉，21.9fps 保平安），自然的问题就是：帧率还有提升空间吗？ 账本摆在那儿——每帧 41.3ms &#x3D; 厂商同步解码 14.1ms（硬底线）+ 读帧 2.7ms + 渲染">
 <meta property="og:type" content="article">
 <meta property="og:title" content="展讯 SC9832A 网络电视攻坚（二十三）：三次&quot;线程必崩&quot;同一病根——clone 不设 TLS，父子共用一个 errno">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇把”治拖影”的翻页线程钉死之后（默认关掉，21.9fps 保平安），自然的问题就是：帧率还有提升空间吗？ 账本摆在那儿——每帧 41.3ms &#x3D; 厂商同步解码 14.1ms（硬底线）+ 读帧 2.7ms + 渲染 23.9ms。解码侧已经拆无可拆，唯一的便宜是把渲染搬到第二">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇把”治拖影”的翻页线程钉死之后（默认关掉，21.9fps 保平安），自然的问题就是：帧率还有提升空间吗？ 账本摆在那儿——每帧 41.3ms &#x3D; 厂商同步解码 14.1ms（硬底线）+ 读帧 2.7ms + 渲染">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-22T06:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-22T07:22:15.755Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:25.739Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="VSP">
 <meta property="article:tag" content="硬解">
@@ -85,7 +85,7 @@
         <li><a class="icon" href="/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -152,6 +152,9 @@
 
   <div class="content" itemprop="articleBody">
     <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/">English</a></p>
+</blockquote>
+<blockquote>
 <p>版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。</p>
 </blockquote>
 <p>上一篇把”治拖影”的翻页线程钉死之后（默认关掉，21.9fps 保平安），自然的问题就是：<strong>帧率还有提升空间吗？</strong> 账本摆在那儿——每帧 41.3ms &#x3D; 厂商同步解码 14.1ms（硬底线）+ 读帧 2.7ms + 渲染 23.9ms。解码侧已经拆无可拆，唯一的便宜是把<strong>渲染搬到第二个执行单元上和解码流水线化</strong>：worker 侧只要 16.8ms，渲染侧 24.1ms，稳态帧率 &#x3D; max(两者) ≈ 24ms ≈ 理论上限 41fps。这篇讲这个”档 2”方案的第一版实现——<strong>又是必崩</strong>，以及这次挖出来的、能一口气解释三次历史悬案的病根。</p>

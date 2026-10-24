@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English  Right after the previous round finished fixing the “black screen when tapping a channel in the UI”, the user dropped one line: “Playback has improved, but it is n">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English  Right after the previous round finished fixing the “black screen when tapping a channel in the UI”, the user dropped one line: “Playback has improved, but it is n">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-21T03:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:04:19.002Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="framebuffer">
+<meta property="article:tag" content="Performance Optimization">
+<meta property="article:tag" content="sprd">
+<meta property="article:tag" content="ION">
+<meta property="article:tag" content="Statistical Definition">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&text=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&title=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&is_video=false&description=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)&body=Check out this article: https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&title=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&title=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&title=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&title=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&name=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Look-at-the-Numbers-First-the-16-9fps-Is-Fake"><span class="toc-number">1.</span> <span class="toc-text">1. Look at the Numbers First: the 16.9fps Is Fake</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Real-Bottleneck-88-of-the-Time-Is-Not-in-Decoding"><span class="toc-number">2.</span> <span class="toc-text">2. The Real Bottleneck: 88% of the Time Is Not in Decoding</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Breakthrough-uncached-Memory-Is-the-Culprit"><span class="toc-number">3.</span> <span class="toc-text">3. The Breakthrough: uncached Memory Is the Culprit</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-The-Overturned-Scheme-Switch-Heaps-to-Dodge-the-Pool"><span class="toc-number">4.</span> <span class="toc-text">4. The Overturned Scheme: Switch Heaps to Dodge the Pool</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-One-More-Pitfall-the-cached-Pool-Is-Empty"><span class="toc-number">5.</span> <span class="toc-text">5. One More Pitfall: the cached Pool Is Empty</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Going-Further-Split-the-Render%E2%80%99s-30ms-Too"><span class="toc-number">6.</span> <span class="toc-text">6. Going Further: Split the Render’s 30ms Too</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-This-Round%E2%80%99s-Ledger"><span class="toc-number">7.</span> <span class="toc-text">7. This Round’s Ledger</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Two-More-Pitfalls-This-Round-Worth-a-Separate-Note"><span class="toc-number">8.</span> <span class="toc-text">8. Two More Pitfalls This Round, Worth a Separate Note</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Pitfall-1-Mistaking-%E2%80%9CMore-Memory-Efficient%E2%80%9D-for-%E2%80%9CBetter-Aligned%E2%80%9D"><span class="toc-number">8.1.</span> <span class="toc-text">Pitfall 1: Mistaking “More Memory-Efficient” for “Better Aligned”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pitfall-2-The-perf-Sampling-Factor-Is-Hardcoded-and-Two-Metrics-Start-Fighting-Each-Other"><span class="toc-number">8.2.</span> <span class="toc-text">Pitfall 2: The perf Sampling Factor Is Hardcoded, and Two Metrics Start Fighting Each Other</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-Next-Steps"><span class="toc-number">9.</span> <span class="toc-text">9. Next Steps</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-21T03:30:00.000Z" itemprop="datePublished">2026-10-21</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/ION/" rel="tag">ION</a>, <a class="tag-link-link" href="/tags/Performance-Optimization/" rel="tag">Performance Optimization</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/Statistical-Definition/" rel="tag">Statistical Definition</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/framebuffer/" rel="tag">framebuffer</a>, <a class="tag-link-link" href="/tags/sprd/" rel="tag">sprd</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/">English</a></p>
+</blockquote>
+<p>Right after the previous round finished fixing the “black screen when tapping a channel in the UI”, the user dropped one line: <strong>“Playback has improved, but it is nowhere near normal viewing standards.”</strong></p>
+<p>The value of that sentence is that it forced me to look back at numbers that had “already been optimized for many rounds”. One check was enough to see the scale of it — <strong>the frame rate we had been staring at for three months was wrong from start to finish.</strong></p>
+<p>This part documents two things: one is the trap of statistical definitions (numbers lie), the other is a genuine performance breakthrough (a 17x frame-readback speedup), plus a scheme that got overturned (it almost crashed the device).</p>
+<h2 id="1-Look-at-the-Numbers-First-the-16-9fps-Is-Fake"><a href="#1-Look-at-the-Numbers-First-the-16-9fps-Is-Fake" class="headerlink" title="1. Look at the Numbers First: the 16.9fps Is Fake"></a>1. Look at the Numbers First: the 16.9fps Is Fake</h2><p>The player has a heartbeat that prints one line every 25 frames:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[STAT] frames=12825 elapsed=759074ms fps_x10=168</span><br></pre></td></tr></table></figure>
+
+<p>759 seconds, 12825 frames, <strong>16.9fps</strong>. Looks perfectly normal, right? The source is a 1080p&#x2F;25fps live stream; the gap is not that big.</p>
+<p>But I went and counted the callbacks:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">grep -c <span class="string">&#x27;filled=3133440&#x27;</span> /tmp/nettv_child.log   <span class="comment"># real frames: 6776</span></span><br><span class="line">grep -c <span class="string">&#x27;filled=0 out=0&#x27;</span>  /tmp/nettv_child.log   <span class="comment"># empty events: 7471</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>6776 real frames + 7471 empty events.</strong></p>
+<p>After the vendor library emits one real frame, an empty event with <code>filled=0</code> always follows immediately — <code>drainAllOutputBuffers</code> recycles the same output header, <code>nFilledLen</code> is zeroed, and so <code>BufferFilledDone</code> fires once more.</p>
+<p>And our code indiscriminately does <code>g_filled++</code> inside the <code>BufferFilledDone</code> callback:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> OMX_ERRORTYPE <span class="title function_">bfd</span><span class="params">(OMX_PTR a,OMX_PTR b,OMX_BUFFERHEADERTYPE_PT h)</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">    g_filled++; frame_beat(); <span class="keyword">return</span> <span class="number">0</span>;   <span class="comment">/* ← real frames and empty events counted together */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>So <strong>the frame count doubled out of thin air</strong>. The real picture update rate is:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">6776 / 759s = 8.9 fps</span><br></pre></td></tr></table></figure>
+
+<p>Not 16.9 — <strong>8.9</strong>.</p>
+<p>That number later contaminated two other places as well:</p>
+<ul>
+<li><strong>Dedup logic</strong>: <code>is_new = (g_filled != filled_seen)</code> — an empty event also counts as “a new frame has arrived”, triggering a full frame readback + render (77ms), even though the picture content never changed at all.</li>
+<li><strong>perf sampling</strong>: every average from <code>[perf] AU#7400</code> is normalized by “callback count” rather than “real frame count”.</li>
+</ul>
+<p><strong>Lesson 1: a performance counter must first answer “what is it counting?”</strong> A counter that conflates two semantics contaminates statistics, dedup, and sampling all at once — and because the number looks plausible, nobody thinks to doubt it.</p>
+<p>The fix is straightforward — count real frames separately:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* ★★ 2026-10-21 Real-frame detection: the vendor emits one real frame always followed</span></span><br><span class="line"><span class="comment"> *   by a filled=0 empty event.</span></span><br><span class="line"><span class="comment"> *   Measured: real frame filled=3133440/out=0, empty event filled=0/out=0 ⇒</span></span><br><span class="line"><span class="comment"> *   (nFilledLen||nOutputLen) non-zero means a real frame.</span></span><br><span class="line"><span class="comment"> *   ★ g_filled keeps its &quot;all callbacks&quot; semantics (the monitor liveness heartbeat shm[3] depends on it),</span></span><br><span class="line"><span class="comment"> *     real frames are counted separately with g_filled_real ⇒ [STAT] frame rate is no longer inflated 2x. */</span></span><br><span class="line"><span class="keyword">if</span> (h &amp;&amp; (h-&gt;nFilledLen || h-&gt;nOutputLen)) g_filled_real++;</span><br></pre></td></tr></table></figure>
+
+<p>Note this deliberately does <strong>not</strong> change the semantics of <code>g_filled</code> — the monitor’s liveness watchdog relies on <code>shm[3] = g_filled</code> to tell whether the vendor is still delivering callbacks, and that must keep the broad definition of “all callbacks”. <strong>When one counter carries two semantics, split it into two rather than changing the original one.</strong></p>
+<h2 id="2-The-Real-Bottleneck-88-of-the-Time-Is-Not-in-Decoding"><a href="#2-The-Real-Bottleneck-88-of-the-Time-Is-Not-in-Decoding" class="headerlink" title="2. The Real Bottleneck: 88% of the Time Is Not in Decoding"></a>2. The Real Bottleneck: 88% of the Time Is Not in Decoding</h2><p>Knowing the real frame rate is 8.9fps, I needed to know where the time went. The player already had segmented timing:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[perf] AU#7400 均值: 墙钟=113.0 段循环=32.6 snap=0.0 读帧=44.3 渲染=33.0 (ms)</span><br></pre></td></tr></table></figure>
+
+<p>113ms per frame corresponds to 8.85fps — an exact match with the measured 8.9. Breaking the three segments down:</p>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>Time</th>
+<th>Share</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>segment loop</td>
+<td>32.6ms</td>
+<td>29%</td>
+<td>feeding AUs + waiting for the vendor to drain</td>
+</tr>
+<tr>
+<td><strong>frame readback</strong></td>
+<td><strong>44.3ms</strong></td>
+<td><strong>39%</strong></td>
+<td><strong>3MB memcpy (ION → staging)</strong></td>
+</tr>
+<tr>
+<td>render</td>
+<td>33.0ms</td>
+<td>29%</td>
+<td>NV12 → ARGB → rotate → write fb</td>
+</tr>
+</tbody></table>
+<p>The vendor’s own decode time, across 828 samples, <strong>is 14ms every single time</strong>, rock steady.</p>
+<p><strong>Put differently: VSP hardware decoding accounts for only 12%; 88% of the time is our post-processing.</strong> The hardware is nowhere near the bottleneck; the bottleneck lies on the path of “moving the decoded frame onto the screen”.</p>
+<p>This realization matters — it means every direction of “optimize hardware decoding performance” is wrong; the direction should be “optimize data movement”.</p>
+<h2 id="3-The-Breakthrough-uncached-Memory-Is-the-Culprit"><a href="#3-The-Breakthrough-uncached-Memory-Is-the-Culprit" class="headerlink" title="3. The Breakthrough: uncached Memory Is the Culprit"></a>3. The Breakthrough: uncached Memory Is the Culprit</h2><p>The 44.3ms frame-readback segment does exactly one thing:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">memcpy</span>(g_stage, q, <span class="number">0x2FC000</span>);   <span class="comment">/* 3MB, copied from ION VA to staging */</span></span><br></pre></td></tr></table></figure>
+
+<p>3MB &#x2F; 44.3ms &#x3D; <strong>68MB&#x2F;s</strong>. This bandwidth is absurdly low — a normal DDR memory memcpy can exceed 1GB&#x2F;s.</p>
+<p>The cause is in the ION allocation’s <code>flags</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ad.len = FSZ; ad.align = <span class="number">0x1000</span>; ad.mask = <span class="number">8</span>;   <span class="comment">/* flags defaults to 0 */</span></span><br></pre></td></tr></table></figure>
+
+<p><code>flags=0</code> means an <strong>uncached mapping</strong>. On an uncached mapping, every cache line read issues an independent bus transaction; hardware prefetch helps not at all. That is where 68MB&#x2F;s comes from.</p>
+<p>Change it to <code>flags=1</code> (cached), with the CPU side going through ordinary load&#x2F;store:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (cached_mode()) ad.flags = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>But here there is a <strong>mandatory accompanying DMA coherency handling</strong>: VSP writes frames into this memory via DMA, and the CPU cache may still hold stale data from before the DMA. So before reading, you must invalidate first:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* ION_IOC_INV = _IOW(&#x27;I&#x27;,14,void*) = 0xc0104914 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">ion_inv_out</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; g_gh_n; i++)</span><br><span class="line">        <span class="keyword">if</span> (g_ion_handle[i])</span><br><span class="line">            ioctl(g_ionfd, <span class="number">0xc0104914</span>, &amp;g_ion_handle[i]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Here is a pitfall, and its position is critical</strong>: the invalidate must come <strong>before</strong> the staging memcpy. Because the memcpy’s source is that DMA region; copying first and invalidating after is a no-op. The original code only did one invalidate, in the pipeline path’s render thread, and after the memcpy — with cached enabled on the single-threaded path you read dirty data (screen corruption).</p>
+<p>A&#x2F;B measurements (same source, same length, only one variable switched):</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">frame readback=44.3ms  →  frame readback=2.6ms        (17x)</span><br><span class="line">wall clock=113.0ms →  wall clock=71.4ms</span><br><span class="line">real frame rate 8.45fps → 12.7fps</span><br></pre></td></tr></table></figure>
+
+<p>Picture quality was verified at the same time: the sparse non-zero counts of the Y plane of the first three frames were 8151&#x2F;8150&#x2F;8154, and the three frames’ signature hashes differ from one another — indicating a genuinely changing picture, not a black screen nor screen corruption.</p>
+<p><strong>Lesson 2: when a number clearly deviates from physical common sense (68MB&#x2F;s), suspect the mapping attributes first, and the algorithm second.</strong> Same memcpy; flipping one flag makes it 17x faster.</p>
+<h2 id="4-The-Overturned-Scheme-Switch-Heaps-to-Dodge-the-Pool"><a href="#4-The-Overturned-Scheme-Switch-Heaps-to-Dodge-the-Pool" class="headerlink" title="4. The Overturned Scheme: Switch Heaps to Dodge the Pool"></a>4. The Overturned Scheme: Switch Heaps to Dodge the Pool</h2><p>After switching to cached, I hit a new problem: the vendor decoder’s C1 buffer allocation started reporting OOM:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ioctl c0144900 failed with code -1: Out of memory</span><br></pre></td></tr></table></figure>
+
+<p>Worse, after failing to get C1, the vendor <strong>falls back to using a CPU virtual address</strong> as a physical address (“all three levels of address resolution failed → falling back to CPU VA (fake PA, risk of garbled frames!)”), and then VSP writes frames to an invalid address → SIGSEGV.</p>
+<p>Diagnosis revealed <strong>same-pool contention</strong>: our output buffer is 3.2MB and must be an order-8 contiguous block; the vendor’s five 638KB C1 DPB blocks also need order-8 (its <code>align=8</code>). The carveout pool has only 4 order-8 large blocks in total (8MB); once we take 1, the vendor no longer has enough.</p>
+<p>My first reaction was: <strong>can’t we just switch pools</strong> — change the output buffer to <code>mask=2</code> (System RAM) instead of <code>mask=8</code> (carveout_mm). The vendor’s own 2MB C1 uses mask&#x3D;2 already, so it looks entirely feasible.</p>
+<p>So I changed the code, compiled, deployed, ran verification. <strong>Then the device rebooted outright.</strong></p>
+<p>No oops, no panic, <code>/proc/sys/kernel/watchdog</code> &#x3D; 1, dmesg is full of <code>powerdown_cpus</code>. Only when checking physical addresses did the reason surface:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vendor 2MB C1 (mask=2):  real PA = 0x9f800000   ← inside the carveout window</span><br><span class="line">our output (mask=8):    real PA = 0x9fa00000   ← inside the carveout window</span><br></pre></td></tr></table></figure>
+
+<p><strong>mask&#x3D;2 and mask&#x3D;8 land in the same carveout region</strong> (0x9f8xxxxx), not “System RAM” at all. The real System RAM is at 0x80000000-0xbfffffff, and what mask&#x3D;2 grabbed there is a high address — <strong>beyond the address window the VSP hardware can access</strong>; VSP writes there and flies off, and the hardware watchdog resets immediately.</p>
+<p><strong>Lesson 3: the same mask name can mean something entirely different in different contexts.</strong> I saw “the vendor succeeds with mask&#x3D;2” and assumed mask&#x3D;2 &#x3D; System RAM &#x3D; a safe alternative pool — but those two mask&#x3D;2 allocations landed in completely different physical regions: one at 0x9f8xxxxx (carveout), one at 0x8xxxxxxx (real RAM). <strong>The same parameter name does not mean the same semantics; you must look at the actual physical address.</strong></p>
+<p>Fortunately this scheme was caught by testing before it could do any real hardware damage, with no worse consequences. Roll back to <code>mask=8</code>.</p>
+<h2 id="5-One-More-Pitfall-the-cached-Pool-Is-Empty"><a href="#5-One-More-Pitfall-the-cached-Pool-Is-Empty" class="headerlink" title="5. One More Pitfall: the cached Pool Is Empty"></a>5. One More Pitfall: the cached Pool Is Empty</h2><p>While checking the pool, I also found:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">carveout_mm:  10 order 4 highmem pages in uncached pool = 655360 total</span><br><span class="line">               0 order 4 highmem pages in   cached pool =       0 total</span><br></pre></td></tr></table></figure>
+
+<p><strong>The cached pool does not have a single page.</strong> That is, a <code>flags=1</code> allocation on carveout goes to an empty pool to grab pages, and fails when it cannot get one. Left unhandled, one allocation failure will chain-OOM all of the vendor’s subsequent C1 allocations.</p>
+<p>So cached allocation must carry a fallback:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (ioctl(g_ionfd, <span class="number">0xc0144900</span>, &amp;ad) != <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (ad.flags) &#123;</span><br><span class="line">        ad.flags = <span class="number">0</span>;                          <span class="comment">/* fall back to uncached */</span></span><br><span class="line">        <span class="keyword">if</span> (ioctl(g_ionfd, <span class="number">0xc0144900</span>, &amp;ad) != <span class="number">0</span>) <span class="keyword">continue</span>;</span><br><span class="line">        g_cached_mode = <span class="number">0</span>;                     <span class="comment">/* globally disable cached */</span></span><br><span class="line">        P(<span class="string">&quot;  [ion] cached allocation failed, falling back to uncached\n&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">continue</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Lesson 4: an optimization switch must carry its own downgrade path.</strong> For the same switch, on&#x2F;off are two states that both run, not a binary choice of “on means fast, off means slow”.</p>
+<h2 id="6-Going-Further-Split-the-Render’s-30ms-Too"><a href="#6-Going-Further-Split-the-Render’s-30ms-Too" class="headerlink" title="6. Going Further: Split the Render’s 30ms Too"></a>6. Going Further: Split the Render’s 30ms Too</h2><p>After switching to cached, I added segmented timing to <code>fb_render</code> (conversion vs write fb):</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[perf] fb_render 均值 32ms (换算上限 31 fps) | 转换 30ms 写fb 1ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>Writing fb takes only 1ms</strong> — writing 3.6MB into the mmap’d framebuffer costs almost nothing (memory bandwidth is ample). All 30ms is in the pure arithmetic of “NV12 → ARGB + rotate + 3&#x2F;2 downsampling”.</p>
+<p>But pure arithmetic should not be this slow. Do the math: 920k pixels, 3 multiplications + 6 shifts + 6 clamp branches per pixel, <strong>over 2 million multiply-adds in total</strong>, which on a Cortex-A7 is at most 1~2ms. Where did the missing 28ms go?</p>
+<p><strong>Cache misses.</strong> The render’s memory access pattern is transposed — output pixel (oy, ox) takes <code>[1079-ox*3/2][oy*3/2]</code> from the source image; source rows follow output columns, source columns follow output rows, and each source pixel’s adjacent output pixels are 1.5 pixels apart in the source image. The source image is 3MB; one frame spans 1080 source rows taking 720 points each — <strong>every source-row change is a fresh cache line fetch</strong>.</p>
+<p>That explains why the earlier “table lookup” approach was actually slower (39.3ms vs 32.5ms) — the lookup moved the miss from the source side to the table side, for zero net gain.</p>
+<p>The fix is not to change the algorithm but to <strong>change the grouping granularity</strong>: the original implementation processed 16 output rows at a time (one “band”), with each source row reading only 24 bytes (~37% of a cache line). After changing to 64 rows, each source row reads 96 bytes, and adjacent bands read exactly the neighboring segments of the same batch of cache lines — <strong>reusable within L2</strong>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> BANDH 64     <span class="comment">/* 16 → 64, geometry formula completely unchanged, only grouping changes */</span></span></span><br></pre></td></tr></table></figure>
+
+<p>Measured: render 34.3 → <strong>30.3ms</strong>, real frame rate 12.4 → <strong>13.1fps</strong>. A screen capture confirms the picture geometry is undistorted in any way (channel logo position, subtitles, colors all normal).</p>
+<p><strong>Lesson 5: cheap arithmetic does not mean cheap memory access.</strong> The same 2 million multiply-adds are about the same scalar vs NEON; but “one cache line fetch per source pixel” vs “one per 4 source pixels” differs by 10x.</p>
+<h2 id="7-This-Round’s-Ledger"><a href="#7-This-Round’s-Ledger" class="headerlink" title="7. This Round’s Ledger"></a>7. This Round’s Ledger</h2><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>real picture update rate</td>
+<td>8.45 fps</td>
+<td><strong>13.1 fps</strong></td>
+</tr>
+<tr>
+<td>frame-readback segment time</td>
+<td>44.3 ms</td>
+<td><strong>2.7 ms</strong></td>
+</tr>
+<tr>
+<td>render segment time</td>
+<td>33.0 ms</td>
+<td><strong>30.3 ms</strong></td>
+</tr>
+<tr>
+<td>per-frame wall clock</td>
+<td>113.0 ms</td>
+<td><strong>70.6 ms</strong></td>
+</tr>
+<tr>
+<td><code>[STAT]</code> frame rate definition</td>
+<td>inflated 2x</td>
+<td>real frame count</td>
+</tr>
+</tbody></table>
+<p>The vendor’s 14ms decode is the hard floor; the theoretical ceiling is 1000&#x2F;(14+30) ≈ 23fps.</p>
+<h2 id="8-Two-More-Pitfalls-This-Round-Worth-a-Separate-Note"><a href="#8-Two-More-Pitfalls-This-Round-Worth-a-Separate-Note" class="headerlink" title="8. Two More Pitfalls This Round, Worth a Separate Note"></a>8. Two More Pitfalls This Round, Worth a Separate Note</h2><h3 id="Pitfall-1-Mistaking-“More-Memory-Efficient”-for-“Better-Aligned”"><a href="#Pitfall-1-Mistaking-“More-Memory-Efficient”-for-“Better-Aligned”" class="headerlink" title="Pitfall 1: Mistaking “More Memory-Efficient” for “Better Aligned”"></a>Pitfall 1: Mistaking “More Memory-Efficient” for “Better Aligned”</h3><p>Our output buffer is 3.25MB, and the exact frame size is 3.13MB — I assumed preferring the exact size would save 140KB and leave a bit more room for the vendor’s C1. Result: <strong>OOM went from 1 to 28</strong>.</p>
+<p>The reason is plain: 3.13MB cannot make up a whole order-8 block; 3.25MB can. <strong>The first entry on the size ladder is not “the most frugal”, it is “the best aligned”</strong>.</p>
+<h3 id="Pitfall-2-The-perf-Sampling-Factor-Is-Hardcoded-and-Two-Metrics-Start-Fighting-Each-Other"><a href="#Pitfall-2-The-perf-Sampling-Factor-Is-Hardcoded-and-Two-Metrics-Start-Fighting-Each-Other" class="headerlink" title="Pitfall 2: The perf Sampling Factor Is Hardcoded, and Two Metrics Start Fighting Each Other"></a>Pitfall 2: The perf Sampling Factor Is Hardcoded, and Two Metrics Start Fighting Each Other</h3><p>After changing the band height from 16 to 64, <code>[perf] fb_render avg</code> reported 133ms, while “render&#x3D;” inside <code>[perf] AU</code> reported 30.3ms — <strong>the same code, two metrics differing by 4x</strong>.</p>
+<p>The sampling conversion factor is hardcoded <code>* 20</code> (80 bands, sampling every 20). After the band height becomes 64, that is 20 bands sampling every 5, and the factor should become <code>* 5</code>. Once this kind of “magic number” is decoupled from the structural parameters, the metric is useless.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> FB_SAMPLE_MUL (1280 / BANDH / 5)   <span class="comment">/* the factor must move in lockstep with structural parameters */</span></span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Lesson 6: performance tooling is itself code that needs maintenance.</strong> The more tightly its constants couple to the object under test, the more changing one side forces changing the other.</p>
+<h2 id="9-Next-Steps"><a href="#9-Next-Steps" class="headerlink" title="9. Next Steps"></a>9. Next Steps</h2><ol>
+<li><strong>Increase the band height further</strong> (64 → 128 &#x2F; 256): verify whether DRAM traffic can drop further, until the render segment stops varying with band height</li>
+<li><strong>NEON-ize YUV→ARGB</strong>: the device CPU (ARMv7 rev5) <strong>supports neon</strong>, and the toolchain already carries <code>-mfpu=neon-vfpv4</code>;<br>nobody had just written the intrinsics. The arithmetic part (3 multiplications + clamp) can be squeezed to 1&#x2F;4 with the saturating instruction <code>vqmovun</code></li>
+<li><strong>Change the transpose implementation</strong>: currently “read in source order, write transposed on the output side” — a natural cache disaster.<br>Changing to “bilinear scaling + scale to 720×1280 first, then transpose” may make memory access contiguous</li>
+<li><strong>fb direct-write optimization</strong>: currently mmap writes 3 pages of fb + PAN; is there a hardware overlay path</li>
+<li><strong>Root-fix the pool conflict</strong>: have our output allocation queued after the vendor’s C1</li>
+</ol>
+<hr>
+<p><strong>One last word</strong>: the most valuable output of this round is not the 17x, but <strong>turning the fake number “16.9fps” into the real number “8.9fps”</strong>. An inflated metric makes you think “a bit more optimization will be enough”, while the real number tells you: there is still a long way to go, but the direction is clear — not in decoding, but in data movement.</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Look-at-the-Numbers-First-the-16-9fps-Is-Fake"><span class="toc-number">1.</span> <span class="toc-text">1. Look at the Numbers First: the 16.9fps Is Fake</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Real-Bottleneck-88-of-the-Time-Is-Not-in-Decoding"><span class="toc-number">2.</span> <span class="toc-text">2. The Real Bottleneck: 88% of the Time Is Not in Decoding</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Breakthrough-uncached-Memory-Is-the-Culprit"><span class="toc-number">3.</span> <span class="toc-text">3. The Breakthrough: uncached Memory Is the Culprit</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-The-Overturned-Scheme-Switch-Heaps-to-Dodge-the-Pool"><span class="toc-number">4.</span> <span class="toc-text">4. The Overturned Scheme: Switch Heaps to Dodge the Pool</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-One-More-Pitfall-the-cached-Pool-Is-Empty"><span class="toc-number">5.</span> <span class="toc-text">5. One More Pitfall: the cached Pool Is Empty</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Going-Further-Split-the-Render%E2%80%99s-30ms-Too"><span class="toc-number">6.</span> <span class="toc-text">6. Going Further: Split the Render’s 30ms Too</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-This-Round%E2%80%99s-Ledger"><span class="toc-number">7.</span> <span class="toc-text">7. This Round’s Ledger</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Two-More-Pitfalls-This-Round-Worth-a-Separate-Note"><span class="toc-number">8.</span> <span class="toc-text">8. Two More Pitfalls This Round, Worth a Separate Note</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Pitfall-1-Mistaking-%E2%80%9CMore-Memory-Efficient%E2%80%9D-for-%E2%80%9CBetter-Aligned%E2%80%9D"><span class="toc-number">8.1.</span> <span class="toc-text">Pitfall 1: Mistaking “More Memory-Efficient” for “Better Aligned”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pitfall-2-The-perf-Sampling-Factor-Is-Hardcoded-and-Two-Metrics-Start-Fighting-Each-Other"><span class="toc-number">8.2.</span> <span class="toc-text">Pitfall 2: The perf Sampling Factor Is Hardcoded, and Two Metrics Start Fighting Each Other</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-Next-Steps"><span class="toc-number">9.</span> <span class="toc-text">9. Next Steps</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&text=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&title=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&is_video=false&description=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)&body=Check out this article: https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&title=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&title=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&title=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&title=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/&name=nettv-21: The 16.9fps Is Fake — the Frame-Rate Statistics Fooled Us for Three Months, and a 17x Frame-Readback Speedup (SC9832A Hardware Decoding Troubleshooting Log)&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

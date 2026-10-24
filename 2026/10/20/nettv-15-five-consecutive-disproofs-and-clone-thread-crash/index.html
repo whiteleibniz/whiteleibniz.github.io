@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="系列第 15 篇。上一篇（nettv-14）我们把“卡”定性成了 ptsync 正反馈和 O_SYNC 日志，拿到 17fps 基线。这一篇是从 17fps 往 25fps 冲的过程——基本全是反面教材：五个看起来很合理的优化，四个被 A&#x2F;B 实验直接证伪，一个把设备重启了两次。结论比过程重要，所以先把结论拍在前面。  一句话结论每帧 116ms 的账：解码 21ms + 拷贝 43m">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 15 篇。上一篇（nettv-14）我们把“卡”定性成了 ptsync 正反馈和 O_SYNC 日志，拿到 17fps 基线。这一篇是从 17fps 往 25fps 冲的过程——基本全是反面教材：五个看起来很合理的优化，四个被 A&#x2F;B 实验直接证伪，一个把设备重启了两次。结论比过程重要，所以先把结论拍在前面。  一句话">
 <meta property="og:type" content="article">
 <meta property="og:title" content="nettv-15：五连证伪——为什么“想当然”的优化全部无效，以及裸 clone 线程是怎么把设备搞重启的">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="系列第 15 篇。上一篇（nettv-14）我们把“卡”定性成了 ptsync 正反馈和 O_SYNC 日志，拿到 17fps 基线。这一篇是从 17fps 往 25fps 冲的过程——基本全是反面教材：五个看起来很合理的优化，四个被 A&#x2F;B 实验直接证伪，一个把设备重启了两次。结论比过程重要，所以先把结论拍在前面。  一句话结论每帧 116ms 的账：解码 21ms + 拷贝 43m">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 15 篇。上一篇（nettv-14）我们把“卡”定性成了 ptsync 正反馈和 O_SYNC 日志，拿到 17fps 基线。这一篇是从 17fps 往 25fps 冲的过程——基本全是反面教材：五个看起来很合理的优化，四个被 A&#x2F;B 实验直接证伪，一个把设备重启了两次。结论比过程重要，所以先把结论拍在前面。  一句话">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-20T03:30:00.000Z">
-<meta property="article:modified_time" content="2026-10-20T03:26:24.354Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:04.224Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="SC9832A">
 <meta property="article:tag" content="VSP">
@@ -79,10 +79,10 @@
   <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/2026/10/20/nettv-16-hw-decoding-slower-than-sw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/2026/10/20/nettv-12-ptsync-positive-feedback-stall/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -149,6 +149,9 @@
 
   <div class="content" itemprop="articleBody">
     <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/">English</a></p>
+</blockquote>
+<blockquote>
 <p>系列第 15 篇。上一篇（nettv-14）我们把“卡”定性成了 ptsync 正反馈和 O_SYNC 日志，<br>拿到 17fps 基线。这一篇是从 17fps 往 25fps 冲的过程——<strong>基本全是反面教材</strong>：<br>五个看起来很合理的优化，四个被 A&#x2F;B 实验直接证伪，一个把设备重启了两次。<br>结论比过程重要，所以先把结论拍在前面。</p>
 </blockquote>
 <h2 id="一句话结论"><a href="#一句话结论" class="headerlink" title="一句话结论"></a>一句话结论</h2><p><strong>每帧 116ms 的账：解码 21ms + 拷贝 43ms + 渲染 32ms。真正的瓶颈是 3MB 的 memcpy，<br>而它慢，是因为 ION buffer 是非缓存映射。</strong> 所有对“解码&#x2F;渲染&#x2F;流水线”的优化，<br>在 uncached 内存这堵墙面前都是隔靴搔痒。</p>

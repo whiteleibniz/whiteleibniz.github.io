@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English  One-Line ConclusionWe spent three weeks tuning the VSP hardware decoding pipeline from “zero frames” to “15.7fps”, then ran a software decoding control with the s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English  One-Line ConclusionWe spent three weeks tuning the VSP hardware decoding pipeline from “zero frames” to “15.7fps”, then ran a software decoding control with the s">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-20T03:45:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:41:03.514Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Hardware Decoding">
+<meta property="article:tag" content="sprd">
+<meta property="article:tag" content="ARM">
+<meta property="article:tag" content="mplayer">
+<meta property="article:tag" content="OMX">
+<meta property="article:tag" content="Software Decoding">
+<meta property="article:tag" content="Performance Analysis">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&text=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&title=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&is_video=false&description=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&title=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&title=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&title=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&title=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&name=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#One-Line-Conclusion"><span class="toc-number">1.</span> <span class="toc-text">One-Line Conclusion</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-First-Figure-Out-the-mplayer-Path"><span class="toc-number">2.</span> <span class="toc-text">1. First, Figure Out the mplayer Path</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Where-It-Is-and-Whether-It-Has-Hardware-Decoding"><span class="toc-number">2.1.</span> <span class="toc-text">1. Where It Is, and Whether It Has Hardware Decoding</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Where-It-Can-Output"><span class="toc-number">2.2.</span> <span class="toc-text">2. Where It Can Output</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-ffmpeg-Doesn%E2%80%99t-Save-the-Day-Either"><span class="toc-number">2.3.</span> <span class="toc-text">3. ffmpeg Doesn’t Save the Day Either</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Real-Control-Experiment"><span class="toc-number">3.</span> <span class="toc-text">2. The Real Control Experiment</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Group-A-mplayer-Pure-Decoding-Ceiling"><span class="toc-number">3.1.</span> <span class="toc-text">Group A: mplayer Pure Decoding Ceiling</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Group-B-The-Existing-Software-Pipeline-y4m-Relay"><span class="toc-number">3.2.</span> <span class="toc-text">Group B: The Existing Software Pipeline (y4m Relay)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Group-C-Our-In-House-VSP-Hardware-Decoding"><span class="toc-number">3.3.</span> <span class="toc-text">Group C: Our In-House VSP Hardware Decoding</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#All-Three-Side-by-Side"><span class="toc-number">3.4.</span> <span class="toc-text">All Three Side by Side</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Why-This-Result-Is-Counterintuitive"><span class="toc-number">4.</span> <span class="toc-text">3. Why This Result Is Counterintuitive</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Two-Real-Hardware-Routes-Found-Along-the-Way"><span class="toc-number">5.</span> <span class="toc-text">4. Two Real Hardware Routes Found Along the Way</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#libomx-avcdec-hw-sprd-so"><span class="toc-number">5.1.</span> <span class="toc-text">libomx_avcdec_hw_sprd.so</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ION-Cached-Mapping"><span class="toc-number">5.2.</span> <span class="toc-text">ION Cached Mapping</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-So-What%E2%80%99s-Next"><span class="toc-number">6.</span> <span class="toc-text">5. So What’s Next</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Three-Methodology-Takeaways"><span class="toc-number">7.</span> <span class="toc-text">6. Three Methodology Takeaways</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-Key-Facts-Covered-in-This-Article"><span class="toc-number">8.</span> <span class="toc-text">Appendix: Key Facts Covered in This Article</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-20T03:45:00.000Z" itemprop="datePublished">2026-10-20</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/ARM/" rel="tag">ARM</a>, <a class="tag-link-link" href="/tags/Hardware-Decoding/" rel="tag">Hardware Decoding</a>, <a class="tag-link-link" href="/tags/OMX/" rel="tag">OMX</a>, <a class="tag-link-link" href="/tags/Performance-Analysis/" rel="tag">Performance Analysis</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/Software-Decoding/" rel="tag">Software Decoding</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/mplayer/" rel="tag">mplayer</a>, <a class="tag-link-link" href="/tags/sprd/" rel="tag">sprd</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/">English</a></p>
+</blockquote>
+<h2 id="One-Line-Conclusion"><a href="#One-Line-Conclusion" class="headerlink" title="One-Line Conclusion"></a>One-Line Conclusion</h2><p>We spent three weeks tuning the VSP hardware decoding pipeline from “zero frames” to “15.7fps”, then ran a software decoding control with the same stream and the same player binary:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mplayer -vo null -nosound  →  25.0 fps   (pure H.264 decoding ceiling)</span><br><span class="line">in-house VSP hw pipeline   →  15.7 fps   (decode + frame fetch + render, full chain)</span><br></pre></td></tr></table></figure>
+
+<p><strong>CPU software decoding is faster than VSP hardware decoding.</strong> It’s not that the optimization wasn’t done well — the premise of “decoding is slow” never held in the first place.</p>
+<hr>
+<h2 id="1-First-Figure-Out-the-mplayer-Path"><a href="#1-First-Figure-Out-the-mplayer-Path" class="headerlink" title="1. First, Figure Out the mplayer Path"></a>1. First, Figure Out the mplayer Path</h2><p>The user suggested a direction: “can we make mplayer use H.264 hardware decoding”. Reconnaissance results in three parts.</p>
+<h3 id="1-Where-It-Is-and-Whether-It-Has-Hardware-Decoding"><a href="#1-Where-It-Is-and-Whether-It-Has-Hardware-Decoding" class="headerlink" title="1. Where It Is, and Whether It Has Hardware Decoding"></a>1. Where It Is, and Whether It Has Hardware Decoding</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ ls /usr/bin/mplayer /usr/local/bin/mplayer</span><br><span class="line">ls: cannot access: No such file or directory     ← not in PATH</span><br><span class="line">$ find / -name &#x27;mplayer*&#x27;</span><br><span class="line">/home/lvgl_demo/lvgl_demo/libs/mplayer/mplayer     ← static binary shipped with the project</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ mplayer -v</span><br><span class="line">MPlayer 1.4-13 (C) 2000-2019 MPlayer Team</span><br><span class="line">CPU: ARM</span><br></pre></td></tr></table></figure>
+
+<p>Scanning with <code>strings</code>, not a single hardware-decoding-related symbol:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ strings mplayer | grep -iE <span class="string">&#x27;libvpu|sprd_vsp|vdsp|hwaccel&#x27;</span></span><br><span class="line">(empty)</span><br></pre></td></tr></table></figure>
+
+<p>The only hit, <code>&quot;For hardware decoders&quot;</code>, appears in this context:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hwmpa</span><br><span class="line">NicoDVB</span><br><span class="line">For hardware decoders</span><br><span class="line">Uncompressed PCM audio decoder          ← audio family (libmpg123/ac3)</span><br></pre></td></tr></table></figure>
+
+<p>MPlayer 1.4 is a 2019 branch, and it has exactly one route to hardware decoding: <strong>an external ffmpeg offloading decoding via <code>-vc ffmpeg:</code></strong>. ffmpeg isn’t installed on our device, and installing it wouldn’t help either (see below).</p>
+<h3 id="2-Where-It-Can-Output"><a href="#2-Where-It-Can-Output" class="headerlink" title="2. Where It Can Output"></a>2. Where It Can Output</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ mplayer -vo help</span><br><span class="line">fbdev   fbdev2   lvfb   null   mpegpes   yuv4mpeg   png   tga   pnm   md5sum</span><br></pre></td></tr></table></figure>
+
+<p>Note how informative this line is: <strong>no v4l2, no dri, no GL vo of any kind</strong>.</p>
+<p>This means even if mplayer decodes to NV12, it can only convert to RGB on the CPU itself and write into the framebuffer. VSP decoding, DPU composition — it can touch none of them. <strong>“-vo lvfb” is the only option worth trying</strong>; that’s the LVGL direct-write vo written by this project.</p>
+<h3 id="3-ffmpeg-Doesn’t-Save-the-Day-Either"><a href="#3-ffmpeg-Doesn’t-Save-the-Day-Either" class="headerlink" title="3. ffmpeg Doesn’t Save the Day Either"></a>3. ffmpeg Doesn’t Save the Day Either</h3><p>It’s in the Alpine repository:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ffmpeg-6.1.2-r1 armhf &#123;ffmpeg&#125; (GPL-2.0-or-later AND LGPL-2.1-or-later)</span><br></pre></td></tr></table></figure>
+
+<p>But <code>which ffmpeg</code> is empty — <strong>it’s only in the repository index, not installed</strong>. And even installing it would be pointless: Alpine’s ffmpeg is a community build, <strong>with no Spreadtrum VSP hwaccel adaptation</strong> (<code>h264_sprd</code>-style decoders are not mainline ffmpeg). Installing it would only give software decoding — the same road as mplayer.</p>
+<hr>
+<h2 id="2-The-Real-Control-Experiment"><a href="#2-The-Real-Control-Experiment" class="headerlink" title="2. The Real Control Experiment"></a>2. The Real Control Experiment</h2><p>With recon done, it’s time for data. Pull a real 1080p TS segment (2.6MB) from the Luxian source and run it three ways.</p>
+<h3 id="Group-A-mplayer-Pure-Decoding-Ceiling"><a href="#Group-A-mplayer-Pure-Decoding-Ceiling" class="headerlink" title="Group A: mplayer Pure Decoding Ceiling"></a>Group A: mplayer Pure Decoding Ceiling</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mplayer -benchmark -vo null -nosound -framedrop /tmp/mp.ts</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">FPS seems to be: 25.000000</span><br><span class="line">VO: [null] 1920x1080 =&gt; 1920x1080 Planar YV12</span><br><span class="line">BENCHMARKs: VC:   9.778s VO:   0.001s A:   0.000s Sys: 0.065s =  9.844s</span><br><span class="line">BENCHMARK%: VC: 99.3308% VO: 0.0068% A: 0.0000% Sys: 0.6624% = 100.0000%</span><br></pre></td></tr></table></figure>
+
+<p><code>VC</code> is video decode (Video Codec) time, accounting for <strong>99.33%</strong>. 10 seconds to finish &#x3D; <strong>25fps &#x3D; 40ms&#x2F;frame</strong>.</p>
+<h3 id="Group-B-The-Existing-Software-Pipeline-y4m-Relay"><a href="#Group-B-The-Existing-Software-Pipeline-y4m-Relay" class="headerlink" title="Group B: The Existing Software Pipeline (y4m Relay)"></a>Group B: The Existing Software Pipeline (y4m Relay)</h3><p>The project already has a software path: <code>curl → mplayer → yuv4mpeg → lv_canvas</code> (<code>/usr/local/bin/nettv_play.sh</code>), with these parameters:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$MP</span> -cache 2048 -cache-min 5 -autosync 100 -mc 1 -quiet \</span><br><span class="line">    -vo yuv4mpeg:file=/tmp/nettv.y4m -vf scale=640:360 <span class="variable">$AOARGS</span> -nolirc -</span><br></pre></td></tr></table></figure>
+
+<p>Running the same TS:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mplayer -vo yuv4mpeg:file=/tmp/t1.y4m -vf scale=640:360 -nosound -fps 60 -slave /tmp/mp.ts</span><br><span class="line"><span class="comment"># after 18s: y4m = 49421692 bytes</span></span><br><span class="line"><span class="comment"># 640×360×1.5 = 345600 bytes per frame → 142 frames</span></span><br><span class="line"><span class="comment"># → 7.9 fps</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>25fps of decoding capability drops to 7.9fps after the y4m disk write + scale filter.</strong> The lost 17fps is entirely in IO and secondary scaling — nothing to do with decoding.</p>
+<h3 id="Group-C-Our-In-House-VSP-Hardware-Decoding"><a href="#Group-C-Our-In-House-VSP-Hardware-Decoding" class="headerlink" title="Group C: Our In-House VSP Hardware Decoding"></a>Group C: Our In-House VSP Hardware Decoding</h3><p>Quantitative from the same-round A&#x2F;B of v16i (60s steady state):</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">single thread 15.7fps, wall clock 116ms/AU</span><br><span class="line">  = DRIVE 21.1ms + memcpy 43.4ms + render 31.8ms</span><br></pre></td></tr></table></figure>
+
+<h3 id="All-Three-Side-by-Side"><a href="#All-Three-Side-by-Side" class="headerlink" title="All Three Side by Side"></a>All Three Side by Side</h3><table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>Frame rate</th>
+<th>Where the bottleneck is</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>mplayer <code>-vo null</code></td>
+<td><strong>25.0 fps</strong></td>
+<td>decoding itself, 40ms&#x2F;frame</td>
+</tr>
+<tr>
+<td>in-house VSP hw full chain</td>
+<td>15.7 fps</td>
+<td>decode 21ms; the other 95ms all in memcpy+render</td>
+</tr>
+<tr>
+<td>software + y4m disk write</td>
+<td>7.9 fps</td>
+<td>file IO + scale filter</td>
+</tr>
+</tbody></table>
+<p><strong>The most glaring part of this table</strong>: the vendor’s VSP hardware decode takes only 14ms (reported by the library itself), yet our entire hw pipeline takes 64ms&#x2F;frame. The 27ms saved is entirely eaten by other things — and we still end up behind.</p>
+<hr>
+<h2 id="3-Why-This-Result-Is-Counterintuitive"><a href="#3-Why-This-Result-Is-Counterintuitive" class="headerlink" title="3. Why This Result Is Counterintuitive"></a>3. Why This Result Is Counterintuitive</h2><p>By all rights hardware decoding should crush software decoding. The difference is that <strong>software decoding’s “slowness” is concentrated in the decode, while hardware decoding’s “slowness” is scattered across IO</strong>.</p>
+<p>A7’s software decoder is slow, but it works on ordinary <code>malloc</code>ed memory — CPU-cache friendly, contiguous, prefetchable. The VSP output, on the other hand, is a block of uncached ION memory, so:</p>
+<ol>
+<li><strong>3MB memcpy 43ms</strong> — non-cached memory read byte by byte; every byte is an independent transaction</li>
+<li><strong>fb_render 31ms</strong> — NV12→ARGB + 90° rotation, 1280×720 entirely scalar arithmetic</li>
+</ol>
+<p>Software decoding doesn’t have step 1 at all: the decoder writes directly into an ordinary buffer, and step 2 can use <code>-vo lvfb</code> to have mplayer draw straight into the framebuffer, skipping the middle steps.</p>
+<p><strong>So the decision to “use a hardware decoder” wasn’t wrong per se; what’s wrong is that the hardware decode’s output has no efficient consumption path.</strong> Hardware only turns compressed data into pixels; the remaining 95ms of moving and compositing doesn’t shrink by a single line.</p>
+<p>As an aside, a counter-proof: we previously tried <code>NETTV_STAGE=0</code> to read ION directly and skip that memcpy, and <strong>fb_render shot from 33ms to 335ms</strong> (10x slower), 5.8fps. Because random reads from non-cached memory are worse than sequential copies. <strong>The 3MB memcpy is already optimal under the current mapping attributes.</strong></p>
+<hr>
+<h2 id="4-Two-Real-Hardware-Routes-Found-Along-the-Way"><a href="#4-Two-Real-Hardware-Routes-Found-Along-the-Way" class="headerlink" title="4. Two Real Hardware Routes Found Along the Way"></a>4. Two Real Hardware Routes Found Along the Way</h2><p>During recon we saw two things far more valuable than mplayer.</p>
+<h3 id="libomx-avcdec-hw-sprd-so"><a href="#libomx-avcdec-hw-sprd-so" class="headerlink" title="libomx_avcdec_hw_sprd.so"></a><code>libomx_avcdec_hw_sprd.so</code></h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ ls /mnt/android_sys/lib | grep -i omx</span><br><span class="line">libomx_avcdec_hw_sprd.so        ← Spreadtrum&#x27;s official H.264 hardware OMX plugin</span><br><span class="line">libomx_avcdec_sw_sprd.so</span><br><span class="line">libomx_avcenc_hw_sprd.so</span><br><span class="line">libomx_m4vh263dec_hw_sprd.so</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>This is the real official hardware path. Dependencies are clean:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ strings libomx_avcdec_hw_sprd.so | grep -E <span class="string">&#x27;^lib.*\.so&#x27;</span> | <span class="built_in">sort</span> -u</span><br><span class="line">libc++.so   libc.so   libcutils.so   libdl.so</span><br><span class="line">liblog.so   libm.so   libutils.so</span><br></pre></td></tr></table></figure>
+
+<p>All sitting in <code>/mnt/android_sys</code> (mounted at boot via <code>/etc/init.d/00_android_sys</code>, 304 libraries).</p>
+<p><strong>But don’t be optimistic just yet</strong>: it’s an Android OMX adaptation layer, and working properly requires the <code>OMXMaster</code> registration, <code>BufferQueue</code> reference counting, and <code>gralloc</code> buffer trio — all in the Android media stack, and our bare-bionic player has none of them. Driving OMXCodec directly is a lot of work, and its semantic assumptions about ION handles (how fd + offset + size are interpreted) are in the same domain as the green-screen pitfalls we hit managing ION ourselves.</p>
+<p><strong>Verdict: doable, high cost, ranked behind ION cached.</strong></p>
+<h3 id="ION-Cached-Mapping"><a href="#ION-Cached-Mapping" class="headerlink" title="ION Cached Mapping"></a>ION Cached Mapping</h3><p>This route is still the best value: change the VSP output buffer from uncached to cached (<code>ION_FLAG_CACHED = 1</code>), with one <code>ION_IOC_SYNC</code> invalidate per frame. The 43ms memcpy could theoretically drop to around 10ms, wall clock 116ms → 75ms, reaching 20fps outright.</p>
+<p>The risk is DMA coherency: between the VSP finishing its write and the CPU reading it, a flush is required; missing it means a garbled or green screen. That’s a reason for a gradual rollout, not for giving up.</p>
+<hr>
+<h2 id="5-So-What’s-Next"><a href="#5-So-What’s-Next" class="headerlink" title="5. So What’s Next"></a>5. So What’s Next</h2><p>mplayer’s positioning is now clear:</p>
+<ul>
+<li><strong>“mplayer hardware decoding” is void</strong> — it has no hardware decode framework and no GPU output path</li>
+<li><strong>“mplayer software decoding” has value</strong> — the 25fps decoding ceiling is real, and <strong>not touching VSP or ION means no kernel crash risk</strong></li>
+</ul>
+<p>Three changes to the software route, ranked by cost-effectiveness:</p>
+<ol>
+<li><strong>Drop the y4m disk write</strong>, use <code>-vo lvfb</code> directly (mplayer’s built-in LVGL direct-write vo) — eliminates the entire file IO, expected 7.9 → ~20fps</li>
+<li><strong>Drop <code>-vf scale=640:360</code></strong>, let the vo output directly at the target size — saves one CPU scaling pass</li>
+<li><strong>Drop <code>-autosync 100 -mc 1</code></strong> — added in v4 to guard against pts jumps at TS segment boundaries, and we’ve proven ptsync is the source of the negative feedback</li>
+</ol>
+<p>All three together, software decoding could likely reach 25fps, with zero kernel risk. <strong>This makes it a better first gradual-rollout experiment than ION cached.</strong></p>
+<p>But be clear about its ceiling: 25fps is the decode ceiling of mplayer’s class of CPU; above 1080p you’d need 720p sources or downscaled resolution. At that point hardware decoding still has to be fixed eventually.</p>
+<hr>
+<h2 id="6-Three-Methodology-Takeaways"><a href="#6-Three-Methodology-Takeaways" class="headerlink" title="6. Three Methodology Takeaways"></a>6. Three Methodology Takeaways</h2><p><strong>1. “Hardware vs software decoding” is not a matter of faith — it’s measurable.</strong><br>A single <code>mplayer -vo null -benchmark</code> gets the truth out in under two minutes. Before investing three weeks in hardware acceleration, spend two minutes measuring the software ceiling.</p>
+<p><strong>2. Performance problems are about “where the money goes”, not “which step is slowest”.</strong><br>Hardware decode dropping from 64ms to 14ms is a huge win, but the same period added 95ms of other overhead; the net gain is negative. The slow step (memcpy 43ms) isn’t the step initially suspected (decoding).</p>
+<p><strong>3. A third-party component’s capability boundaries are established by reading lists, not guessing.</strong><br>The <code>mplayer -vo help</code> line lists ten vos, with no v4l2 and no dri — mplayer cannot participate in GPU composition, a fact confirmable without reading a single line of source. And <code>strings | grep hwaccel</code> being empty means there’s no hardware decode framework. Far more reliable than “I think MPlayer should support it”.</p>
+<hr>
+<h2 id="Appendix-Key-Facts-Covered-in-This-Article"><a href="#Appendix-Key-Facts-Covered-in-This-Article" class="headerlink" title="Appendix: Key Facts Covered in This Article"></a>Appendix: Key Facts Covered in This Article</h2><ul>
+<li>mplayer location: <code>/home/lvgl_demo/lvgl_demo/libs/mplayer/mplayer</code>, MPlayer 1.4-13 static build, <strong>not in PATH</strong></li>
+<li>Software decode ceiling 25.0fps &#x2F; 40ms per frame (<code>VC</code> at 99.33%)</li>
+<li>Existing y4m chain 7.9fps; the real bottleneck is file IO + scale filter</li>
+<li>Hardware decode baseline 15.7fps, wall clock 116ms (DRIVE 21.1 + memcpy 43.4 + render 31.8)</li>
+<li>Direct ION read counter-proof: fb_render 335ms, 10x slower</li>
+<li><code>/mnt/android_sys/lib/libomx_avcdec_hw_sprd.so</code> exists, but requires the Android media stack</li>
+<li>Alpine’s ffmpeg 6.1.2 has no VSP hwaccel, and isn’t installed</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright Notice</strong>: This article is an original work by whiteleibniz (organized with AI assistance). Copyright belongs to whiteleibniz. Please credit the source and link to the original article when reposting: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#One-Line-Conclusion"><span class="toc-number">1.</span> <span class="toc-text">One-Line Conclusion</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-First-Figure-Out-the-mplayer-Path"><span class="toc-number">2.</span> <span class="toc-text">1. First, Figure Out the mplayer Path</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Where-It-Is-and-Whether-It-Has-Hardware-Decoding"><span class="toc-number">2.1.</span> <span class="toc-text">1. Where It Is, and Whether It Has Hardware Decoding</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Where-It-Can-Output"><span class="toc-number">2.2.</span> <span class="toc-text">2. Where It Can Output</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-ffmpeg-Doesn%E2%80%99t-Save-the-Day-Either"><span class="toc-number">2.3.</span> <span class="toc-text">3. ffmpeg Doesn’t Save the Day Either</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Real-Control-Experiment"><span class="toc-number">3.</span> <span class="toc-text">2. The Real Control Experiment</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Group-A-mplayer-Pure-Decoding-Ceiling"><span class="toc-number">3.1.</span> <span class="toc-text">Group A: mplayer Pure Decoding Ceiling</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Group-B-The-Existing-Software-Pipeline-y4m-Relay"><span class="toc-number">3.2.</span> <span class="toc-text">Group B: The Existing Software Pipeline (y4m Relay)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Group-C-Our-In-House-VSP-Hardware-Decoding"><span class="toc-number">3.3.</span> <span class="toc-text">Group C: Our In-House VSP Hardware Decoding</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#All-Three-Side-by-Side"><span class="toc-number">3.4.</span> <span class="toc-text">All Three Side by Side</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Why-This-Result-Is-Counterintuitive"><span class="toc-number">4.</span> <span class="toc-text">3. Why This Result Is Counterintuitive</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Two-Real-Hardware-Routes-Found-Along-the-Way"><span class="toc-number">5.</span> <span class="toc-text">4. Two Real Hardware Routes Found Along the Way</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#libomx-avcdec-hw-sprd-so"><span class="toc-number">5.1.</span> <span class="toc-text">libomx_avcdec_hw_sprd.so</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ION-Cached-Mapping"><span class="toc-number">5.2.</span> <span class="toc-text">ION Cached Mapping</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-So-What%E2%80%99s-Next"><span class="toc-number">6.</span> <span class="toc-text">5. So What’s Next</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Three-Methodology-Takeaways"><span class="toc-number">7.</span> <span class="toc-text">6. Three Methodology Takeaways</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-Key-Facts-Covered-in-This-Article"><span class="toc-number">8.</span> <span class="toc-text">Appendix: Key Facts Covered in This Article</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&text=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&title=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&is_video=false&description=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&title=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&title=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&title=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&title=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/&name=nettv-16: Hardware Decoding Is Slower Than Software — A Controlled Experiment That Completely Overturned the Assumption That Decoding Is Slow&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

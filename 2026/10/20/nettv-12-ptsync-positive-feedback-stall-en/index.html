@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English  The first ten parts were all spent wrestling with “crashes”: kernel crashes, hangs, green screens, black screens. Once those were solved and 4800 consecutive fram">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English  The first ten parts were all spent wrestling with “crashes”: kernel crashes, hangs, green screens, black screens. Once those were solved and 4800 consecutive fram">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-19T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:49:15.192Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Spreadtrum">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="hardware decoding">
+<meta property="article:tag" content="PTS">
+<meta property="article:tag" content="A&#x2F;V sync">
+<meta property="article:tag" content="positive feedback">
+<meta property="article:tag" content="performance optimization">
+<meta property="article:tag" content="A&#x2F;B testing">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/20/nettv-12-ptsync-positive-feedback-stall/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&text=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&title=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&is_video=false&description=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&title=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&title=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&title=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&title=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&name=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Falsification-First-IDR-Is-Not-to-Blame"><span class="toc-number">1.</span> <span class="toc-text">1. Falsification First: IDR Is Not to Blame</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Real-Culprit-An-A-V-Sync-That-Only-Slows-Down"><span class="toc-number">2.</span> <span class="toc-text">2. The Real Culprit: An A-V Sync That Only Slows Down</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-A-B-The-Gap-of-a-Single-env"><span class="toc-number">3.</span> <span class="toc-text">3. A&#x2F;B: The Gap of a Single env</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-The-Fix"><span class="toc-number">4.</span> <span class="toc-text">4. The Fix</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Four-Lessons"><span class="toc-number">5.</span> <span class="toc-text">5. Four Lessons</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-19T18:00:00.000Z" itemprop="datePublished">2026-10-20</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/A-B-testing/" rel="tag">A/B testing</a>, <a class="tag-link-link" href="/tags/A-V-sync/" rel="tag">A/V sync</a>, <a class="tag-link-link" href="/tags/PTS/" rel="tag">PTS</a>, <a class="tag-link-link" href="/tags/Spreadtrum/" rel="tag">Spreadtrum</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/hardware-decoding/" rel="tag">hardware decoding</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/performance-optimization/" rel="tag">performance optimization</a>, <a class="tag-link-link" href="/tags/positive-feedback/" rel="tag">positive feedback</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/">English</a></p>
+</blockquote>
+<p>The first ten parts were all spent wrestling with “crashes”: kernel crashes, hangs, green screens, black screens. Once those were solved and 4800 consecutive frames became possible, the only enemy left was — <strong>stutter</strong>. 240 seconds produced only 19 frames on screen, about 0.08fps; the picture was basically a slideshow.</p>
+<p>This part covers how that number was raised to 6.3fps (about 80x), and how, along the way, a single diagnostic experiment <strong>falsified a wrong hypothesis chased for three days</strong>.</p>
+<h2 id="1-Falsification-First-IDR-Is-Not-to-Blame"><a href="#1-Falsification-First-IDR-Is-Not-to-Blame" class="headerlink" title="1. Falsification First: IDR Is Not to Blame"></a>1. Falsification First: IDR Is Not to Blame</h2><p>There had always been one hypothesis: <strong>“feeding a second IDR guarantees a hang”</strong>. In the logs, every generation of the process died near the GOP#2 IDR — consistent across all three streams, seemingly ironclad.</p>
+<p>Two possibilities had to be distinguished:</p>
+<ul>
+<li><strong>A</strong>: in streaming state, the decoder hangs upon seeing any second IDR → the fix is a soft reset at the GOP boundary</li>
+<li><strong>B</strong>: drift&#x2F;leaks accumulated over the previous 36 rounds → the fix is hunting for resource leaks</li>
+</ul>
+<p>The two fixes are completely different; guessing wrong means a wasted week. So on 10-19 I planted a diagnostic switch in the player, <code>NETTV_IDRREPLAY=K</code>: after capturing the first IDR, <strong>feed the same IDR K times in a row</strong> (zero accumulation, eliminating every drift factor).</p>
+<p>10-20, in the small hours, the first truly successful run (the previous round’s script upload turned into 0 bytes and I wasted a day waiting — more on that separately later):</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[diag] NETTV_IDRREPLAY=3 (首 IDR 连投次数)</span><br><span class="line">[diag] 捕获首 IDR 106336B(t=5), 之后连投 3 次</span><br><span class="line">[diag] AU[4] 重投首 IDR 106336B(t=24), 剩 2 次</span><br><span class="line">[diag] AU[5] 重投首 IDR 106336B(t=24), 剩 1 次</span><br><span class="line">[diag] AU[6] 重投首 IDR 106336B(t=24), 剩 0 次</span><br><span class="line">★ 帧#20 已上屏 @4887ms</span><br><span class="line">★ 帧#21 已上屏 @5028ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>Fed three times in a row, not one hang, and frames kept coming.</strong></p>
+<p>Hypothesis A is out. The IDR itself is innocent; the claim “a second IDR always hangs” was wrong from the root — it was only the <strong>symptom</strong>; the real problem was something else happening in the window around the IDR’s arrival.</p>
+<h2 id="2-The-Real-Culprit-An-A-V-Sync-That-Only-Slows-Down"><a href="#2-The-Real-Culprit-An-A-V-Sync-That-Only-Slows-Down" class="headerlink" title="2. The Real Culprit: An A-V Sync That Only Slows Down"></a>2. The Real Culprit: An A-V Sync That Only Slows Down</h2><p>Flipping further down the same log, one line repeats endlessly:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[ptsync] 视频落后, 暂缓解码 (累计 960)</span><br></pre></td></tr></table></figure>
+
+<p>It appeared 138 times in 240 seconds (one line printed per 16 frame drops), working out to over two thousand dropped frames.</p>
+<p>The corresponding code looks like this:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* returns 1=wait (video ahead), -1=drop (video too far behind), 0=normal */</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">pts_should_skip_or_wait</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> diff = (<span class="type">long</span> <span class="type">long</span>)vp - (<span class="type">long</span> <span class="type">long</span>)target;</span><br><span class="line">    <span class="keyword">if</span> (diff &lt; -(<span class="type">long</span> <span class="type">long</span>)thresh) <span class="keyword">return</span> <span class="number">-1</span>;   <span class="comment">/* too far behind → drop frame */</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Note that the function signature promises two things: “wait when ahead” and “drop when behind”. But <strong>the <code>return 1</code> branch was never implemented</strong> — the whole function has only two outcomes: drop a frame, or do nothing.</p>
+<p>So the logic became one-directional:</p>
+<ol>
+<li>Video falls behind → drop a frame</li>
+<li>Dropping a frame &#x3D; consuming more slowly (in the code, <code>rb_take</code> discards one NAL and then <code>continue</code>s)</li>
+<li>Slower &#x3D; further behind</li>
+<li>Back to step 1</li>
+</ol>
+<p><strong>This is positive feedback.</strong> Once triggered it only stalls harder and harder and never converges. Worse, the trigger condition is trivially easy to meet: a live stream’s <code>video_pts_ms</code> updates only once every 6 seconds (one TS segment), while the wall clock <code>target</code> climbs every millisecond; during those 6 seconds <code>diff</code> runs steadily negative, and the moment it crosses the threshold (by then already relaxed to 5000ms) it is guaranteed to fire.</p>
+<p>Incidentally, using it as the A-V sync reference is untenable in the first place: the audio runs on an independent mplayer + <code>bt_audio.fifo</code>, which is simply not the same clock source as the video.</p>
+<h2 id="3-A-B-The-Gap-of-a-Single-env"><a href="#3-A-B-The-Gap-of-a-Single-env" class="headerlink" title="3. A&#x2F;B: The Gap of a Single env"></a>3. A&#x2F;B: The Gap of a Single env</h2><p>No code changes — just one environment variable. Same binary, same source (Luxian 1080p), same 240 seconds:</p>
+<table>
+<thead>
+<tr>
+<th>Round</th>
+<th>NETTV_PTSSYNC</th>
+<th>Frames on screen</th>
+<th>AU progress</th>
+<th>ptsync drops</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>v13</td>
+<td>On by default</td>
+<td>19</td>
+<td>Stalls after AU[27]</td>
+<td>960 cumulative</td>
+</tr>
+<tr>
+<td>v14</td>
+<td><code>=0</code> off</td>
+<td>1191 (400-frame cap reached in just 63.6s)</td>
+<td>AU[441]</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p><strong>About 80x.</strong> And with it off, AU advanced all the way to 441, and the earlier “stops at AU[36]” phenomenon vanished as well — that too was an illusion created by the frame-drop storm, not a decoder crash.</p>
+<h2 id="4-The-Fix"><a href="#4-The-Fix" class="headerlink" title="4. The Fix"></a>4. The Fix</h2><p>Since the conclusion is “this logic does more harm than good in the current architecture”, the fix is to cement the verified env behavior into the default, keeping both the code and the switch:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">g_ptssync = (e &amp;&amp; e[<span class="number">0</span>] == <span class="string">&#x27;1&#x27;</span>) ? <span class="number">1</span> : <span class="number">0</span>;   <span class="comment">/* 10-20: off by default */</span></span><br></pre></td></tr></table></figure>
+
+<p>And to spell out why in the comments. The entire round’s change is a single character-level difference, and the build artifact’s size didn’t change at all (still 128028 bytes) — <strong>which also shows that this time you can’t judge the build by binary size; you have to look at timestamps and behavior</strong>.</p>
+<h2 id="5-Four-Lessons"><a href="#5-Four-Lessons" class="headerlink" title="5. Four Lessons"></a>5. Four Lessons</h2><p><strong>1. A one-directional feedback loop is more dangerous than no feedback at all.</strong><br>A controller with deceleration but no acceleration is a one-way ticket once it enters the negative region. When writing closed-loop logic like “A-V sync”, first confirm that both directions are truly implemented — don’t let the function signature fool you.</p>
+<p><strong>2. Symptoms masquerade as root causes, and they masquerade well.</strong><br>“A second IDR always hangs” was chased for three days; the truth is that the IDR’s arrival happened to trigger a frame-drop storm. <strong>First design an experiment that cleanly separates the two hypotheses (IDRREPLAY), then start fixing.</strong></p>
+<p><strong>3. Always md5 after uploading.</strong><br>Last round’s &#x2F;tmp&#x2F;r26.sh was 0 bytes yet showed PUSHED, causing “the experiment ran but no conclusion was obtained” to be misrecorded as “the experiment failed”. This time the process was fixed — every step gets a <code>md5sum</code> check.</p>
+<p><strong>4. Treat stutter and crashes with the same rigor.</strong><br>Crashes have backtraces; stutter has nothing, so it’s tempting to guess. But locating stutter is actually cheaper — one env switch and you have an answer in four minutes.</p>
+<hr>
+<p><em>Related reading: <a href="nettv-09-sigkill-vsp-kernel-reboot.md">Spreadtrum SC9832A Network TV Deep Dive (9): One SIGKILL Rebooted the Device</a></em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Falsification-First-IDR-Is-Not-to-Blame"><span class="toc-number">1.</span> <span class="toc-text">1. Falsification First: IDR Is Not to Blame</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Real-Culprit-An-A-V-Sync-That-Only-Slows-Down"><span class="toc-number">2.</span> <span class="toc-text">2. The Real Culprit: An A-V Sync That Only Slows Down</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-A-B-The-Gap-of-a-Single-env"><span class="toc-number">3.</span> <span class="toc-text">3. A&#x2F;B: The Gap of a Single env</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-The-Fix"><span class="toc-number">4.</span> <span class="toc-text">4. The Fix</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Four-Lessons"><span class="toc-number">5.</span> <span class="toc-text">5. Four Lessons</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&text=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&title=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&is_video=false&description=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&title=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&title=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&title=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&title=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/&name=Spreadtrum SC9832A Network TV Deep Dive (12): 80x Speedup — A &#39;The More It Stalls, the More It Drops&#39; PTS Sync Death Loop&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -6,23 +6,23 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪 背景：展讯 SC9832A（sc8830 系列）上做 HLS 直播硬解，裸调 SprdSimpleOMXComponent，输出 framebuffer。某天新版代码每跑必崩 —— 崩在 DRIVE fill(out) #1，设备随即重启。进程级保护拦不住，栈上也没有任何线索。 真凶是一段”为了查挂死而加的”调试代码。  症状相位桩（O_">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English  调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪 背景：展讯 SC9832A（sc8830 系列）上做 HLS 直播硬解，裸调 SprdSimpleOMXComponent，输出 framebuffer。某天新版代码每跑必崩 —— 崩在 DRIVE fill(out) #1，设备随即重启。进程级保护拦不住，栈上也没有任何线索。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪 背景：展讯 SC9832A（sc8830 系列）上做 HLS 直播硬解，裸调 SprdSimpleOMXComponent，输出 framebuffer。某天新版代码每跑必崩 —— 崩在 DRIVE fill(out) #1，设备随即重启。进程级保护拦不住，栈上也没有任何线索。 真凶是一段”为了查挂死而加的”调试代码。  症状相位桩（O_">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English  调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪 背景：展讯 SC9832A（sc8830 系列）上做 HLS 直播硬解，裸调 SprdSimpleOMXComponent，输出 framebuffer。某天新版代码每跑必崩 —— 崩在 DRIVE fill(out) #1，设备随即重启。进程级保护拦不住，栈上也没有任何线索。">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-18T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-19T05:52:14.119Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:04.192Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="展讯">
 <meta property="article:tag" content="nettv">
 <meta property="article:tag" content="vsp">
 <meta property="article:tag" content="sc9830">
+<meta property="article:tag" content="MMIO">
 <meta property="article:tag" content="内核崩溃">
 <meta property="article:tag" content="调试方法论">
-<meta property="article:tag" content="MMIO">
 <meta name="twitter:card" content="summary">
     
     
@@ -80,10 +80,10 @@
   <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -149,7 +149,10 @@
   
 
   <div class="content" itemprop="articleBody">
-    <h1 id="调试代码自己就是崩因：一次-VSP-内核崩溃的-8-层证伪"><a href="#调试代码自己就是崩因：一次-VSP-内核崩溃的-8-层证伪" class="headerlink" title="调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪"></a>调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪</h1><blockquote>
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/">English</a></p>
+</blockquote>
+<h1 id="调试代码自己就是崩因：一次-VSP-内核崩溃的-8-层证伪"><a href="#调试代码自己就是崩因：一次-VSP-内核崩溃的-8-层证伪" class="headerlink" title="调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪"></a>调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪</h1><blockquote>
 <p>背景：展讯 SC9832A（sc8830 系列）上做 HLS 直播硬解，裸调 <code>SprdSimpleOMXComponent</code>，<br>输出 framebuffer。某天新版代码每跑必崩 —— 崩在 <code>DRIVE fill(out) #1</code>，<br>设备随即重启。<strong>进程级保护拦不住，栈上也没有任何线索。</strong></p>
 <p>真凶是一段”为了查挂死而加的”调试代码。</p>
 </blockquote>

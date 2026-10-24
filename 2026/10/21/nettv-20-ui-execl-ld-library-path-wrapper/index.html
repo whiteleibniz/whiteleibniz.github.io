@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="上午刚用「pkill 大法」把黑屏的电视救回来，下午用户又点了个频道——还是黑的。后台进程明明活着。得，这台设备的黑屏有两张完全不同的脸。 这篇记录第二张脸的抓捕过程：一个藏在动态链接器行为差异里的真 bug。 一、现场：进程活着，日志里写着「关键符号缺失」抓进程树和日志，播放器 nettv_player 确实在跑，但 worker 子进程的日志停在一行刺眼的话上： 123&#x3D;&#x3D;&#x3D; 符号解析 &#x3D;&#x3D;&#x3D;">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English  上午刚用「pkill 大法」把黑屏的电视救回来，下午用户又点了个频道——还是黑的。后台进程明明活着。得，这台设备的黑屏有两张完全不同的脸。 这篇记录第二张脸的抓捕过程：一个藏在动态链接器行为差异里的真 bug。 一、现场：进程活着，日志里写着「关键符号缺失」抓进程树和日志，播放器 nettv_player 确实在跑，但 worker 子进">
 <meta property="og:type" content="article">
 <meta property="og:title" content="nettv-20：点频道黑屏的第二张脸——bionic 不认 DT_RPATH，wrapper 一招救回 UI 链路">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="上午刚用「pkill 大法」把黑屏的电视救回来，下午用户又点了个频道——还是黑的。后台进程明明活着。得，这台设备的黑屏有两张完全不同的脸。 这篇记录第二张脸的抓捕过程：一个藏在动态链接器行为差异里的真 bug。 一、现场：进程活着，日志里写着「关键符号缺失」抓进程树和日志，播放器 nettv_player 确实在跑，但 worker 子进程的日志停在一行刺眼的话上： 123&#x3D;&#x3D;&#x3D; 符号解析 &#x3D;&#x3D;&#x3D;">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English  上午刚用「pkill 大法」把黑屏的电视救回来，下午用户又点了个频道——还是黑的。后台进程明明活着。得，这台设备的黑屏有两张完全不同的脸。 这篇记录第二张脸的抓捕过程：一个藏在动态链接器行为差异里的真 bug。 一、现场：进程活着，日志里写着「关键符号缺失」抓进程树和日志，播放器 nettv_player 确实在跑，但 worker 子进">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-21T01:40:00.000Z">
-<meta property="article:modified_time" content="2026-10-21T01:33:35.942Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:04.240Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="SC9832A">
 <meta property="article:tag" content="sprd">
@@ -79,10 +79,10 @@
   <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -148,7 +148,10 @@
   
 
   <div class="content" itemprop="articleBody">
-    <p>上午刚用「pkill 大法」把黑屏的电视救回来，下午用户又点了个频道——<strong>还是黑的</strong>。后台进程明明活着。得，这台设备的黑屏有两张完全不同的脸。</p>
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper-en/">English</a></p>
+</blockquote>
+<p>上午刚用「pkill 大法」把黑屏的电视救回来，下午用户又点了个频道——<strong>还是黑的</strong>。后台进程明明活着。得，这台设备的黑屏有两张完全不同的脸。</p>
 <p>这篇记录第二张脸的抓捕过程：一个藏在动态链接器行为差异里的真 bug。</p>
 <h2 id="一、现场：进程活着，日志里写着「关键符号缺失」"><a href="#一、现场：进程活着，日志里写着「关键符号缺失」" class="headerlink" title="一、现场：进程活着，日志里写着「关键符号缺失」"></a>一、现场：进程活着，日志里写着「关键符号缺失」</h2><p>抓进程树和日志，播放器 <code>nettv_player</code> 确实在跑，但 worker 子进程的日志停在一行刺眼的话上：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">=== 符号解析 ===</span><br><span class="line">  create=0x0 onMsgRecv=0xb5340731 empty=0xb533f90d ...</span><br><span class="line">&gt;&gt;&gt; 关键符号缺失, 无法继续</span><br></pre></td></tr></table></figure>

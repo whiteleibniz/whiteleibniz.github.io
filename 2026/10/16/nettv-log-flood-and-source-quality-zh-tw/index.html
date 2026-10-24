@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  上一篇（四）把「假物理位址」修掉了，第二個 IDR 不再崩、也不再切軟解。這次接著在真機上驗證，結果順手抓到一個跟畫面無關、但足以讓整機「慢性死亡」的問題：播放器把系統碟寫爆了。同時把「到底修好沒修好」這件事，拆成兩個更準確的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  上一篇（四）把「假物理位址」修掉了，第二個 IDR 不再崩、也不再切軟解。這次接著在真機上驗證，結果順手抓到一個跟畫面無關、但足以讓整機「慢性死亡」的問題：播放器把系統碟寫爆了。同時把「到底修好沒修好」這件事，拆成兩個更準確的">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-16T08:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:31:48.279Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="展訊">
+<meta property="article:tag" content="m3u8">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="fb">
+<meta property="article:tag" content="日誌">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/16/nettv-log-flood-and-source-quality-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/16/nettv-log-flood-and-source-quality/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&text=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&title=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&is_video=false&description=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源&body=Check out this article: https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&title=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&title=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&title=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&title=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&name=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8F%BE%E8%B1%A1%EF%BC%9A%E5%B9%BE%E5%B0%8F%E6%99%82%E5%BE%8C-tmp-lvgl-demo-log-%E8%AE%8A%E6%88%90-131MB"><span class="toc-number">1.</span> <span class="toc-text">一、現象：幾小時後 &#x2F;tmp&#x2F;lvgl_demo.log 變成 131MB</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%A0%B9%E5%9B%A0%EF%BC%9A%E4%B8%89%E5%B1%A4%E7%96%8A%E5%8A%A0"><span class="toc-number">2.</span> <span class="toc-text">二、根因：三層疊加</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%9A%E4%B8%80%E5%80%8B%E9%96%98%E9%96%80-%E4%B8%80%E6%AC%A1%E9%87%8D%E5%AE%9A%E5%90%91%E7%B6%81%E5%AE%9A"><span class="toc-number">3.</span> <span class="toc-text">三、修法：一個閘門 + 一次重定向綁定</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%A0%86%E5%B8%B6%E7%B3%BE%E6%AD%A3%E5%85%A9%E5%80%8B%E8%AA%8D%E7%9F%A5"><span class="toc-number">4.</span> <span class="toc-text">四、順帶糾正兩個認知</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%80%E5%8F%A5%E8%A9%B1%E6%95%99%E8%A8%93"><span class="toc-number">5.</span> <span class="toc-text">五、一句話教訓</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-16T08:00:00.000Z" itemprop="datePublished">2026-10-16</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/fb/" rel="tag">fb</a>, <a class="tag-link-link" href="/tags/m3u8/" rel="tag">m3u8</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A/" rel="tag">展訊</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E6%97%A5%E8%AA%8C/" rel="tag">日誌</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。</p>
+</blockquote>
+<p>上一篇（四）把「假物理位址」修掉了，第二個 IDR 不再崩、也不再切軟解。這次接著在真機上驗證，結果順手抓到一個跟畫面無關、但足以讓整機「慢性死亡」的問題：<strong>播放器把系統碟寫爆了</strong>。同時把「到底修好沒修好」這件事，拆成兩個更準確的結論：畫面品質其實強依賴源，而 IDR 掛死才是真正的攔路虎。</p>
+<h2 id="一、現象：幾小時後-tmp-lvgl-demo-log-變成-131MB"><a href="#一、現象：幾小時後-tmp-lvgl-demo-log-變成-131MB" class="headerlink" title="一、現象：幾小時後 &#x2F;tmp&#x2F;lvgl_demo.log 變成 131MB"></a>一、現象：幾小時後 &#x2F;tmp&#x2F;lvgl_demo.log 變成 131MB</h2><p>驗證時習慣性看一眼磁碟，發現 <code>/tmp/lvgl_demo.log</code> 已經 <strong>131621286 位元組（≈131MB）</strong>，而根分區只剩 586MB（91% 已用）。更糟的是它還在漲。</p>
+<p>日誌尾巴長這樣，一眼就能看出刷屏源：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">DRIVE empty(全量): m=0xb0b7a400 what=3048035944 hdr=0xb6cced70</span><br><span class="line">DRIVE empty(全量) → 返回, 队列:  in  queue=0xb4ec9304 begin=b4e8c060 end=00000000 (空)</span><br><span class="line">DRIVE fill(out): m=0xb0b7ae00 what=3048035944 hdr=0xb6ccedc0</span><br><span class="line">DRIVE fill(out) → 返回, 队列: ...</span><br></pre></td></tr></table></figure>
+
+<p>每條診斷本身沒問題——除錯硬解時全靠它。問題是<strong>它每影格都在打</strong>，而且不止一處。</p>
+<h2 id="二、根因：三層疊加"><a href="#二、根因：三層疊加" class="headerlink" title="二、根因：三層疊加"></a>二、根因：三層疊加</h2><ol>
+<li><strong>投餵日誌是「每影格級」的。</strong> <code>DRIVE</code> 巨集每投餵一個 buffer 就打兩行（還有佇列快照），一影格要投餵好幾次 → 實測 <strong>~9KB&#x2F;s</strong>。</li>
+<li><strong>廠商解碼函式庫也往 stdout 打。</strong> <code>SprdSimpleOMXComponent</code> &#x2F; <code>SPRDAVCDecoder</code> 內部有 <code>fillThisBuffer</code> &#x2F; <code>onQueueFilled</code> 之類的列印，跟著我們的呼叫一起吐。</li>
+<li><strong>最要命的一點：UI 拉起的播放器繼承了 UI 的 stdout。</strong> 網路電視頁是 <code>fork + execl(&quot;/usr/local/bin/nettv_player&quot;, url)</code>，沒有重定向——於是播放器的所有輸出都灌進了 LVGL 主程式的日誌檔案 <code>/tmp/lvgl_demo.log</code>。</li>
+</ol>
+<p>9KB&#x2F;s × 幾小時 &#x3D; 上百 MB。對一個 24 小時開著的電視盒子，這是必然爆碟。</p>
+<h2 id="三、修法：一個閘門-一次重定向綁定"><a href="#三、修法：一個閘門-一次重定向綁定" class="headerlink" title="三、修法：一個閘門 + 一次重定向綁定"></a>三、修法：一個閘門 + 一次重定向綁定</h2><p>思路是兩條：</p>
+<p><strong>① 每影格診斷加開關（預設關）。</strong> 加一個只認環境變數的閘門：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> g_vlog = <span class="number">-1</span>;</span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">vlog_on</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (g_vlog &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="type">const</span> <span class="type">char</span> *e = getenv(<span class="string">&quot;NETTV_VLOG&quot;</span>);</span><br><span class="line">        g_vlog = (e &amp;&amp; *e &amp;&amp; *e != <span class="string">&#x27;0&#x27;</span>) ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> g_vlog;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然後把 <code>DRIVE</code> 巨集裡的兩行、以及每影格的「已上螢幕」列印用 <code>if (vlog_on())</code> 包起來。要查問題時 <code>NETTV_VLOG=1</code> 跑一次即可，平時零開銷。</p>
+<p><strong>② 把子行程的輸出「綁」到一個每次重生都截斷的固定檔案。</strong> 因為廠商函式庫的列印我們在原始碼裡管不著，只能從 fd 層面下手：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">child_log_bound</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (vlog_on()) <span class="keyword">return</span>;                        <span class="comment">/* 除錯模式: 保留呼叫方重定向 */</span></span><br><span class="line">    <span class="type">int</span> f = open(<span class="string">&quot;/tmp/nettv_child.log&quot;</span>, O_WRONLY | O_CREAT | O_TRUNC, <span class="number">0644</span>);</span><br><span class="line">    <span class="keyword">if</span> (f &lt; <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">    dup2(f, <span class="number">1</span>); dup2(f, <span class="number">2</span>);</span><br><span class="line">    <span class="keyword">if</span> (f &gt; <span class="number">2</span>) close(f);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 monitor <code>fork</code> 出來的子行程一開始就呼叫它。兩個好處疊加：</p>
+<ul>
+<li>UI 的 <code>/tmp/lvgl_demo.log</code> 不再被灌（播放器輸出進了自己的檔案）；</li>
+<li>這個檔案是 <strong>O_TRUNC</strong> 打開的，而 monitor 每次兜底重生都會重新 <code>fork</code> 一次 → 檔案被反覆截斷，磁碟占用被死死限制在「<strong>單個子行程</strong>」的量級。</li>
+</ul>
+<p><strong>實測對比：</strong></p>
+<table>
+<thead>
+<tr>
+<th>指標</th>
+<th>修前</th>
+<th>修後</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/tmp/lvgl_demo.log</code></td>
+<td>131MB（持續漲）</td>
+<td><strong>965 位元組</strong></td>
+</tr>
+<tr>
+<td>子行程日誌</td>
+<td>混在 UI 日誌裡</td>
+<td><code>/tmp/nettv_child.log</code>，~59KB（單子行程）</td>
+</tr>
+<tr>
+<td>每影格診斷</td>
+<td>每影格多行</td>
+<td>預設 0（<code>NETTV_VLOG=1</code> 才開）</td>
+</tr>
+<tr>
+<td><code>[STAT]</code> 心跳</td>
+<td>有</td>
+<td>保留（每 25 影格一條）</td>
+</tr>
+</tbody></table>
+<h2 id="四、順帶糾正兩個認知"><a href="#四、順帶糾正兩個認知" class="headerlink" title="四、順帶糾正兩個認知"></a>四、順帶糾正兩個認知</h2><p>這次是「上機驗證」，驗證過程本身糾正了兩個之前的判斷：</p>
+<p><strong>① 「花畫面」不是二元的，它強依賴源。</strong></p>
+<ul>
+<li>好源（lxfile 瀘縣&#x2F;成都）：畫面主體清晰，只有中右局部糊 + 邊緣少量塊狀；</li>
+<li>差源（某 cztv 1080p 頻道）：幾乎整面螢幕都花，不可辨認。</li>
+</ul>
+<p>也就是說，用「有沒有馬賽克」來判斷「修沒修好」是不準的——得固定用一個已知好源做基線。</p>
+<p><strong>② 真正的穩定性攔路虎仍是 IDR 掛死，跟假 PA 無關。</strong><br>日誌顯示每個子行程都終止在同一點：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">  ── empty AU[69] 104222 字节 @7876ms t=5 (8c=1, 9a清0) ──</span><br><span class="line">*** GOP#3 IDR: 原生续解(3s 挂死看门狗兜底) ***</span><br></pre></td></tr></table></figure>
+
+<p>即：<strong>餵第 3 個 GOP 的 IDR 時，<code>DRIVE empty(全量)</code> 永不返回</strong>——和上一篇的結論一致（假 PA 不是它的根因）。monitor 每 ~8-30s 兜底重生一次，所以畫面是「能看幾分鐘、卡一下、再恢復」的節奏。要「穩定流暢」，下一步必須啃這塊。</p>
+<p>（附帶一個小插曲：抓螢幕時發現兩次抓到的影格<strong>位元組完全相同</strong>，一度以為畫面卡死。後來才想起播放器有「影格簽名去重」——只在畫面簽名變化時才重繪 fb。靜態場景下兩影格相同是<strong>正常最佳化</strong>，不是故障。抓圖驗證動態畫面時得選有運動的場景。）</p>
+<h2 id="五、一句話教訓"><a href="#五、一句話教訓" class="headerlink" title="五、一句話教訓"></a>五、一句話教訓</h2><blockquote>
+<p><strong>除錯列印是雙面刃：調的時候越詳細越好，上線的時候越安靜越好。</strong> 尤其是當程式是被別的行程 <code>fork+exec</code> 拉起、又沒有重定向 stdout 時——你以為「只是多打了幾行日誌」，幾小時後就變成了一顆 131MB 的定時炸彈。給它一個環境變數開關，再把子行程的輸出綁到一個會自動截斷的檔案上，代價幾乎為零，收益是整機不會慢性死亡。</p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8F%BE%E8%B1%A1%EF%BC%9A%E5%B9%BE%E5%B0%8F%E6%99%82%E5%BE%8C-tmp-lvgl-demo-log-%E8%AE%8A%E6%88%90-131MB"><span class="toc-number">1.</span> <span class="toc-text">一、現象：幾小時後 &#x2F;tmp&#x2F;lvgl_demo.log 變成 131MB</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%A0%B9%E5%9B%A0%EF%BC%9A%E4%B8%89%E5%B1%A4%E7%96%8A%E5%8A%A0"><span class="toc-number">2.</span> <span class="toc-text">二、根因：三層疊加</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%9A%E4%B8%80%E5%80%8B%E9%96%98%E9%96%80-%E4%B8%80%E6%AC%A1%E9%87%8D%E5%AE%9A%E5%90%91%E7%B6%81%E5%AE%9A"><span class="toc-number">3.</span> <span class="toc-text">三、修法：一個閘門 + 一次重定向綁定</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%A0%86%E5%B8%B6%E7%B3%BE%E6%AD%A3%E5%85%A9%E5%80%8B%E8%AA%8D%E7%9F%A5"><span class="toc-number">4.</span> <span class="toc-text">四、順帶糾正兩個認知</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%80%E5%8F%A5%E8%A9%B1%E6%95%99%E8%A8%93"><span class="toc-number">5.</span> <span class="toc-text">五、一句話教訓</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&text=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&title=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&is_video=false&description=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源&body=Check out this article: https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&title=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&title=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&title=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&title=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/&name=展訊 SC9832A 網路電視攻堅（五）：播放器把系統碟寫爆了——每影格日誌的代價，以及「花畫面」其實強依賴源&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

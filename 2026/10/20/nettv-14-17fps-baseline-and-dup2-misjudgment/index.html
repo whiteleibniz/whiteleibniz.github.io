@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="系列第 14 篇。上一篇（十三）把「O_SYNC 日志」定为隐形帧率杀手并默认关掉了它，本篇回答：关掉之后到底跑多少帧？结论是 17fps——以及我是怎么被 dup2误导、差点把”能跑”误判成”0 帧”的。  一、先纠正上一篇遗留的一个悬案上一篇结尾说 A&#x2F;B 实验被用户桌面播放占着 ION 池挡住，重跑之后拿到了真实数据。但重跑第一步就撞上一个诡异现象：A 组、B 组日志都只有 27">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 14 篇。上一篇（十三）把「O_SYNC 日志」定为隐形帧率杀手并默认关掉了它，本篇回答：关掉之后到底跑多少帧？结论是 17fps——以及我是怎么被 dup2误导、差点把”能跑”误判成”0 帧”的。  一、先纠正上一篇遗留的一个悬案上一篇结尾说 A&#x2F;B 实验被用户桌面播放占着 ION 池挡住，重跑之后拿到了真实数据。但">
 <meta property="og:type" content="article">
 <meta property="og:title" content="netTV 硬解攻坚（十四）：17fps 基线实测与一次 dup2 误判——判&quot;有没有出帧&quot;不能只看主日志">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="系列第 14 篇。上一篇（十三）把「O_SYNC 日志」定为隐形帧率杀手并默认关掉了它，本篇回答：关掉之后到底跑多少帧？结论是 17fps——以及我是怎么被 dup2误导、差点把”能跑”误判成”0 帧”的。  一、先纠正上一篇遗留的一个悬案上一篇结尾说 A&#x2F;B 实验被用户桌面播放占着 ION 池挡住，重跑之后拿到了真实数据。但重跑第一步就撞上一个诡异现象：A 组、B 组日志都只有 27">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 14 篇。上一篇（十三）把「O_SYNC 日志」定为隐形帧率杀手并默认关掉了它，本篇回答：关掉之后到底跑多少帧？结论是 17fps——以及我是怎么被 dup2误导、差点把”能跑”误判成”0 帧”的。  一、先纠正上一篇遗留的一个悬案上一篇结尾说 A&#x2F;B 实验被用户桌面播放占着 ION 池挡住，重跑之后拿到了真实数据。但">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-20T06:45:00.000Z">
-<meta property="article:modified_time" content="2026-10-20T01:22:08.252Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:04.224Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="SC9832A">
 <meta property="article:tag" content="VSP">
@@ -79,10 +79,10 @@
   <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/2026/10/21/nettv-18-dl-child-exec-ld-library-path/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/2026/10/20/nettv-13-o-sync-logging-bottleneck/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -149,6 +149,9 @@
 
   <div class="content" itemprop="articleBody">
     <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/">English</a></p>
+</blockquote>
+<blockquote>
 <p>系列第 14 篇。上一篇（十三）把「O_SYNC 日志」定为隐形帧率杀手并默认关掉了它，<br>本篇回答：关掉之后到底跑多少帧？结论是 <strong>17fps</strong>——以及我是怎么被 <code>dup2</code><br>误导、差点把”能跑”误判成”0 帧”的。</p>
 </blockquote>
 <h2 id="一、先纠正上一篇遗留的一个悬案"><a href="#一、先纠正上一篇遗留的一个悬案" class="headerlink" title="一、先纠正上一篇遗留的一个悬案"></a>一、先纠正上一篇遗留的一个悬案</h2><p>上一篇结尾说 A&#x2F;B 实验被用户桌面播放占着 ION 池挡住，重跑之后拿到了真实数据。<br>但重跑第一步就撞上一个诡异现象：A 组、B 组日志都只有 <strong>271~291 字节、6 行</strong>，<br>帧数为 0、心跳 0、性能汇总 0——和上一次”池被占”的表现一模一样。</p>

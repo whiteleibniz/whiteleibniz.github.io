@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  前幾篇一直在跟「第二個 IDR 必卡死」死磕，日誌斷層、證據反覆丟失。這次本來只想加一個診斷開關跑 60 秒，結果把裝置連著打成兩次重啟。復盤下來，事故本身就是最有價值的結論：解碼中用 kill -9 打斷 nettv_pla">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  前幾篇一直在跟「第二個 IDR 必卡死」死磕，日誌斷層、證據反覆丟失。這次本來只想加一個診斷開關跑 60 秒，結果把裝置連著打成兩次重啟。復盤下來，事故本身就是最有價值的結論：解碼中用 kill -9 打斷 nettv_pla">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-18T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:00:07.810Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="展訊">
+<meta property="article:tag" content="DMA">
+<meta property="article:tag" content="SIGKILL">
+<meta property="article:tag" content="OpenRC">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="核心崩潰">
+<meta property="article:tag" content="stdio緩衝">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&text=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&title=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&is_video=false&description=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&title=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&title=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&title=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&title=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&name=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%BA%8B%E6%95%85%E7%8F%BE%E5%A0%B4"><span class="toc-number">1.</span> <span class="toc-text">一、事故現場</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%A0%B9%E5%9B%A0%EF%BC%9AVSP-%E7%9A%84-DMA-%E5%BF%85%E9%A0%88%E8%AE%93%E5%AE%83%E8%87%AA%E5%B7%B1%E6%8E%92%E7%A9%BA"><span class="toc-number">2.</span> <span class="toc-text">二、根因：VSP 的 DMA 必須讓它自己排空</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%80%A3%E5%B8%B6%E5%9D%91%E4%B8%80%EF%BC%9A%E6%97%A5%E8%AA%8C%E6%98%AF-4KB-%E5%85%A8%E7%B7%A9%E8%A1%9D%EF%BC%8C%E3%80%8C%E8%A1%8C%E7%B7%A9%E8%A1%9D%E3%80%8D%E7%9A%84%E8%A8%BB%E8%A7%A3%E9%A8%99%E4%BA%86%E8%87%AA%E5%B7%B1"><span class="toc-number">3.</span> <span class="toc-text">三、連帶坑一：日誌是 4KB 全緩衝，「行緩衝」的註解騙了自己</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%80%A3%E5%B8%B6%E5%9D%91%E4%BA%8C%EF%BC%9AOpenRC-%E6%9C%8D%E5%8B%99%E6%B2%92%E6%9C%89-start-%E6%9C%83%E8%A2%AB%E9%9D%9C%E9%BB%98%E8%B7%B3%E9%81%8E"><span class="toc-number">4.</span> <span class="toc-text">四、連帶坑二：OpenRC 服務沒有 start() 會被靜默跳過</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%9C%AC%E6%AC%A1%E7%9C%9F%E6%83%B3%E5%81%9A%E7%9A%84%E5%AF%A6%E9%A9%97%EF%BC%9A%E7%B5%A6%E3%80%8C%E7%AC%AC%E4%BA%8C%E5%80%8B-IDR-%E5%8D%A1%E6%AD%BB%E3%80%8D%E5%81%9A%E4%BA%8C%E5%88%86"><span class="toc-number">5.</span> <span class="toc-text">五、本次真想做的實驗：給「第二個 IDR 卡死」做二分</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%8B%E4%B8%80%E6%AC%A1%E9%96%8B%E5%B7%A5%E7%9A%84%E4%B8%89%E6%A2%9D%E7%B4%80%E5%BE%8B"><span class="toc-number">6.</span> <span class="toc-text">六、下一次開工的三條紀律</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-18T18:00:00.000Z" itemprop="datePublished">2026-10-19</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/DMA/" rel="tag">DMA</a>, <a class="tag-link-link" href="/tags/OpenRC/" rel="tag">OpenRC</a>, <a class="tag-link-link" href="/tags/SIGKILL/" rel="tag">SIGKILL</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/stdio%E7%B7%A9%E8%A1%9D/" rel="tag">stdio緩衝</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A/" rel="tag">展訊</a>, <a class="tag-link-link" href="/tags/%E6%A0%B8%E5%BF%83%E5%B4%A9%E6%BD%B0/" rel="tag">核心崩潰</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。</p>
+</blockquote>
+<p>前幾篇一直在跟「第二個 IDR 必卡死」死磕，日誌斷層、證據反覆丟失。這次本來只想加一個診斷開關跑 60 秒，結果<strong>把裝置連著打成兩次重啟</strong>。復盤下來，事故本身就是最有價值的結論：<strong>解碼中用 <code>kill -9</code> 打斷 nettv_player，等於讓核心去收拾 VSP 沒排空的 DMA，直接崩</strong>。順帶還清掉了兩個長期誤判。</p>
+<h2 id="一、事故現場"><a href="#一、事故現場" class="headerlink" title="一、事故現場"></a>一、事故現場</h2><p>實驗腳本按老習慣寫的：起播放器，<code>( sleep 75; pkill -9 ... ) &amp;</code> 兜底，<code>timeout -s KILL 90</code> 硬收尾。跑完一查：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ uptime</span><br><span class="line"> 02:28:42 up 1 min,  0 users        ← 裝置重啟過</span><br><span class="line">$ wc -c /tmp/v11.log</span><br><span class="line">4096                                 ← 日誌只有 4KB，且大半是 NUL</span><br></pre></td></tr></table></figure>
+
+<p>不是 sshd 工作階段耗盡，也不是「卡死」——<strong>裝置真的重啟了</strong>。 ping 一直通（協定堆疊中斷驅動），SSH 不通（行程排程不起來），和 10-18 晚那次「ping 通但 sshd 無回應」是同一件事，當時判錯了方向。</p>
+<h2 id="二、根因：VSP-的-DMA-必須讓它自己排空"><a href="#二、根因：VSP-的-DMA-必須讓它自己排空" class="headerlink" title="二、根因：VSP 的 DMA 必須讓它自己排空"></a>二、根因：VSP 的 DMA 必須讓它自己排空</h2><p>播放器的退出路徑裡一直有一句 <code>usleep(800000)</code>，註解寫著「排空 DMA，防核心崩」。這是 10-09 就踩過的坑：VSP 硬體還在往 ion 連續記憶體裡寫影格的時候，如果行程被外力掐掉，驅動程式側沒有機會收回這次 DMA，接下來就是核心崩。</p>
+<p>關鍵在於：**<code>SIGKILL</code> 不會走任何使用者態退出路徑**。<code>_exit()</code> 也不會。所以</p>
+<ul>
+<li><code>pkill -9 -f nettv_player</code> ✗</li>
+<li><code>timeout -s KILL 90 ...</code> ✗</li>
+<li>SIGKILL 之後那 800ms 排空程式碼一行都不會執行 ✓（崩給你看）</li>
+</ul>
+<p>正確的停法只有兩種：</p>
+<ol>
+<li><strong>讓它自己退出</strong>：播放器第二個參數是「總影格數上限」（<code>g_arg2</code>，0 &#x3D; 無限），達到就走正常退出流程：<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/local/bin/nettv_player &lt;m3u8-url&gt; 400 &gt; /tmp/v12.<span class="built_in">log</span> 2&gt;&amp;1</span><br></pre></td></tr></table></figure></li>
+<li><strong>只發 SIGTERM</strong>：播放器裝了 SIGTERM 處理，會先停餵、排空 DMA 再退。SIGKILL 留作 3 秒後的兜底，但<strong>正常情況下不該觸發</strong>。</li>
+</ol>
+<p>改完之後腳本長這樣（<code>outputs/r26.sh</code>）：全程沒有 <code>-9</code>，靠影格數上限自退。</p>
+<h2 id="三、連帶坑一：日誌是-4KB-全緩衝，「行緩衝」的註解騙了自己"><a href="#三、連帶坑一：日誌是-4KB-全緩衝，「行緩衝」的註解騙了自己" class="headerlink" title="三、連帶坑一：日誌是 4KB 全緩衝，「行緩衝」的註解騙了自己"></a>三、連帶坑一：日誌是 4KB 全緩衝，「行緩衝」的註解騙了自己</h2><p>排查過程中最迷惑人的一點：行程明明跑了 75 秒，日誌檔案永遠停在 4096 位元組，<code>grep</code> 什麼都搜不到。</p>
+<p>原因很樸素：<strong>stdout 重導向到檔案後是 4KB 全緩衝</strong>，程式碼註解裡寫的「已開行緩衝（<code>setvbuf _IOLBF</code>）」在這條路徑上沒生效。行程被 SIGKILL → 緩衝區永遠不 flush → 你看到的日誌是若干個 4KB 塊，最後一截全丟。</p>
+<p>所以：</p>
+<ul>
+<li>實驗日誌<strong>必須等行程自己正常退出</strong>再看，別指望被殺的行程把尾部吐出來；</li>
+<li>判定「程式是不是卡住了」，不能只看日誌大小（4KB 一跳），要看 <code>pgrep</code> 和 <code>/proc/&lt;pid&gt;/stat</code>。</li>
+</ul>
+<h2 id="四、連帶坑二：OpenRC-服務沒有-start-會被靜默跳過"><a href="#四、連帶坑二：OpenRC-服務沒有-start-會被靜默跳過" class="headerlink" title="四、連帶坑二：OpenRC 服務沒有 start() 會被靜默跳過"></a>四、連帶坑二：OpenRC 服務沒有 <code>start()</code> 會被靜默跳過</h2><p>實驗一開始報了個很唬人的錯：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CANNOT LINK EXECUTABLE: library &quot;libc.so&quot; not found</span><br></pre></td></tr></table></figure>
+
+<p>查下去發現 <code>/system/lib/*.so</code> 全是懸空符號連結——它們指向 <code>/mnt/android_sys/lib/</code>，而 <strong>android_sys 分割區根本沒掛載</strong>。</p>
+<p>固化腳本 <code>/etc/init.d/00_android_sys</code> 是存在的，<code>rc-update show</code> 也顯示在 default runlevel 裡，但開機就是不執行。原因：OpenRC 的 runscript **必須定義 <code>start()</code>**（或者用 <code>command=</code> &#x2F; <code>start_stop_daemon</code>），裸的一段 shell 會被靜默跳過。改成標準 runscript 後立刻好了：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/sbin/openrc-run</span></span><br><span class="line"><span class="function"><span class="title">depend</span></span>() &#123; need localmount; &#125;</span><br><span class="line"><span class="function"><span class="title">start</span></span>() &#123;</span><br><span class="line">    mount | grep -q android_sys || mount -t ext4 -o ro /dev/mmcblk0p17 /mnt/android_sys</span><br><span class="line">    <span class="built_in">printf</span> <span class="string">&#x27;nameserver 8.8.8.8\nnameserver 114.114.114.114\n&#x27;</span> &gt; /etc/resolv.conf</span><br><span class="line">    ip route | grep -q default || route add default gw &lt;RNDIS-GW&gt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>rc-service 00_android_sys start</code> → <code>mnt=304</code>，問題解決。以後看到 <code>library &quot;libc.so&quot; not found</code>，先查 <code>ls /mnt/android_sys/lib | wc -l</code>，別去動編譯參數。</p>
+<h2 id="五、本次真想做的實驗：給「第二個-IDR-卡死」做二分"><a href="#五、本次真想做的實驗：給「第二個-IDR-卡死」做二分" class="headerlink" title="五、本次真想做的實驗：給「第二個 IDR 卡死」做二分"></a>五、本次真想做的實驗：給「第二個 IDR 卡死」做二分</h2><p>事故歸事故，診斷開關已經加進原始碼了（<code>outputs/sprd_msg_np_v2.c</code>，環境變數 <code>NETTV_IDRREPLAY</code>，預設 0 關閉）：</p>
+<p><strong>思路</strong>：現在的現象是每代 worker 都活到 AU[36]（GOP#2 的 IDR）然後 DRIVE 卡死 5~10 秒。這有兩種可能——</p>
+<ul>
+<li><strong>A. 元件狀態說</strong>：串流態下 <em>任何</em> IDR 都會卡，跟餵了多少輪無關 → 修法是 GOP 邊界做解碼器軟重置（flush + 重建緩衝區），不用重啟行程；</li>
+<li><strong>B. 累積漂移說</strong>：前 35 輪消耗掉了某種資源（ion&#x2F;CMA、偏移、參照計數），IDR 只是恰好撞在爆點上 → 修法完全不同，得去查 36 輪裡的洩漏。</li>
+</ul>
+<p><strong>做法</strong>：擷取第一個 IDR 之後，<strong>緊接著連投 K 次同一份 IDR</strong>（零累積、元件狀態與 AU[36] 時一致）。如果重投第 1 次就卡死，A 成立；如果連投 3 次全過、仍然要等到 36 輪才卡，B 成立。</p>
+<p>判準就兩條：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">grep -n &quot;\[diag\]&quot; /tmp/v12.log      # 擷取/重投的 IDR 行</span><br><span class="line">grep -n &quot;超时逃生\|alarm 超时&quot; ...    # 緊跟其後有沒有掛</span><br></pre></td></tr></table></figure>
+
+<p>二進位檔已經編好部署（<code>nettv_player</code> 118788 位元組，舊版備份在 <code>.bak_1019</code>），但<strong>實跑資料這次沒拿到</strong>——就是被上面兩次重啟攔下來的。</p>
+<h2 id="六、下一次開工的三條紀律"><a href="#六、下一次開工的三條紀律" class="headerlink" title="六、下一次開工的三條紀律"></a>六、下一次開工的三條紀律</h2><ol>
+<li>起實驗前先 <code>pgrep</code> 確認沒有別的播放行程；<strong>收尾只用 SIGTERM 或影格數上限</strong>，任何 <code>-9</code> 都等於讓裝置重啟。</li>
+<li>每次跑完先看 <code>uptime</code>，重啟過的資料一律作廢（日誌不全、現場沒了）。</li>
+<li>手動跑播放器前先停桌面（lvgl_demo 占著 fb，雙寫衝突），否則現象會被污染。</li>
+</ol>
+<p>把這條放最後是因為它最貴：一次重啟，前面半小時的取證全清零。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%BA%8B%E6%95%85%E7%8F%BE%E5%A0%B4"><span class="toc-number">1.</span> <span class="toc-text">一、事故現場</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%A0%B9%E5%9B%A0%EF%BC%9AVSP-%E7%9A%84-DMA-%E5%BF%85%E9%A0%88%E8%AE%93%E5%AE%83%E8%87%AA%E5%B7%B1%E6%8E%92%E7%A9%BA"><span class="toc-number">2.</span> <span class="toc-text">二、根因：VSP 的 DMA 必須讓它自己排空</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%80%A3%E5%B8%B6%E5%9D%91%E4%B8%80%EF%BC%9A%E6%97%A5%E8%AA%8C%E6%98%AF-4KB-%E5%85%A8%E7%B7%A9%E8%A1%9D%EF%BC%8C%E3%80%8C%E8%A1%8C%E7%B7%A9%E8%A1%9D%E3%80%8D%E7%9A%84%E8%A8%BB%E8%A7%A3%E9%A8%99%E4%BA%86%E8%87%AA%E5%B7%B1"><span class="toc-number">3.</span> <span class="toc-text">三、連帶坑一：日誌是 4KB 全緩衝，「行緩衝」的註解騙了自己</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%80%A3%E5%B8%B6%E5%9D%91%E4%BA%8C%EF%BC%9AOpenRC-%E6%9C%8D%E5%8B%99%E6%B2%92%E6%9C%89-start-%E6%9C%83%E8%A2%AB%E9%9D%9C%E9%BB%98%E8%B7%B3%E9%81%8E"><span class="toc-number">4.</span> <span class="toc-text">四、連帶坑二：OpenRC 服務沒有 start() 會被靜默跳過</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%9C%AC%E6%AC%A1%E7%9C%9F%E6%83%B3%E5%81%9A%E7%9A%84%E5%AF%A6%E9%A9%97%EF%BC%9A%E7%B5%A6%E3%80%8C%E7%AC%AC%E4%BA%8C%E5%80%8B-IDR-%E5%8D%A1%E6%AD%BB%E3%80%8D%E5%81%9A%E4%BA%8C%E5%88%86"><span class="toc-number">5.</span> <span class="toc-text">五、本次真想做的實驗：給「第二個 IDR 卡死」做二分</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%8B%E4%B8%80%E6%AC%A1%E9%96%8B%E5%B7%A5%E7%9A%84%E4%B8%89%E6%A2%9D%E7%B4%80%E5%BE%8B"><span class="toc-number">6.</span> <span class="toc-text">六、下一次開工的三條紀律</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&text=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&title=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&is_video=false&description=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&title=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&title=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&title=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&title=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/&name=netTV 硬解攻堅(九)：一次 SIGKILL 把裝置打成重啟——VSP 解碼中斷的代價與兩個連帶坑&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

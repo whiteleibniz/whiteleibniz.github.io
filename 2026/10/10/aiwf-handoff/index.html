@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="交接文档 — SC9832A 设备 PSP 硬渲恢复（2026-10-10） 交接对象：豆包。读完本文档即可继续干活。设备&#x3D;展讯 SC9832A armv7l，Alpine chroot，720x1280 竖屏 fb，LVGL 9.6 桌面 + 模拟器&#x2F;网络电视。  1. 连接与工具（必读） 设备经 PC ICS NAT 上网：USB RNDIS(192.168.137.x)">
+    <meta name="description" content="交接文档 — SC9832A 设备 PSP 硬渲恢复（2026-10-10） 交接对象：豆包。读完本文档即可继续干活。设备&#x3D;展讯 SC9832A armv7l，Alpine chroot，720x1280 竖屏 fb，LVGL 9.6 桌面 + 模拟器&#x2F;网络电视。  1. 连接与工具（必读） 设备经 PC ICS NAT 上网：USB RNDIS(RNDIS 网段) → PC">
 <meta property="og:type" content="article">
 <meta property="og:title" content="handoff_doubao_2026-10-10">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/10/aiwf-handoff/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="交接文档 — SC9832A 设备 PSP 硬渲恢复（2026-10-10） 交接对象：豆包。读完本文档即可继续干活。设备&#x3D;展讯 SC9832A armv7l，Alpine chroot，720x1280 竖屏 fb，LVGL 9.6 桌面 + 模拟器&#x2F;网络电视。  1. 连接与工具（必读） 设备经 PC ICS NAT 上网：USB RNDIS(192.168.137.x)">
+<meta property="og:description" content="交接文档 — SC9832A 设备 PSP 硬渲恢复（2026-10-10） 交接对象：豆包。读完本文档即可继续干活。设备&#x3D;展讯 SC9832A armv7l，Alpine chroot，720x1280 竖屏 fb，LVGL 9.6 桌面 + 模拟器&#x2F;网络电视。  1. 连接与工具（必读） 设备经 PC ICS NAT 上网：USB RNDIS(RNDIS 网段) → PC">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-10T09:10:35.000Z">
-<meta property="article:modified_time" content="2026-10-13T05:01:21.506Z">
+<meta property="article:modified_time" content="2026-10-24T05:11:21.734Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="AI协作">
 <meta property="article:tag" content="交接">
@@ -148,8 +148,8 @@
 <p>交接对象：豆包。读完本文档即可继续干活。设备&#x3D;展讯 SC9832A armv7l，Alpine chroot，720x1280 竖屏 fb，LVGL 9.6 桌面 + 模拟器&#x2F;网络电视。</p>
 </blockquote>
 <h2 id="1-连接与工具（必读）"><a href="#1-连接与工具（必读）" class="headerlink" title="1. 连接与工具（必读）"></a>1. 连接与工具（必读）</h2><ul>
-<li>设备经 PC ICS NAT 上网：USB RNDIS(192.168.137.x) → PC → WiFi。环境变量 <code>DEV_IP</code>（当前 192.168.137.100）。</li>
-<li><strong>SSH 一律走工程里的 <code>ssh_tools/dev.py</code><strong>（paramiko）：<code>DEV_IP=192.168.137.100 python dev.py &quot;&lt;cmd&gt;&quot;</code>；跑本地脚本 <code>python dev.py --run &lt;script&gt; [timeout]</code>；传文件 <code>MSYS_NO_PATHCONV=1 python devput.py &lt;local&gt; &lt;remote&gt;</code>（</strong>必须带 MSYS_NO_PATHCONV&#x3D;1</strong>，否则 Git Bash 吃掉远端路径）。裸 <code>ssh</code> 会被拒（非密钥登录）。</li>
+<li>设备经 PC ICS NAT 上网：USB RNDIS(RNDIS 网段) → PC → WiFi。环境变量 <code>DEV_IP</code>（当前 &lt;设备IP&gt;）。</li>
+<li><strong>SSH 一律走工程里的 <code>ssh_tools/dev.py</code><strong>（paramiko）：<code>DEV_IP=&lt;设备IP&gt; python dev.py &quot;&lt;cmd&gt;&quot;</code>；跑本地脚本 <code>python dev.py --run &lt;script&gt; [timeout]</code>；传文件 <code>MSYS_NO_PATHCONV=1 python devput.py &lt;local&gt; &lt;remote&gt;</code>（</strong>必须带 MSYS_NO_PATHCONV&#x3D;1</strong>，否则 Git Bash 吃掉远端路径）。裸 <code>ssh</code> 会被拒（非密钥登录）。</li>
 <li>★ 本机 sandbox 会 SIGTERM 跑久的命令 → <strong>SSH 命令一律 &lt;20s 完成</strong>；长任务用 <code>--run</code> 后台跑。被杀的 SSH 会话泄漏会耗尽 dropbear（症状：TCP22 通但 banner 立即断，只能设备断电重启）。</li>
 <li>★ 设备 SFTP 损坏 → 不要用 dev.py –get 拉大文件；文本&#x2F;小文件用 devput（inline base64）。</li>
 <li>设备有 python3.12、GNU ld 2.43.1（无 gold&#x2F;lld）、gcc14（apk 升级过，新工具链产物老 bionic linker 不认，见 §3）。</li>
@@ -171,7 +171,7 @@
 <h3 id="启动命令（测试用）"><a href="#启动命令（测试用）" class="headerlink" title="启动命令（测试用）"></a>启动命令（测试用）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd /home/lvgl_demo/lvgl_demo/extern/miniretro</span><br><span class="line">MINIRETRO_SHOW_FPS=1 timeout -k 3 30 ./miniretro_psp_hw ./ppsspp_libretro_hw.so /home/lvgl_demo/lvgl_demo/sdcard/game/psp/9100053.iso</span><br></pre></td></tr></table></figure>
 <p>游戏目录 <code>/home/lvgl_demo/lvgl_demo/sdcard/game/psp/</code>（9100053.iso、Cube 旋转立方体.pbp 等）。</p>
 <h2 id="3-★★-重启后必做清单（不做全是坑）"><a href="#3-★★-重启后必做清单（不做全是坑）" class="headerlink" title="3. ★★ 重启后必做清单（不做全是坑）"></a>3. ★★ 重启后必做清单（不做全是坑）</h2><ol>
-<li><strong>默认路由</strong>：设备跑 <code>route add default gw 192.168.137.1</code>（否则上不了外网）。</li>
+<li><strong>默认路由</strong>：设备跑 <code>route add default gw &lt;RNDIS-GW&gt;</code>（否则上不了外网）。</li>
 <li><strong>PC 侧 ICS 重绑</strong>：RNDIS 重新枚举后 PC 跑 <code>outputs/_ics_rebind.ps1</code>。判据：GW_OK+EXT_FAIL&#x3D;ICS 掉了。</li>
 <li><strong>mount p17</strong>：<code>mount -r /dev/mmcblk0p17 /mnt/android_sys</code>（重启后 gpu_env_ensure 的 stamp 兜底<strong>不生效</strong>；不挂 → &#x2F;system&#x2F;lib&#x2F;libEGL.so 断链 → EGL 失败静默退软渲 20fps）。</li>
 <li><strong>insmod mali</strong>：<code>insmod /lib/modules/mali.ko</code>（硬件加速默认关、app 不拉驱动；不加载同样静默退软渲）。</li>

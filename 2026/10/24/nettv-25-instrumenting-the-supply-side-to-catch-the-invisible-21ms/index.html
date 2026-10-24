@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇把连续播放拉到 386 秒，稳定性达标，却留下一笔对不上的账：AU 平均墙钟 62.6 ms，而所有分段计时器加起来只有 40.4 ms，21.6 ms 没有任何计时器认领。这次设备离线（RNDIS 未枚举、WiFi 也不通），没法上机测，那就干离线最该干的事——把仪表装好，让下一轮">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇把连续播放拉到 386 秒，稳定性达标，却留下一笔对不上的账：AU 平均墙钟 62.6 ms，而所有分段计时器加起来只有 40.4 ms，21.6 ms 没有任何计时器认领。这次设备离线（RNDIS 未枚举、WiFi 也不通">
 <meta property="og:type" content="article">
 <meta property="og:title" content="展讯 SC9832A 网络电视攻坚（二十五）：给&quot;看不见的 21.6 ms&quot;装上仪表——供数侧仪器化设计">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇把连续播放拉到 386 秒，稳定性达标，却留下一笔对不上的账：AU 平均墙钟 62.6 ms，而所有分段计时器加起来只有 40.4 ms，21.6 ms 没有任何计时器认领。这次设备离线（RNDIS 未枚举、WiFi 也不通），没法上机测，那就干离线最该干的事——把仪表装好，让下一轮">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  上一篇把连续播放拉到 386 秒，稳定性达标，却留下一笔对不上的账：AU 平均墙钟 62.6 ms，而所有分段计时器加起来只有 40.4 ms，21.6 ms 没有任何计时器认领。这次设备离线（RNDIS 未枚举、WiFi 也不通">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-23T18:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-23T18:15:36.202Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:25.753Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="VSP">
 <meta property="article:tag" content="硬解">
@@ -22,8 +22,8 @@
 <meta property="article:tag" content="帧率">
 <meta property="article:tag" content="rb_take">
 <meta property="article:tag" content="m3u8">
-<meta property="article:tag" content="性能剖析">
 <meta property="article:tag" content="直播">
+<meta property="article:tag" content="性能剖析">
 <meta name="twitter:card" content="summary">
     
     
@@ -81,10 +81,10 @@
   <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -151,6 +151,9 @@
 
   <div class="content" itemprop="articleBody">
     <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-en/">English</a></p>
+</blockquote>
+<blockquote>
 <p>版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。</p>
 </blockquote>
 <p>上一篇把连续播放拉到 386 秒，稳定性达标，却留下一笔<strong>对不上的账</strong>：AU 平均墙钟 62.6 ms，而所有分段计时器加起来只有 40.4 ms，<strong>21.6 ms 没有任何计时器认领</strong>。这次设备离线（RNDIS 未枚举、WiFi 也不通），没法上机测，那就干离线最该干的事——<strong>把仪表装好</strong>，让下一轮开机就能直接读出那 21.6 ms 是谁。</p>
@@ -236,7 +239,7 @@
 <li><strong>用默认值做静态排除</strong>。三个候选根本不用上机——默认关闭的功能不可能在默认跑法里产生 20 ms。先读代码砍候选，再为上机留一个真正未知的量。</li>
 <li><strong>供&#x2F;消平衡的直读指标比计时更有解释力</strong>：计时告诉你”等了多久”，rb 深度告诉你”为什么会等”。</li>
 </ol>
-<h2 id="六、状态"><a href="#六、状态" class="headerlink" title="六、状态"></a>六、状态</h2><p>本次<strong>设备离线</strong>（RNDIS 未枚举、192.168.137.100&#x2F;101、192.168.1.30 全不通，PC 侧无 RNDIS 网卡），改动尚未编译上机：</p>
+<h2 id="六、状态"><a href="#六、状态" class="headerlink" title="六、状态"></a>六、状态</h2><p>本次<strong>设备离线</strong>（RNDIS 未枚举，PC 侧无 RNDIS 网卡），改动尚未编译上机：</p>
 <ul>
 <li>源码：<code>outputs/sprd_msg_np_v2.c</code>（供数侧仪器化，md5 <code>c15e558f</code>）</li>
 <li>验收脚本：<code>outputs/_sup1024.sh</code>（编译 v18 + 跑 150 s）、<code>outputs/_sup1024_fin.sh</code>（取判据）</li>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Part 26 of the series. The previous part instrumented the supply side; this one takes it on-device and balances the books — and the conclusion rewrites the proje">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Part 26 of the series. The previous part instrumented the supply side; this one takes it on-device and balances the books — and the conclusion rewrites the proje">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-24T03:40:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:23:15.497Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Performance Profiling">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="VSP Hardware Decoding">
+<meta property="article:tag" content="HLS Live Streaming">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&text=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&title=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself&body=Check out this article: https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&title=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&title=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&title=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&title=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&name=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Background-An-Account-That-Wouldn%E2%80%99t-Balance"><span class="toc-number">1.</span> <span class="toc-text">1. Background: An Account That Wouldn’t Balance</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-On-Device-Result-Books-Balanced-the-Suspect-Exonerated"><span class="toc-number">2.</span> <span class="toc-text">2. On-Device Result: Books Balanced, the Suspect Exonerated</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Two-Numbers-That-Flipped-the-Conclusion"><span class="toc-number">3.</span> <span class="toc-text">3. Two Numbers That Flipped the Conclusion</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Number-1-The-fps-Curve-Is-Not-a-Flat-Line"><span class="toc-number">3.1.</span> <span class="toc-text">Number 1: The fps Curve Is Not a Flat Line</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Number-2-The-NAL-Histogram-Is-Cumulative"><span class="toc-number">3.2.</span> <span class="toc-text">Number 2: The NAL Histogram Is Cumulative</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-So-All-the-Books-Get-Rearranged"><span class="toc-number">4.</span> <span class="toc-text">4. So All the Books Get Rearranged</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-What-Is-the-10-6s-Segment-Gap"><span class="toc-number">5.</span> <span class="toc-text">5. What Is the 10.6s Segment Gap</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Direction-Rewrite"><span class="toc-number">6.</span> <span class="toc-text">6. Direction Rewrite</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Methodology-Takeaways-Worth-More-Than-the-Conclusion"><span class="toc-number">7.</span> <span class="toc-text">7. Methodology Takeaways (Worth More Than the Conclusion)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Current-Status"><span class="toc-number">8.</span> <span class="toc-text">8. Current Status</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-24T03:40:00.000Z" itemprop="datePublished">2026-10-24</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/HLS-Live-Streaming/" rel="tag">HLS Live Streaming</a>, <a class="tag-link-link" href="/tags/Performance-Profiling/" rel="tag">Performance Profiling</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP-Hardware-Decoding/" rel="tag">VSP Hardware Decoding</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Part 26 of the series. The previous part instrumented the supply side; this one takes it on-device and balances the books — and the conclusion rewrites the project’s entire optimization direction.</p>
+</blockquote>
+<h2 id="1-Background-An-Account-That-Wouldn’t-Balance"><a href="#1-Background-An-Account-That-Wouldn’t-Balance" class="headerlink" title="1. Background: An Account That Wouldn’t Balance"></a>1. Background: An Account That Wouldn’t Balance</h2><p>The 10-23 long-run stability test left an unexplained gap: on the Luxian 1080p live stream, the wall-clock period per AU was 62.6ms, but every instrumented component added up to only 40.4ms (segment loop 14.1 + frame readback 2.5 + render 23.8), leaving <strong>21.6ms unaccounted for</strong>. Switching the same source to single-segment file mode, wall clock 41.5ms ≈ instrumented sum 41.3 — zero residual.</p>
+<p>The gap only appeared in “download-while-playing” mode, and the prime suspect was <code>rb_take()</code> spinning while waiting for supply — but a suspect is not a conviction.</p>
+<p>On 10-24 we did one thing: <strong>turned the unknown into an explicit printed value</strong>. On the worker side we added four timing buckets: <code>g_t_take</code> (rb_take supply wait) &#x2F; <code>g_t_pre</code> &#x2F; <code>g_t_cool</code> &#x2F; <code>g_t_pace</code>, plus a “residual &#x3D; wall clock − sum of buckets” field on the [perf] line. On the dl side, every segment now prints one line: “[supply] download&#x2F;enqueue&#x2F;segment gap&#x2F;rb depth&#x2F;backpressure”.</p>
+<h2 id="2-On-Device-Result-Books-Balanced-the-Suspect-Exonerated"><a href="#2-On-Device-Result-Books-Balanced-the-Suspect-Exonerated" class="headerlink" title="2. On-Device Result: Books Balanced, the Suspect Exonerated"></a>2. On-Device Result: Books Balanced, the Suspect Exonerated</h2><p>150s of continuous playback, 0 crashes, clean exit. AU#400 average:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">wall=58.1 = segment loop 13.9 (bsOnMsg 14.0)</span><br><span class="line">          + frame readback 2.5</span><br><span class="line">          + render 23.2</span><br><span class="line">          + take NAL 17.6    ← there it is</span><br><span class="line">          + prep 0.3</span><br><span class="line">          + residual 0.5     ← down from 21.6ms to 0.5ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>The residual method worked: the 21.6ms mystery &#x3D; rb_take supply wait 17.6ms + change.</strong> Instrumentation goal achieved; case closed.</p>
+<p>But before closing the case we glanced at two more numbers — and they flipped the entire optimization direction.</p>
+<h2 id="3-Two-Numbers-That-Flipped-the-Conclusion"><a href="#3-Two-Numbers-That-Flipped-the-Conclusion" class="headerlink" title="3. Two Numbers That Flipped the Conclusion"></a>3. Two Numbers That Flipped the Conclusion</h2><h3 id="Number-1-The-fps-Curve-Is-Not-a-Flat-Line"><a href="#Number-1-The-fps-Curve-Is-Not-a-Flat-Line" class="headerlink" title="Number 1: The fps Curve Is Not a Flat Line"></a>Number 1: The fps Curve Is Not a Flat Line</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">start: fps_x10 = 208 → 226    (20.8~22.6fps)</span><br><span class="line">steady: fps_x10 = 142         (14.2fps)</span><br></pre></td></tr></table></figure>
+
+<p>Same stream, same code — 22fps at the start, 14fps at steady state. If the bottleneck were us, the curve would be flat; <strong>only “supply dictates consumption” produces this shape</strong> — the start eats the backlog, and once it’s gone, you’re in the source’s real-time rhythm.</p>
+<h3 id="Number-2-The-NAL-Histogram-Is-Cumulative"><a href="#Number-2-The-NAL-Histogram-Is-Cumulative" class="headerlink" title="Number 2: The NAL Histogram Is Cumulative"></a>Number 2: The NAL Histogram Is Cumulative</h3><p>The dl side already had a diagnostic histogram (counting NAL types per segment), but <code>hist[]</code> is a <code>static</code> array — <strong>what it prints is cumulative, not per-segment delta</strong>. After differencing between segments:</p>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>slice delta</th>
+<th>IDR delta</th>
+<th>SPS&#x2F;PPS</th>
+<th>Total frames&#x2F;segment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>9→10</td>
+<td>145</td>
+<td>5</td>
+<td>5+5</td>
+<td><strong>155</strong></td>
+</tr>
+<tr>
+<td>13→14</td>
+<td>145</td>
+<td>5</td>
+<td>5+5</td>
+<td><strong>155</strong></td>
+</tr>
+</tbody></table>
+<p>Segment gap 10.6s. <strong>155 frames ÷ 10.6s &#x3D; 14.6fps — the Luxian source’s true frame rate is only 14.6fps.</strong></p>
+<p>The [STAT] line’s definition confirms it: <code>frames=4275 real=2035 elapsed=142918ms</code> — frames is the OMX callback count (29.9fps, including vendor filled&#x3D;0 empty events); real is the true frame count (14.2fps).</p>
+<h2 id="4-So-All-the-Books-Get-Rearranged"><a href="#4-So-All-the-Books-Get-Rearranged" class="headerlink" title="4. So All the Books Get Rearranged"></a>4. So All the Books Get Rearranged</h2><table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Source frame rate</td>
+<td>14.6fps</td>
+<td>155 frames &#x2F; 10.6s segment</td>
+</tr>
+<tr>
+<td>Pipeline throughput ceiling</td>
+<td><strong>22.5~24fps</strong></td>
+<td>measured during burst (41.5ms&#x2F;AU, no supply wait)</td>
+</tr>
+<tr>
+<td>Steady-state fps</td>
+<td>14.2fps</td>
+<td><strong>&#x3D; source frame rate, pinned by the source</strong></td>
+</tr>
+<tr>
+<td>take-NAL wait</td>
+<td>17.6ms&#x2F;AU</td>
+<td>supply throttling, not waste</td>
+</tr>
+</tbody></table>
+<p><strong>The pipeline has 60% more throughput than the source needs.</strong> The “push frame rate to 25fps” goal we chased all along is physically unreachable for a 14fps source — like interpolating a 25fps movie to 60fps: those 35 frames simply don’t exist in the source.</p>
+<p>The 10-23 A&#x2F;B data now reads consistently too: 60s short test 21.8fps (the startup-backlog window, with 3-5 segments queued in the playlist), 386s long run 14.4fps (backlog exhausted, in the source’s real-time rhythm). <strong>High short-test frame rates were always an illusion.</strong></p>
+<h2 id="5-What-Is-the-10-6s-Segment-Gap"><a href="#5-What-Is-the-10-6s-Segment-Gap" class="headerlink" title="5. What Is the 10.6s Segment Gap"></a>5. What Is the 10.6s Segment Gap</h2><p>Per-segment cycle on the dl side: download 235ms → enqueue 3ms → <code>audio_feed</code> blocks ~10.6s (fifo backpressure &#x3D; segment audio duration, the metronome of A&#x2F;V sync) → next segment.</p>
+<p>The segment gap <em>is</em> the <code>audio_feed</code> block — the deliberate design of the 10-17 A&#x2F;V sync refactor: <strong>dl is locked to the real-time rhythm by the audio clock, pacing video progress onto the audio timeline</strong>. The benefit: audio and video never drift apart. The cost: dl only ever stays one segment ahead, with no hoarding ability.</p>
+<p>So “prefetch the next segment” is killed outright: prefetching &#x3D; video running ahead of audio &#x3D; A&#x2F;V sync collapse. The ~164 NAL ≈ 9.5s steady-state backlog in rb is a designed jitter cushion, not a defect.</p>
+<h2 id="6-Direction-Rewrite"><a href="#6-Direction-Rewrite" class="headerlink" title="6. Direction Rewrite"></a>6. Direction Rewrite</h2><p>The old top to-do was “frame-rate battleground &#x3D; supply”. It now becomes:</p>
+<ol>
+<li><strong>Verify the pipeline with a high-frame-rate source</strong>: find a 25&#x2F;30fps source among the 12 tested channels, and check on-device whether the fps curve sits at 22fps+ without startup decay — that’s the pipeline’s real report card</li>
+<li>If no high-frame-rate source exists, loop local multi-GOP samples (h1.ts&#x2F;np1.ts) to measure the pipeline ceiling directly</li>
+<li>Keep instrumentation (v18) as a standard A&#x2F;B tool, md5 <code>c15e558f</code>, committed as <code>f3bd837</code></li>
+<li>Redirect remaining effort to the real product problems: ghosting, channel switching, A&#x2F;V sync details, black-screen root fix</li>
+</ol>
+<h2 id="7-Methodology-Takeaways-Worth-More-Than-the-Conclusion"><a href="#7-Methodology-Takeaways-Worth-More-Than-the-Conclusion" class="headerlink" title="7. Methodology Takeaways (Worth More Than the Conclusion)"></a>7. Methodology Takeaways (Worth More Than the Conclusion)</h2><ol>
+<li><strong>The residual method</strong>: time everything you can time, and print the rest as an explicit “residual” — the unknown becomes observable, which is how we caught 21.6ms</li>
+<li><strong>The cumulative-value trap</strong>: a diagnostic histogram using a static array outputs cumulative values by definition. This time we almost mistook “2030 frames per segment” for truth (actually 14 segments’ accumulation) — the absurd 191fps it computed is what exposed it. <strong>Any static cumulative must output deltas</strong></li>
+<li><strong>Short test vs long run</strong>: in a buffered system, short-test report cards are fake. 60s measured 21.8fps; 386s dropped to 14.4fps — the difference is entirely the startup backlog</li>
+<li><strong>Callback count ≠ frame count</strong>: the vendor appends a filled&#x3D;0 empty event to every real frame; OMX callback rate 29.9fps vs true frames 14.2fps — a 2x gap. Frame judgment must use <code>[STAT] real=</code></li>
+</ol>
+<h2 id="8-Current-Status"><a href="#8-Current-Status" class="headerlink" title="8. Current Status"></a>8. Current Status</h2><ul>
+<li>Steady-state playback: 14.2fps (&#x3D; source frame rate), 0 crashes, no ION leak, 9.5s buffer</li>
+<li>Pipeline throughput: 22.5~24fps (bounded by the 23.2ms render; no cheap variables left)</li>
+<li>Code: <code>f3bd837</code> committed (not pushed, awaiting authorization)</li>
+<li>Next: find a high-frame-rate source and get the pipeline’s real report card</li>
+</ul>
+<hr>
+<p><em>Part 26 of the “netTV Hardware Decoding Deep Dive” series. All data measured on real Spreadtrum SC9832A hardware.</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Background-An-Account-That-Wouldn%E2%80%99t-Balance"><span class="toc-number">1.</span> <span class="toc-text">1. Background: An Account That Wouldn’t Balance</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-On-Device-Result-Books-Balanced-the-Suspect-Exonerated"><span class="toc-number">2.</span> <span class="toc-text">2. On-Device Result: Books Balanced, the Suspect Exonerated</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Two-Numbers-That-Flipped-the-Conclusion"><span class="toc-number">3.</span> <span class="toc-text">3. Two Numbers That Flipped the Conclusion</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Number-1-The-fps-Curve-Is-Not-a-Flat-Line"><span class="toc-number">3.1.</span> <span class="toc-text">Number 1: The fps Curve Is Not a Flat Line</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Number-2-The-NAL-Histogram-Is-Cumulative"><span class="toc-number">3.2.</span> <span class="toc-text">Number 2: The NAL Histogram Is Cumulative</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-So-All-the-Books-Get-Rearranged"><span class="toc-number">4.</span> <span class="toc-text">4. So All the Books Get Rearranged</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-What-Is-the-10-6s-Segment-Gap"><span class="toc-number">5.</span> <span class="toc-text">5. What Is the 10.6s Segment Gap</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Direction-Rewrite"><span class="toc-number">6.</span> <span class="toc-text">6. Direction Rewrite</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Methodology-Takeaways-Worth-More-Than-the-Conclusion"><span class="toc-number">7.</span> <span class="toc-text">7. Methodology Takeaways (Worth More Than the Conclusion)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Current-Status"><span class="toc-number">8.</span> <span class="toc-text">8. Current Status</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&text=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&title=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself&body=Check out this article: https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&title=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&title=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&title=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&title=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/&name=netTV Hardware Decoding Deep Dive (26): The 21.6ms Mystery — When the Bottleneck Was the Source Itself&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  設備重啟後 netTV 全線癱瘓一、現象：一次重啟，三件事同時壞展訊 SC9832A 設備因為上一次的 sshd 事故斷電重啟之後，想繼續驗證「4 影格 &#x2F; 第二個 IDR 崩潰」的修復效果，結果連環境都起不來：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="設備重啟後 netTV 全線癱瘓：ICS 重綁與 &#x2F;mnt&#x2F;android_sys 掛載這兩個必踩坑">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  設備重啟後 netTV 全線癱瘓一、現象：一次重啟，三件事同時壞展訊 SC9832A 設備因為上一次的 sshd 事故斷電重啟之後，想繼續驗證「4 影格 &#x2F; 第二個 IDR 崩潰」的修復效果，結果連環境都起不來：">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-13T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:24:51.018Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="bionic">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="故障修復">
+<meta property="article:tag" content="ICS">
+<meta property="article:tag" content="環境依賴">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/15/nettv-workaround-poison-gop-restart/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&text=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&title=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&is_video=false&description=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑&body=Check out this article: https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&title=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&title=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&title=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&title=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&name=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A8%AD%E5%82%99%E9%87%8D%E5%95%9F%E5%BE%8C-netTV-%E5%85%A8%E7%B7%9A%E7%99%B1%E7%98%93"><span class="toc-number">1.</span> <span class="toc-text">設備重啟後 netTV 全線癱瘓</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8F%BE%E8%B1%A1%EF%BC%9A%E4%B8%80%E6%AC%A1%E9%87%8D%E5%95%9F%EF%BC%8C%E4%B8%89%E4%BB%B6%E4%BA%8B%E5%90%8C%E6%99%82%E5%A3%9E"><span class="toc-number">1.1.</span> <span class="toc-text">一、現象：一次重啟，三件事同時壞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9D%91%E4%B8%80%EF%BC%9AICS-%E9%87%8D%E7%B6%81%E5%BF%85%E9%A0%88%E3%80%8C%E5%85%88%E6%B8%85-IP%E3%80%81%E5%85%88%E7%A7%81%E5%BE%8C%E5%85%AC%E3%80%8D"><span class="toc-number">1.2.</span> <span class="toc-text">二、坑一：ICS 重綁必須「先清 IP、先私後公」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%9D%91%E4%BA%8C%EF%BC%9Abionic-%E5%9F%B7%E8%A1%8C%E7%92%B0%E5%A2%83%E4%BE%9D%E8%B3%B4-mnt-android-sys-%E6%8E%9B%E8%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、坑二：bionic 執行環境依賴 &#x2F;mnt&#x2F;android_sys 掛載</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%AD%A3%E4%BA%8B%EF%BC%9A10-13-%E7%9A%84-mbinfo-%E9%87%8D%E7%94%A8%E4%BF%AE%E5%BE%A9%EF%BC%8C%E5%88%9D%E6%AD%A5%E9%A9%97%E8%AD%89%E9%80%9A%E9%81%8E"><span class="toc-number">1.4.</span> <span class="toc-text">四、正事：10-13 的 mbinfo 重用修復，初步驗證通過</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%9C%AC%E6%AC%A1%E6%9C%80%E8%B2%B4%E7%9A%84%E6%95%99%E8%A8%93%EF%BC%9A%E5%88%A5%E5%B0%8D-UI-%E4%B8%BB%E8%A1%8C%E7%A8%8B%E7%99%BC-SIGSTOP"><span class="toc-number">1.5.</span> <span class="toc-text">五、本次最貴的教訓：別對 UI 主行程發 SIGSTOP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E7%B6%93%E9%A9%97%E7%B8%BD%E7%B5%90"><span class="toc-number">1.6.</span> <span class="toc-text">六、經驗總結</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-13T18:30:00.000Z" itemprop="datePublished">2026-10-14</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/ICS/" rel="tag">ICS</a>, <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/bionic/" rel="tag">bionic</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/%E6%95%85%E9%9A%9C%E4%BF%AE%E5%BE%A9/" rel="tag">故障修復</a>, <a class="tag-link-link" href="/tags/%E7%92%B0%E5%A2%83%E4%BE%9D%E8%B3%B4/" rel="tag">環境依賴</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。</p>
+</blockquote>
+<h1 id="設備重啟後-netTV-全線癱瘓"><a href="#設備重啟後-netTV-全線癱瘓" class="headerlink" title="設備重啟後 netTV 全線癱瘓"></a>設備重啟後 netTV 全線癱瘓</h1><h2 id="一、現象：一次重啟，三件事同時壞"><a href="#一、現象：一次重啟，三件事同時壞" class="headerlink" title="一、現象：一次重啟，三件事同時壞"></a>一、現象：一次重啟，三件事同時壞</h2><p>展訊 SC9832A 設備因為上一次的 sshd 事故斷電重啟之後，想繼續驗證「4 影格 &#x2F; 第二個 IDR 崩潰」的修復效果，結果連環境都起不來：</p>
+<table>
+<thead>
+<tr>
+<th>現象</th>
+<th>判準</th>
+<th>第一反應（錯的）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>設備不上外網</td>
+<td><code>curl</code> 回傳 <code>000</code>，但 <code>ip route</code> 裡 <code>default via &lt;RNDIS-GW&gt;</code> 還在</td>
+<td>以為頻道源又掛了</td>
+</tr>
+<tr>
+<td>播放器起不來</td>
+<td><code>CANNOT LINK EXECUTABLE: library &quot;libc.so&quot; not found</code></td>
+<td>以為二進位被改壞了</td>
+</tr>
+</tbody></table>
+<p>兩條都不是真的：<strong>源沒掛，二進位也沒壞</strong>。壞的是兩台機器之間那層「共享上網」，以及設備重啟後被遺忘的一個掛載點。</p>
+<h2 id="二、坑一：ICS-重綁必須「先清-IP、先私後公」"><a href="#二、坑一：ICS-重綁必須「先清-IP、先私後公」" class="headerlink" title="二、坑一：ICS 重綁必須「先清 IP、先私後公」"></a>二、坑一：ICS 重綁必須「先清 IP、先私後公」</h2><p>設備上網鏈路是 <code>USB RNDIS（RNDIS 網段） → PC ICS NAT → PC WiFi</code>。PC 自己上網 200，設備 000，路由表也在——這就是標準的 <strong>ICS 掉綁定</strong>。</p>
+<p>舊腳本的做法是：找到 WLAN（public）和 RNDIS（private）兩個連線，<code>DisableSharing</code> 之後 <code>EnableSharing</code>。這次它直接失敗：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EnableSharing(0) → COMException 0x80040201</span><br></pre></td></tr></table></figure>
+
+<p>更坑的是補救動作：手動用 <code>New-NetIPAddress</code> 給 RNDIS 網卡設上 <code>&lt;RNDIS-GW&gt;/24</code>，地址確實出現了，ping 設備也通，但設備照樣上不了網。因為 <strong>ICS 不認這個手動地址</strong>——它接管網卡時會自己重新配置，手動地址會被頂掉，網卡退化成 <strong>APIPA 169.254.x</strong>，NAT 表根本沒建立。</p>
+<p>正確順序（已固化成腳本）：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 找到 public(WLAN/Intel 9462) 與 private(USB RNDIS Adapter)</span></span><br><span class="line"><span class="comment"># 2. 兩邊 DisableSharing()</span></span><br><span class="line"><span class="comment"># 3. ★ 把 private 網卡上【所有】IPv4 地址刪乾淨 —— 留任何一個 ICS 都不重配</span></span><br><span class="line"><span class="comment"># 4. private.EnableSharing(1)   ← 先私</span></span><br><span class="line"><span class="comment"># 5. public.EnableSharing(0)    ← 後公</span></span><br><span class="line"><span class="comment"># 6. 等 10s，ICS 自行把 private 配成 &lt;RNDIS-GW&gt;/24</span></span><br></pre></td></tr></table></figure>
+
+<p>驗證點只有一個：<code>Get-NetIPAddress -InterfaceAlias 以太網</code> 裡出現 ICS 私有地址。出現即通，不出現就是沒成，別拿 ping 通當判準。</p>
+<p><strong>教訓</strong>：Windows ICS 的私有側地址必須由 ICS 自己建立。你替它設好的地址，它不認，還會把網卡甩到 169.254 去。</p>
+<h2 id="三、坑二：bionic-執行環境依賴-mnt-android-sys-掛載"><a href="#三、坑二：bionic-執行環境依賴-mnt-android-sys-掛載" class="headerlink" title="三、坑二：bionic 執行環境依賴 &#x2F;mnt&#x2F;android_sys 掛載"></a>三、坑二：bionic 執行環境依賴 &#x2F;mnt&#x2F;android_sys 掛載</h2><p>ICS 修好後興沖沖跑播放器，結果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">WARNING: linker: /usr/local/bin/nettv_player: unused DT entry: type 0x1d</span><br><span class="line">CANNOT LINK EXECUTABLE: library &quot;libc.so&quot; not found</span><br></pre></td></tr></table></figure>
+
+<p><code>/system/lib/libc.so</code> 明明存在——但它是個軟鏈結：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/system/lib/libc.so -&gt; /mnt/android_sys/lib/libc.so</span><br></pre></td></tr></table></figure>
+
+<p>而 <code>/mnt/android_sys</code> 是 <strong><code>/dev/mmcblk0p17</code>（ext4 唯讀）的掛載點</strong>，重啟之後沒人掛它，於是 <code>/system/lib</code> 底下幾百個 <code>.so</code> 軟鏈結全部懸空。</p>
+<p>為什麼重啟後沒人掛？因為掛載點全被歷史改動拆掉了：</p>
+<ul>
+<li><code>01_wifi.start</code> —— 早已 disabled</li>
+<li><code>01_mali.start</code> —— 為了「Mali 去腳本化」已刪</li>
+<li><code>wifi_bringup.c:296</code> —— 只在使用者打開 WiFi 開關時才掛</li>
+<li><code>gpu_env.c</code> —— <strong>只建軟鏈結，沒有掛載兜底</strong>（它預設 &#x2F;mnt 已經掛好了）</li>
+</ul>
+<p>一行命令救回來：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p /mnt/android_sys</span><br><span class="line">mount -t ext4 -o ro /dev/mmcblk0p17 /mnt/android_sys</span><br></pre></td></tr></table></figure>
+
+<p><strong>遺留待辦</strong>：把這條固化成開機腳本 <code>00_android_sys.start</code>。否則每次重啟，所有 bionic 程式（nettv_player、PSP 前端、WCN 相關）全部 linking 失敗。</p>
+<h2 id="四、正事：10-13-的-mbinfo-重用修復，初步驗證通過"><a href="#四、正事：10-13-的-mbinfo-重用修復，初步驗證通過" class="headerlink" title="四、正事：10-13 的 mbinfo 重用修復，初步驗證通過"></a>四、正事：10-13 的 mbinfo 重用修復，初步驗證通過</h2><p>環境修好後重跑瀘縣源（<code>timeout -s KILL 80</code>），約 50 秒時的判準：</p>
+<table>
+<thead>
+<tr>
+<th>判準</th>
+<th>舊版</th>
+<th>新版</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>change to sw decoder</code></td>
+<td>必出（單向門）</td>
+<td><strong>0 次</strong></td>
+</tr>
+<tr>
+<td><code>[ion] ... FAILED rc=</code></td>
+<td>第 5 塊必出 -12</td>
+<td><strong>0 次</strong></td>
+</tr>
+<tr>
+<td><code>重用塊#</code></td>
+<td>無</td>
+<td><strong>93 次</strong></td>
+</tr>
+<tr>
+<td>行程存活</td>
+<td>4 影格後崩&#x2F;掛死</td>
+<td><strong>&gt;50s，持續出影格</strong></td>
+</tr>
+</tbody></table>
+<p>也就是說，10-13 定案的因果鏈成立了：**根本不是「第二個 IDR 必崩」，而是 VSP 的 mbinfo（653824B&#x2F;塊）在 ~7MB CMA 池裡只夠放 4 塊，第 5 塊 ENOMEM → <code>decRet=-3</code> → 元件永久切軟解 → 之後恆 <code>-9 needIVOP</code>**。把「重用 + 降對齊重試 + 檢測單向門主動重生」三件事做完，第二個 IDR 就不再是終點。</p>
+<p>還差的驗證：精確影格數、多 GOP 連續時長、畫面是否花畫面（<code>C1_REUSE_MAX</code> 可能要調）。</p>
+<h2 id="五、本次最貴的教訓：別對-UI-主行程發-SIGSTOP"><a href="#五、本次最貴的教訓：別對-UI-主行程發-SIGSTOP" class="headerlink" title="五、本次最貴的教訓：別對 UI 主行程發 SIGSTOP"></a>五、本次最貴的教訓：別對 UI 主行程發 SIGSTOP</h2><p>為了不讓 LVGL 跟播放器搶 framebuffer，我在測試腳本裡加了一句 <code>kill -STOP $(pgrep -x lvgl_demo)</code>。</p>
+<p>然後輪詢的時候 SSH 掛了：<code>Error reading SSH protocol banner [WinError 10054]</code>，複測是 <strong>TCP 22 Connection refused</strong>（ping 仍通），5555&#x2F;23&#x2F;8022 全 Timeout。sshd 死了，設備上沒有任何遠端通道。</p>
+<p>真正的災難在這裡：<strong>lvgl_demo 停在 SIGSTOP 狀態，沒有人給它 SIGCONT</strong>。設備 watchdog 早就裁撤了，看門狗不會拉它，也不會有人來恢復它。於是一臺「網路通但 SSH 死、UI 凍結」的設備，只剩斷電一條路。</p>
+<p>在無人值守的自動化裡，這是一條鐵律：</p>
+<blockquote>
+<p><strong>不要對 UI 主行程發 STOP&#x2F;TERM。</strong> 省下的那點 framebuffer 爭用，遠不值得賭上整機失聯。要測播放器就讓它搶螢幕，畫面閃幾下而已，測完 UI 自己就恢復了。</p>
+</blockquote>
+<h2 id="六、經驗總結"><a href="#六、經驗總結" class="headerlink" title="六、經驗總結"></a>六、經驗總結</h2><ol>
+<li><strong>重啟是嵌入式設備最危險的動作</strong>，它把「開機腳本裡已經不存在的隱含依賴」一次性全部暴露出來。改開機腳本（尤其是刪除）時，必須把被刪腳本承擔的非顯性職責（掛載、建軟鏈結、環境變數）顯式遷走。</li>
+<li><strong>ICS 這類「系統託管」的配置，手動替代永遠是假的</strong>。地址在、ping 通，不代表 NAT 在。判準要用<strong>功能真值</strong>（能不能出去），不要用配置表象（地址在不在）。</li>
+<li><strong><code>library &quot;xxx.so&quot; not found</code> 的第一嫌疑是掛載點，不是檔案</strong>。動態連結器報缺庫時，先看看軟鏈結目標目錄是不是空的——特別是在小機上盒 &#x2F; chroot &#x2F; Android 相容層這種到處是軟鏈結的環境。</li>
+<li><strong>長任務「背景 + 短輪詢」是紀律，但對主行程發訊號不是</strong>。前者是為了躲沙箱超時，後者是主動製造不可恢復狀態，兩回事。</li>
+<li><strong>修完根因要立刻用判準複驗</strong>。本次 <code>重用塊#=93 / sw=0 / FAILED=0</code> 三個計數，比「看著在播」可靠得多——把判準寫成可 grep 的計數，下次幾分鐘就能確認。</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文連結：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A8%AD%E5%82%99%E9%87%8D%E5%95%9F%E5%BE%8C-netTV-%E5%85%A8%E7%B7%9A%E7%99%B1%E7%98%93"><span class="toc-number">1.</span> <span class="toc-text">設備重啟後 netTV 全線癱瘓</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%8F%BE%E8%B1%A1%EF%BC%9A%E4%B8%80%E6%AC%A1%E9%87%8D%E5%95%9F%EF%BC%8C%E4%B8%89%E4%BB%B6%E4%BA%8B%E5%90%8C%E6%99%82%E5%A3%9E"><span class="toc-number">1.1.</span> <span class="toc-text">一、現象：一次重啟，三件事同時壞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9D%91%E4%B8%80%EF%BC%9AICS-%E9%87%8D%E7%B6%81%E5%BF%85%E9%A0%88%E3%80%8C%E5%85%88%E6%B8%85-IP%E3%80%81%E5%85%88%E7%A7%81%E5%BE%8C%E5%85%AC%E3%80%8D"><span class="toc-number">1.2.</span> <span class="toc-text">二、坑一：ICS 重綁必須「先清 IP、先私後公」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%9D%91%E4%BA%8C%EF%BC%9Abionic-%E5%9F%B7%E8%A1%8C%E7%92%B0%E5%A2%83%E4%BE%9D%E8%B3%B4-mnt-android-sys-%E6%8E%9B%E8%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">三、坑二：bionic 執行環境依賴 &#x2F;mnt&#x2F;android_sys 掛載</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%AD%A3%E4%BA%8B%EF%BC%9A10-13-%E7%9A%84-mbinfo-%E9%87%8D%E7%94%A8%E4%BF%AE%E5%BE%A9%EF%BC%8C%E5%88%9D%E6%AD%A5%E9%A9%97%E8%AD%89%E9%80%9A%E9%81%8E"><span class="toc-number">1.4.</span> <span class="toc-text">四、正事：10-13 的 mbinfo 重用修復，初步驗證通過</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%9C%AC%E6%AC%A1%E6%9C%80%E8%B2%B4%E7%9A%84%E6%95%99%E8%A8%93%EF%BC%9A%E5%88%A5%E5%B0%8D-UI-%E4%B8%BB%E8%A1%8C%E7%A8%8B%E7%99%BC-SIGSTOP"><span class="toc-number">1.5.</span> <span class="toc-text">五、本次最貴的教訓：別對 UI 主行程發 SIGSTOP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E7%B6%93%E9%A9%97%E7%B8%BD%E7%B5%90"><span class="toc-number">1.6.</span> <span class="toc-text">六、經驗總結</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&text=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&title=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&is_video=false&description=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑&body=Check out this article: https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&title=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&title=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&title=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&title=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/&name=設備重啟後 netTV 全線癱瘓：ICS 重綁與 /mnt/android_sys 掛載這兩個必踩坑&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English  The Real Reason netTV Only Outputs 4 Frames1. SymptomPlaying a 1080p m3u8 live stream on “Network TV” on a Spreadtrum SC9832A device, each round only outputs 4 fr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &quot;Second IDR&#39;s Fault&quot;)">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English  The Real Reason netTV Only Outputs 4 Frames1. SymptomPlaying a 1080p m3u8 live stream on “Network TV” on a Spreadtrum SC9832A device, each round only outputs 4 fr">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-12T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:23:22.987Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="ION">
+<meta property="article:tag" content="VSP hardware decoding">
+<meta property="article:tag" content="CMA">
+<meta property="article:tag" content="Bug Fix">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/10/13/blog-i18n-architecture/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&text=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&title=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&is_video=false&description=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)&body=Check out this article: https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&title=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&title=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&title=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&title=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&name=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#The-Real-Reason-netTV-Only-Outputs-4-Frames"><span class="toc-number">1.</span> <span class="toc-text">The Real Reason netTV Only Outputs 4 Frames</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Real-Root-Cause-Chain"><span class="toc-number">1.2.</span> <span class="toc-text">2. The Real Root-Cause Chain</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Fix-Three-Places-All-Around-%E2%80%9CNever-Let-It-Switch-to-Software-Decoding%E2%80%9D"><span class="toc-number">1.3.</span> <span class="toc-text">3. The Fix (Three Places, All Around “Never Let It Switch to Software Decoding”)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Reuse-Old-Blocks-When-mbinfo-Allocation-Fails"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 Reuse Old Blocks When mbinfo Allocation Fails</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Retry-with-Progressively-Lower-Alignment-on-Allocation-Failure"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Retry with Progressively Lower Alignment on Allocation Failure</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-Actively-Respawn-Immediately-Upon-Detecting-%E2%80%9CSwitch-to-Software-Decoding%E2%80%9D"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 Actively Respawn Immediately Upon Detecting “Switch to Software Decoding”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-A-Pitfall-Dug-Up-Along-the-Way-Root-Partition-100-Full"><span class="toc-number">1.4.</span> <span class="toc-text">4. A Pitfall Dug Up Along the Way: Root Partition 100% Full</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Another-Discipline-SSH-Commands-Must-Be-Short"><span class="toc-number">1.5.</span> <span class="toc-text">5. Another Discipline: SSH Commands Must Be Short</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Lessons-Learned"><span class="toc-number">1.6.</span> <span class="toc-text">6. Lessons Learned</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-12T18:30:00.000Z" itemprop="datePublished">2026-10-13</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Bug-Fix/" rel="tag">Bug Fix</a>, <a class="tag-link-link" href="/tags/CMA/" rel="tag">CMA</a>, <a class="tag-link-link" href="/tags/ION/" rel="tag">ION</a>, <a class="tag-link-link" href="/tags/VSP-hardware-decoding/" rel="tag">VSP hardware decoding</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/">English</a></p>
+</blockquote>
+<h1 id="The-Real-Reason-netTV-Only-Outputs-4-Frames"><a href="#The-Real-Reason-netTV-Only-Outputs-4-Frames" class="headerlink" title="The Real Reason netTV Only Outputs 4 Frames"></a>The Real Reason netTV Only Outputs 4 Frames</h1><h2 id="1-Symptom"><a href="#1-Symptom" class="headerlink" title="1. Symptom"></a>1. Symptom</h2><p>Playing a 1080p m3u8 live stream on “Network TV” on a Spreadtrum SC9832A device, each round only outputs <strong>4 frames</strong>, then the picture freezes; when the second IDR is fed, it always crashes (<code>SIGSEGV addr=0x747474</code>) or hangs permanently, and can only be restarted by the monitor process, manifesting as a “4 frames per round” slideshow mode.</p>
+<p>In earlier rounds of troubleshooting, the conclusion was recorded as “vendor library defect: the second IDR always hangs”, and a workaround was made (actively respawn upon detecting the second IDR). <strong>This conclusion is wrong</strong> — the second IDR is only a secondary phenomenon.</p>
+<h2 id="2-The-Real-Root-Cause-Chain"><a href="#2-The-Real-Root-Cause-Chain" class="headerlink" title="2. The Real Root-Cause Chain"></a>2. The Real Root-Cause Chain</h2><p>The key move: don’t just look at “which round it crashed in”; pull <strong>each round’s feed return codes</strong> into a timeline. Use a regex to extract each AU’s <code>decRet / frameEffective / consume byte</code> from the log, and the result is clear at a glance:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">AU[  3] sz= 106336 t=5  ret=0   eff=0 cons=106336   ← 第一个 IDR，解码成功</span><br><span class="line">AU[  4] sz=   8983 t=1  ret=0   eff=0 cons=8983</span><br><span class="line">...</span><br><span class="line">AU[  9] sz=  13967 t=1  ret=0   eff=0 cons=13967    ← 出第 4 帧</span><br><span class="line">AU[ 10] sz=  17116 t=1  ret=-3  eff=0 cons=17116    ← ★ 突变点</span><br><span class="line">AU[ 11] sz=  13424 t=1  ret=-9  eff=0 cons=13424    ← 从此恒 -9</span><br><span class="line">AU[ 12..35]                 ret=-9  needIVOP:1 ...</span><br></pre></td></tr></table></figure>
+
+<p>Pulling up the vendor log for the AU[10] round, the real cause is written right there:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">VSP_malloc_mbinfo_cb, 1770, idx: 4, size_mbinfo: 653824</span><br><span class="line">ioctl c0144900 failed with code -1: Out of memory</span><br><span class="line">[ion] C1 /dev/ion alloc(653824,heap=0,align=8) FAILED rc=-12</span><br><span class="line">[ion] get_phy_addr: heapID=0 base=0x0 -&gt; fail</span><br><span class="line">mPmem_mbinfo[4]: get phy addr fail -1</span><br><span class="line">H264Dec_init_picture, 648, mbinfo memory is not enough</span><br><span class="line">H264Dec_Process_slice, 117, error_flag=0x2</span><br><span class="line">decRet: -3</span><br><span class="line">failed to allocate memory.</span><br><span class="line">change to sw decoder.</span><br></pre></td></tr></table></figure>
+
+<p>The next round immediately:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">onQueueFilled, 1122, change to sw decoder, mThumbnailMode: 0</span><br><span class="line">H264Dec_ReleaseRefBuffers, 32</span><br><span class="line">openDecoder, lib: libomx_avcdec_sw_sprd.so</span><br><span class="line">decRet: -9, needIVOP: 1, SPS:0, PPS:0</span><br></pre></td></tr></table></figure>
+
+<p>String it together:</p>
+<ol>
+<li>VSP needs one <strong>653824-byte mbinfo</strong> (macroblock info) roughly every 2 frames decoded, and <strong>never frees it</strong>, requesting in increasing idx order;</li>
+<li>the CMA contiguous memory pool is only ~7MB; after subtracting the 3.1MB output frame buffer and 1.5MB input buffer, it only holds <strong>4 blocks</strong> of mbinfo;</li>
+<li>the 5th block’s <code>ion_alloc</code> returns <code>-ENOMEM</code> → <code>decRet=-3</code>;</li>
+<li>the component’s handling is to <strong>permanently switch to the software decoder</strong> (<code>libomx_avcdec_sw_sprd.so</code>) — this is a <strong>one-way door</strong>;</li>
+<li>the software decode path cannot get the SPS&#x2F;PPS fed in earlier (<code>SPS:0 PPS:0</code>), so each round returns <code>-9 needIVOP</code> (wants an I-frame), and it can never output frames again;</li>
+<li>the picture freezes at 4 frames; when the second IDR is fed again, it crashes or hangs inside the software decode context.</li>
+</ol>
+<p><strong>So “the second IDR crashes” is not a bug; it is the inevitable result after hardware decoding has already died.</strong></p>
+<h2 id="3-The-Fix-Three-Places-All-Around-“Never-Let-It-Switch-to-Software-Decoding”"><a href="#3-The-Fix-Three-Places-All-Around-“Never-Let-It-Switch-to-Software-Decoding”" class="headerlink" title="3. The Fix (Three Places, All Around “Never Let It Switch to Software Decoding”)"></a>3. The Fix (Three Places, All Around “Never Let It Switch to Software Decoding”)</h2><h3 id="3-1-Reuse-Old-Blocks-When-mbinfo-Allocation-Fails"><a href="#3-1-Reuse-Old-Blocks-When-mbinfo-Allocation-Fails" class="headerlink" title="3.1 Reuse Old Blocks When mbinfo Allocation Fails"></a>3.1 Reuse Old Blocks When mbinfo Allocation Fails</h3><p>The original LRU reuse only triggered when “the pool is full (<code>g_c1r_n &gt;= C1_REUSE_MAX=5</code>)”. But the actual CMA only holds 4 blocks; the 5th allocation fails outright, so <strong>the reuse logic is never reached</strong>. Change to two trigger paths: pool full <strong>or</strong> this <code>ion_alloc</code> failure.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">c1_reuse</span><span class="params">(<span class="type">void</span> *self, <span class="type">const</span> <span class="type">char</span> *name, <span class="type">unsigned</span> size)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (size != C1_REUSE_SZ || g_c1r_n &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> s = g_c1r_next % g_c1r_n;   <span class="comment">/* note %g_c1r_n, not %MAX */</span></span><br><span class="line">    g_c1r_next++;</span><br><span class="line">    ...  <span class="comment">/* fill the old block&#x27;s fd/base/handle/PA into the new MemoryHeapIon object */</span></span><br><span class="line">    map_add(g_c1r[s].buf_fd, g_c1r[s].pa, size);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The cost is possibly reusing blocks still referenced by the DPB (may cause corrupted frames), but compared with “permanent software decoding”, this cost is worth paying.</p>
+<h3 id="3-2-Retry-with-Progressively-Lower-Alignment-on-Allocation-Failure"><a href="#3-2-Retry-with-Progressively-Lower-Alignment-on-Allocation-Failure" class="headerlink" title="3.2 Retry with Progressively Lower Alignment on Allocation Failure"></a>3.2 Retry with Progressively Lower Alignment on Allocation Failure</h3><p>The original alignment algorithm was <code>order = ceil(log2(size))</code>, capped at 8. A 639KB mbinfo gets computed as a <strong>1MB alignment</strong> request, and CMA quickly fragments into unusable large blocks. On failure, retry with progressively lower alignment <code>6/4/2/0</code>, changing only alignment not size, which squeezes out one or two more blocks.</p>
+<h3 id="3-3-Actively-Respawn-Immediately-Upon-Detecting-“Switch-to-Software-Decoding”"><a href="#3-3-Actively-Respawn-Immediately-Upon-Detecting-“Switch-to-Software-Decoding”" class="headerlink" title="3.3 Actively Respawn Immediately Upon Detecting “Switch to Software Decoding”"></a>3.3 Actively Respawn Immediately Upon Detecting “Switch to Software Decoding”</h3><p>Software decoding is a one-way door; struggling inside it is pointless. The vendor log prints <code>change to sw decoder</code>; catch this string in the <code>__android_log_print</code> hook, set a flag, and on the next round of the feed loop immediately <code>usleep(800ms)</code> to drain the DMA, then <code>_exit(9)</code>, letting the monitor bring up a clean hardware decode process in 0.15s.</p>
+<h2 id="4-A-Pitfall-Dug-Up-Along-the-Way-Root-Partition-100-Full"><a href="#4-A-Pitfall-Dug-Up-Along-the-Way-Root-Partition-100-Full" class="headerlink" title="4. A Pitfall Dug Up Along the Way: Root Partition 100% Full"></a>4. A Pitfall Dug Up Along the Way: Root Partition 100% Full</h2><p>Another thing found during troubleshooting: <code>df -h /</code> shows the 6.2G root partition <strong>with not a single byte left</strong>. The consequence is <code>curl</code> failing to write <code>/tmp/nettv.raw</code> (exit code 23), and the player misjudging it as “channel source unreachable” (exit code 98), which looks exactly like a source failure.</p>
+<p>After clearing three debug logs (<code>btud_dbg.log</code> 326MB, <code>nt_live.log</code> 239MB, <code>dis.txt</code> 158MB), 724MB was freed.</p>
+<p><strong>Lesson</strong>: on embedded devices, “network failure” and “disk writes failing” look like the same phenomenon at the application layer; run <code>df</code> first before troubleshooting network issues.</p>
+<h2 id="5-Another-Discipline-SSH-Commands-Must-Be-Short"><a href="#5-Another-Discipline-SSH-Commands-Must-Be-Short" class="headerlink" title="5. Another Discipline: SSH Commands Must Be Short"></a>5. Another Discipline: SSH Commands Must Be Short</h2><p>I ran a foreground gcc compile command (over 20 seconds), which was SIGTERM’d by the local sandbox; the leftover connection dragged the device’s sshd down — port 22 became <code>Connection refused</code>, unrecoverable remotely, forcing a power-cycle reboot.</p>
+<p><strong>On resource-constrained embedded devices, long tasks must always be “background script + short polling”; foreground commands must always be wrapped in <code>timeout</code> and kept under 20 seconds.</strong></p>
+<h2 id="6-Lessons-Learned"><a href="#6-Lessons-Learned" class="headerlink" title="6. Lessons Learned"></a>6. Lessons Learned</h2><ol>
+<li><strong>Pulling per-round return codes into a timeline is far more useful than staring at the crash point.</strong> The crash point is often at the very end of the causal chain (here, the second IDR); the real mutation point (here, <code>decRet</code> going from 0 to -3 to -9) can only be seen via a timeline.</li>
+<li><strong>Beware of “one-way door” state switches.</strong> Switching to software decoding when the hardware decoder runs out of resources sounds elegant, but if after switching you cannot get SPS&#x2F;PPS and cannot switch back, it is a dead end. Faced with a one-way door, the right strategy is to <strong>detect it and respawn wholesale</strong>, not to keep feeding in the degraded state.</li>
+<li><strong>Memory-pool-class failures require looking at the “request sequence number”.</strong> The number <code>idx: 4</code> directly tells you the pool capacity is 4, while the hardcoded <code>MAX=5</code> in the code is dead logic that will never trigger — <strong>when using a constant to describe a resource upper bound, always use a measured value, not an estimate</strong>.</li>
+<li><strong>Alignment determines how long CMA lasts.</strong> <code>align = ceil(log2(size))</code> is a big waste for non-power-of-2 sizes; aligning 639KB to 1MB fragments dozens of times faster than 4KB alignment.</li>
+<li><strong>Do an environment checkup before troubleshooting</strong> (<code>df</code>, <code>free</code>, routing). In this case, running <code>df</code> right away would have saved a whole round of “is the source down again” misjudgment.</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is original work by whiteleibniz (organized with AI collaboration); copyright belongs to whiteleibniz. Please credit the source and link to the original when reposting: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#The-Real-Reason-netTV-Only-Outputs-4-Frames"><span class="toc-number">1.</span> <span class="toc-text">The Real Reason netTV Only Outputs 4 Frames</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-Real-Root-Cause-Chain"><span class="toc-number">1.2.</span> <span class="toc-text">2. The Real Root-Cause Chain</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-Fix-Three-Places-All-Around-%E2%80%9CNever-Let-It-Switch-to-Software-Decoding%E2%80%9D"><span class="toc-number">1.3.</span> <span class="toc-text">3. The Fix (Three Places, All Around “Never Let It Switch to Software Decoding”)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Reuse-Old-Blocks-When-mbinfo-Allocation-Fails"><span class="toc-number">1.3.1.</span> <span class="toc-text">3.1 Reuse Old Blocks When mbinfo Allocation Fails</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Retry-with-Progressively-Lower-Alignment-on-Allocation-Failure"><span class="toc-number">1.3.2.</span> <span class="toc-text">3.2 Retry with Progressively Lower Alignment on Allocation Failure</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-Actively-Respawn-Immediately-Upon-Detecting-%E2%80%9CSwitch-to-Software-Decoding%E2%80%9D"><span class="toc-number">1.3.3.</span> <span class="toc-text">3.3 Actively Respawn Immediately Upon Detecting “Switch to Software Decoding”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-A-Pitfall-Dug-Up-Along-the-Way-Root-Partition-100-Full"><span class="toc-number">1.4.</span> <span class="toc-text">4. A Pitfall Dug Up Along the Way: Root Partition 100% Full</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Another-Discipline-SSH-Commands-Must-Be-Short"><span class="toc-number">1.5.</span> <span class="toc-text">5. Another Discipline: SSH Commands Must Be Short</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Lessons-Learned"><span class="toc-number">1.6.</span> <span class="toc-text">6. Lessons Learned</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&text=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&title=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&is_video=false&description=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)&body=Check out this article: https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&title=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&title=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&title=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&title=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/&name=The Real Reason netTV Only Outputs 4 Frames: VSP mbinfo Memory Pool Exhaustion Triggers a Hardware-Decode Downgrade to Software (Not the &#34;Second IDR&#39;s Fault&#34;)&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

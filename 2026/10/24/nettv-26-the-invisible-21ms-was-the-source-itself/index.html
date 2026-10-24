@@ -6,21 +6,21 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="系列第 26 篇。上一篇给供数侧装了仪表，这一篇上机把账对平——结论把整个项目的优化方向都改写了。  一、先交代背景：一笔对不上的账10-23 长稳测试留下一笔糊涂账：泸县 1080p 直播流，每个 AU 的墙钟周期 62.6ms，但所有能计时的部件加起来只有 40.4ms（段循环 14.1 + 读帧 2.5 + 渲染 23.8），21.6ms 无人认领。同样的源切到单段文件模式，墙钟 41.5">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 26 篇。上一篇给供数侧装了仪表，这一篇上机把账对平——结论把整个项目的优化方向都改写了。  一、先交代背景：一笔对不上的账10-23 长稳测试留下一笔糊涂账：泸县 1080p 直播流，每个 AU 的墙钟周期 62.6ms，但所有能计时的部件加起来只有 40.4ms（段循环 14.1 + 读帧 2.5 + 渲染 23.8），21">
 <meta property="og:type" content="article">
 <meta property="og:title" content="netTV 硬解攻坚(26)：21.6ms 之谜——当瓶颈其实是源本身">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="系列第 26 篇。上一篇给供数侧装了仪表，这一篇上机把账对平——结论把整个项目的优化方向都改写了。  一、先交代背景：一笔对不上的账10-23 长稳测试留下一笔糊涂账：泸县 1080p 直播流，每个 AU 的墙钟周期 62.6ms，但所有能计时的部件加起来只有 40.4ms（段循环 14.1 + 读帧 2.5 + 渲染 23.8），21.6ms 无人认领。同样的源切到单段文件模式，墙钟 41.5">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 26 篇。上一篇给供数侧装了仪表，这一篇上机把账对平——结论把整个项目的优化方向都改写了。  一、先交代背景：一笔对不上的账10-23 长稳测试留下一笔糊涂账：泸县 1080p 直播流，每个 AU 的墙钟周期 62.6ms，但所有能计时的部件加起来只有 40.4ms（段循环 14.1 + 读帧 2.5 + 渲染 23.8），21">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-24T03:40:00.000Z">
-<meta property="article:modified_time" content="2026-10-24T04:28:40.940Z">
+<meta property="article:modified_time" content="2026-10-24T05:23:15.488Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="性能剖析">
 <meta property="article:tag" content="嵌入式">
-<meta property="article:tag" content="展讯 SC9832A">
 <meta property="article:tag" content="VSP 硬解">
 <meta property="article:tag" content="HLS 直播">
+<meta property="article:tag" content="展讯 SC9832A">
 <meta name="twitter:card" content="summary">
     
     
@@ -78,8 +78,10 @@
   <span id="actions">
       <ul>
         
+        <li><a class="icon" href="/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
-        <li><a class="icon" href="/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -146,6 +148,9 @@
 
   <div class="content" itemprop="articleBody">
     <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/">English</a></p>
+</blockquote>
+<blockquote>
 <p>系列第 26 篇。上一篇给供数侧装了仪表，这一篇上机把账对平——结论把整个项目的优化方向都改写了。</p>
 </blockquote>
 <h2 id="一、先交代背景：一笔对不上的账"><a href="#一、先交代背景：一笔对不上的账" class="headerlink" title="一、先交代背景：一笔对不上的账"></a>一、先交代背景：一笔对不上的账</h2><p>10-23 长稳测试留下一笔糊涂账：泸县 1080p 直播流，每个 AU 的墙钟周期 62.6ms，但所有能计时的部件加起来只有 40.4ms（段循环 14.1 + 读帧 2.5 + 渲染 23.8），<strong>21.6ms 无人认领</strong>。同样的源切到单段文件模式，墙钟 41.5ms ≈ 剖析和 41.3，零差额。</p>

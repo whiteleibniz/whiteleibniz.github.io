@@ -6,24 +6,24 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前一篇把厂商库 libstagefright_sprd_h264dec.so 里那个”每 GOP 边界必踩坏链表节点”的 UAF 定性了，我兴冲冲地打了个二进制补丁：三处链表遍历加节点合法性校验。结果部署上去——一张帧都出不来了。这篇记录翻车原因（活寄存器被我当成了临时变量）和 v2 补丁">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前一篇把厂商库 libstagefright_sprd_h264dec.so 里那个”每 GOP 边界必踩坏链表节点”的 UAF 定性了，我兴冲冲地打了个二进制补丁：三处链表遍历加节点合法性校验。结果部署上去——一张帧都出不来了。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="展讯 SC9832A 网络电视攻坚（八）：给厂商库打补丁翻车记——我是怎么把活寄存器 ip 写坏的">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前一篇把厂商库 libstagefright_sprd_h264dec.so 里那个”每 GOP 边界必踩坏链表节点”的 UAF 定性了，我兴冲冲地打了个二进制补丁：三处链表遍历加节点合法性校验。结果部署上去——一张帧都出不来了。这篇记录翻车原因（活寄存器被我当成了临时变量）和 v2 补丁">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。  前一篇把厂商库 libstagefright_sprd_h264dec.so 里那个”每 GOP 边界必踩坏链表节点”的 UAF 定性了，我兴冲冲地打了个二进制补丁：三处链表遍历加节点合法性校验。结果部署上去——一张帧都出不来了。">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-17T18:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-18T03:04:02.821Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:04.192Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="VSP">
 <meta property="article:tag" content="硬解">
+<meta property="article:tag" content="展讯">
 <meta property="article:tag" content="h264dec">
 <meta property="article:tag" content="UAF">
+<meta property="article:tag" content="SIGSEGV">
 <meta property="article:tag" content="ARM汇编">
 <meta property="article:tag" content="二进制补丁">
-<meta property="article:tag" content="展讯">
-<meta property="article:tag" content="SIGSEGV">
 <meta name="twitter:card" content="summary">
     
     
@@ -81,10 +81,10 @@
   <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/18/nettv-08-uaf-patch-v1-fail-v2-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/2026/10/17/nettv-07-fb-render-single-pass/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/17/nettv-07-fb-render-single-pass-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -151,6 +151,9 @@
 
   <div class="content" itemprop="articleBody">
     <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2-en/">English</a></p>
+</blockquote>
+<blockquote>
 <p>版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。</p>
 </blockquote>
 <p>前一篇把厂商库 <code>libstagefright_sprd_h264dec.so</code> 里那个”每 GOP 边界必踩坏链表节点”的 UAF 定性了，我兴冲冲地打了个二进制补丁：三处链表遍历加节点合法性校验。结果部署上去——<strong>一张帧都出不来了</strong>。这篇记录翻车原因（活寄存器被我当成了临时变量）和 v2 补丁的写法，顺带把 <code>addr=0x747474</code> 这个悬了半天的崩溃签名给结案了。</p>

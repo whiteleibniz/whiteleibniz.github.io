@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English  把網路電視調通：從一天崩三次到連續播 4800 幀 裝置：展訊 SC9832A（sc8830 系列），Alpine&#x2F;armv7l，720×1280 直式螢幕，LVGL 桌面。目標：HLS 直播串流用 VSP 硬解輸出到 framebuffer，達到安卓官方播放效果。最終：遼寧衛視《鄉村財富》穩定播出，uptime 36 分鐘">
+<meta property="og:type" content="article">
+<meta property="og:title" content="把網路電視調通：從一天崩三次到連續播 4800 幀">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English  把網路電視調通：從一天崩三次到連續播 4800 幀 裝置：展訊 SC9832A（sc8830 系列），Alpine&#x2F;armv7l，720×1280 直式螢幕，LVGL 桌面。目標：HLS 直播串流用 VSP 硬解輸出到 framebuffer，達到安卓官方播放效果。最終：遼寧衛視《鄉村財富》穩定播出，uptime 36 分鐘">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-18T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:42:42.089Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="framebuffer">
+<meta property="article:tag" content="展訊">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="核心崩潰">
+<meta property="article:tag" content="vsp">
+<meta property="article:tag" content="sc9830">
+<meta property="article:tag" content="除錯方法論">
+<meta property="article:tag" content="綠畫面">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>把網路電視調通：從一天崩三次到連續播 4800 幀</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&text=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&title=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&is_video=false&description=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=把網路電視調通：從一天崩三次到連續播 4800 幀&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&title=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&title=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&title=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&title=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&name=把網路電視調通：從一天崩三次到連續播 4800 幀&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%8A%8A%E7%B6%B2%E8%B7%AF%E9%9B%BB%E8%A6%96%E8%AA%BF%E9%80%9A%EF%BC%9A%E5%BE%9E%E4%B8%80%E5%A4%A9%E5%B4%A9%E4%B8%89%E6%AC%A1%E5%88%B0%E9%80%A3%E7%BA%8C%E6%92%AD-4800-%E5%B9%80"><span class="toc-number">1.</span> <span class="toc-text">把網路電視調通：從一天崩三次到連續播 4800 幀</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B5%B7%E9%BB%9E%EF%BC%9A%E6%AF%8F%E8%BC%AA%E5%BF%85%E5%B4%A9"><span class="toc-number">1.1.</span> <span class="toc-text">起點：每輪必崩</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E5%80%8B%E6%A0%B9%E5%9B%A0%EF%BC%8C%E4%BA%94%E6%AC%A1-A-B"><span class="toc-number">1.2.</span> <span class="toc-text">五個根因，五次 A&#x2F;B</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-1%EF%BC%9A%E9%99%A4%E9%8C%AF%E7%A8%8B%E5%BC%8F%E8%87%AA%E5%B7%B1%E5%B0%B1%E6%98%AF%E5%B4%A9%E5%9B%A0"><span class="toc-number">1.2.1.</span> <span class="toc-text">根因 1：除錯程式自己就是崩因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-2%EF%BC%9ANAL-%E5%88%87%E7%A2%8E"><span class="toc-number">1.2.2.</span> <span class="toc-text">根因 2：NAL 切碎</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-3%EF%BC%9A%E8%99%9B%E6%93%AC%E4%BD%8D%E5%9D%80%E7%95%B6%E6%88%90%E5%AF%A6%E9%AB%94%E4%BD%8D%E5%9D%80-%E2%86%92-%E4%B8%80%E7%89%87%E7%B6%A0"><span class="toc-number">1.2.3.</span> <span class="toc-text">根因 3：虛擬位址當成實體位址 → 一片綠</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-4%EF%BC%9AION-%E6%90%B6%E4%B8%8D%E5%88%B0-%E4%B8%8D%E9%87%8B%E6%94%BE"><span class="toc-number">1.2.4.</span> <span class="toc-text">根因 4：ION 搶不到 + 不釋放</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-5%EF%BC%9A%E6%9C%80%E8%B2%B4%E7%9A%84%E9%82%A3%E5%80%8B%E2%80%94%E2%80%94%E6%98%AF%E6%88%91%E8%87%AA%E5%B7%B1"><span class="toc-number">1.2.5.</span> <span class="toc-text">根因 5：最貴的那個——是我自己</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%80%E5%BE%8C%E4%B8%80%E5%B0%8F%E6%99%82%EF%BC%9A%E6%8A%93%E7%95%AB%E9%9D%A2%E9%A8%99%E4%BA%86%E6%88%91%E4%B8%80%E5%B0%8F%E6%99%82"><span class="toc-number">1.3.</span> <span class="toc-text">最後一小時：抓畫面騙了我一小時</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%80%E7%B5%82%E9%A9%97%E8%AD%89"><span class="toc-number">1.4.</span> <span class="toc-text">最終驗證</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E8%AB%96%E6%AA%A2%E8%A8%8E"><span class="toc-number">1.5.</span> <span class="toc-text">方法論檢討</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        把網路電視調通：從一天崩三次到連續播 4800 幀
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-18T16:00:00.000Z" itemprop="datePublished">2026-10-19</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/framebuffer/" rel="tag">framebuffer</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/sc9830/" rel="tag">sc9830</a>, <a class="tag-link-link" href="/tags/vsp/" rel="tag">vsp</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A/" rel="tag">展訊</a>, <a class="tag-link-link" href="/tags/%E6%A0%B8%E5%BF%83%E5%B4%A9%E6%BD%B0/" rel="tag">核心崩潰</a>, <a class="tag-link-link" href="/tags/%E7%B6%A0%E7%95%AB%E9%9D%A2/" rel="tag">綠畫面</a>, <a class="tag-link-link" href="/tags/%E9%99%A4%E9%8C%AF%E6%96%B9%E6%B3%95%E8%AB%96/" rel="tag">除錯方法論</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/">English</a></p>
+</blockquote>
+<h1 id="把網路電視調通：從一天崩三次到連續播-4800-幀"><a href="#把網路電視調通：從一天崩三次到連續播-4800-幀" class="headerlink" title="把網路電視調通：從一天崩三次到連續播 4800 幀"></a>把網路電視調通：從一天崩三次到連續播 4800 幀</h1><blockquote>
+<p>裝置：展訊 SC9832A（sc8830 系列），Alpine&#x2F;armv7l，720×1280 直式螢幕，LVGL 桌面。<br>目標：HLS 直播串流用 VSP 硬解輸出到 framebuffer，達到安卓官方播放效果。<br>最終：遼寧衛視《鄉村財富》穩定播出，uptime 36 分鐘零重啟，4808 幀上螢幕。</p>
+</blockquote>
+<h2 id="起點：每輪必崩"><a href="#起點：每輪必崩" class="headerlink" title="起點：每輪必崩"></a>起點：每輪必崩</h2><p>新版程式每跑必崩，崩在相位樁最後一行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt; fill(out)#1 开始 g_nout=1</span><br><span class="line">   fill(out) 交第0路 hdr=0xb6d8ec80 pBuffer=0xb6d9ba80</span><br><span class="line">                                    ← 没有下一行，设备重启</span><br></pre></td></tr></table></figure>
+
+<p><code>sigsetjmp</code> 攔不住，<code>dmesg</code> 無 OOM，記憶體還剩 882 MB。核心模式崩潰。</p>
+<h2 id="五個根因，五次-A-B"><a href="#五個根因，五次-A-B" class="headerlink" title="五個根因，五次 A&#x2F;B"></a>五個根因，五次 A&#x2F;B</h2><h3 id="根因-1：除錯程式自己就是崩因"><a href="#根因-1：除錯程式自己就是崩因" class="headerlink" title="根因 1：除錯程式自己就是崩因"></a>根因 1：除錯程式自己就是崩因</h3><p>10-18 晚上我加了一套「掛死現場取證」：<code>vrp_hook()</code> hook 廠商的 VSP 暫存器寫函式，<br>每次呼叫都從 <code>rb + 0x60901000</code> &#x2F; <code>rb + 0x60908000</code> <strong>直接讀 MMIO 暫存器視窗</strong>；<br><code>tr_line()</code> 更狠，每次 DRIVE 前後各讀一次。</p>
+<p><code>vrp_hook</code> 是每一輪輪詢都會走的高頻路徑。於是 VSP 狀態機被打亂，<br>崩在緊隨其後的 <code>DRIVE fill(out)#1</code>。</p>
+<p><strong>崩潰點不在除錯程式那行</strong>，所以堆疊、日誌、訊號處理全都指不到它。<br>舊版（能跑的）完全沒有這段程式碼——這才讓我想到去比。</p>
+<p>修法：<code>NETTV_TRACE_MMIO</code> 預設 0，直接 return 不碰 MMIO。<br>驗證：跑到 AU[1100]+，564 次 fill 全返回，零重啟。</p>
+<h3 id="根因-2：NAL-切碎"><a href="#根因-2：NAL-切碎" class="headerlink" title="根因 2：NAL 切碎"></a>根因 2：NAL 切碎</h3><p>三次崩潰現場的鐵證——<strong>崩點永遠緊跟一個被切成多片的 NAL</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">AU[109] sub1/4  4096B 后崩</span><br><span class="line">AU[369] sub1/2  4096B 后崩</span><br><span class="line">AU[36]  sub28/28 3048B 后崩</span><br><span class="line">而 sub1/1（未切碎）从不崩</span><br></pre></td></tr></table></figure>
+
+<p>A&#x2F;B 決定性：<code>NETTV_CHUNK=0</code> → 1200 幀跑到 AU[1100]+ 零重啟；預設 4096 → 每輪必崩。</p>
+<p>機理推論：廠商函式庫對「同一個 NAL 分多次 nOffset 續投同一個 buffer」的處理有缺陷。<br>（我最初查錯了方向——<code>NETTV_SPLIT</code> 管的是拆 NAL 邊界，切碎由 <code>g_chunk</code> 決定，兩者不同。）</p>
+<h3 id="根因-3：虛擬位址當成實體位址-→-一片綠"><a href="#根因-3：虛擬位址當成實體位址-→-一片綠" class="headerlink" title="根因 3：虛擬位址當成實體位址 → 一片綠"></a>根因 3：虛擬位址當成實體位址 → 一片綠</h3><p>日誌裡兩行並列就是鐵證（同一個 fd&#x3D;12）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">登记 fd=12 → pa=0xb1ce6000            ← 虚拟地址（错）</span><br><span class="line">[ion] Get_phy_addr#1 fd=12 真PA=0x9fa00000   ← 真物理地址（对）</span><br></pre></td></tr></table></figure>
+
+<p>廠商 VSP 把 <code>handle-&gt;ints[12]</code> 當<strong>實體位址</strong>寫影格，我填的卻是 mmap 的虛擬位址。<br>硬體存取不到使用者空間虛擬位址 → 寫不進真顯示記憶體 → 螢幕上一片綠。</p>
+<p>修法：新增 <code>g_gh_pa[]</code> 存真 PA，4 處 <code>fh[12]</code> 全部改填 PA，VA 只留給 CPU 讀影格。</p>
+<h3 id="根因-4：ION-搶不到-不釋放"><a href="#根因-4：ION-搶不到-不釋放" class="headerlink" title="根因 4：ION 搶不到 + 不釋放"></a>根因 4：ION 搶不到 + 不釋放</h3><p>自管 ION（heap mask&#x3D;8 <code>carveout_mm</code>，實體連續）搶到時一切正常，搶不到時<br><code>ghOut</code> 會退回 gralloc 的真 handle——而 gralloc 走 IOMMU heap，<strong>無實體連續 backing</strong>，<br>VSP 拿假 PA 寫影格必崩核心。</p>
+<p>兩個改動：重試 6 輪 + 120ms 退避 + 尺寸階梯；仍搶不到就 <code>_exit(12)</code> 讓看門狗重生，<br><strong>寧可不出畫面也不打飛核心</strong>。另外退出前呼叫 <code>ION_IOC_FREE</code>(0xc0044901) 主動釋放。</p>
+<h3 id="根因-5：最貴的那個——是我自己"><a href="#根因-5：最貴的那個——是我自己" class="headerlink" title="根因 5：最貴的那個——是我自己"></a>根因 5：最貴的那個——是我自己</h3><p><code>ps | grep -c nettv_player</code> 顯示堆了 <strong>12~23 個殭屍行程</strong>。</p>
+<p>每輪除錯我都 <code>nohup</code> 起一個腳本，而 monitor 內部還會自己重生 worker&#x2F;worker-dl&#x2F;mplayer，<br>每輪實驗多留一整套，每個搶 2MB C1 緩衝 → 池被撐爆 → 後續起不來。</p>
+<p><code>pgrep -x nettv_player</code> 只數主行程，看不到這些，所以我一度誤判成「核心洩漏」，<br>還專門寫了個 <code>ion_release()</code> 去救火。</p>
+<p><code>pkill -f nettv_player</code> 全清後，池立刻回到 <code>total 0</code>，<strong>立刻就能正常播</strong>。</p>
+<blockquote>
+<p>這一條最值錢：<strong>症狀和真因差了十萬八千里，而唯一的分界線是「多問一句 ps」</strong>。</p>
+</blockquote>
+<h2 id="最後一小時：抓畫面騙了我一小時"><a href="#最後一小時：抓畫面騙了我一小時" class="headerlink" title="最後一小時：抓畫面騙了我一小時"></a>最後一小時：抓畫面騙了我一小時</h2><p>畫面明明上螢幕了，我抓畫面看到的卻是舊的 WiFi 設定頁，連抓 4 張內容一模一樣。</p>
+<p>真因：<code>/sys/class/graphics/fb0/virtual_size = 720,3840</code> —— fb 有 4 頁，<br>我的截圖腳本只讀<strong>第 0 頁</strong>。而 <code>fb_render()</code> 每影格寫 <code>g_fbpg*720*1280*4</code> 偏移<br>並 <code>fb_pan()</code> 翻頁，內容在第 1&#x2F;2 頁。</p>
+<p><strong>抓畫面看到舊畫面 ≠ 沒上螢幕。</strong> 先查 <code>virtual_size</code>，再下結論。</p>
+<p>順手把截圖腳本改成自動：驅動 <code>pan_offset</code> 恆 0 讀不到目前頁面，於是逐頁統計<br><strong>色彩種類數</strong>取最多者（實測 page0&#x3D;55 色殘留舊頁 vs page1&#x3D;617 色真實畫面）。<br>中間試過「取樣求和」，結果選反了——求和反映亮度不反映多樣性。</p>
+<h2 id="最終驗證"><a href="#最終驗證" class="headerlink" title="最終驗證"></a>最終驗證</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">uptime 36min  零重启</span><br><span class="line">上屏 4808 帧</span><br><span class="line">画面: 辽宁卫视《乡村财富》  人物清晰 / 字幕可读 / 台标正常 / 色彩正确</span><br></pre></td></tr></table></figure>
+
+<h2 id="方法論檢討"><a href="#方法論檢討" class="headerlink" title="方法論檢討"></a>方法論檢討</h2><p><strong>1. 「除錯程式自己就是崩因」是一類獨立故障模式。</strong><br>它不會崩在自己那行，所以堆疊和日誌全都指不到它。<br>只有把能跑的舊版和崩的新版<strong>擺在一起</strong>，逐欄位比對執行時期狀態，才看得出「舊版沒有這段」。</p>
+<p><strong>2. 崩點模式比「猜假設」有力得多。</strong><br>根因 2 是靠「崩點永遠緊跟 subN&#x2F;M」這個模式一眼看出來的，<br>而不是靠推論。<strong>拿到多次崩潰現場，第一件事是找它們的共同模式。</strong></p>
+<p><strong>3. 排查期必須有絕對可靠的取證通道。</strong><br>這個專案 stdout 被自訂 stdio 的 4KB 塊緩衝吞掉，崩潰時緩衝區全丟——<br>我一度靠空日誌誤判過三次。後來改用 <code>O_SYNC</code> 直寫的相位樁，<br>每次腳本上傳都 <code>md5sum</code> 校驗（踩過 3 次 0 位元組腳本導致誤判「新版不崩」）。</p>
+<p><strong>4. 「跑不起來」先 <code>ps</code> 一遍。</strong><br>真的，這個成本 1 秒，能省掉一小時的錯誤歸因。</p>
+<p><strong>5. A&#x2F;B 是唯一誠實的實驗。</strong><br>本文五個根因，每一個都是「改一個變數、跑一次、對比」定出來的。<br>憑推論猜出來的假設，我試了八個，全錯。</p>
+<hr>
+<p><em>相關閱讀：<a href="nettv-10-debug-code-is-the-crash-cause.md">除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽</a>（根因 1 的詳細拆解）</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%8A%8A%E7%B6%B2%E8%B7%AF%E9%9B%BB%E8%A6%96%E8%AA%BF%E9%80%9A%EF%BC%9A%E5%BE%9E%E4%B8%80%E5%A4%A9%E5%B4%A9%E4%B8%89%E6%AC%A1%E5%88%B0%E9%80%A3%E7%BA%8C%E6%92%AD-4800-%E5%B9%80"><span class="toc-number">1.</span> <span class="toc-text">把網路電視調通：從一天崩三次到連續播 4800 幀</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B5%B7%E9%BB%9E%EF%BC%9A%E6%AF%8F%E8%BC%AA%E5%BF%85%E5%B4%A9"><span class="toc-number">1.1.</span> <span class="toc-text">起點：每輪必崩</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E5%80%8B%E6%A0%B9%E5%9B%A0%EF%BC%8C%E4%BA%94%E6%AC%A1-A-B"><span class="toc-number">1.2.</span> <span class="toc-text">五個根因，五次 A&#x2F;B</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-1%EF%BC%9A%E9%99%A4%E9%8C%AF%E7%A8%8B%E5%BC%8F%E8%87%AA%E5%B7%B1%E5%B0%B1%E6%98%AF%E5%B4%A9%E5%9B%A0"><span class="toc-number">1.2.1.</span> <span class="toc-text">根因 1：除錯程式自己就是崩因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-2%EF%BC%9ANAL-%E5%88%87%E7%A2%8E"><span class="toc-number">1.2.2.</span> <span class="toc-text">根因 2：NAL 切碎</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-3%EF%BC%9A%E8%99%9B%E6%93%AC%E4%BD%8D%E5%9D%80%E7%95%B6%E6%88%90%E5%AF%A6%E9%AB%94%E4%BD%8D%E5%9D%80-%E2%86%92-%E4%B8%80%E7%89%87%E7%B6%A0"><span class="toc-number">1.2.3.</span> <span class="toc-text">根因 3：虛擬位址當成實體位址 → 一片綠</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-4%EF%BC%9AION-%E6%90%B6%E4%B8%8D%E5%88%B0-%E4%B8%8D%E9%87%8B%E6%94%BE"><span class="toc-number">1.2.4.</span> <span class="toc-text">根因 4：ION 搶不到 + 不釋放</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E5%9B%A0-5%EF%BC%9A%E6%9C%80%E8%B2%B4%E7%9A%84%E9%82%A3%E5%80%8B%E2%80%94%E2%80%94%E6%98%AF%E6%88%91%E8%87%AA%E5%B7%B1"><span class="toc-number">1.2.5.</span> <span class="toc-text">根因 5：最貴的那個——是我自己</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%80%E5%BE%8C%E4%B8%80%E5%B0%8F%E6%99%82%EF%BC%9A%E6%8A%93%E7%95%AB%E9%9D%A2%E9%A8%99%E4%BA%86%E6%88%91%E4%B8%80%E5%B0%8F%E6%99%82"><span class="toc-number">1.3.</span> <span class="toc-text">最後一小時：抓畫面騙了我一小時</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%80%E7%B5%82%E9%A9%97%E8%AD%89"><span class="toc-number">1.4.</span> <span class="toc-text">最終驗證</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E8%AB%96%E6%AA%A2%E8%A8%8E"><span class="toc-number">1.5.</span> <span class="toc-text">方法論檢討</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&text=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&title=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&is_video=false&description=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=把網路電視調通：從一天崩三次到連續播 4800 幀&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&title=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&title=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&title=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&title=把網路電視調通：從一天崩三次到連續播 4800 幀"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/&name=把網路電視調通：從一天崩三次到連續播 4800 幀&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

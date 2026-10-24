@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English  除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽 背景：展訊 SC9832A（sc8830 系列）上做 HLS 直播硬解，裸調 SprdSimpleOMXComponent，輸出 framebuffer。某天新版程式每跑必崩 —— 崩在 DRIVE fill(out) #1，裝置隨即重啟。行程級保護攔不住，堆疊上也沒有任何線">
+<meta property="og:type" content="article">
+<meta property="og:title" content="除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English  除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽 背景：展訊 SC9832A（sc8830 系列）上做 HLS 直播硬解，裸調 SprdSimpleOMXComponent，輸出 framebuffer。某天新版程式每跑必崩 —— 崩在 DRIVE fill(out) #1，裝置隨即重啟。行程級保護攔不住，堆疊上也沒有任何線">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-18T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:42:42.073Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="展訊">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="核心崩潰">
+<meta property="article:tag" content="vsp">
+<meta property="article:tag" content="sc9830">
+<meta property="article:tag" content="MMIO">
+<meta property="article:tag" content="除錯方法論">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/19/nettv-10-debug-code-is-the-crash-cause/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&text=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&title=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&is_video=false&description=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&title=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&title=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&title=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&title=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&name=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%99%A4%E9%8C%AF%E7%A8%8B%E5%BC%8F%E8%87%AA%E5%B7%B1%E5%B0%B1%E6%98%AF%E5%B4%A9%E5%9B%A0%EF%BC%9A%E4%B8%80%E6%AC%A1-VSP-%E6%A0%B8%E5%BF%83%E5%B4%A9%E6%BD%B0%E7%9A%84-8-%E5%B1%A4%E8%AD%89%E5%81%BD"><span class="toc-number">1.</span> <span class="toc-text">除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%97%87%E7%8B%80"><span class="toc-number">1.1.</span> <span class="toc-text">症狀</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E5%B1%A4%E8%AD%89%E5%81%BD"><span class="toc-number">1.2.</span> <span class="toc-text">8 層證偽</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9C%9F%E5%85%87"><span class="toc-number">1.3.</span> <span class="toc-text">真兇</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E6%A2%9D%E6%96%B9%E6%B3%95%E8%AB%96"><span class="toc-number">1.4.</span> <span class="toc-text">三條方法論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%B8%B6%E4%BF%AE%E5%A5%BD%E7%9A%84%E4%B8%80%E5%80%8B%E7%9C%9F%E5%95%8F%E9%A1%8C"><span class="toc-number">1.5.</span> <span class="toc-text">附帶修好的一個真問題</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AF%AB%E5%9C%A8%E6%9C%80%E5%BE%8C"><span class="toc-number">1.6.</span> <span class="toc-text">寫在最後</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-18T16:00:00.000Z" itemprop="datePublished">2026-10-19</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/MMIO/" rel="tag">MMIO</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/sc9830/" rel="tag">sc9830</a>, <a class="tag-link-link" href="/tags/vsp/" rel="tag">vsp</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A/" rel="tag">展訊</a>, <a class="tag-link-link" href="/tags/%E6%A0%B8%E5%BF%83%E5%B4%A9%E6%BD%B0/" rel="tag">核心崩潰</a>, <a class="tag-link-link" href="/tags/%E9%99%A4%E9%8C%AF%E6%96%B9%E6%B3%95%E8%AB%96/" rel="tag">除錯方法論</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/">English</a></p>
+</blockquote>
+<h1 id="除錯程式自己就是崩因：一次-VSP-核心崩潰的-8-層證偽"><a href="#除錯程式自己就是崩因：一次-VSP-核心崩潰的-8-層證偽" class="headerlink" title="除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"></a>除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽</h1><blockquote>
+<p>背景：展訊 SC9832A（sc8830 系列）上做 HLS 直播硬解，裸調 <code>SprdSimpleOMXComponent</code>，<br>輸出 framebuffer。某天新版程式每跑必崩 —— 崩在 <code>DRIVE fill(out) #1</code>，<br>裝置隨即重啟。<strong>行程級保護攔不住，堆疊上也沒有任何線索。</strong></p>
+<p>真兇是一段「為了查掛死而加的」除錯程式。</p>
+</blockquote>
+<h2 id="症狀"><a href="#症狀" class="headerlink" title="症狀"></a>症狀</h2><p>相位樁（<code>O_SYNC</code> 直寫 <code>/tmp/phase.log</code>）顯示每一輪都停在同一行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">t=1385724329 &gt;&gt; fill(out)#1 开始 g_nout=1</span><br><span class="line">t=1385724331    fill(out) 交第0路 hdr=0xb6d8ec80 pBuffer=0xb6d9ba80</span><br><span class="line">                                     ← 没有下一行，设备重启，uptime 回 1 分钟</span><br></pre></td></tr></table></figure>
+
+<p><code>sigsetjmp</code> 攔不住、<code>dmesg</code> 無 OOM、<code>MemFree</code> 有 882 MB。</p>
+<h2 id="8-層證偽"><a href="#8-層證偽" class="headerlink" title="8 層證偽"></a>8 層證偽</h2><p>崩潰點那行程式碼和 10-18 能跑版<strong>逐位元組相同</strong>。所以差異在它<strong>之前</strong>。<br>我把自己能想到的每一條都單獨做了 A&#x2F;B：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>假設</th>
+<th>驗證方式</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>補調 <code>useBuffer</code> 導致廠商 ASSERT</td>
+<td><code>NETTV_UBMODE=0</code> 不補調</td>
+<td>仍崩同一處</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>setParameter(0x7f000011)</code> 是崩因</td>
+<td><code>NETTV_SP228=0</code> 跳過</td>
+<td>仍崩</td>
+</tr>
+<tr>
+<td>3</td>
+<td>自管 ION 的假 native_handle 是崩因</td>
+<td><code>NETTV_NOFAKE=1</code> 整個禁用</td>
+<td>仍崩</td>
+</tr>
+<tr>
+<td>4</td>
+<td>投餵切分 <code>offsplit</code>&#x2F;<code>chunk</code> 是崩因</td>
+<td>強制 <code>g_offsplit=0 g_chunk=0</code></td>
+<td>仍崩</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>NOUT 6→4</code> 回滾動到了 BSS</td>
+<td>回滾後</td>
+<td>仍崩</td>
+</tr>
+<tr>
+<td>6</td>
+<td>handle 來源是 gralloc vs 自管 ION</td>
+<td><code>NETTV_EARLY=1</code> 提前搶到自管 ION，handle 變回堆積位址</td>
+<td>仍崩</td>
+</tr>
+<tr>
+<td>7</td>
+<td>carveout_mm 池被搶空（<code>total 0</code>）</td>
+<td>重試 6 輪 + 退避 + 尺寸階梯，第 6 輪真搶到</td>
+<td>仍崩</td>
+</tr>
+<tr>
+<td>8</td>
+<td>記憶體不足</td>
+<td>MemFree 882 MB，dmesg 無 OOM</td>
+<td>排除</td>
+</tr>
+</tbody></table>
+<p>第 8 層排除後，能解釋「同環境 AB 對照」的就只剩一件事：<strong>舊版沒有的程式碼</strong>。</p>
+<h2 id="真兇"><a href="#真兇" class="headerlink" title="真兇"></a>真兇</h2><p>10-18 晚上為了抓「掛死現場」，我加了一套暫存器取證：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">vrp_hook</span><span class="params">(<span class="type">void</span> *d, <span class="type">unsigned</span> off, ...)</span>   <span class="comment">/* hook 廠商 VSP 暫存器寫函式 */</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> r = g_vrp_real ? g_vrp_real(...) : <span class="number">-1</span>;</span><br><span class="line">    g_vsp_rb = *(<span class="type">unsigned</span> *)d;                    <span class="comment">/* ← 取 VSP 暫存器視窗基底位址 */</span></span><br><span class="line">    <span class="type">unsigned</span> rb = *(<span class="type">unsigned</span> *)d;</span><br><span class="line">    <span class="keyword">volatile</span> <span class="type">unsigned</span> *W = (<span class="keyword">volatile</span> <span class="type">unsigned</span> *)(rb + <span class="number">0x60901000</span>);</span><br><span class="line">    <span class="keyword">volatile</span> <span class="type">unsigned</span> *B = (<span class="keyword">volatile</span> <span class="type">unsigned</span> *)(rb + <span class="number">0x60908000</span>);</span><br><span class="line">    P(<span class="string">&quot;[W10] 1010=%08x ...&quot;</span>, W[<span class="number">0x10</span>/<span class="number">4</span>], ...);    <span class="comment">/* ← 直接讀 MMIO */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以及 <code>tr_line()</code>，在<strong>每次 DRIVE 前後各呼叫一次</strong>，讀 <code>W[0x1c/4]</code>、<code>B[0x34/4]</code>。</p>
+<p><code>vrp_hook</code> 是<strong>每一輪輪詢都會走</strong>的高頻路徑。等於在解碼過程中持續<br>從 <code>0x60901000</code> &#x2F; <code>0x60908000</code> 這兩塊暫存器視窗<strong>讀 MMIO</strong>。</p>
+<p>結果是：VSP 狀態機被打亂，崩在緊隨其後的 <code>DRIVE fill(out) #1</code>。<br><strong>崩潰點不在除錯程式那行，而在它造成的下一處破壞。</strong></p>
+<p>修法就一行語意：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123; <span class="type">static</span> <span class="type">int</span> mmo = <span class="number">-1</span>;</span><br><span class="line">  <span class="keyword">if</span> (mmo &lt; <span class="number">0</span>) &#123; <span class="type">const</span> <span class="type">char</span> *em = getenv(<span class="string">&quot;NETTV_TRACE_MMIO&quot;</span>);</span><br><span class="line">                 mmo = (em &amp;&amp; em[<span class="number">0</span>] == <span class="string">&#x27;1&#x27;</span>) ? <span class="number">1</span> : <span class="number">0</span>; &#125;</span><br><span class="line">  <span class="keyword">if</span> (!mmo) <span class="keyword">return</span> r; &#125;        <span class="comment">/* 預設關，不碰 MMIO */</span></span><br></pre></td></tr></table></figure>
+
+<p>驗證：新版跑到 <code>AU[299]</code>，phase.log 裡 1032 次 <code>fill(out)</code> 全部「已返回」，<br>裝置零重啟。</p>
+<h2 id="三條方法論"><a href="#三條方法論" class="headerlink" title="三條方法論"></a>三條方法論</h2><p><strong>1. 「除錯程式自己就是崩因」是一類獨立故障模式。</strong><br>它不會崩在自己那行，所以堆疊、日誌、ASAN 全都指不到它。<br>只有把舊版和新版<strong>放在同一裝置同一環境連跑對照</strong>、逐欄位比對執行時期狀態<br>（我打的是 handle 的 <code>ints[0..23]</code>、<code>g_gh_n</code>、<code>g_nout</code>），才能看出「舊版沒有這段」。</p>
+<p><strong>2. 排查期要有一個絕對可靠的日誌通道。</strong><br>這個專案裡 stdout 被自訂 stdio 的 4KB 塊緩衝吞掉，崩潰時緩衝區全丟 ——<br>於是我一度靠空日誌誤判過三次。<code>O_SYNC</code> 直寫的相位樁是唯一可信通道。<br>同理，腳本上傳後必須 <code>md5sum</code> 校驗，我踩過 3 次「0 位元組腳本導致誤判新版不崩」。</p>
+<p><strong>3. 判準要選可重現的。</strong><br>「ALIVE&#x3D;0」這個訊號毫無資訊量（舊版正常自退也是 0）；<br><code>uptime</code> 是否回 1 分鐘 + 相位樁最後一行，才是可靠判準。</p>
+<h2 id="附帶修好的一個真問題"><a href="#附帶修好的一個真問題" class="headerlink" title="附帶修好的一個真問題"></a>附帶修好的一個真問題</h2><p><code>g_gh_n=0</code>（carveout_mm 池被元件 init 階段性搶空）時，<br><code>ghOut</code> 會留在 gralloc 的真 handle 上。而 gralloc 走的是 IOMMU heap，<br><strong>沒有實體連續 backing</strong>，VSP 會往假實體位址寫影格。</p>
+<p>所以加了兩道防線：</p>
+<ul>
+<li>搶池加重試（6 輪 × 120ms 退避 × 4 檔尺寸輪轉），實測第 6 輪能搶到；</li>
+<li>仍搶不到就 <code>_exit(12)</code> 交給看門狗重生 —— <strong>寧可不出畫面，也不打飛核心</strong>。</li>
+</ul>
+<h2 id="寫在最後"><a href="#寫在最後" class="headerlink" title="寫在最後"></a>寫在最後</h2><p>「加個暫存器 dump 看看」這句話，在硬體加速除錯裡是有代價的。<br>讀 MMIO 不是 <code>read()</code> 一個普通變數，它是<strong>在別人的狀態機上插一腳</strong>。</p>
+<p>排查複雜問題的方法歸根到底只有一句：<strong>把「能跑的版本」和「崩的版本」擺在一起，<br>逐項二分</strong>。這次要不是手上有 10-18 那份能跑的原始碼當基線，<br>我會一直在這個坑裡猜第八、第九、第十個假設。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%99%A4%E9%8C%AF%E7%A8%8B%E5%BC%8F%E8%87%AA%E5%B7%B1%E5%B0%B1%E6%98%AF%E5%B4%A9%E5%9B%A0%EF%BC%9A%E4%B8%80%E6%AC%A1-VSP-%E6%A0%B8%E5%BF%83%E5%B4%A9%E6%BD%B0%E7%9A%84-8-%E5%B1%A4%E8%AD%89%E5%81%BD"><span class="toc-number">1.</span> <span class="toc-text">除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%97%87%E7%8B%80"><span class="toc-number">1.1.</span> <span class="toc-text">症狀</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E5%B1%A4%E8%AD%89%E5%81%BD"><span class="toc-number">1.2.</span> <span class="toc-text">8 層證偽</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9C%9F%E5%85%87"><span class="toc-number">1.3.</span> <span class="toc-text">真兇</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E6%A2%9D%E6%96%B9%E6%B3%95%E8%AB%96"><span class="toc-number">1.4.</span> <span class="toc-text">三條方法論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%B8%B6%E4%BF%AE%E5%A5%BD%E7%9A%84%E4%B8%80%E5%80%8B%E7%9C%9F%E5%95%8F%E9%A1%8C"><span class="toc-number">1.5.</span> <span class="toc-text">附帶修好的一個真問題</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AF%AB%E5%9C%A8%E6%9C%80%E5%BE%8C"><span class="toc-number">1.6.</span> <span class="toc-text">寫在最後</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&text=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&title=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&is_video=false&description=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&title=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&title=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&title=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&title=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/&name=除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

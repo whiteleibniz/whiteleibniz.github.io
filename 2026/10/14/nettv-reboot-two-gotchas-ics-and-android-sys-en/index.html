@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the &#x2F;mnt&#x2F;android_sys Mount">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-13T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:25:27.987Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="bionic">
+<meta property="article:tag" content="VSP Hardware Decoding">
+<meta property="article:tag" content="Bug Fix">
+<meta property="article:tag" content="ICS">
+<meta property="article:tag" content="Environment Dependencies">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/13/zh-tw/proxy-setting/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&text=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&title=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&is_video=false&description=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount&body=Check out this article: https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&title=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&title=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&title=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&title=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&name=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#netTV-Completely-Down-After-a-Device-Reboot"><span class="toc-number">1.</span> <span class="toc-text">netTV Completely Down After a Device Reboot</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom-One-Reboot-Three-Things-Broken-at-Once"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom: One Reboot, Three Things Broken at Once</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Pit-1-ICS-Re-binding-Must-%E2%80%9CClear-the-IP-First-Private-Before-Public%E2%80%9D"><span class="toc-number">1.2.</span> <span class="toc-text">2. Pit #1: ICS Re-binding Must “Clear the IP First, Private Before Public”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Pit-2-The-bionic-Runtime-Environment-Depends-on-the-mnt-android-sys-Mount"><span class="toc-number">1.3.</span> <span class="toc-text">3. Pit #2: The bionic Runtime Environment Depends on the &#x2F;mnt&#x2F;android_sys Mount</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-The-Actual-Business-The-10-13-mbinfo-Reuse-Fix-Passes-Preliminary-Verification"><span class="toc-number">1.4.</span> <span class="toc-text">4. The Actual Business: The 10-13 mbinfo Reuse Fix Passes Preliminary Verification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-The-Most-Expensive-Lesson-This-Time-Don%E2%80%99t-SIGSTOP-the-UI-Main-Process"><span class="toc-number">1.5.</span> <span class="toc-text">5. The Most Expensive Lesson This Time: Don’t SIGSTOP the UI Main Process</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Lessons-Learned"><span class="toc-number">1.6.</span> <span class="toc-text">6. Lessons Learned</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-13T18:30:00.000Z" itemprop="datePublished">2026-10-14</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Bug-Fix/" rel="tag">Bug Fix</a>, <a class="tag-link-link" href="/tags/Environment-Dependencies/" rel="tag">Environment Dependencies</a>, <a class="tag-link-link" href="/tags/ICS/" rel="tag">ICS</a>, <a class="tag-link-link" href="/tags/VSP-Hardware-Decoding/" rel="tag">VSP Hardware Decoding</a>, <a class="tag-link-link" href="/tags/bionic/" rel="tag">bionic</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.</p>
+</blockquote>
+<h1 id="netTV-Completely-Down-After-a-Device-Reboot"><a href="#netTV-Completely-Down-After-a-Device-Reboot" class="headerlink" title="netTV Completely Down After a Device Reboot"></a>netTV Completely Down After a Device Reboot</h1><h2 id="1-Symptom-One-Reboot-Three-Things-Broken-at-Once"><a href="#1-Symptom-One-Reboot-Three-Things-Broken-at-Once" class="headerlink" title="1. Symptom: One Reboot, Three Things Broken at Once"></a>1. Symptom: One Reboot, Three Things Broken at Once</h2><p>After the Spreadtrum SC9832A device was power-cycled due to the previous sshd incident, I wanted to continue verifying the fix for “4 frames &#x2F; second IDR crash” — but the environment wouldn’t even come up:</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Criterion</th>
+<th>First Reaction (Wrong)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Device can’t reach the internet</td>
+<td><code>curl</code> returns <code>000</code>, but <code>ip route</code> still has <code>default via &lt;RNDIS-GW&gt;</code></td>
+<td>Assumed the channel sources were down again</td>
+</tr>
+<tr>
+<td>Player won’t start</td>
+<td><code>CANNOT LINK EXECUTABLE: library &quot;libc.so&quot; not found</code></td>
+<td>Assumed the binary was corrupted</td>
+</tr>
+</tbody></table>
+<p>Neither is true: <strong>the sources are not down, and the binary is not broken</strong>. What broke is the “shared internet connection” layer between the two machines, and one mount point that was forgotten after the device rebooted.</p>
+<h2 id="2-Pit-1-ICS-Re-binding-Must-“Clear-the-IP-First-Private-Before-Public”"><a href="#2-Pit-1-ICS-Re-binding-Must-“Clear-the-IP-First-Private-Before-Public”" class="headerlink" title="2. Pit #1: ICS Re-binding Must “Clear the IP First, Private Before Public”"></a>2. Pit #1: ICS Re-binding Must “Clear the IP First, Private Before Public”</h2><p>The device’s internet path is <code>USB RNDIS (RNDIS subnet) → PC ICS NAT → PC WiFi</code>. The PC itself gets 200, the device gets 000, and the routing table is still there — this is a textbook <strong>ICS lost binding</strong>.</p>
+<p>The old script’s approach: find the WLAN (public) and RNDIS (private) connections, then <code>DisableSharing</code> followed by <code>EnableSharing</code>. This time it failed outright:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EnableSharing(0) → COMException 0x80040201</span><br></pre></td></tr></table></figure>
+
+<p>Worse was the remediation: manually setting <code>&lt;RNDIS-GW&gt;/24</code> on the RNDIS NIC with <code>New-NetIPAddress</code> — the address did appear, pinging the device worked, but the device still couldn’t reach the internet. Because <strong>ICS does not recognize the manually set address</strong> — when it takes over the NIC it reconfigures it itself; the manual address gets pushed off, the NIC degenerates to <strong>APIPA 169.254.x</strong>, and the NAT table is never established at all.</p>
+<p>The correct order (now baked into a script):</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. Find public(WLAN/Intel 9462) and private(USB RNDIS Adapter)</span></span><br><span class="line"><span class="comment"># 2. DisableSharing() on both</span></span><br><span class="line"><span class="comment"># 3. ★ Delete ALL IPv4 addresses on the private NIC — leave even one and ICS won&#x27;t reconfigure</span></span><br><span class="line"><span class="comment"># 4. private.EnableSharing(1)   ← private first</span></span><br><span class="line"><span class="comment"># 5. public.EnableSharing(0)    ← then public</span></span><br><span class="line"><span class="comment"># 6. Wait 10s; ICS configures private to &lt;RNDIS-GW&gt;/24 on its own</span></span><br></pre></td></tr></table></figure>
+
+<p>There is only one verification point: the ICS private address appears in <code>Get-NetIPAddress -InterfaceAlias Ethernet</code>. It appears → connected; it doesn’t appear → it didn’t happen. Don’t use “ping works” as the criterion.</p>
+<p><strong>Lesson</strong>: the private-side address of Windows ICS must be created by ICS itself. An address you set for it, it does not recognize, and it will sling the NIC off to 169.254.</p>
+<h2 id="3-Pit-2-The-bionic-Runtime-Environment-Depends-on-the-mnt-android-sys-Mount"><a href="#3-Pit-2-The-bionic-Runtime-Environment-Depends-on-the-mnt-android-sys-Mount" class="headerlink" title="3. Pit #2: The bionic Runtime Environment Depends on the &#x2F;mnt&#x2F;android_sys Mount"></a>3. Pit #2: The bionic Runtime Environment Depends on the &#x2F;mnt&#x2F;android_sys Mount</h2><p>With ICS fixed, I ran the player excitedly, and:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">WARNING: linker: /usr/local/bin/nettv_player: unused DT entry: type 0x1d</span><br><span class="line">CANNOT LINK EXECUTABLE: library &quot;libc.so&quot; not found</span><br></pre></td></tr></table></figure>
+
+<p><code>/system/lib/libc.so</code> clearly exists — but it is a symlink:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/system/lib/libc.so -&gt; /mnt/android_sys/lib/libc.so</span><br></pre></td></tr></table></figure>
+
+<p>And <code>/mnt/android_sys</code> is a mount point of <strong><code>/dev/mmcblk0p17</code> (ext4, read-only)</strong>; after the reboot nobody mounts it, so all several hundred <code>.so</code> symlinks under <code>/system/lib</code> dangle.</p>
+<p>Why does nobody mount it after a reboot? Because the mount points were all torn apart by historical changes:</p>
+<ul>
+<li><code>01_wifi.start</code> — disabled long ago</li>
+<li><code>01_mali.start</code> — deleted for “Mali de-scripting”</li>
+<li><code>wifi_bringup.c:296</code> — only mounts when the user turns the WiFi switch on</li>
+<li><code>gpu_env.c</code> — <strong>only creates symlinks, with no mount fallback</strong> (it assumes &#x2F;mnt is already mounted)</li>
+</ul>
+<p>One command saved the day:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p /mnt/android_sys</span><br><span class="line">mount -t ext4 -o ro /dev/mmcblk0p17 /mnt/android_sys</span><br></pre></td></tr></table></figure>
+
+<p><strong>Remaining to-do</strong>: bake this into a boot script <code>00_android_sys.start</code>. Otherwise, after every reboot all bionic programs (nettv_player, the PSP frontend, WCN-related) fail linking.</p>
+<h2 id="4-The-Actual-Business-The-10-13-mbinfo-Reuse-Fix-Passes-Preliminary-Verification"><a href="#4-The-Actual-Business-The-10-13-mbinfo-Reuse-Fix-Passes-Preliminary-Verification" class="headerlink" title="4. The Actual Business: The 10-13 mbinfo Reuse Fix Passes Preliminary Verification"></a>4. The Actual Business: The 10-13 mbinfo Reuse Fix Passes Preliminary Verification</h2><p>With the environment fixed, I reran the Luxian source (<code>timeout -s KILL 80</code>); the criteria at about 50 seconds:</p>
+<table>
+<thead>
+<tr>
+<th>Criterion</th>
+<th>Old Version</th>
+<th>New Version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>change to sw decoder</code></td>
+<td>always (one-way gate)</td>
+<td><strong>0 times</strong></td>
+</tr>
+<tr>
+<td><code>[ion] ... FAILED rc=</code></td>
+<td>-12 on block 5, always</td>
+<td><strong>0 times</strong></td>
+</tr>
+<tr>
+<td><code>reuse block #</code></td>
+<td>none</td>
+<td><strong>93 times</strong></td>
+</tr>
+<tr>
+<td>Process survival</td>
+<td>crash&#x2F;hang after 4 frames</td>
+<td><strong>&gt;50s, frames flowing</strong></td>
+</tr>
+</tbody></table>
+<p>In other words, the causal chain settled on 10-13 holds: <strong>it was never “the second IDR always crashes”; rather, VSP’s mbinfo (653824B per block) only fits 4 blocks in the ~7MB CMA pool; block 5 gets ENOMEM → <code>decRet=-3</code> → the component permanently switches to software decoding → and after that it is permanently <code>-9 needIVOP</code></strong>. With all three of “reuse + alignment-downgraded retry + detect the one-way gate and actively respawn” done, the second IDR is no longer the end of the line.</p>
+<p>Still to verify: exact frame count, continuous duration across multiple GOPs, and whether the picture shows artifacts (<code>C1_REUSE_MAX</code> may need tuning).</p>
+<h2 id="5-The-Most-Expensive-Lesson-This-Time-Don’t-SIGSTOP-the-UI-Main-Process"><a href="#5-The-Most-Expensive-Lesson-This-Time-Don’t-SIGSTOP-the-UI-Main-Process" class="headerlink" title="5. The Most Expensive Lesson This Time: Don’t SIGSTOP the UI Main Process"></a>5. The Most Expensive Lesson This Time: Don’t SIGSTOP the UI Main Process</h2><p>To keep LVGL from fighting the player for the framebuffer, I added one line to the test script: <code>kill -STOP $(pgrep -x lvgl_demo)</code>.</p>
+<p>Then, while polling, SSH died: <code>Error reading SSH protocol banner [WinError 10054]</code>; retesting gave <strong>TCP 22 Connection refused</strong> (ping still worked), and 5555&#x2F;23&#x2F;8022 all timed out. sshd was dead; the device had no remote channel left.</p>
+<p>The real disaster is here: <strong>lvgl_demo sits in SIGSTOP state, and nobody will SIGCONT it</strong>. The device watchdog had been disbanded long ago; the watchdog won’t revive it, and nobody else will come to recover it. So a device that is “networked but SSH-dead, UI frozen” has only one way out: the power cord.</p>
+<p>In unattended automation, this is an iron law:</p>
+<blockquote>
+<p><strong>Never send STOP&#x2F;TERM to the UI main process.</strong> The framebuffer contention you save is nowhere near worth gambling the whole device’s reachability. If you want to test the player, let it fight for the screen; the picture flickers a few times, and the UI recovers on its own once the test is done.</p>
+</blockquote>
+<h2 id="6-Lessons-Learned"><a href="#6-Lessons-Learned" class="headerlink" title="6. Lessons Learned"></a>6. Lessons Learned</h2><ol>
+<li><strong>A reboot is the most dangerous action for an embedded device</strong>; it exposes all at once the “implicit dependencies that no longer exist in the boot scripts”. When changing boot scripts (especially deleting), you must explicitly migrate the non-obvious duties carried by the deleted scripts (mounts, symlink creation, environment variables).</li>
+<li>For system-managed configuration like ICS, <strong>a manual substitute is always fake</strong>. The address is there, ping works, but that doesn’t mean NAT is there. Criteria must use <strong>functional truth values</strong> (can traffic actually get out), not configuration appearances (whether the address exists).</li>
+<li><strong>The first suspect for <code>library &quot;xxx.so&quot; not found</code> is the mount point, not the file</strong>. When the dynamic linker reports a missing library, first check whether the symlink’s target directory is empty — especially in environments full of symlinks like small set-top boxes &#x2F; chroot &#x2F; Android compatibility layers.</li>
+<li><strong>“Background + short polling” for long tasks is discipline; sending signals to the main process is not</strong>. The former is for dodging sandbox timeouts; the latter is actively manufacturing an unrecoverable state — two different things.</li>
+<li><strong>After fixing a root cause, re-verify with criteria immediately</strong>. This time’s three counts — reuse blocks &#x3D; 93 &#x2F; sw &#x3D; 0 &#x2F; FAILED &#x3D; 0 — are far more reliable than “looks like it’s playing”. Write criteria as greppable counts, and next time you can confirm in minutes.</li>
+</ol>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: This article is original work by whiteleibniz (with AI-assisted editing). Copyright belongs to whiteleibniz. Please credit the source and link to the original article when reposting: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#netTV-Completely-Down-After-a-Device-Reboot"><span class="toc-number">1.</span> <span class="toc-text">netTV Completely Down After a Device Reboot</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Symptom-One-Reboot-Three-Things-Broken-at-Once"><span class="toc-number">1.1.</span> <span class="toc-text">1. Symptom: One Reboot, Three Things Broken at Once</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Pit-1-ICS-Re-binding-Must-%E2%80%9CClear-the-IP-First-Private-Before-Public%E2%80%9D"><span class="toc-number">1.2.</span> <span class="toc-text">2. Pit #1: ICS Re-binding Must “Clear the IP First, Private Before Public”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Pit-2-The-bionic-Runtime-Environment-Depends-on-the-mnt-android-sys-Mount"><span class="toc-number">1.3.</span> <span class="toc-text">3. Pit #2: The bionic Runtime Environment Depends on the &#x2F;mnt&#x2F;android_sys Mount</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-The-Actual-Business-The-10-13-mbinfo-Reuse-Fix-Passes-Preliminary-Verification"><span class="toc-number">1.4.</span> <span class="toc-text">4. The Actual Business: The 10-13 mbinfo Reuse Fix Passes Preliminary Verification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-The-Most-Expensive-Lesson-This-Time-Don%E2%80%99t-SIGSTOP-the-UI-Main-Process"><span class="toc-number">1.5.</span> <span class="toc-text">5. The Most Expensive Lesson This Time: Don’t SIGSTOP the UI Main Process</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Lessons-Learned"><span class="toc-number">1.6.</span> <span class="toc-text">6. Lessons Learned</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&text=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&title=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&is_video=false&description=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount&body=Check out this article: https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&title=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&title=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&title=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&title=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/&name=netTV Completely Down After a Device Reboot: Two Unavoidable Pits — ICS Re-binding and the /mnt/android_sys Mount&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

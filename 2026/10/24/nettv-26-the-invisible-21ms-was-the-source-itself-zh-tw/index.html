@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English   系列第 26 篇。上一篇給供數側裝了儀表，這一篇上機把帳對平——結論把整個專案的最佳化方向都改寫了。  一、先交代背景：一筆對不上的帳10-23 長穩測試留下一筆糊塗帳：瀘縣 1080p 直播流，每個 AU 的牆鐘週期 62.6ms，但所有能計時的部件加起來只有 40.4ms（段循環 14.1 + 讀幀 2.5 + 渲染 23.8）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English   系列第 26 篇。上一篇給供數側裝了儀表，這一篇上機把帳對平——結論把整個專案的最佳化方向都改寫了。  一、先交代背景：一筆對不上的帳10-23 長穩測試留下一筆糊塗帳：瀘縣 1080p 直播流，每個 AU 的牆鐘週期 62.6ms，但所有能計時的部件加起來只有 40.4ms（段循環 14.1 + 讀幀 2.5 + 渲染 23.8）">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-24T03:40:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:23:15.493Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="效能剖析">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="展訊 SC9832A">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="HLS 直播">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&text=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&title=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&is_video=false&description=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身&body=Check out this article: https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&title=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&title=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&title=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&title=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&name=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E4%BA%A4%E4%BB%A3%E8%83%8C%E6%99%AF%EF%BC%9A%E4%B8%80%E7%AD%86%E5%B0%8D%E4%B8%8D%E4%B8%8A%E7%9A%84%E5%B8%B3"><span class="toc-number">1.</span> <span class="toc-text">一、先交代背景：一筆對不上的帳</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%B8%8A%E6%A9%9F%E7%B5%90%E6%9E%9C%EF%BC%9A%E5%B8%B3%E5%B9%B3%E4%BA%86%EF%BC%8C%E5%85%87%E6%89%8B%E4%B8%8D%E6%98%AF%E5%85%87%E6%89%8B"><span class="toc-number">2.</span> <span class="toc-text">二、上機結果：帳平了，兇手不是兇手</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%8E%80%E7%BF%BB%E7%B5%90%E8%AB%96%E7%9A%84%E5%85%A9%E5%80%8B%E8%B3%87%E6%96%99"><span class="toc-number">3.</span> <span class="toc-text">三、掀翻結論的兩個資料</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B3%87%E6%96%99-1%EF%BC%9Afps-%E6%9B%B2%E7%B7%9A%E4%B8%8D%E6%98%AF%E4%B8%80%E6%A2%9D%E7%B7%9A"><span class="toc-number">3.1.</span> <span class="toc-text">資料 1：fps 曲線不是一條線</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B3%87%E6%96%99-2%EF%BC%9ANAL-%E7%9B%B4%E6%96%B9%E5%9C%96%E6%98%AF%E7%B4%AF%E8%A8%88%E5%80%BC"><span class="toc-number">3.2.</span> <span class="toc-text">資料 2：NAL 直方圖是累計值</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%96%BC%E6%98%AF%E5%85%A8%E9%83%A8%E5%B8%B3%E7%9B%AE%E9%87%8D%E6%8E%92"><span class="toc-number">4.</span> <span class="toc-text">四、於是全部帳目重排</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%AE%B5%E9%96%93%E9%9A%99-10-6s-%E6%98%AF%E4%BB%80%E9%BA%BC"><span class="toc-number">5.</span> <span class="toc-text">五、段間隙 10.6s 是什麼</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E6%96%B9%E5%90%91%E6%94%B9%E5%AF%AB"><span class="toc-number">6.</span> <span class="toc-text">六、方向改寫</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E6%96%B9%E6%B3%95%E8%AB%96%E6%94%B6%E7%A9%AB%EF%BC%88%E6%AF%94%E7%B5%90%E8%AB%96%E6%9B%B4%E5%80%BC%E9%8C%A2%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">七、方法論收穫（比結論更值錢）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E7%95%B6%E5%89%8D%E7%8B%80%E6%85%8B"><span class="toc-number">8.</span> <span class="toc-text">八、當前狀態</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-24T03:40:00.000Z" itemprop="datePublished">2026-10-24</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/HLS-%E7%9B%B4%E6%92%AD/" rel="tag">HLS 直播</a>, <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A-SC9832A/" rel="tag">展訊 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E6%95%88%E8%83%BD%E5%89%96%E6%9E%90/" rel="tag">效能剖析</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 26 篇。上一篇給供數側裝了儀表，這一篇上機把帳對平——結論把整個專案的最佳化方向都改寫了。</p>
+</blockquote>
+<h2 id="一、先交代背景：一筆對不上的帳"><a href="#一、先交代背景：一筆對不上的帳" class="headerlink" title="一、先交代背景：一筆對不上的帳"></a>一、先交代背景：一筆對不上的帳</h2><p>10-23 長穩測試留下一筆糊塗帳：瀘縣 1080p 直播流，每個 AU 的牆鐘週期 62.6ms，但所有能計時的部件加起來只有 40.4ms（段循環 14.1 + 讀幀 2.5 + 渲染 23.8），<strong>21.6ms 無人認領</strong>。同樣的源切到單段檔案模式，牆鐘 41.5ms ≈ 剖析和 41.3，零差額。</p>
+<p>差額只在「邊下邊播」出現，頭號嫌疑是 <code>rb_take()</code> 等供數時的空轉——但它是嫌疑人，不是定案。</p>
+<p>10-24 做了一件事：<strong>把未知做成顯式印出量</strong>。worker 側新增 <code>g_t_take</code>（rb_take 等供數）&#x2F;<code>g_t_pre</code>&#x2F;<code>g_t_cool</code>&#x2F;<code>g_t_pace</code> 四個計時桶，[perf] 行加「餘差 &#x3D; 牆鐘 − 各桶之和」；dl 側每段打一行「[供數] 下載&#x2F;入池&#x2F;段間隙&#x2F;rb深&#x2F;背壓」。</p>
+<h2 id="二、上機結果：帳平了，兇手不是兇手"><a href="#二、上機結果：帳平了，兇手不是兇手" class="headerlink" title="二、上機結果：帳平了，兇手不是兇手"></a>二、上機結果：帳平了，兇手不是兇手</h2><p>150s 連續播放，0 崩潰乾淨退出。AU#400 平均值：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">牆鐘=58.1 = 段循環 13.9(bsOnMsg 14.0)</span><br><span class="line">          + 讀幀 2.5</span><br><span class="line">          + 渲染 23.2</span><br><span class="line">          + 取NAL 17.6   ← 就是它</span><br><span class="line">          + 準備 0.3</span><br><span class="line">          + 餘差 0.5     ← 從 21.6ms 壓到 0.5ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>餘差法成功：21.6ms 之謎 &#x3D; rb_take 等供數 17.6ms + 零頭。</strong> 儀器化目標達成，可以結案了。</p>
+<p>但結案之前順便多看了兩個資料，結果把整個最佳化方向掀翻了。</p>
+<h2 id="三、掀翻結論的兩個資料"><a href="#三、掀翻結論的兩個資料" class="headerlink" title="三、掀翻結論的兩個資料"></a>三、掀翻結論的兩個資料</h2><h3 id="資料-1：fps-曲線不是一條線"><a href="#資料-1：fps-曲線不是一條線" class="headerlink" title="資料 1：fps 曲線不是一條線"></a>資料 1：fps 曲線不是一條線</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">開頭: fps_x10 = 208 → 226    (20.8~22.6fps)</span><br><span class="line">穩態: fps_x10 = 142          (14.2fps)</span><br></pre></td></tr></table></figure>
+
+<p>同一條流、同一份程式碼，開頭 22fps、穩態 14fps。如果瓶頸是我們自己，曲線應該是平的；<strong>只有「供給決定消費」才會這樣</strong>——開頭在吃存量，存量吃完進入即時節奏。</p>
+<h3 id="資料-2：NAL-直方圖是累計值"><a href="#資料-2：NAL-直方圖是累計值" class="headerlink" title="資料 2：NAL 直方圖是累計值"></a>資料 2：NAL 直方圖是累計值</h3><p>dl 側原本就有診斷直方圖（統計每段各種 NAL 類型數量），但 <code>hist[]</code> 是 <code>static</code> 陣列——<strong>打出來的是累計值，不是每段增量</strong>。段間差分後：</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>slice 增量</th>
+<th>IDR 增量</th>
+<th>SPS&#x2F;PPS</th>
+<th>合計幀&#x2F;段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>9→10</td>
+<td>145</td>
+<td>5</td>
+<td>5+5</td>
+<td><strong>155</strong></td>
+</tr>
+<tr>
+<td>13→14</td>
+<td>145</td>
+<td>5</td>
+<td>5+5</td>
+<td><strong>155</strong></td>
+</tr>
+</tbody></table>
+<p>段間隙 10.6s。<strong>155 幀 ÷ 10.6s &#x3D; 14.6fps——瀘縣源的真實影格率就只有 14.6fps。</strong></p>
+<p>[STAT] 行的口徑也印證了：<code>frames=4275 real=2035 elapsed=142918ms</code>——frames 是 OMX 回呼次數（29.9fps，含廠商 filled&#x3D;0 空事件），real 才是真幀（14.2fps）。</p>
+<h2 id="四、於是全部帳目重排"><a href="#四、於是全部帳目重排" class="headerlink" title="四、於是全部帳目重排"></a>四、於是全部帳目重排</h2><table>
+<thead>
+<tr>
+<th>項</th>
+<th>數值</th>
+<th>含義</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>源影格率</td>
+<td>14.6fps</td>
+<td>155 幀&#x2F;10.6s 段</td>
+</tr>
+<tr>
+<td>管線吞吐上限</td>
+<td><strong>22.5~24fps</strong></td>
+<td>burst 期實測（41.5ms&#x2F;AU，無供給等待）</td>
+</tr>
+<tr>
+<td>穩態 fps</td>
+<td>14.2fps</td>
+<td><strong>&#x3D; 源影格率，被源卡死</strong></td>
+</tr>
+<tr>
+<td>取NAL 等待</td>
+<td>17.6ms&#x2F;AU</td>
+<td>供給節流，不是浪費</td>
+</tr>
+</tbody></table>
+<p><strong>管線吞吐比源影格率過剩 60%。</strong> 我們一直在追的「提幀到 25fps」，對這條 14fps 的源物理不可達——就像給 25fps 的電影插幀到 60fps，源裡根本沒有那 35 幀。</p>
+<p>回头看 10-23 的 A&#x2F;B 資料也自洽了：60s 短測 21.8fps（吃開播囤貨的視窗期，playlist 裡躺著 3-5 段存量），386s 長穩 14.4fps（存量耗盡，進入源即時節奏）。<strong>短測高影格率一直是假象。</strong></p>
+<h2 id="五、段間隙-10-6s-是什麼"><a href="#五、段間隙-10-6s-是什麼" class="headerlink" title="五、段間隙 10.6s 是什麼"></a>五、段間隙 10.6s 是什麼</h2><p>dl 側每段週期：下載 235ms → 入池 3ms → <code>audio_feed</code> 阻塞約 10.6s（fifo 背壓 &#x3D; 段音訊時長，影音同步的節拍器）→ 下一段。</p>
+<p>段間隙的構成就是 <code>audio_feed</code> 阻塞——這是 10-17 影音同步重構的刻意設計：<strong>dl 被音訊時鐘鎖在即時節奏上，視訊進度 pacing 到音訊時間軸</strong>。好處是影音永遠同軸；代價是 dl 永遠只提前一段，沒有囤貨能力。</p>
+<p>所以「提前拉下一段」這個方案直接槍斃：提前拉 &#x3D; 視訊跑在音訊前面 &#x3D; 影音同步崩。rb 裡穩態存量 ~164 NAL ≈ 9.5s 緩衝，本來就是設計好的抗抖動墊子，不是缺陷。</p>
+<h2 id="六、方向改寫"><a href="#六、方向改寫" class="headerlink" title="六、方向改寫"></a>六、方向改寫</h2><p>原來的待辦第一條是「提幀主戰場 &#x3D; 供數」。現在改成：</p>
+<ol>
+<li><strong>換高影格率源驗證管線</strong>：頻道表 12 條實測源裡找 25&#x2F;30fps 的，上機看 fps 曲線是否貼 22fps+ 且無開頭衰減——那才是管線的真實成績單</li>
+<li>找不到高影格率源，就用本機多 GOP 樣本（h1.ts&#x2F;np1.ts）迴圈播，直接測管線上限</li>
+<li>儀器化（v18）保留為常規 A&#x2F;B 工具，md5 <code>c15e558f</code>，已提交 <code>f3bd837</code></li>
+<li>剩餘精力轉向真正的產品問題：殘影、換臺、影音同步細節、黑畫面根治</li>
+</ol>
+<h2 id="七、方法論收穫（比結論更值錢）"><a href="#七、方法論收穫（比結論更值錢）" class="headerlink" title="七、方法論收穫（比結論更值錢）"></a>七、方法論收穫（比結論更值錢）</h2><ol>
+<li><strong>餘差法</strong>：把所有能計時的都計時，剩下的印成顯式「餘差」——未知量變成可觀測值，21.6ms 就是這麼抓住的</li>
+<li><strong>累計值陷阱</strong>：診斷直方圖用 static 陣列，輸出即累計。這次差點把「每段 2030 幀」當成真值（實際是累計 14 段），算出來 191fps 的荒謬數字才暴露。<strong>凡 static 累計，輸出必須給增量</strong></li>
+<li><strong>短測 vs 長穩</strong>：有緩衝的系統，短測成績單是假的。60s 測出 21.8fps，386s 只剩 14.4fps——差別全在開播囤貨</li>
+<li><strong>回呼次數 ≠ 幀數</strong>：廠商每真幀跟一個 filled&#x3D;0 空事件，OMX 回呼率 29.9fps vs 真幀 14.2fps，差一倍。判幀必須認準 <code>[STAT] real=</code></li>
+</ol>
+<h2 id="八、當前狀態"><a href="#八、當前狀態" class="headerlink" title="八、當前狀態"></a>八、當前狀態</h2><ul>
+<li>穩態播放：14.2fps（&#x3D; 源影格率），0 崩潰，ION 無洩漏，9.5s 緩衝</li>
+<li>管線吞吐：22.5~24fps（受渲染 23.2ms 限制，已無便宜變數）</li>
+<li>程式碼：<code>f3bd837</code> 已提交（未 push，等待授權）</li>
+<li>下一篇：找高影格率源，驗證管線真實成績單</li>
+</ul>
+<hr>
+<p><em>本文為「netTV 硬解攻堅」系列第 26 篇，全部資料來自展訊 SC9832A 設備實測。</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E4%BA%A4%E4%BB%A3%E8%83%8C%E6%99%AF%EF%BC%9A%E4%B8%80%E7%AD%86%E5%B0%8D%E4%B8%8D%E4%B8%8A%E7%9A%84%E5%B8%B3"><span class="toc-number">1.</span> <span class="toc-text">一、先交代背景：一筆對不上的帳</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%B8%8A%E6%A9%9F%E7%B5%90%E6%9E%9C%EF%BC%9A%E5%B8%B3%E5%B9%B3%E4%BA%86%EF%BC%8C%E5%85%87%E6%89%8B%E4%B8%8D%E6%98%AF%E5%85%87%E6%89%8B"><span class="toc-number">2.</span> <span class="toc-text">二、上機結果：帳平了，兇手不是兇手</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%8E%80%E7%BF%BB%E7%B5%90%E8%AB%96%E7%9A%84%E5%85%A9%E5%80%8B%E8%B3%87%E6%96%99"><span class="toc-number">3.</span> <span class="toc-text">三、掀翻結論的兩個資料</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B3%87%E6%96%99-1%EF%BC%9Afps-%E6%9B%B2%E7%B7%9A%E4%B8%8D%E6%98%AF%E4%B8%80%E6%A2%9D%E7%B7%9A"><span class="toc-number">3.1.</span> <span class="toc-text">資料 1：fps 曲線不是一條線</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B3%87%E6%96%99-2%EF%BC%9ANAL-%E7%9B%B4%E6%96%B9%E5%9C%96%E6%98%AF%E7%B4%AF%E8%A8%88%E5%80%BC"><span class="toc-number">3.2.</span> <span class="toc-text">資料 2：NAL 直方圖是累計值</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%96%BC%E6%98%AF%E5%85%A8%E9%83%A8%E5%B8%B3%E7%9B%AE%E9%87%8D%E6%8E%92"><span class="toc-number">4.</span> <span class="toc-text">四、於是全部帳目重排</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%AE%B5%E9%96%93%E9%9A%99-10-6s-%E6%98%AF%E4%BB%80%E9%BA%BC"><span class="toc-number">5.</span> <span class="toc-text">五、段間隙 10.6s 是什麼</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E6%96%B9%E5%90%91%E6%94%B9%E5%AF%AB"><span class="toc-number">6.</span> <span class="toc-text">六、方向改寫</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E6%96%B9%E6%B3%95%E8%AB%96%E6%94%B6%E7%A9%AB%EF%BC%88%E6%AF%94%E7%B5%90%E8%AB%96%E6%9B%B4%E5%80%BC%E9%8C%A2%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">七、方法論收穫（比結論更值錢）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E7%95%B6%E5%89%8D%E7%8B%80%E6%85%8B"><span class="toc-number">8.</span> <span class="toc-text">八、當前狀態</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&text=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&title=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&is_video=false&description=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身&body=Check out this article: https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&title=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&title=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&title=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&title=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/&name=netTV 硬解攻堅(26)：21.6ms 之謎——當瓶頸其實是源本身&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

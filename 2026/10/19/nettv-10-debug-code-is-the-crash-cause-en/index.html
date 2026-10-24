@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English  The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash Background: HLS live-stream hardware decoding on Spreadtrum SC9832A (sc8830">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English  The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash Background: HLS live-stream hardware decoding on Spreadtrum SC9832A (sc8830">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-18T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:42:42.073Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Spreadtrum">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="vsp">
+<meta property="article:tag" content="sc9830">
+<meta property="article:tag" content="kernel crash">
+<meta property="article:tag" content="debugging methodology">
+<meta property="article:tag" content="MMIO">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&text=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&title=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&is_video=false&description=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&title=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&title=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&title=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&title=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&name=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#The-Debug-Code-Was-the-Crash-Cause-8-Layers-of-Falsification-for-One-VSP-Kernel-Crash"><span class="toc-number">1.</span> <span class="toc-text">The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Symptoms"><span class="toc-number">1.1.</span> <span class="toc-text">Symptoms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Layers-of-Falsification"><span class="toc-number">1.2.</span> <span class="toc-text">8 Layers of Falsification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#The-Real-Culprit"><span class="toc-number">1.3.</span> <span class="toc-text">The Real Culprit</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Three-Methodology-Lessons"><span class="toc-number">1.4.</span> <span class="toc-text">Three Methodology Lessons</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#A-Real-Problem-Fixed-Along-the-Way"><span class="toc-number">1.5.</span> <span class="toc-text">A Real Problem Fixed Along the Way</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#In-Closing"><span class="toc-number">1.6.</span> <span class="toc-text">In Closing</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-18T16:00:00.000Z" itemprop="datePublished">2026-10-19</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/MMIO/" rel="tag">MMIO</a>, <a class="tag-link-link" href="/tags/Spreadtrum/" rel="tag">Spreadtrum</a>, <a class="tag-link-link" href="/tags/debugging-methodology/" rel="tag">debugging methodology</a>, <a class="tag-link-link" href="/tags/kernel-crash/" rel="tag">kernel crash</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/sc9830/" rel="tag">sc9830</a>, <a class="tag-link-link" href="/tags/vsp/" rel="tag">vsp</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/">English</a></p>
+</blockquote>
+<h1 id="The-Debug-Code-Was-the-Crash-Cause-8-Layers-of-Falsification-for-One-VSP-Kernel-Crash"><a href="#The-Debug-Code-Was-the-Crash-Cause-8-Layers-of-Falsification-for-One-VSP-Kernel-Crash" class="headerlink" title="The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"></a>The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash</h1><blockquote>
+<p>Background: HLS live-stream hardware decoding on Spreadtrum SC9832A (sc8830 family), driving <code>SprdSimpleOMXComponent</code> directly, output to framebuffer. One day the new build crashed on every single run — crashing at <code>DRIVE fill(out) #1</code>, with the device rebooting right after. <strong>Process-level guards couldn’t stop it, and there was not a single clue on the stack.</strong></p>
+<p>The real culprit was a piece of debug code “added to investigate a hang”.</p>
+</blockquote>
+<h2 id="Symptoms"><a href="#Symptoms" class="headerlink" title="Symptoms"></a>Symptoms</h2><p>The phase stake (<code>O_SYNC</code> direct write to <code>/tmp/phase.log</code>) showed every round stopping at the same line:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">t=1385724329 &gt;&gt; fill(out)#1 开始 g_nout=1</span><br><span class="line">t=1385724331    fill(out) 交第0路 hdr=0xb6d8ec80 pBuffer=0xb6d9ba80</span><br><span class="line">                                     ← 没有下一行，设备重启，uptime 回 1 分钟</span><br></pre></td></tr></table></figure>
+
+<p><code>sigsetjmp</code> couldn’t catch it, <code>dmesg</code> showed no OOM, and <code>MemFree</code> still had 882 MB.</p>
+<h2 id="8-Layers-of-Falsification"><a href="#8-Layers-of-Falsification" class="headerlink" title="8 Layers of Falsification"></a>8 Layers of Falsification</h2><p>The crashing line was <strong>byte-for-byte identical</strong> to the working 10-18 build — so the difference lay <strong>before</strong> it.<br>I A&#x2F;B-tested every hypothesis I could think of, one at a time:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Hypothesis</th>
+<th>Verification</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>The supplementary <code>useBuffer</code> call triggers a vendor ASSERT</td>
+<td><code>NETTV_UBMODE=0</code> skips the extra call</td>
+<td>Still crashes at the same spot</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>setParameter(0x7f000011)</code> is the crash cause</td>
+<td><code>NETTV_SP228=0</code> skips it</td>
+<td>Still crashes</td>
+</tr>
+<tr>
+<td>3</td>
+<td>The fake native_handle for self-managed ION is the crash cause</td>
+<td><code>NETTV_NOFAKE=1</code> disables it entirely</td>
+<td>Still crashes</td>
+</tr>
+<tr>
+<td>4</td>
+<td>The feeding split <code>offsplit</code>&#x2F;<code>chunk</code> is the crash cause</td>
+<td>Force <code>g_offsplit=0 g_chunk=0</code></td>
+<td>Still crashes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>The <code>NOUT 6→4</code> rollback touched BSS</td>
+<td>After rolling back</td>
+<td>Still crashes</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Handle source: gralloc vs self-managed ION</td>
+<td><code>NETTV_EARLY=1</code> grabs self-managed ION early; the handle reverts to a heap address</td>
+<td>Still crashes</td>
+</tr>
+<tr>
+<td>7</td>
+<td>The carveout_mm pool was drained (<code>total 0</code>)</td>
+<td>6 retries + backoff + size ladder; the 6th round really grabbed it</td>
+<td>Still crashes</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Out of memory</td>
+<td>MemFree 882 MB, no OOM in dmesg</td>
+<td>Ruled out</td>
+</tr>
+</tbody></table>
+<p>Once layer 8 was ruled out, only one thing could explain the “same-environment A&#x2F;B contrast”: <strong>code the old build didn’t have</strong>.</p>
+<h2 id="The-Real-Culprit"><a href="#The-Real-Culprit" class="headerlink" title="The Real Culprit"></a>The Real Culprit</h2><p>On the evening of 10-18, to capture a “hang in the act”, I added a set of register forensics:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">vrp_hook</span><span class="params">(<span class="type">void</span> *d, <span class="type">unsigned</span> off, ...)</span>   <span class="comment">/* hook the vendor&#x27;s VSP register write function */</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> r = g_vrp_real ? g_vrp_real(...) : <span class="number">-1</span>;</span><br><span class="line">    g_vsp_rb = *(<span class="type">unsigned</span> *)d;                    <span class="comment">/* ← grab the VSP register window base */</span></span><br><span class="line">    <span class="type">unsigned</span> rb = *(<span class="type">unsigned</span> *)d;</span><br><span class="line">    <span class="keyword">volatile</span> <span class="type">unsigned</span> *W = (<span class="keyword">volatile</span> <span class="type">unsigned</span> *)(rb + <span class="number">0x60901000</span>);</span><br><span class="line">    <span class="keyword">volatile</span> <span class="type">unsigned</span> *B = (<span class="keyword">volatile</span> <span class="type">unsigned</span> *)(rb + <span class="number">0x60908000</span>);</span><br><span class="line">    P(<span class="string">&quot;[W10] 1010=%08x ...&quot;</span>, W[<span class="number">0x10</span>/<span class="number">4</span>], ...);    <span class="comment">/* ← direct MMIO read */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Then there was <code>tr_line()</code>, <strong>called once before and after every DRIVE</strong>, reading <code>W[0x1c/4]</code> and <code>B[0x34/4]</code>.</p>
+<p><code>vrp_hook</code> is a high-frequency path walked on <strong>every polling round</strong> — equivalent to continuously<br><strong>reading MMIO</strong> from the two register windows <code>0x60901000</code> &#x2F; <code>0x60908000</code> throughout decoding.</p>
+<p>The result: the VSP state machine was scrambled, and it crashed at the immediately following <code>DRIVE fill(out) #1</code>.<br><strong>The crash point is not the debug code’s own line, but the next breakage it caused.</strong></p>
+<p>The fix was a single line of semantics:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123; <span class="type">static</span> <span class="type">int</span> mmo = <span class="number">-1</span>;</span><br><span class="line">  <span class="keyword">if</span> (mmo &lt; <span class="number">0</span>) &#123; <span class="type">const</span> <span class="type">char</span> *em = getenv(<span class="string">&quot;NETTV_TRACE_MMIO&quot;</span>);</span><br><span class="line">                 mmo = (em &amp;&amp; em[<span class="number">0</span>] == <span class="string">&#x27;1&#x27;</span>) ? <span class="number">1</span> : <span class="number">0</span>; &#125;</span><br><span class="line">  <span class="keyword">if</span> (!mmo) <span class="keyword">return</span> r; &#125;        <span class="comment">/* off by default; never touch MMIO */</span></span><br></pre></td></tr></table></figure>
+
+<p>Verification: the new build ran to <code>AU[299]</code>, with all 1032 <code>fill(out)</code> calls in phase.log “returned”, and zero device reboots.</p>
+<h2 id="Three-Methodology-Lessons"><a href="#Three-Methodology-Lessons" class="headerlink" title="Three Methodology Lessons"></a>Three Methodology Lessons</h2><p><strong>1. “The debug code was the crash cause” is an independent class of failure mode.</strong><br>It never crashes on its own line, so the stack, the logs, and ASAN all fail to point at it.<br>Only by putting the old and new builds <strong>on the same device in the same environment, running A&#x2F;B against each other</strong>, and comparing runtime state field by field (I printed handle <code>ints[0..23]</code>, <code>g_gh_n</code>, <code>g_nout</code>), could you see “the old build doesn’t have this part”.</p>
+<p><strong>2. During the hunt you need one absolutely reliable logging channel.</strong><br>On this project, stdout was swallowed by the custom stdio’s 4KB block buffer, and the entire buffer was lost at crash time — so I misjudged three times off empty logs. The <code>O_SYNC</code> direct-write phase stake is the only trustworthy channel.<br>Likewise, every script upload must be verified with <code>md5sum</code>; I stepped on 3 cases of “0-byte script led to misjudging that the new build doesn’t crash”.</p>
+<p><strong>3. The criteria must be reproducible.</strong><br>The “ALIVE&#x3D;0” signal carries zero information (the old build’s normal self-exit is also 0); whether <code>uptime</code> falls back to 1 minute, plus the phase stake’s last line, are the reliable criteria.</p>
+<h2 id="A-Real-Problem-Fixed-Along-the-Way"><a href="#A-Real-Problem-Fixed-Along-the-Way" class="headerlink" title="A Real Problem Fixed Along the Way"></a>A Real Problem Fixed Along the Way</h2><p>When <code>g_gh_n=0</code> (the carveout_mm pool periodically drained by component init), <code>ghOut</code> stays on gralloc’s real handle. And gralloc uses an IOMMU heap, <strong>with no physically contiguous backing</strong>, so the VSP writes frames to fake physical addresses.</p>
+<p>So two lines of defense were added:</p>
+<ul>
+<li>Pool grabbing with retries (6 rounds × 120ms backoff × 4-step size rotation) — measured, round 6 can grab it;</li>
+<li>If it still can’t be grabbed, <code>_exit(12)</code> and hand it to the watchdog for a restart — <strong>better to show no picture than to knock the kernel flying</strong>.</li>
+</ul>
+<h2 id="In-Closing"><a href="#In-Closing" class="headerlink" title="In Closing"></a>In Closing</h2><p>“Let’s add a register dump and see” — that sentence has a price in hardware-accelerated debugging.<br>Reading MMIO is not <code>read()</code> on an ordinary variable; it is <strong>reaching into someone else’s state machine</strong>.</p>
+<p>The approach to complex problems comes down to one sentence: <strong>put the “working build” and the “crashing build” side by side and bisect them item by item</strong>. If I hadn’t had the working 10-18 source as a baseline this time, I’d still be in this pit guessing at an eighth, ninth, and tenth hypothesis.</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#The-Debug-Code-Was-the-Crash-Cause-8-Layers-of-Falsification-for-One-VSP-Kernel-Crash"><span class="toc-number">1.</span> <span class="toc-text">The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Symptoms"><span class="toc-number">1.1.</span> <span class="toc-text">Symptoms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Layers-of-Falsification"><span class="toc-number">1.2.</span> <span class="toc-text">8 Layers of Falsification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#The-Real-Culprit"><span class="toc-number">1.3.</span> <span class="toc-text">The Real Culprit</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Three-Methodology-Lessons"><span class="toc-number">1.4.</span> <span class="toc-text">Three Methodology Lessons</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#A-Real-Problem-Fixed-Along-the-Way"><span class="toc-number">1.5.</span> <span class="toc-text">A Real Problem Fixed Along the Way</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#In-Closing"><span class="toc-number">1.6.</span> <span class="toc-text">In Closing</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&text=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&title=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&is_video=false&description=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&title=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&title=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&title=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&title=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/&name=The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

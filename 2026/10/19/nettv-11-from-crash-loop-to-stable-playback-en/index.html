@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English  Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames Device: Spreadtrum SC9832A (sc8830 family), Alpine&#x2F;armv7l, 720×1280 portrait">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English  Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames Device: Spreadtrum SC9832A (sc8830 family), Alpine&#x2F;armv7l, 720×1280 portrait">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-18T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:42:42.089Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="framebuffer">
+<meta property="article:tag" content="Spreadtrum">
+<meta property="article:tag" content="nettv">
+<meta property="article:tag" content="vsp">
+<meta property="article:tag" content="sc9830">
+<meta property="article:tag" content="kernel crash">
+<meta property="article:tag" content="debugging methodology">
+<meta property="article:tag" content="green screen">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/19/nettv-10-debug-code-is-the-crash-cause/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&text=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&title=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&is_video=false&description=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&title=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&title=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&title=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&title=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&name=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Getting-Network-TV-Working-From-Three-Crashes-a-Day-to-4800-Consecutive-Frames"><span class="toc-number">1.</span> <span class="toc-text">Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Starting-Point-Crashes-on-Every-Run"><span class="toc-number">1.1.</span> <span class="toc-text">Starting Point: Crashes on Every Run</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Five-Root-Causes-Five-A-B-Tests"><span class="toc-number">1.2.</span> <span class="toc-text">Five Root Causes, Five A&#x2F;B Tests</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-Cause-1-The-Debug-Code-Was-the-Crash-Cause"><span class="toc-number">1.2.1.</span> <span class="toc-text">Root Cause 1: The Debug Code Was the Crash Cause</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-Cause-2-NAL-Fragmentation"><span class="toc-number">1.2.2.</span> <span class="toc-text">Root Cause 2: NAL Fragmentation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-Cause-3-Virtual-Address-Mistaken-for-Physical-%E2%86%92-All-Green"><span class="toc-number">1.2.3.</span> <span class="toc-text">Root Cause 3: Virtual Address Mistaken for Physical → All Green</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-Cause-4-ION-Can%E2%80%99t-Be-Grabbed-Never-Released"><span class="toc-number">1.2.4.</span> <span class="toc-text">Root Cause 4: ION Can’t Be Grabbed + Never Released</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-Cause-5-The-Most-Expensive-One-%E2%80%94-Me"><span class="toc-number">1.2.5.</span> <span class="toc-text">Root Cause 5: The Most Expensive One — Me</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#The-Last-Hour-The-Screenshot-Fooled-Me-for-an-Hour"><span class="toc-number">1.3.</span> <span class="toc-text">The Last Hour: The Screenshot Fooled Me for an Hour</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Final-Verification"><span class="toc-number">1.4.</span> <span class="toc-text">Final Verification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Methodology-Review"><span class="toc-number">1.5.</span> <span class="toc-text">Methodology Review</span></a></li></ol></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-18T16:00:00.000Z" itemprop="datePublished">2026-10-19</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Spreadtrum/" rel="tag">Spreadtrum</a>, <a class="tag-link-link" href="/tags/debugging-methodology/" rel="tag">debugging methodology</a>, <a class="tag-link-link" href="/tags/framebuffer/" rel="tag">framebuffer</a>, <a class="tag-link-link" href="/tags/green-screen/" rel="tag">green screen</a>, <a class="tag-link-link" href="/tags/kernel-crash/" rel="tag">kernel crash</a>, <a class="tag-link-link" href="/tags/nettv/" rel="tag">nettv</a>, <a class="tag-link-link" href="/tags/sc9830/" rel="tag">sc9830</a>, <a class="tag-link-link" href="/tags/vsp/" rel="tag">vsp</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/">English</a></p>
+</blockquote>
+<h1 id="Getting-Network-TV-Working-From-Three-Crashes-a-Day-to-4800-Consecutive-Frames"><a href="#Getting-Network-TV-Working-From-Three-Crashes-a-Day-to-4800-Consecutive-Frames" class="headerlink" title="Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"></a>Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames</h1><blockquote>
+<p>Device: Spreadtrum SC9832A (sc8830 family), Alpine&#x2F;armv7l, 720×1280 portrait screen, LVGL desktop.<br>Goal: HLS live streams hardware-decoded by the VSP and output to framebuffer, matching the official Android player’s playback quality.<br>Final result: Liaoning TV’s “Village Fortune” broadcasting stably, uptime 36 minutes with zero reboots, 4808 frames on screen.</p>
+</blockquote>
+<h2 id="Starting-Point-Crashes-on-Every-Run"><a href="#Starting-Point-Crashes-on-Every-Run" class="headerlink" title="Starting Point: Crashes on Every Run"></a>Starting Point: Crashes on Every Run</h2><p>The new build crashed on every run, stopping at the phase stake’s last line:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt; fill(out)#1 开始 g_nout=1</span><br><span class="line">   fill(out) 交第0路 hdr=0xb6d8ec80 pBuffer=0xb6d9ba80</span><br><span class="line">                                    ← 没有下一行，设备重启</span><br></pre></td></tr></table></figure>
+
+<p><code>sigsetjmp</code> couldn’t catch it, <code>dmesg</code> showed no OOM, and 882 MB of memory still remained. A kernel-mode crash.</p>
+<h2 id="Five-Root-Causes-Five-A-B-Tests"><a href="#Five-Root-Causes-Five-A-B-Tests" class="headerlink" title="Five Root Causes, Five A&#x2F;B Tests"></a>Five Root Causes, Five A&#x2F;B Tests</h2><h3 id="Root-Cause-1-The-Debug-Code-Was-the-Crash-Cause"><a href="#Root-Cause-1-The-Debug-Code-Was-the-Crash-Cause" class="headerlink" title="Root Cause 1: The Debug Code Was the Crash Cause"></a>Root Cause 1: The Debug Code Was the Crash Cause</h3><p>On the evening of 10-18 I added a “capture the hang in the act” kit: <code>vrp_hook()</code> hooks the vendor’s VSP register write function, <strong>reading the MMIO register windows</strong> <code>rb + 0x60901000</code> &#x2F; <code>rb + 0x60908000</code> directly on every call; <code>tr_line()</code> is even more aggressive, reading once before and after every DRIVE.</p>
+<p><code>vrp_hook</code> is a high-frequency path walked on every polling round. So the VSP state machine got scrambled, crashing at the immediately following <code>DRIVE fill(out)#1</code>.</p>
+<p><strong>The crash point is not the debug code’s own line</strong>, so the stack, the logs, and the signal handlers all fail to point at it.<br>The old (working) build had none of this code — which is what made me think of comparing.</p>
+<p>Fix: <code>NETTV_TRACE_MMIO</code> defaults to 0, returning immediately without touching MMIO.<br>Verification: ran to AU[1100]+, all 564 fills returned, zero reboots.</p>
+<h3 id="Root-Cause-2-NAL-Fragmentation"><a href="#Root-Cause-2-NAL-Fragmentation" class="headerlink" title="Root Cause 2: NAL Fragmentation"></a>Root Cause 2: NAL Fragmentation</h3><p>The smoking gun from three crash scenes — <strong>the crash point always immediately follows a NAL cut into multiple pieces</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">AU[109] sub1/4  4096B 后崩</span><br><span class="line">AU[369] sub1/2  4096B 后崩</span><br><span class="line">AU[36]  sub28/28 3048B 后崩</span><br><span class="line">而 sub1/1（未切碎）从不崩</span><br></pre></td></tr></table></figure>
+
+<p>Decisive A&#x2F;B: <code>NETTV_CHUNK=0</code> → 1200 frames up to AU[1100]+ with zero reboots; the default 4096 → crashes on every run.</p>
+<p>Mechanism inference: the vendor library’s handling of “one NAL fed in multiple nOffset continuations into the same buffer” is defective.<br>(I initially looked in the wrong direction — <code>NETTV_SPLIT</code> governs splitting at NAL boundaries; fragmentation is decided by <code>g_chunk</code>. The two are different.)</p>
+<h3 id="Root-Cause-3-Virtual-Address-Mistaken-for-Physical-→-All-Green"><a href="#Root-Cause-3-Virtual-Address-Mistaken-for-Physical-→-All-Green" class="headerlink" title="Root Cause 3: Virtual Address Mistaken for Physical → All Green"></a>Root Cause 3: Virtual Address Mistaken for Physical → All Green</h3><p>Two adjacent lines in the log are the smoking gun (same fd&#x3D;12):</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">登记 fd=12 → pa=0xb1ce6000            ← 虚拟地址（错）</span><br><span class="line">[ion] Get_phy_addr#1 fd=12 真PA=0x9fa00000   ← 真物理地址（对）</span><br></pre></td></tr></table></figure>
+
+<p>The vendor VSP writes frames treating <code>handle-&gt;ints[12]</code> as the <strong>physical address</strong>, while what I filled in was the mmap’ed virtual address.<br>The hardware can’t reach user-space virtual addresses → nothing gets written into real video memory → the screen goes all green.</p>
+<p>Fix: added <code>g_gh_pa[]</code> to store the true PA; all 4 occurrences of <code>fh[12]</code> now filled with the PA; the VA is left only for the CPU to read frames.</p>
+<h3 id="Root-Cause-4-ION-Can’t-Be-Grabbed-Never-Released"><a href="#Root-Cause-4-ION-Can’t-Be-Grabbed-Never-Released" class="headerlink" title="Root Cause 4: ION Can’t Be Grabbed + Never Released"></a>Root Cause 4: ION Can’t Be Grabbed + Never Released</h3><p>When self-managed ION (heap mask&#x3D;8 <code>carveout_mm</code>, physically contiguous) is grabbed, everything works; when it can’t be, <code>ghOut</code> falls back to gralloc’s real handle — and gralloc uses an IOMMU heap, <strong>with no physically contiguous backing</strong>, so the VSP writing frames with a fake PA is guaranteed to crash the kernel.</p>
+<p>Two changes: 6 retry rounds + 120ms backoff + a size ladder; if it still can’t be grabbed, <code>_exit(12)</code> and let the watchdog restart it — <strong>better to show no picture than to knock the kernel flying</strong>. Also, call <code>ION_IOC_FREE</code>(0xc0044901) to release it proactively before exiting.</p>
+<h3 id="Root-Cause-5-The-Most-Expensive-One-—-Me"><a href="#Root-Cause-5-The-Most-Expensive-One-—-Me" class="headerlink" title="Root Cause 5: The Most Expensive One — Me"></a>Root Cause 5: The Most Expensive One — Me</h3><p><code>ps | grep -c nettv_player</code> showed <strong>12~23 zombie processes</strong> piled up.</p>
+<p>In every debugging round I’d <code>nohup</code> a script, and the monitor internally respawns worker&#x2F;worker-dl&#x2F;mplayer on its own, leaving an extra full set per experiment round, each grabbing 2MB of C1 buffer → the pool gets stretched to bursting → subsequent launches fail.</p>
+<p><code>pgrep -x nettv_player</code> only counts the main process and can’t see these, so I once misdiagnosed it as a “kernel leak”, and even wrote a dedicated <code>ion_release()</code> to fight the fire.</p>
+<p>After <code>pkill -f nettv_player</code> cleared them all, the pool immediately returned to <code>total 0</code>, <strong>and playback worked immediately</strong>.</p>
+<blockquote>
+<p>This one is the most valuable: <strong>the symptom and the real cause are worlds apart, and the only dividing line is “asking one more question with ps”</strong>.</p>
+</blockquote>
+<h2 id="The-Last-Hour-The-Screenshot-Fooled-Me-for-an-Hour"><a href="#The-Last-Hour-The-Screenshot-Fooled-Me-for-an-Hour" class="headerlink" title="The Last Hour: The Screenshot Fooled Me for an Hour"></a>The Last Hour: The Screenshot Fooled Me for an Hour</h2><p>The picture clearly made it to the screen, yet what I captured was the old WiFi settings page — 4 shots in a row, all identical.</p>
+<p>Real cause: <code>/sys/class/graphics/fb0/virtual_size = 720,3840</code> — the fb has 4 pages, and my screenshot script only reads <strong>page 0</strong>. Meanwhile <code>fb_render()</code> writes at the <code>g_fbpg*720*1280*4</code> offset every frame and <code>fb_pan()</code> flips pages, so the content is on pages 1&#x2F;2.</p>
+<p><strong>An old picture in a screenshot ≠ nothing reached the screen.</strong> Check <code>virtual_size</code> first, then draw conclusions.</p>
+<p>I also made the screenshot script automatic on the side: driving <code>pan_offset</code> to a constant 0 can’t read the current page, so it counts <strong>color variety per page</strong> and takes the maximum (measured: page0&#x3D;55 colors, leftover from the old page, vs page1&#x3D;617 colors, the real picture).<br>I tried “sampled sum” along the way and it picked backwards — the sum reflects brightness, not diversity.</p>
+<h2 id="Final-Verification"><a href="#Final-Verification" class="headerlink" title="Final Verification"></a>Final Verification</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">uptime 36min  零重启</span><br><span class="line">上屏 4808 帧</span><br><span class="line">画面: 辽宁卫视《乡村财富》  人物清晰 / 字幕可读 / 台标正常 / 色彩正确</span><br></pre></td></tr></table></figure>
+
+<h2 id="Methodology-Review"><a href="#Methodology-Review" class="headerlink" title="Methodology Review"></a>Methodology Review</h2><p><strong>1. “The debug code was the crash cause” is an independent class of failure mode.</strong><br>It never crashes on its own line, so the stack and the logs all fail to point at it.<br>Only by putting the working old build and the crashing new build <strong>side by side</strong>, comparing runtime state field by field, can you see “the old build doesn’t have this part”.</p>
+<p><strong>2. Crash-point patterns are far more powerful than “guessing hypotheses”.</strong><br>Root cause 2 was spotted at a glance from the pattern “the crash point always immediately follows subN&#x2F;M”, not by deduction. <strong>When you have multiple crash scenes, the first thing to do is find their common pattern.</strong></p>
+<p><strong>3. The debugging period must have an absolutely reliable forensics channel.</strong><br>On this project, stdout is swallowed by the custom stdio’s 4KB block buffer, and the whole buffer is lost at crash time — I misjudged three times off empty logs. Later I switched to the <code>O_SYNC</code> direct-write phase stake, verifying with <code>md5sum</code> on every script upload (I stepped on 3 cases of 0-byte scripts causing the misjudgment “the new build doesn’t crash”).</p>
+<p><strong>4. When it “won’t run”, <code>ps</code> it first.</strong><br>Really — it costs 1 second and saves an hour of wrong attribution.</p>
+<p><strong>5. A&#x2F;B is the only honest experiment.</strong><br>Every one of this article’s five root causes was pinned down by “change one variable, run once, compare”.<br>Of the hypotheses I guessed by deduction, I tried eight — all wrong.</p>
+<hr>
+<p><em>Related reading: <a href="nettv-10-debug-code-is-the-crash-cause.md">The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash</a> (a detailed breakdown of root cause 1)</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Getting-Network-TV-Working-From-Three-Crashes-a-Day-to-4800-Consecutive-Frames"><span class="toc-number">1.</span> <span class="toc-text">Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Starting-Point-Crashes-on-Every-Run"><span class="toc-number">1.1.</span> <span class="toc-text">Starting Point: Crashes on Every Run</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Five-Root-Causes-Five-A-B-Tests"><span class="toc-number">1.2.</span> <span class="toc-text">Five Root Causes, Five A&#x2F;B Tests</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-Cause-1-The-Debug-Code-Was-the-Crash-Cause"><span class="toc-number">1.2.1.</span> <span class="toc-text">Root Cause 1: The Debug Code Was the Crash Cause</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-Cause-2-NAL-Fragmentation"><span class="toc-number">1.2.2.</span> <span class="toc-text">Root Cause 2: NAL Fragmentation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-Cause-3-Virtual-Address-Mistaken-for-Physical-%E2%86%92-All-Green"><span class="toc-number">1.2.3.</span> <span class="toc-text">Root Cause 3: Virtual Address Mistaken for Physical → All Green</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-Cause-4-ION-Can%E2%80%99t-Be-Grabbed-Never-Released"><span class="toc-number">1.2.4.</span> <span class="toc-text">Root Cause 4: ION Can’t Be Grabbed + Never Released</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Root-Cause-5-The-Most-Expensive-One-%E2%80%94-Me"><span class="toc-number">1.2.5.</span> <span class="toc-text">Root Cause 5: The Most Expensive One — Me</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#The-Last-Hour-The-Screenshot-Fooled-Me-for-an-Hour"><span class="toc-number">1.3.</span> <span class="toc-text">The Last Hour: The Screenshot Fooled Me for an Hour</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Final-Verification"><span class="toc-number">1.4.</span> <span class="toc-text">Final Verification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Methodology-Review"><span class="toc-number">1.5.</span> <span class="toc-text">Methodology Review</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&text=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&title=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&is_video=false&description=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames&body=Check out this article: https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&title=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&title=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&title=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&title=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/&name=Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

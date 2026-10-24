@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Part 15 of the series. In the previous part (nettv-14) we had pinned the stutter on ptsync positive feedback and O_SYNC logging,reaching a 17fps baseline. This p">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Part 15 of the series. In the previous part (nettv-14) we had pinned the stutter on ptsync positive feedback and O_SYNC logging,reaching a 17fps baseline. This p">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-20T03:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:39:33.636Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Performance Profiling">
+<meta property="article:tag" content="sprd">
+<meta property="article:tag" content="ION">
+<meta property="article:tag" content="ARM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&text=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&title=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&title=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&title=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&title=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&title=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&name=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#The-One-Sentence-Conclusion"><span class="toc-number">1.</span> <span class="toc-text">The One-Sentence Conclusion</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Background-The-116ms-Wall"><span class="toc-number">2.</span> <span class="toc-text">Background: The 116ms Wall</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Disproof-1-Down-Rating-the-Signature-Scan-%E2%80%94-%E2%80%9C25ms-of-the-45ms-Frame-Readback-Is-Scanning%E2%80%9D"><span class="toc-number">3.</span> <span class="toc-text">Disproof 1: Down-Rating the Signature Scan — “25ms of the 45ms Frame Readback Is Scanning”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Disproof-2-LUT-izing-fb-render-%E2%80%94-%E2%80%9CEliminate-3-Multiplications-per-Pixel%E2%80%9D"><span class="toc-number">4.</span> <span class="toc-text">Disproof 2: LUT-izing fb_render — “Eliminate 3 Multiplications per Pixel”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Disproof-3-Reading-ION-Directly-to-Skip-the-memcpy-%E2%80%94-%E2%80%9Ccopy-is-pure-waste%E2%80%9D"><span class="toc-number">5.</span> <span class="toc-text">Disproof 3: Reading ION Directly to Skip the memcpy — “copy is pure waste”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Wreck-4-The-Bare-clone-Dual-Thread-Pipeline-%E2%80%94-Two-Reboots"><span class="toc-number">6.</span> <span class="toc-text">Wreck 4: The Bare clone Dual-Thread Pipeline — Two Reboots</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Negative-Optimization-5-After-the-Fix-the-Pipeline-Got-Slower"><span class="toc-number">7.</span> <span class="toc-text">Negative Optimization 5: After the Fix, the Pipeline Got Slower</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#So-How-Do-We-Actually-Get-Fast"><span class="toc-number">8.</span> <span class="toc-text">So How Do We Actually Get Fast?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Methodology-Deposit"><span class="toc-number">9.</span> <span class="toc-text">Methodology Deposit</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-20T03:30:00.000Z" itemprop="datePublished">2026-10-20</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/ARM/" rel="tag">ARM</a>, <a class="tag-link-link" href="/tags/ION/" rel="tag">ION</a>, <a class="tag-link-link" href="/tags/Performance-Profiling/" rel="tag">Performance Profiling</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/sprd/" rel="tag">sprd</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Part 15 of the series. In the previous part (nettv-14) we had pinned the stutter on ptsync positive feedback and O_SYNC logging,<br>reaching a 17fps baseline. This part is the push from 17fps toward 25fps — <strong>almost entirely a catalog of cautionary tales</strong>:<br>five optimizations that looked perfectly reasonable, four directly disproven by A&#x2F;B experiments, and one that rebooted the device twice.<br>The conclusion matters more than the process, so here it is up front.</p>
+</blockquote>
+<h2 id="The-One-Sentence-Conclusion"><a href="#The-One-Sentence-Conclusion" class="headerlink" title="The One-Sentence Conclusion"></a>The One-Sentence Conclusion</h2><p><strong>The 116ms-per-frame ledger: decode 21ms + copy 43ms + render 32ms. The real bottleneck is the 3MB memcpy,<br>and it is slow because the ION buffer is mapped uncached.</strong> Every optimization aimed at “decode &#x2F; render &#x2F; pipelining”<br>is scratching an itch from outside the boot in front of the uncached-memory wall.</p>
+<h2 id="Background-The-116ms-Wall"><a href="#Background-The-116ms-Wall" class="headerlink" title="Background: The 116ms Wall"></a>Background: The 116ms Wall</h2><p>Luxian 1080p live source; measured per AU (one access unit ≈ one frame):</p>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>Time</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DRIVE</td>
+<td>21.1ms</td>
+<td>vendor library synchronous decode, of which only 14ms is hardware</td>
+</tr>
+<tr>
+<td>frame readback</td>
+<td>43.4ms</td>
+<td>3MB <code>memcpy(uncached ION → cached staging)</code></td>
+</tr>
+<tr>
+<td>render</td>
+<td>31.8ms</td>
+<td>NV12→ARGB + rotation composition + fb write</td>
+</tr>
+</tbody></table>
+<p>Monitoring <code>[STAT] fps_x10=157</code>, i.e. 15.7fps. The 25fps target means the total must come down from 116ms to under 40ms.<br>Below are the five things we tried, in order.</p>
+<h2 id="Disproof-1-Down-Rating-the-Signature-Scan-—-“25ms-of-the-45ms-Frame-Readback-Is-Scanning”"><a href="#Disproof-1-Down-Rating-the-Signature-Scan-—-“25ms-of-the-45ms-Frame-Readback-Is-Scanning”" class="headerlink" title="Disproof 1: Down-Rating the Signature Scan — “25ms of the 45ms Frame Readback Is Scanning”"></a>Disproof 1: Down-Rating the Signature Scan — “25ms of the 45ms Frame Readback Is Scanning”</h2><p>Logically airtight: a content signature over the Y&#x2F;UV planes every frame (for duplicate-frame detection), with stride-256 sampling that still costs<br>8K+4K accesses — it sure looked like the big-ticket item.</p>
+<p>After switching to “periodic signature + callback-count dedupe”, the A&#x2F;B measurement:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Group A (down-rated): frame readback 44.6ms</span><br><span class="line">Group B (full signature every frame): frame readback 44.8ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>The difference is noise.</strong> The signature scan was never the bottleneck; the entire cost is the memcpy.<br>Lesson: between the “big-ticket item” you imagine and the real one lies a single-variable A&#x2F;B.</p>
+<h2 id="Disproof-2-LUT-izing-fb-render-—-“Eliminate-3-Multiplications-per-Pixel”"><a href="#Disproof-2-LUT-izing-fb-render-—-“Eliminate-3-Multiplications-per-Pixel”" class="headerlink" title="Disproof 2: LUT-izing fb_render — “Eliminate 3 Multiplications per Pixel”"></a>Disproof 2: LUT-izing fb_render — “Eliminate 3 Multiplications per Pixel”</h2><p>For BT.601 conversion formulas like <code>r=y+f(v)</code>, the textbook optimization is a precomputed coefficient table:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">short</span> sRV[<span class="number">256</span>], sGU[<span class="number">256</span>], sGV[<span class="number">256</span>], sBU[<span class="number">256</span>];</span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">unsigned</span> <span class="title function_">pxlut</span><span class="params">(<span class="type">int</span> yv, <span class="type">int</span> u, <span class="type">int</span> v)</span> &#123;</span><br><span class="line">    <span class="type">int</span> r = yv + sRV[v];</span><br><span class="line">    <span class="type">int</span> g = yv - sGU[u] - sGV[v];</span><br><span class="line">    <span class="type">int</span> b = yv + sBU[u];</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Three multiplications and six clamps become four table lookups and three additions — beautiful in theory. Measured:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Group A (LUT):    render 39.3ms, fb_render mean 39ms</span><br><span class="line">Group B (scalar): render 32.5ms, fb_render mean 36ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>The LUT was 20% slower.</strong> Cortex-A7’s hardware multiplier finishes in a single cycle, while random indexed access across four 256-entry tables<br>(the U&#x2F;V jumps between adjacent pixels) brings L1&#x2F;L2 misses. In the end we flipped the default<br>back (<code>NETTV_LUT=1</code> to enable), keeping the code only as A&#x2F;B teaching material.</p>
+<h2 id="Disproof-3-Reading-ION-Directly-to-Skip-the-memcpy-—-“copy-is-pure-waste”"><a href="#Disproof-3-Reading-ION-Directly-to-Skip-the-memcpy-—-“copy-is-pure-waste”" class="headerlink" title="Disproof 3: Reading ION Directly to Skip the memcpy — “copy is pure waste”"></a>Disproof 3: Reading ION Directly to Skip the memcpy — “copy is pure waste”</h2><p>If the memcpy takes 43ms, why not have the renderer read the ION buffer directly? <code>NETTV_STAGE=0</code> is<br>exactly that switch. Measured:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">5.8fps, fb_render mean 335ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>10x slower than the copy version.</strong> The reason: ION was allocated with <code>flags=0</code>, so the mapping is <strong>uncached<br>memory</strong>: the copy version does one sequential bulk read (DRAM bursts, hardware prefetch — all comfortable),<br>after which every access lands in cache; the direct-read version issues one uncached transaction per pixel, each costing a full bus<br>cycle. Sequential scanning &#x2F; mixed access over uncached memory is suicide.</p>
+<p><strong>The 3MB memcpy is not waste — it is the optimal solution.</strong> But the number “43ms” itself became the new target.</p>
+<h2 id="Wreck-4-The-Bare-clone-Dual-Thread-Pipeline-—-Two-Reboots"><a href="#Wreck-4-The-Bare-clone-Dual-Thread-Pipeline-—-Two-Reboots" class="headerlink" title="Wreck 4: The Bare clone Dual-Thread Pipeline — Two Reboots"></a>Wreck 4: The Bare clone Dual-Thread Pipeline — Two Reboots</h2><p>At this point the single thread couldn’t be cut any further; the only way out on the ledger was pipelining:<br>the worker decodes + copies, a separate thread renders, the two overlapping.<br>Bare bionic (-nostdlib) has no pthread, so we spawned the thread with the <code>clone</code> syscall directly:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> CLONE_VM 0x00000100</span></span><br><span class="line"><span class="type">long</span> r = syscall(<span class="number">120</span> <span class="comment">/* clone ARM EABI */</span>,</span><br><span class="line">                 CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD,</span><br><span class="line">                 sp, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line"><span class="keyword">if</span> (r == <span class="number">0</span>) &#123; fn(); syscall(<span class="number">1</span>, <span class="number">0</span>); &#125;</span><br></pre></td></tr></table></figure>
+
+<p>A 20-second trial run: fully functional — the render thread started, DRIVE dropped to 18ms, wall clock 80ms.<br>Switching to the 60-second long test — <strong>the device rebooted, twice in one day</strong> (even the binary in <code>/tmp</code> was<br>truncated to 0 bytes: textbook power-loss-grade filesystem corruption).</p>
+<p>The retrospective found two root causes, both landmines specific to “bare threads”:</p>
+<ol>
+<li><strong>No TLS was set.</strong> <code>clone</code> was called without <code>CLONE_SETTLS</code>, so the new thread runs on the parent thread’s TLS.<br>And the render thread called bionic’s <code>snprintf</code> (log printing) — inside, bionic stdio goes through the<br><code>__nbuf</code> thread-local buffer pool, i.e. <strong>TLS</strong>. The child writing through someone else’s TLS corrupts the thread structure,<br>and when it explodes depends on timing (hence: fine at 20s, crash at 60s).</li>
+<li><strong>Shared signal handlers.</strong> Under <code>CLONE_SIGHAND</code>, the SIGSEGV&#x2F;SIGALRM handler may be executed by<br>any thread, and the handler contains <code>siglongjmp</code> — a cross-thread longjmp is undefined behavior.</li>
+</ol>
+<p>The fix (v16i): at the render thread’s entry, <code>rt_sigprocmask</code> first masks all signals of the process handlers;<br>inside the thread, disable every TLS-touching libc call (<code>P</code>&#x2F;<code>snprintf</code> become hand-written <code>write</code> syscalls;<br>memcpy is pure assembly, uses no TLS, kept). After the fix, the 60s long test <strong>no longer crashes</strong>.</p>
+<blockquote>
+<p><strong>The bare-clone thread iron rule</strong>: inside a child thread, only raw syscalls and compiler-builtin memcpy are allowed;<br>the first act on entering the thread is to mask signals; snprintf&#x2F;P macros are contraband, full stop.</p>
+</blockquote>
+<h2 id="Negative-Optimization-5-After-the-Fix-the-Pipeline-Got-Slower"><a href="#Negative-Optimization-5-After-the-Fix-the-Pipeline-Got-Slower" class="headerlink" title="Negative Optimization 5: After the Fix, the Pipeline Got Slower"></a>Negative Optimization 5: After the Fix, the Pipeline Got Slower</h2><p>Not crashing only earned the right to experiment; the single-variable comparison:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Group A (dual-thread pipeline): 12.3fps, wall clock 80ms (metric includes overlap)</span><br><span class="line">Group B (single thread):        15.7fps, wall clock 116ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>22% slower.</strong> Attribution:</p>
+<ul>
+<li>DRIVE did drop from 21ms to 18ms, but the <strong>43ms memcpy didn’t budge</strong> (this is the bottleneck at the tail of the chain);</li>
+<li>both threads hammer memory bandwidth; L2 contention slows reads on both sides;</li>
+<li>the <code>usleep(200µs)</code> granularity of the handshake turns the intended pipelined parallelism back into half-serial;</li>
+<li>render’s 32ms is completely buried under the worker’s 62ms — pure waste.</li>
+</ul>
+<p>Android’s BufferQueue works on the premise of “multiple output buffers rotating + an asynchronous decoder”;<br>we have <code>g_nout=1</code>, a single output path, and synchronous blocking decode — hanging a render thread on top just moves<br>the serialization elsewhere. <strong>When the architecture doesn’t match, copying the shape is useless.</strong></p>
+<h2 id="So-How-Do-We-Actually-Get-Fast"><a href="#So-How-Do-We-Actually-Get-Fast" class="headerlink" title="So How Do We Actually Get Fast?"></a>So How Do We Actually Get Fast?</h2><p>Put three numbers together and the roadmap draws itself:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">DRIVE 21ms (of which hardware decode 14ms, library-side paperwork 7ms — near the limit)</span><br><span class="line">memcpy 43ms (3MB uncached — the only target)</span><br><span class="line">render 32ms (can be buried by pipelining, but burying it yields no net gain)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>First cut: switch ION to cached mapping.</strong> Allocate with <code>ION_FLAG_CACHED</code> and run <code>ION_IOC_SYNC</code><br>to invalidate every frame. The memcpy goes from “uncached sequential bulk” to “cached bulk”, expected 43ms→10ms<br>magnitude, total wall clock 116→~75ms, <strong>20fps+</strong>. The risk is DMA coherency (VSP writes, CPU reads a stale cache<br>→ screen corruption), so it must be rolled out gradually.</li>
+<li><strong>Second cut: cache the DRIVE library-side 7-18ms phys ioctl</strong> (build an fd→PA table, look up once, use it long-term).</li>
+<li><strong>Third cut: fb_render’s 32ms</strong> — with NEON disabled in the ARMv7 build, do loop unrolling and<br>8-pixel prefetching.</li>
+<li><strong>The metaphysical cut: display driver overlay.</strong> If the sprd DPU can take NV12 + rotation directly, the entire CPU composition<br>disappears — the real killer move for catching up to Android’s 50fps, but it requires recon of the driver’s capabilities.</li>
+</ul>
+<h2 id="Methodology-Deposit"><a href="#Methodology-Deposit" class="headerlink" title="Methodology Deposit"></a>Methodology Deposit</h2><ol>
+<li><strong>Anything that “obviously looks like the big-ticket item” must be A&#x2F;B verified.</strong> Three of this round’s five (signature, LUT, direct read)<br>crashed against measurement, two of them counter-intuitively.</li>
+<li><strong>With every optimization added, A&#x2F;B an old behavior in parallel as counter-evidence.</strong> Without a B group there is no conclusion,<br>only a feeling.</li>
+<li><strong>Performance attribution must reach the memory-attribute layer.</strong> uncached&#x2F;cached, sequential&#x2F;random, hit&#x2F;miss,<br>explain order-of-magnitude differences better than algorithm-level optimizations.</li>
+<li><strong>Before shipping any risky runtime abstraction (bare threads), first confirm it survives 3x the duration.</strong><br>20 seconds running doesn’t mean 60 seconds will — timing bugs don’t pick times, only probabilities.</li>
+<li>Device reboot &#x3D; the prime suspect for truncated <code>/tmp</code> files. When an md5 doesn’t match, suspect power loss first, code second.</li>
+</ol>
+<hr>
+<p><em>Previous part: nettv-14 “From 6.3fps to 17fps: The O_SYNC Logging and a dup2 Misjudgment”</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#The-One-Sentence-Conclusion"><span class="toc-number">1.</span> <span class="toc-text">The One-Sentence Conclusion</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Background-The-116ms-Wall"><span class="toc-number">2.</span> <span class="toc-text">Background: The 116ms Wall</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Disproof-1-Down-Rating-the-Signature-Scan-%E2%80%94-%E2%80%9C25ms-of-the-45ms-Frame-Readback-Is-Scanning%E2%80%9D"><span class="toc-number">3.</span> <span class="toc-text">Disproof 1: Down-Rating the Signature Scan — “25ms of the 45ms Frame Readback Is Scanning”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Disproof-2-LUT-izing-fb-render-%E2%80%94-%E2%80%9CEliminate-3-Multiplications-per-Pixel%E2%80%9D"><span class="toc-number">4.</span> <span class="toc-text">Disproof 2: LUT-izing fb_render — “Eliminate 3 Multiplications per Pixel”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Disproof-3-Reading-ION-Directly-to-Skip-the-memcpy-%E2%80%94-%E2%80%9Ccopy-is-pure-waste%E2%80%9D"><span class="toc-number">5.</span> <span class="toc-text">Disproof 3: Reading ION Directly to Skip the memcpy — “copy is pure waste”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Wreck-4-The-Bare-clone-Dual-Thread-Pipeline-%E2%80%94-Two-Reboots"><span class="toc-number">6.</span> <span class="toc-text">Wreck 4: The Bare clone Dual-Thread Pipeline — Two Reboots</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Negative-Optimization-5-After-the-Fix-the-Pipeline-Got-Slower"><span class="toc-number">7.</span> <span class="toc-text">Negative Optimization 5: After the Fix, the Pipeline Got Slower</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#So-How-Do-We-Actually-Get-Fast"><span class="toc-number">8.</span> <span class="toc-text">So How Do We Actually Get Fast?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Methodology-Deposit"><span class="toc-number">9.</span> <span class="toc-text">Methodology Deposit</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&text=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&title=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&is_video=false&description=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&title=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&title=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&title=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&title=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/&name=netTV Hardware Decoding Deep Dive (15): Five Consecutive Disproofs — Why Every &#39;Obvious&#39; Optimization Failed, and How a Bare clone Thread Kept Rebooting the Device&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

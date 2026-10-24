@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  背景：一句話交代播放器連續兩輪 A&#x2F;B 都是零影格，日誌裡刷屏： 1234Error relocating &#x2F;system&#x2F;lib&#x2F;libc++.so: __strlen_chk: symbol not foundE">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  背景：一句話交代播放器連續兩輪 A&#x2F;B 都是零影格，日誌裡刷屏： 1234Error relocating &#x2F;system&#x2F;lib&#x2F;libc++.so: __strlen_chk: symbol not foundE">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-20T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:06:23.379Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="sprd">
+<meta property="article:tag" content="bionic">
+<meta property="article:tag" content="musl">
+<meta property="article:tag" content="LD_LIBRARY_PATH">
+<meta property="article:tag" content="exec">
+<meta property="article:tag" content="排障">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/21/nettv-18-dl-child-exec-ld-library-path-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/21/nettv-18-dl-child-exec-ld-library-path/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&text=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&title=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&is_video=false&description=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱&body=Check out this article: https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&title=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&title=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&title=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&title=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&name=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF%EF%BC%9A%E4%B8%80%E5%8F%A5%E8%A9%B1%E4%BA%A4%E4%BB%A3"><span class="toc-number">1.</span> <span class="toc-text">背景：一句話交代</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1"><span class="toc-number">2.</span> <span class="toc-text">現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%92%E6%9F%A5%EF%BC%9A%E5%85%88%E5%88%A5%E6%80%A5%E8%91%97%E4%B8%8B%E7%B5%90%E8%AB%96"><span class="toc-number">3.</span> <span class="toc-text">排查：先別急著下結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%AE%E6%B3%95%EF%BC%9A%E5%8F%AA%E6%91%98%E5%AD%90%E8%A1%8C%E7%A8%8B%E7%9A%84%E7%92%B0%E5%A2%83%E8%AE%8A%E6%95%B8"><span class="toc-number">4.</span> <span class="toc-text">修法：只摘子行程的環境變數</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E6%A2%9D%E6%96%B9%E6%B3%95%E8%AB%96%EF%BC%88%E6%AF%94%E9%80%99%E5%80%8B-bug-%E6%9C%AC%E8%BA%AB%E5%80%BC%E9%8C%A2%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">三條方法論（比這個 bug 本身值錢）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A0%86%E5%B8%B6%EF%BC%9A%E8%B7%A8-libc-%E7%9A%84%E8%A1%8C%E7%A8%8B%E6%A8%B9%E8%A6%81%E7%89%B9%E5%88%A5%E5%B0%8F%E5%BF%83"><span class="toc-number">6.</span> <span class="toc-text">順帶：跨 libc 的行程樹要特別小心</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-20T18:00:00.000Z" itemprop="datePublished">2026-10-21</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/LD-LIBRARY-PATH/" rel="tag">LD_LIBRARY_PATH</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/bionic/" rel="tag">bionic</a>, <a class="tag-link-link" href="/tags/exec/" rel="tag">exec</a>, <a class="tag-link-link" href="/tags/musl/" rel="tag">musl</a>, <a class="tag-link-link" href="/tags/sprd/" rel="tag">sprd</a>, <a class="tag-link-link" href="/tags/%E6%8E%92%E9%9A%9C/" rel="tag">排障</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。</p>
+</blockquote>
+<h2 id="背景：一句話交代"><a href="#背景：一句話交代" class="headerlink" title="背景：一句話交代"></a>背景：一句話交代</h2><p>播放器連續兩輪 A&#x2F;B 都是<strong>零影格</strong>，日誌裡刷屏：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Error relocating /system/lib/libc++.so: __strlen_chk: symbol not found</span><br><span class="line">Error relocating /system/lib/libc++.so: __errno: symbol not found</span><br><span class="line">Error relocating /system/lib/libz.so.1: __register_atfork: symbol not found</span><br><span class="line">  [http] reap status=0x7f00 (0=成功, 0x7f00=execl失败)</span><br></pre></td></tr></table></figure>
+
+<p>我上一輪把它記成了「libc++ 連結壞／映像檔版本不符」，準備去折騰系統函式庫。<strong>這是錯的</strong>，而且是個很典型的誤判。</p>
+<h2 id="現象"><a href="#現象" class="headerlink" title="現象"></a>現象</h2><p><code>nettv_player</code> 用 <code>fork()</code> + <code>execl(&quot;/usr/bin/curl&quot;, ...)</code> 下載 HLS 的 TS 分片。子行程結束碼 127（父行程只看到 <code>status=0x7f00</code>），TS 永遠拿不到 ⇒ 解碼器沒有輸入 ⇒ 零影格。</p>
+<h2 id="排查：先別急著下結論"><a href="#排查：先別急著下結論" class="headerlink" title="排查：先別急著下結論"></a>排查：先別急著下結論</h2><p>關鍵在於<strong>那些「找不到符號」是不是真的不存在</strong>。我先在設備上確認：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ grep __strlen_chk 的符號是否存在於 /mnt/android_sys/lib/libc.so</span><br><span class="line">strings /mnt/android_sys/lib/libc.so | grep __strlen_chk    # 有，2 處</span><br></pre></td></tr></table></figure>
+
+<p>符號明明就在。那「symbol not found」就不是「缺符號」，而是<strong>「從錯誤的 libc 裡找」</strong>。</p>
+<p>再看執行體：<code>/usr/bin/curl</code> 是 <strong>Alpine musl</strong> 程式，<code>readelf -d</code> 顯示它 NEEDED 三個函式庫：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">libcurl.so.4  libz.so.1  libc.musl-armhf.so.1</span><br></pre></td></tr></table></figure>
+
+<p>而我們的 <code>nettv_player</code> 是 <strong>bionic</strong> 程式，執行環境裡帶著：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">export LD_LIBRARY_PATH=/system/lib:/mnt/android_sys/lib    # 載入安卓廠商函式庫必需</span><br></pre></td></tr></table></figure>
+
+<p><code>fork()</code> 會繼承整個 <code>environ</code>，<code>execl()</code> 不清理 ⇒ <strong>musl 的動態連結器照著 <code>LD_LIBRARY_PATH</code> 去 <code>/system/lib</code> 找 <code>libz.so.1</code>，抓到的是 bionic 的 libz</strong>。bionic 的 libz 又 NEEDED <code>libc++.so</code>，於是 musl 繼續去載入 bionic 的 <code>libc++.so</code>——它要的 <code>__strlen_chk</code> &#x2F; <code>__errno</code> &#x2F; <code>__memchr_chk</code> 在 <strong>musl libc</strong> 裡當然沒有，連結器直接 <code>exit(127)</code>。</p>
+<p>一句話重現／一句話反證：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ LD_LIBRARY_PATH=/system/lib curl -s -o /dev/null -w &#x27;%&#123;http_code&#125;&#x27; http://baidu.com</span><br><span class="line">Error relocating /system/lib/libz.so.1: __register_atfork: symbol not found</span><br><span class="line">...（一螢幕）</span><br><span class="line">$ curl -s -o /dev/null -w &#x27;%&#123;http_code&#125;&#x27; http://baidu.com</span><br><span class="line">301</span><br></pre></td></tr></table></figure>
+
+<h2 id="修法：只摘子行程的環境變數"><a href="#修法：只摘子行程的環境變數" class="headerlink" title="修法：只摘子行程的環境變數"></a>修法：只摘子行程的環境變數</h2><p>在 <code>fork()</code> 出來的孩子行程裡、exec 之前，把 <code>LD_*</code> 從 <code>environ</code> 摘掉（COW，不影響父行程）：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">musl_child_sanitize_env</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">extern</span> <span class="type">char</span> **environ;</span><br><span class="line">    <span class="keyword">if</span> (!environ) <span class="keyword">return</span>;</span><br><span class="line">    <span class="type">int</span> o = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; environ[i]; i++) &#123;</span><br><span class="line">        <span class="type">const</span> <span class="type">char</span> *e = environ[i];</span><br><span class="line">        <span class="keyword">if</span> (e[<span class="number">0</span>] == <span class="string">&#x27;L&#x27;</span> &amp;&amp; e[<span class="number">1</span>] == <span class="string">&#x27;D&#x27;</span> &amp;&amp; e[<span class="number">2</span>] == <span class="string">&#x27;_&#x27;</span>) <span class="keyword">continue</span>;  <span class="comment">/* LD_LIBRARY_PATH / LD_PRELOAD ... */</span></span><br><span class="line">        environ[o++] = environ[i];</span><br><span class="line">    &#125;</span><br><span class="line">    environ[o] = (<span class="type">char</span> *)<span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在兩處 <code>fork</code> 子行程的 exec 前呼叫（curl 下載、mplayer 音訊，都是 musl 程式）。父行程自己的 <code>LD_LIBRARY_PATH</code> 保持不變——bionic 側還要靠它 dlopen 展訊的 VSP 廠商函式庫。</p>
+<p>驗證：同樣帶著 <code>LD_LIBRARY_PATH=/system/lib</code> 跑一輪，<code>Error relocating</code> <strong>0 次</strong>、<code>reap status=0x7f00</code> <strong>0 次</strong>，解碼器正常吃到 TS 並推進到餵 IDR。</p>
+<h2 id="三條方法論（比這個-bug-本身值錢）"><a href="#三條方法論（比這個-bug-本身值錢）" class="headerlink" title="三條方法論（比這個 bug 本身值錢）"></a>三條方法論（比這個 bug 本身值錢）</h2><ol>
+<li><strong>「symbol not found」要先區分「沒有」還是「找錯地方」</strong>。查一下符號在不在目標函式庫裡，就能立刻把「映像檔壞了」這種大結論否掉。</li>
+<li><strong>錯誤現象發生在子行程，不要只看父行程的日誌</strong>。<code>0x7f00</code> 是父行程轉述的，真相在子行程 stderr 的第一行。</li>
+<li>★ <strong>A&#x2F;B 兩組同時零影格 &#x3D; 環境問題，不是被測項無效</strong>。我一開始差點把它讀成「ION cached 無效」，實際上是<strong>基線組也出不了影格</strong>，對比根本不成立。<strong>先證明基線能出影格，再談對比。</strong></li>
+</ol>
+<h2 id="順帶：跨-libc-的行程樹要特別小心"><a href="#順帶：跨-libc-的行程樹要特別小心" class="headerlink" title="順帶：跨 libc 的行程樹要特別小心"></a>順帶：跨 libc 的行程樹要特別小心</h2><p>這台設備是一個很罕見的混合環境：Alpine&#x2F;musl 的用戶態 + 安卓 bionic 的廠商函式庫。只要行程樹裡同時存在兩種 libc 的程式，任何「給連結器看的環境變數」（<code>LD_LIBRARY_PATH</code> &#x2F; <code>LD_PRELOAD</code>）都會變成<strong>單向污染</strong>：bionic 需要的變數，對 musl 子行程是毒藥。</p>
+<blockquote>
+<p>本文為原創，轉載請註明出處。</p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF%EF%BC%9A%E4%B8%80%E5%8F%A5%E8%A9%B1%E4%BA%A4%E4%BB%A3"><span class="toc-number">1.</span> <span class="toc-text">背景：一句話交代</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E8%B1%A1"><span class="toc-number">2.</span> <span class="toc-text">現象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%92%E6%9F%A5%EF%BC%9A%E5%85%88%E5%88%A5%E6%80%A5%E8%91%97%E4%B8%8B%E7%B5%90%E8%AB%96"><span class="toc-number">3.</span> <span class="toc-text">排查：先別急著下結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%AE%E6%B3%95%EF%BC%9A%E5%8F%AA%E6%91%98%E5%AD%90%E8%A1%8C%E7%A8%8B%E7%9A%84%E7%92%B0%E5%A2%83%E8%AE%8A%E6%95%B8"><span class="toc-number">4.</span> <span class="toc-text">修法：只摘子行程的環境變數</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E6%A2%9D%E6%96%B9%E6%B3%95%E8%AB%96%EF%BC%88%E6%AF%94%E9%80%99%E5%80%8B-bug-%E6%9C%AC%E8%BA%AB%E5%80%BC%E9%8C%A2%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">三條方法論（比這個 bug 本身值錢）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A0%86%E5%B8%B6%EF%BC%9A%E8%B7%A8-libc-%E7%9A%84%E8%A1%8C%E7%A8%8B%E6%A8%B9%E8%A6%81%E7%89%B9%E5%88%A5%E5%B0%8F%E5%BF%83"><span class="toc-number">6.</span> <span class="toc-text">順帶：跨 libc 的行程樹要特別小心</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&text=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&title=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&is_video=false&description=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱&body=Check out this article: https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&title=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&title=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&title=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&title=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/&name=nettv-18：子行程的 exec 為什麼會「莫名 127」——bionic 父行程 + musl 子行程的 LD_LIBRARY_PATH 陷阱&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

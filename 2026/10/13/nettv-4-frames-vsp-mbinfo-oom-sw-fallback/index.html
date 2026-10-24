@@ -6,20 +6,20 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="netTV 只出 4 帧的真因一、现象展讯 SC9832A 设备上「网络电视」播放 1080p m3u8 直播流，每轮只能出 4 帧，然后画面定格；等喂到第二个 IDR 时必崩（SIGSEGV addr&#x3D;0x747474）或永久挂起，只能靠监控进程重启，表现为「4 帧一轮」的幻灯模式。 前几轮排查一直把结论记成「厂商库缺陷：第二个 IDR 必挂死」，并做了绕过（检测到第二个 IDR 就主动重生）。">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English  netTV 只出 4 帧的真因一、现象展讯 SC9832A 设备上「网络电视」播放 1080p m3u8 直播流，每轮只能出 4 帧，然后画面定格；等喂到第二个 IDR 时必崩（SIGSEGV addr&#x3D;0x747474）或永久挂起，只能靠监控进程重启，表现为「4 帧一轮」的幻灯模式。 前几轮排查一直把结论记成「厂商库缺陷：第二个 IDR">
 <meta property="og:type" content="article">
 <meta property="og:title" content="netTV 只出 4 帧的真因：VSP mbinfo 内存池耗尽触发硬解降级软解（不是“第二个 IDR”的锅）">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="netTV 只出 4 帧的真因一、现象展讯 SC9832A 设备上「网络电视」播放 1080p m3u8 直播流，每轮只能出 4 帧，然后画面定格；等喂到第二个 IDR 时必崩（SIGSEGV addr&#x3D;0x747474）或永久挂起，只能靠监控进程重启，表现为「4 帧一轮」的幻灯模式。 前几轮排查一直把结论记成「厂商库缺陷：第二个 IDR 必挂死」，并做了绕过（检测到第二个 IDR 就主动重生）。">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English  netTV 只出 4 帧的真因一、现象展讯 SC9832A 设备上「网络电视」播放 1080p m3u8 直播流，每轮只能出 4 帧，然后画面定格；等喂到第二个 IDR 时必崩（SIGSEGV addr&#x3D;0x747474）或永久挂起，只能靠监控进程重启，表现为「4 帧一轮」的幻灯模式。 前几轮排查一直把结论记成「厂商库缺陷：第二个 IDR">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-12T18:30:00.000Z">
-<meta property="article:modified_time" content="2026-10-13T05:01:22.420Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:52.109Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="nettv">
 <meta property="article:tag" content="ION">
-<meta property="article:tag" content="VSP硬解">
 <meta property="article:tag" content="CMA">
+<meta property="article:tag" content="VSP硬解">
 <meta property="article:tag" content="故障修复">
 <meta name="twitter:card" content="summary">
     
@@ -78,10 +78,10 @@
   <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/zh-tw/2026/10/13/blog-i18n-architecture/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" href="/en/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -147,7 +147,10 @@
   
 
   <div class="content" itemprop="articleBody">
-    <h1 id="netTV-只出-4-帧的真因"><a href="#netTV-只出-4-帧的真因" class="headerlink" title="netTV 只出 4 帧的真因"></a>netTV 只出 4 帧的真因</h1><h2 id="一、现象"><a href="#一、现象" class="headerlink" title="一、现象"></a>一、现象</h2><p>展讯 SC9832A 设备上「网络电视」播放 1080p m3u8 直播流，每轮只能出 <strong>4 帧</strong>，然后画面定格；等喂到第二个 IDR 时必崩（<code>SIGSEGV addr=0x747474</code>）或永久挂起，只能靠监控进程重启，表现为「4 帧一轮」的幻灯模式。</p>
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/">English</a></p>
+</blockquote>
+<h1 id="netTV-只出-4-帧的真因"><a href="#netTV-只出-4-帧的真因" class="headerlink" title="netTV 只出 4 帧的真因"></a>netTV 只出 4 帧的真因</h1><h2 id="一、现象"><a href="#一、现象" class="headerlink" title="一、现象"></a>一、现象</h2><p>展讯 SC9832A 设备上「网络电视」播放 1080p m3u8 直播流，每轮只能出 <strong>4 帧</strong>，然后画面定格；等喂到第二个 IDR 时必崩（<code>SIGSEGV addr=0x747474</code>）或永久挂起，只能靠监控进程重启，表现为「4 帧一轮」的幻灯模式。</p>
 <p>前几轮排查一直把结论记成「厂商库缺陷：第二个 IDR 必挂死」，并做了绕过（检测到第二个 IDR 就主动重生）。<strong>这个结论是错的</strong>——第二个 IDR 只是次生现象。</p>
 <h2 id="二、真正的根因链"><a href="#二、真正的根因链" class="headerlink" title="二、真正的根因链"></a>二、真正的根因链</h2><p>关键做法：不要只看「崩在哪一轮」，要把<strong>每一轮投喂的返回码</strong>拉成一条时间线。用正则把日志里每个 AU 的 <code>decRet / frameEffective / consume byte</code> 抽出来，结果一目了然：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">AU[  3] sz= 106336 t=5  ret=0   eff=0 cons=106336   ← 第一个 IDR，解码成功</span><br><span class="line">AU[  4] sz=   8983 t=1  ret=0   eff=0 cons=8983</span><br><span class="line">...</span><br><span class="line">AU[  9] sz=  13967 t=1  ret=0   eff=0 cons=13967    ← 出第 4 帧</span><br><span class="line">AU[ 10] sz=  17116 t=1  ret=-3  eff=0 cons=17116    ← ★ 突变点</span><br><span class="line">AU[ 11] sz=  13424 t=1  ret=-9  eff=0 cons=13424    ← 从此恒 -9</span><br><span class="line">AU[ 12..35]                 ret=-9  needIVOP:1 ...</span><br></pre></td></tr></table></figure>

@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="背景：一句话交代昨天我们把帧率瓶颈精确定位到 「YUV→RGB→framebuffer」这一步（三条完全不同的链路撞同一堵墙），所以我把「显示控制器硬件 overlay 直吃 NV12」列为唯一出路。 豆包的方案里也是这么说的：  弃用 Mali 做 YUV 转换，改用显示控制器硬件旋转 + YUV 转换。SC9832A 的显示模块本身支持 YUV 输入和画面旋转。把 NV12 帧直接送显示层，M">
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English  背景：一句话交代昨天我们把帧率瓶颈精确定位到 「YUV→RGB→framebuffer」这一步（三条完全不同的链路撞同一堵墙），所以我把「显示控制器硬件 overlay 直吃 NV12」列为唯一出路。 豆包的方案里也是这么说的：  弃用 Mali 做 YUV 转换，改用显示控制器硬件旋转 + YUV 转换。SC9832A 的显示模块本身支">
 <meta property="og:type" content="article">
 <meta property="og:title" content="nettv-17：overlay recon 判负——当&quot;唯一出路&quot;被证伪时，我们剩下什么">
 <meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative/index.html">
 <meta property="og:site_name" content="wlb">
-<meta property="og:description" content="背景：一句话交代昨天我们把帧率瓶颈精确定位到 「YUV→RGB→framebuffer」这一步（三条完全不同的链路撞同一堵墙），所以我把「显示控制器硬件 overlay 直吃 NV12」列为唯一出路。 豆包的方案里也是这么说的：  弃用 Mali 做 YUV 转换，改用显示控制器硬件旋转 + YUV 转换。SC9832A 的显示模块本身支持 YUV 输入和画面旋转。把 NV12 帧直接送显示层，M">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English  背景：一句话交代昨天我们把帧率瓶颈精确定位到 「YUV→RGB→framebuffer」这一步（三条完全不同的链路撞同一堵墙），所以我把「显示控制器硬件 overlay 直吃 NV12」列为唯一出路。 豆包的方案里也是这么说的：  弃用 Mali 做 YUV 转换，改用显示控制器硬件旋转 + YUV 转换。SC9832A 的显示模块本身支">
 <meta property="og:locale">
 <meta property="article:published_time" content="2026-10-20T05:10:00.000Z">
-<meta property="article:modified_time" content="2026-10-20T05:07:32.203Z">
+<meta property="article:modified_time" content="2026-10-24T06:37:04.224Z">
 <meta property="article:author" content="white leibniz">
 <meta property="article:tag" content="SC9832A">
 <meta property="article:tag" content="Mali">
@@ -80,7 +80,7 @@
   <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/2026/10/20/nettv-13-o-sync-logging-bottleneck/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" href="/2026/10/20/nettv-17-overlay-recon-negative-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
         <li><a class="icon" href="/2026/10/20/nettv-16-hw-decoding-slower-than-sw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
@@ -149,7 +149,10 @@
   
 
   <div class="content" itemprop="articleBody">
-    <h2 id="背景：一句话交代"><a href="#背景：一句话交代" class="headerlink" title="背景：一句话交代"></a>背景：一句话交代</h2><p>昨天我们把帧率瓶颈精确定位到 <strong>「YUV→RGB→framebuffer」这一步</strong>（三条完全不同的链路撞同一堵墙），所以我把「显示控制器硬件 overlay 直吃 NV12」列为唯一出路。</p>
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/">English</a></p>
+</blockquote>
+<h2 id="背景：一句话交代"><a href="#背景：一句话交代" class="headerlink" title="背景：一句话交代"></a>背景：一句话交代</h2><p>昨天我们把帧率瓶颈精确定位到 <strong>「YUV→RGB→framebuffer」这一步</strong>（三条完全不同的链路撞同一堵墙），所以我把「显示控制器硬件 overlay 直吃 NV12」列为唯一出路。</p>
 <p>豆包的方案里也是这么说的：</p>
 <blockquote>
 <p>弃用 Mali 做 YUV 转换，改用显示控制器硬件旋转 + YUV 转换。SC9832A 的显示模块本身支持 YUV 输入和画面旋转。把 NV12 帧直接送显示层，Mali 只用来叠加 UI 字幕。</p>

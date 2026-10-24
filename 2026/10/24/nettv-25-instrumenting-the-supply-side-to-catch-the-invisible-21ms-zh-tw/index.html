@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  上一篇把連續播放拉到 386 秒，穩定性達標，卻留下一筆對不上的帳：AU 平均牆鐘 62.6 ms，而所有分段計時器加起來只有 40.4 ms，21.6 ms 沒有任何計時器認領。這次裝置離線（RNDIS 未列舉、WiFi 也">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English   版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。  上一篇把連續播放拉到 386 秒，穩定性達標，卻留下一筆對不上的帳：AU 平均牆鐘 62.6 ms，而所有分段計時器加起來只有 40.4 ms，21.6 ms 沒有任何計時器認領。這次裝置離線（RNDIS 未列舉、WiFi 也">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-23T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T06:19:01.956Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="展訊">
+<meta property="article:tag" content="影格率">
+<meta property="article:tag" content="rb_take">
+<meta property="article:tag" content="m3u8">
+<meta property="article:tag" content="效能剖析">
+<meta property="article:tag" content="直播">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&text=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&title=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&is_video=false&description=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計&body=Check out this article: https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&title=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&title=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&title=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&title=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&name=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%B8%B3%E7%82%BA%E4%BB%80%E9%BA%BC%E5%B0%8D%E4%B8%8D%E4%B8%8A"><span class="toc-number">1.</span> <span class="toc-text">一、帳為什麼對不上</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%85%88%E9%9D%A0%E9%A0%90%E8%A8%AD%E9%85%8D%E7%BD%AE%E6%8E%92%E9%99%A4%E6%8E%89%E4%B8%89%E5%80%8B%E5%AB%8C%E7%96%91"><span class="toc-number">2.</span> <span class="toc-text">二、先靠預設配置排除掉三個嫌疑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%84%80%E5%99%A8%E5%8C%96%E5%81%9A%E4%BA%86%E4%BB%80%E9%BA%BC%EF%BC%8810-24-%E9%9B%A2%E7%B7%9A%E6%94%B9%E5%8B%95%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">三、儀器化做了什麼（10-24 離線改動）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%8E%E9%BA%BC%E8%AE%80%E4%B8%8B%E4%B8%80%E6%AC%A1%E7%9A%84-perf-%E8%A1%8C"><span class="toc-number">4.</span> <span class="toc-text">四、怎麼讀下一次的 perf 行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%96%B9%E6%B3%95%E8%AB%96%E6%B2%89%E6%BE%B1"><span class="toc-number">5.</span> <span class="toc-text">五、方法論沉澱</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E7%8B%80%E6%85%8B"><span class="toc-number">6.</span> <span class="toc-text">六、狀態</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-23T18:00:00.000Z" itemprop="datePublished">2026-10-24</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/m3u8/" rel="tag">m3u8</a>, <a class="tag-link-link" href="/tags/rb-take/" rel="tag">rb_take</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A/" rel="tag">展訊</a>, <a class="tag-link-link" href="/tags/%E5%BD%B1%E6%A0%BC%E7%8E%87/" rel="tag">影格率</a>, <a class="tag-link-link" href="/tags/%E6%95%88%E8%83%BD%E5%89%96%E6%9E%90/" rel="tag">效能剖析</a>, <a class="tag-link-link" href="/tags/%E7%9B%B4%E6%92%AD/" rel="tag">直播</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。</p>
+</blockquote>
+<p>上一篇把連續播放拉到 386 秒，穩定性達標，卻留下一筆<strong>對不上的帳</strong>：AU 平均牆鐘 62.6 ms，而所有分段計時器加起來只有 40.4 ms，<strong>21.6 ms 沒有任何計時器認領</strong>。這次裝置離線（RNDIS 未列舉、WiFi 也不通），沒辦法上機測，那就做離線最該做的事——<strong>把儀表裝好</strong>，讓下一輪開機就能直接讀出那 21.6 ms 是誰。</p>
+<h2 id="一、帳為什麼對不上"><a href="#一、帳為什麼對不上" class="headerlink" title="一、帳為什麼對不上"></a>一、帳為什麼對不上</h2><p>現有分段計時只覆蓋了四塊：段迴圈（bsOnMsg + 睡眠 + 9c 等）、snap、讀影格、渲染。可是 worker 一輪 AU 裡做的事遠不止這些：</p>
+<table>
+<thead>
+<tr>
+<th>未計時區域</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>rb_take()</code></td>
+<td>環空時 <code>usleep(2000)</code> 空轉等 dl 供數，2 ms 粒度平均白睡 1 ms</td>
+</tr>
+<tr>
+<td>取到 NAL 之後到 <code>DRIVE</code> 之前</td>
+<td>NAL 拷出、分片、補 out 佇列、配額判斷</td>
+</tr>
+<tr>
+<td>IDR 扎堆冷卻</td>
+<td><code>g_idr_gap_ms</code> 非零時主動 <code>usleep</code></td>
+</tr>
+<tr>
+<td>影格間隔下限</td>
+<td><code>g_fps_ms</code> 非零時的鋪影格 <code>usleep</code></td>
+</tr>
+</tbody></table>
+<p>還有一個關鍵線索：<strong>單段檔案模式牆鐘 &#x3D; 剖析和，一毫秒不差</strong>。差額只在「邊下邊播」的直播鏈路出現——所以嫌疑集中在「等資料」，而不是「算得慢」。</p>
+<h2 id="二、先靠預設配置排除掉三個嫌疑"><a href="#二、先靠預設配置排除掉三個嫌疑" class="headerlink" title="二、先靠預設配置排除掉三個嫌疑"></a>二、先靠預設配置排除掉三個嫌疑</h2><p>不用上機就能砍掉一半候選，因為預設值擺在程式碼裡：</p>
+<ul>
+<li><code>g_gop_ms = 0</code>、<code>g_fps_ms = 0</code>（2026-10-19 定案：配額與鋪影格預設全關）⇒ <strong>GOP 預算跳過</strong>和<strong>影格間隔睡眠</strong>在預設跑法下恆為 0；</li>
+<li><code>g_idr_gap_ms</code> 只在相鄰 IDR 間隔 &lt; 1 s 時非零，而 GOP 約 2 s、解碼還慢於即時 ⇒ <strong>IDR 冷卻</strong>基本恆為 0；</li>
+<li><code>NETTV_PTSSYNC</code> 預設關 ⇒ PTS 丟影格分支不參與。</li>
+</ul>
+<p>於是預設路徑下最大的一號嫌疑就是 <strong><code>rb_take()</code> 空轉等供數</strong>。但「最大嫌疑」不等於「已定罪」，所以這次的做法不是直接改它，而是<strong>先把帳閉合</strong>。</p>
+<h2 id="三、儀器化做了什麼（10-24-離線改動）"><a href="#三、儀器化做了什麼（10-24-離線改動）" class="headerlink" title="三、儀器化做了什麼（10-24 離線改動）"></a>三、儀器化做了什麼（10-24 離線改動）</h2><p><strong>worker 側</strong>：新增四個計時桶 <code>g_t_take / g_t_pre / g_t_cool / g_t_pace</code>，外加兩個免費指標——</p>
+<ul>
+<li><strong>餘差</strong>：<code>牆鐘 − (段迴圈 + snap + 讀影格 + 渲染 + 取NAL + 準備 + 冷卻 + 節拍)</code>，每 200 個 AU 打一次；</li>
+<li><strong>rb 深度</strong>：每輪累計 <code>wpos − rpos</code>（未消費 NAL 數）的平均值。</li>
+</ul>
+<p>餘差 ≈ 0 就說明 21.6 ms 已經落在某個桶裡；餘差仍然大，就說明還有第五處，繼續二分。rb 深度則一眼區分兩種世界：<strong>深度長期≈0 ⇒ 消費者在等米下鍋（供數是瓶頸）；深度持續漲 ⇒ 消費是瓶頸</strong>。</p>
+<p><strong>dl 側</strong>：每段打一行 <code>[供數]</code>，四個數——</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[供数] 段N: 下载=Xms 入池=Yms 段间隙=Zms(EMA=…) rb深=D 背压=B</span><br></pre></td></tr></table></figure>
+
+<p>其中<strong>段間隙</strong>定義為「上一段最後 NAL 入池結束 → 本段開始入池」，也就是 rb 不再增長、worker 只能空轉的那段窗口；它的主要成分是 <code>audio_feed</code> 的段節拍阻塞。段間隙大，就該讓預取更深或提前拉段；下載耗時大，那是源限速，改程式碼沒用。</p>
+<p><strong>行為零改變</strong>：<code>rb_take</code> 的空轉粒度保留舊值 2000 µs，只新增 <code>NETTV_RBUS=N</code> 環境變數，等定位完成後可以直接做 2000&#x2F;500&#x2F;200 的 A&#x2F;B，不用重新編譯。</p>
+<h2 id="四、怎麼讀下一次的-perf-行"><a href="#四、怎麼讀下一次的-perf-行" class="headerlink" title="四、怎麼讀下一次的 perf 行"></a>四、怎麼讀下一次的 perf 行</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[perf] AU#N 均值: 墙钟=… 段循环=… (bsOnMsg=… 睡眠=… 9c等=…)</span><br><span class="line">       snap=… 读帧=… 渲染=… | 取NAL=… 准备=… 冷却=… 节拍=… | 余差=… rb深=… (ms)</span><br></pre></td></tr></table></figure>
+
+<p>判準表：</p>
+<table>
+<thead>
+<tr>
+<th>現象</th>
+<th>結論</th>
+<th>下一步</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>取NAL ≈ 21.6、rb深 ≈ 0</td>
+<td>供數真是瓶頸（坐實）</td>
+<td>量化段間隙 → 提前拉下一段 &#x2F; 加深預取</td>
+</tr>
+<tr>
+<td>餘差 ≈ 21.6、各桶都小</td>
+<td>還有第五處沒進桶</td>
+<td>繼續二分（多半是段尾收尾或丟影格分支）</td>
+</tr>
+<tr>
+<td>rb深持續 &gt; 幾百</td>
+<td>消費才是瓶頸</td>
+<td>回到渲染 23.8 ms 那條線</td>
+</tr>
+<tr>
+<td>餘差 ≈ 0 且取NAL≈0</td>
+<td>21.6 ms 是取樣偽影</td>
+<td>複核牆鐘統計口徑</td>
+</tr>
+</tbody></table>
+<h2 id="五、方法論沉澱"><a href="#五、方法論沉澱" class="headerlink" title="五、方法論沉澱"></a>五、方法論沉澱</h2><ol>
+<li><strong>帳對不上時先裝儀表，不要先改程式碼</strong>。直接把 <code>usleep(2000)</code> 改成 500 µs 也能「試試看」，但試完你不知道贏在哪兒、也不知道還有沒有第二處。</li>
+<li><strong>餘差法</strong>：把所有已知項加起來，把「未知」作為一個顯式打印的量。未知量一旦變成數字，定位就從猜變成查。</li>
+<li><strong>用預設值做靜態排除</strong>。三個候選根本不用上機——預設關閉的功能不可能在預設跑法裡產生 20 ms。先讀程式碼砍候選，再為上機留一個真正未知的量。</li>
+<li><strong>供&#x2F;消平衡的直讀指標比計時更有解釋力</strong>：計時告訴你「等了多久」，rb 深度告訴你「為什麼會等」。</li>
+</ol>
+<h2 id="六、狀態"><a href="#六、狀態" class="headerlink" title="六、狀態"></a>六、狀態</h2><p>本次<strong>裝置離線</strong>（RNDIS 未列舉，PC 側無 RNDIS 網卡），改動尚未編譯上機：</p>
+<ul>
+<li>原始碼：<code>outputs/sprd_msg_np_v2.c</code>（供數側儀器化，md5 <code>c15e558f</code>）</li>
+<li>驗收腳本：<code>outputs/_sup1024.sh</code>（編譯 v18 + 跑 150 s）、<code>outputs/_sup1024_fin.sh</code>（取判準）</li>
+</ul>
+<p>下次開機先確認新原始碼已就位 → 跑 <code>_sup1024.sh</code> → 3 分鐘後 <code>_sup1024_fin.sh</code> 讀數，按上面判準表決定下一步砍誰。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%B8%B3%E7%82%BA%E4%BB%80%E9%BA%BC%E5%B0%8D%E4%B8%8D%E4%B8%8A"><span class="toc-number">1.</span> <span class="toc-text">一、帳為什麼對不上</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%85%88%E9%9D%A0%E9%A0%90%E8%A8%AD%E9%85%8D%E7%BD%AE%E6%8E%92%E9%99%A4%E6%8E%89%E4%B8%89%E5%80%8B%E5%AB%8C%E7%96%91"><span class="toc-number">2.</span> <span class="toc-text">二、先靠預設配置排除掉三個嫌疑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%84%80%E5%99%A8%E5%8C%96%E5%81%9A%E4%BA%86%E4%BB%80%E9%BA%BC%EF%BC%8810-24-%E9%9B%A2%E7%B7%9A%E6%94%B9%E5%8B%95%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">三、儀器化做了什麼（10-24 離線改動）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%8E%E9%BA%BC%E8%AE%80%E4%B8%8B%E4%B8%80%E6%AC%A1%E7%9A%84-perf-%E8%A1%8C"><span class="toc-number">4.</span> <span class="toc-text">四、怎麼讀下一次的 perf 行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%96%B9%E6%B3%95%E8%AB%96%E6%B2%89%E6%BE%B1"><span class="toc-number">5.</span> <span class="toc-text">五、方法論沉澱</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E7%8B%80%E6%85%8B"><span class="toc-number">6.</span> <span class="toc-text">六、狀態</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&text=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&title=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&is_video=false&description=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計&body=Check out this article: https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&title=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&title=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&title=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&title=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/&name=netTV 硬解攻堅(25)：為「看不見的 21.6 ms」裝上儀表——供數側儀器化設計&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

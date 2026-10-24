@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言切換：简体中文 · 繁體中文 · English  一句話結論我們花了三週把 VSP 硬解鏈路從「零幀」調到「15.7fps」，然後我用同一條流、同一個播放器二進位檔跑了一次軟解對照： 12mplayer -vo null -nosound  →  25.0 fps   （純 H.264 解碼上限）我們自研 VSP 硬解鏈路      →  15.7 fps   （解碼+取影格+渲染全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言切換：简体中文 · 繁體中文 · English  一句話結論我們花了三週把 VSP 硬解鏈路從「零幀」調到「15.7fps」，然後我用同一條流、同一個播放器二進位檔跑了一次軟解對照： 12mplayer -vo null -nosound  →  25.0 fps   （純 H.264 解碼上限）我們自研 VSP 硬解鏈路      →  15.7 fps   （解碼+取影格+渲染全">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-20T03:45:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T05:41:03.511Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="效能分析">
+<meta property="article:tag" content="sprd">
+<meta property="article:tag" content="ARM">
+<meta property="article:tag" content="mplayer">
+<meta property="article:tag" content="OMX">
+<meta property="article:tag" content="軟解">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/20/nettv-16-hw-decoding-slower-than-sw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&text=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&title=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&is_video=false&description=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&title=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&title=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&title=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&title=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&name=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B5%90%E8%AB%96"><span class="toc-number">1.</span> <span class="toc-text">一句話結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E6%8A%8A-mplayer-%E9%80%99%E6%A2%9D%E8%B7%AF%E6%91%B8%E6%B8%85%E6%A5%9A"><span class="toc-number">2.</span> <span class="toc-text">一、先把 mplayer 這條路摸清楚</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%AE%83%E5%9C%A8%E5%93%AA%E3%80%81%E6%9C%89%E6%B2%92%E6%9C%89%E7%A1%AC%E8%A7%A3"><span class="toc-number">2.1.</span> <span class="toc-text">1. 它在哪、有沒有硬解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AE%83%E8%83%BD%E5%BE%80%E5%93%AA%E5%85%92%E8%BC%B8%E5%87%BA"><span class="toc-number">2.2.</span> <span class="toc-text">2. 它能往哪兒輸出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-ffmpeg-%E4%B9%9F%E4%B8%8D%E6%95%91%E5%A0%B4"><span class="toc-number">2.3.</span> <span class="toc-text">3. ffmpeg 也不救場</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%9C%9F%E6%AD%A3%E7%9A%84%E5%B0%8D%E7%85%A7%E5%AF%A6%E9%A9%97"><span class="toc-number">3.</span> <span class="toc-text">二、真正的對照實驗</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#A-%E7%B5%84%EF%BC%9Amplayer-%E7%B4%94%E8%A7%A3%E7%A2%BC%E4%B8%8A%E9%99%90"><span class="toc-number">3.1.</span> <span class="toc-text">A 組：mplayer 純解碼上限</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-%E7%B5%84%EF%BC%9A%E7%8F%BE%E6%9C%89%E8%BB%9F%E8%A7%A3%E9%8F%88%E8%B7%AF%EF%BC%88y4m-%E4%B8%AD%E8%BD%89%EF%BC%89"><span class="toc-number">3.2.</span> <span class="toc-text">B 組：現有軟解鏈路（y4m 中轉）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#C-%E7%B5%84%EF%BC%9A%E6%88%91%E5%80%91%E8%87%AA%E7%A0%94-VSP-%E7%A1%AC%E8%A7%A3"><span class="toc-number">3.3.</span> <span class="toc-text">C 組：我們自研 VSP 硬解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E7%B5%84%E4%B8%A6%E6%8E%92%E7%9C%8B"><span class="toc-number">3.4.</span> <span class="toc-text">三組並排看</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%80%99%E5%80%8B%E7%B5%90%E6%9E%9C%E7%82%BA%E4%BB%80%E9%BA%BC%E5%8F%8D%E7%9B%B4%E8%A6%BA"><span class="toc-number">4.</span> <span class="toc-text">三、這個結果為什麼反直覺</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%A0%86%E6%89%8B%E7%99%BC%E7%8F%BE%E7%9A%84%E5%85%A9%E6%A2%9D%E7%9C%9F%E7%A1%AC%E8%A7%A3%E8%B7%AF%E7%B7%9A"><span class="toc-number">5.</span> <span class="toc-text">四、順手發現的兩條真硬解路線</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#libomx-avcdec-hw-sprd-so"><span class="toc-number">5.1.</span> <span class="toc-text">libomx_avcdec_hw_sprd.so</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ION-cached-%E6%98%A0%E5%B0%84"><span class="toc-number">5.2.</span> <span class="toc-text">ION cached 映射</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%89%80%E4%BB%A5%E6%8E%A5%E4%B8%8B%E4%BE%86%E5%81%9A%E4%BB%80%E9%BA%BC"><span class="toc-number">6.</span> <span class="toc-text">五、所以接下來做什麼</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E6%96%B9%E6%B3%95%E8%AB%96%E5%B1%A4%E9%9D%A2%E7%9A%84%E4%B8%89%E6%A2%9D"><span class="toc-number">7.</span> <span class="toc-text">六、方法論層面的三條</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E6%9C%AC%E6%96%87%E6%B6%89%E5%8F%8A%E7%9A%84%E9%97%9C%E9%8D%B5%E4%BA%8B%E5%AF%A6"><span class="toc-number">8.</span> <span class="toc-text">附：本文涉及的關鍵事實</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-20T03:45:00.000Z" itemprop="datePublished">2026-10-20</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/ARM/" rel="tag">ARM</a>, <a class="tag-link-link" href="/tags/OMX/" rel="tag">OMX</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/mplayer/" rel="tag">mplayer</a>, <a class="tag-link-link" href="/tags/sprd/" rel="tag">sprd</a>, <a class="tag-link-link" href="/tags/%E6%95%88%E8%83%BD%E5%88%86%E6%9E%90/" rel="tag">效能分析</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>, <a class="tag-link-link" href="/tags/%E8%BB%9F%E8%A7%A3/" rel="tag">軟解</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言切換：<a href="https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/">English</a></p>
+</blockquote>
+<h2 id="一句話結論"><a href="#一句話結論" class="headerlink" title="一句話結論"></a>一句話結論</h2><p>我們花了三週把 VSP 硬解鏈路從「零幀」調到「15.7fps」，然後我用同一條流、同一個播放器二進位檔跑了一次軟解對照：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mplayer -vo null -nosound  →  25.0 fps   （純 H.264 解碼上限）</span><br><span class="line">我們自研 VSP 硬解鏈路      →  15.7 fps   （解碼+取影格+渲染全鏈）</span><br></pre></td></tr></table></figure>
+
+<p><strong>CPU 軟解比 VSP 硬解還快。</strong> 不是最佳化沒做好，是「解碼慢」這個前提從一開始就不成立。</p>
+<hr>
+<h2 id="一、先把-mplayer-這條路摸清楚"><a href="#一、先把-mplayer-這條路摸清楚" class="headerlink" title="一、先把 mplayer 這條路摸清楚"></a>一、先把 mplayer 這條路摸清楚</h2><p>用戶提了個方向：「能不能讓 mplayer 走 H.264 硬解」。偵察結果分三塊。</p>
+<h3 id="1-它在哪、有沒有硬解"><a href="#1-它在哪、有沒有硬解" class="headerlink" title="1. 它在哪、有沒有硬解"></a>1. 它在哪、有沒有硬解</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ ls /usr/bin/mplayer /usr/local/bin/mplayer</span><br><span class="line">ls: cannot access: No such file or directory     ← 不在 PATH</span><br><span class="line">$ find / -name &#x27;mplayer*&#x27;</span><br><span class="line">/home/lvgl_demo/lvgl_demo/libs/mplayer/mplayer     ← 專案自帶的靜態編譯二進位檔</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ mplayer -v</span><br><span class="line">MPlayer 1.4-13 (C) 2000-2019 MPlayer Team</span><br><span class="line">CPU: ARM</span><br></pre></td></tr></table></figure>
+
+<p><code>strings</code> 掃一遍，硬解相關符號一個都沒有：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ strings mplayer | grep -iE <span class="string">&#x27;libvpu|sprd_vsp|vdsp|hwaccel&#x27;</span></span><br><span class="line">（空）</span><br></pre></td></tr></table></figure>
+
+<p>唯一命中的 <code>&quot;For hardware decoders&quot;</code> 字串上下文是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hwmpa</span><br><span class="line">NicoDVB</span><br><span class="line">For hardware decoders</span><br><span class="line">Uncompressed PCM audio decoder          ← 音訊家族（libmpg123/ac3）</span><br></pre></td></tr></table></figure>
+
+<p>MPlayer 1.4 是 2019 年的分支，它的硬解支援只有一條路：<strong>外部 ffmpeg 透過 <code>-vc ffmpeg:</code> 把解碼外包出去</strong>。我們設備上沒裝 ffmpeg，裝了也沒用（見下文）。</p>
+<h3 id="2-它能往哪兒輸出"><a href="#2-它能往哪兒輸出" class="headerlink" title="2. 它能往哪兒輸出"></a>2. 它能往哪兒輸出</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ mplayer -vo help</span><br><span class="line">fbdev   fbdev2   lvfb   null   mpegpes   yuv4mpeg   png   tga   pnm   md5sum</span><br></pre></td></tr></table></figure>
+
+<p>注意這行的資訊量：<strong>沒有 v4l2、沒有 dri、沒有任何 GL vo</strong>。</p>
+<p>這意味著即使 mplayer 解出了 NV12，它也只能自己用 CPU 轉成 RGB 再往 framebuffer 裡寫。VSP 解碼也好、DPU 合成也好，它一個都碰不到。<strong>「-vo lvfb」是唯一值得試的選項</strong>，那是這個專案自己寫的 LVGL 直寫 vo。</p>
+<h3 id="3-ffmpeg-也不救場"><a href="#3-ffmpeg-也不救場" class="headerlink" title="3. ffmpeg 也不救場"></a>3. ffmpeg 也不救場</h3><p>Alpine 儲存庫裡有：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ffmpeg-6.1.2-r1 armhf &#123;ffmpeg&#125; (GPL-2.0-or-later AND LGPL-2.1-or-later)</span><br></pre></td></tr></table></figure>
+
+<p>但 <code>which ffmpeg</code> 是空的——<strong>只進了儲存庫索引，沒安裝</strong>。而且就算裝了也沒意義：Alpine 的 ffmpeg 是社群建構，<strong>不包含展訊 VSP 的 hwaccel 適配</strong>（<code>h264_sprd</code> 這種 decoder 不是主線 ffmpeg 的東西）。裝了只能軟解，還是回到 mplayer 同一條路。</p>
+<hr>
+<h2 id="二、真正的對照實驗"><a href="#二、真正的對照實驗" class="headerlink" title="二、真正的對照實驗"></a>二、真正的對照實驗</h2><p>偵察做完就該拿資料說話。從瀘縣源拉一段真實的 1080p TS（2.6MB），用三種方式跑。</p>
+<h3 id="A-組：mplayer-純解碼上限"><a href="#A-組：mplayer-純解碼上限" class="headerlink" title="A 組：mplayer 純解碼上限"></a>A 組：mplayer 純解碼上限</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mplayer -benchmark -vo null -nosound -framedrop /tmp/mp.ts</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">FPS seems to be: 25.000000</span><br><span class="line">VO: [null] 1920x1080 =&gt; 1920x1080 Planar YV12</span><br><span class="line">BENCHMARKs: VC:   9.778s VO:   0.001s A:   0.000s Sys: 0.065s =  9.844s</span><br><span class="line">BENCHMARK%: VC: 99.3308% VO: 0.0068% A: 0.0000% Sys: 0.6624% = 100.0000%</span><br></pre></td></tr></table></figure>
+
+<p><code>VC</code> 是影片解碼（Video Codec）時間，佔 **99.33%**。10 秒解完 &#x3D; <strong>25fps &#x3D; 40ms&#x2F;影格</strong>。</p>
+<h3 id="B-組：現有軟解鏈路（y4m-中轉）"><a href="#B-組：現有軟解鏈路（y4m-中轉）" class="headerlink" title="B 組：現有軟解鏈路（y4m 中轉）"></a>B 組：現有軟解鏈路（y4m 中轉）</h3><p>專案裡其實已經有一條軟解路徑：<code>curl → mplayer → yuv4mpeg → lv_canvas</code>（<code>/usr/local/bin/nettv_play.sh</code>），參數是這樣的：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$MP</span> -cache 2048 -cache-min 5 -autosync 100 -mc 1 -quiet \</span><br><span class="line">    -vo yuv4mpeg:file=/tmp/nettv.y4m -vf scale=640:360 <span class="variable">$AOARGS</span> -nolirc -</span><br></pre></td></tr></table></figure>
+
+<p>跑一遍同樣的 TS：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mplayer -vo yuv4mpeg:file=/tmp/t1.y4m -vf scale=640:360 -nosound -fps 60 -slave /tmp/mp.ts</span><br><span class="line"><span class="comment"># 18 秒後：y4m = 49421692 位元組</span></span><br><span class="line"><span class="comment"># 每影格 640×360×1.5 = 345600 位元組 → 142 影格</span></span><br><span class="line"><span class="comment"># → 7.9 fps</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>25fps 的解碼能力，經過 y4m 落盤 + scale 濾鏡後只剩 7.9fps。</strong> 丟掉的 17fps 全在 IO 和二次縮放上，跟解碼一點關係都沒有。</p>
+<h3 id="C-組：我們自研-VSP-硬解"><a href="#C-組：我們自研-VSP-硬解" class="headerlink" title="C 組：我們自研 VSP 硬解"></a>C 組：我們自研 VSP 硬解</h3><p>v16i 同輪 A&#x2F;B 的定量（60s 穩態）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">單執行緒 15.7fps，牆鐘 116ms/AU</span><br><span class="line">  = DRIVE 21.1ms + memcpy 43.4ms + 渲染 31.8ms</span><br></pre></td></tr></table></figure>
+
+<h3 id="三組並排看"><a href="#三組並排看" class="headerlink" title="三組並排看"></a>三組並排看</h3><table>
+<thead>
+<tr>
+<th>方案</th>
+<th>影格率（fps）</th>
+<th>瓶頸在哪</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>mplayer <code>-vo null</code></td>
+<td><strong>25.0 fps</strong></td>
+<td>解碼本身，40ms&#x2F;影格</td>
+</tr>
+<tr>
+<td>自研 VSP 硬解全鏈</td>
+<td>15.7 fps</td>
+<td>解碼 21ms，其餘 95ms 全在 memcpy+渲染</td>
+</tr>
+<tr>
+<td>軟解 + y4m 落盤</td>
+<td>7.9 fps</td>
+<td>檔案 IO + scale 濾鏡</td>
+</tr>
+</tbody></table>
+<p><strong>這張表最刺眼的地方</strong>：廠商 VSP 硬體解碼只要 14ms（函式庫自己報的），我們整條硬解鏈路卻要 64ms&#x2F;影格。省下的 27ms 全部被別的東西吃掉了，還倒虧。</p>
+<hr>
+<h2 id="三、這個結果為什麼反直覺"><a href="#三、這個結果為什麼反直覺" class="headerlink" title="三、這個結果為什麼反直覺"></a>三、這個結果為什麼反直覺</h2><p>按理說硬解該碾壓軟解。差別在於<strong>軟解的「慢」是集中在解碼裡的，硬解的「慢」是散落在 IO 裡的</strong>。</p>
+<p>A7 的軟解解碼器雖然慢，但它拿到的是普通 <code>malloc</code> 出來的記憶體——CPU 快取友好的、連續可預取的。而 VSP 輸出的是一塊 uncached 的 ION 記憶體，於是：</p>
+<ol>
+<li><strong>3MB memcpy 43ms</strong>——非快取記憶體逐位元組讀，每個位元組都是獨立交易</li>
+<li><strong>fb_render 31ms</strong>——NV12→ARGB + 90° 旋轉，1280×720 全靠標量算</li>
+</ol>
+<p>軟解根本沒有第 1 步：解碼器直接寫進普通 buffer，第 2 步可以用 <code>-vo lvfb</code> 讓 mplayer 直接畫進 framebuffer，省掉中間環節。</p>
+<p><strong>所以「用硬體解碼器」這個決策本身沒錯，錯的是硬解的產出物沒有一條高效率的消費路徑。</strong> 硬體只負責把壓縮資料變成像素，剩下 95ms 的搬運和合成，一行都沒少。</p>
+<p>順帶一個反證：之前我們試過 <code>NETTV_STAGE=0</code> 直讀 ION 省掉那次 memcpy，結果 <strong>fb_render 從 33ms 飆到 335ms</strong>（慢 10 倍），5.8fps。因為非快取記憶體的隨機讀比順序拷貝更可怕。<strong>3MB memcpy 在當前映射屬性下已經是最佳解。</strong></p>
+<hr>
+<h2 id="四、順手發現的兩條真硬解路線"><a href="#四、順手發現的兩條真硬解路線" class="headerlink" title="四、順手發現的兩條真硬解路線"></a>四、順手發現的兩條真硬解路線</h2><p>偵察時看到兩樣東西，比 mplayer 有價值得多。</p>
+<h3 id="libomx-avcdec-hw-sprd-so"><a href="#libomx-avcdec-hw-sprd-so" class="headerlink" title="libomx_avcdec_hw_sprd.so"></a><code>libomx_avcdec_hw_sprd.so</code></h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ ls /mnt/android_sys/lib | grep -i omx</span><br><span class="line">libomx_avcdec_hw_sprd.so        ← 展訊官方 H.264 硬體 OMX 外掛</span><br><span class="line">libomx_avcdec_sw_sprd.so</span><br><span class="line">libomx_avcenc_hw_sprd.so</span><br><span class="line">libomx_m4vh263dec_hw_sprd.so</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>這才是真正的官方硬解通路。依賴很乾淨：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ strings libomx_avcdec_hw_sprd.so | grep -E <span class="string">&#x27;^lib.*\.so&#x27;</span> | <span class="built_in">sort</span> -u</span><br><span class="line">libc++.so   libc.so   libcutils.so   libdl.so</span><br><span class="line">liblog.so   libm.so   libutils.so</span><br></pre></td></tr></table></figure>
+
+<p>全在 <code>/mnt/android_sys</code> 裡躺著（設備開機靠 <code>/etc/init.d/00_android_sys</code> 掛載，304 個函式庫）。</p>
+<p><strong>但別急著樂觀</strong>：它是 Android OMX 適配層，要正常運作需要 <code>OMXMaster</code> 註冊、<code>BufferQueue</code> 引用計數、<code>gralloc</code> buffer 三件套——這些都在 Android media stack 裡，我們的裸 bionic 播放器一樣都沒有。硬調 OMXCodec 的工作量很大，而且它對 ION handle 的語意假設（fd + offset + size 怎麼解釋）和我們自管 ION 時踩過的綠畫面坑是同一個域。</p>
+<p><strong>結論：可做，成本高，排在 ION cached 後面。</strong></p>
+<h3 id="ION-cached-映射"><a href="#ION-cached-映射" class="headerlink" title="ION cached 映射"></a>ION cached 映射</h3><p>這條路還是最划算的：把 VSP 輸出緩衝從 uncached 改成 cached（<code>ION_FLAG_CACHED = 1</code>），每影格用 <code>ION_IOC_SYNC</code> 做一次 invalidate。那 43ms 的 memcpy 理論上能掉到 10ms 上下，牆鐘 116ms → 75ms，直接摸到 20fps。</p>
+<p>風險是 DMA 一致性：VSP 寫完到 CPU 讀到之間必須刷一次，漏了就是花畫面或綠畫面。這是灰度的理由，不是放棄的理由。</p>
+<hr>
+<h2 id="五、所以接下來做什麼"><a href="#五、所以接下來做什麼" class="headerlink" title="五、所以接下來做什麼"></a>五、所以接下來做什麼</h2><p>mplayer 這條路的定位現在很清楚了：</p>
+<ul>
+<li><strong>「mplayer 硬解」作廢</strong>——它沒有硬解框架，也沒有任何 GPU 輸出路徑</li>
+<li><strong>「mplayer 軟解」有價值</strong>——25fps 的解碼上限是真的，而且<strong>不碰 VSP、不碰 ION，就沒有核心崩潰風險</strong></li>
+</ul>
+<p>軟解路線三個改法，按性價比排：</p>
+<ol>
+<li><strong>去掉 y4m 落盤</strong>，直接 <code>-vo lvfb</code>（mplayer 自帶的 LVGL 直寫 vo）——省掉整個檔案 IO，預估 7.9 → ~20fps</li>
+<li>**去掉 <code>-vf scale=640:360</code>**，讓 vo 直接輸出到目標尺寸——省一次 CPU 縮放</li>
+<li>**去掉 <code>-autosync 100 -mc 1</code>**——這是 v4 為防 TS 段邊界 pts 跳變加的，而 ptsync 我們已經證明是負回饋的源頭</li>
+</ol>
+<p>三條加起來，軟解很可能摸到 25fps，且零核心風險。<strong>這比 ION cached 更適合當第一個灰度實驗。</strong></p>
+<p>但要清楚它的天花板：25fps 是 mplayer 那一檔 CPU 的解碼上限，1080p 再往上就得上 720p 源或者降解析度。到那時候硬解還是得回頭修。</p>
+<hr>
+<h2 id="六、方法論層面的三條"><a href="#六、方法論層面的三條" class="headerlink" title="六、方法論層面的三條"></a>六、方法論層面的三條</h2><p><strong>1. 「硬解 vs 軟解」不是信仰問題，是可以測的。</strong><br>一個 <code>mplayer -vo null -benchmark</code> 就把真相問出來了，不到兩分鐘。在為硬體加速投入三週之前，先花兩分鐘量一下軟解的天花板。</p>
+<p><strong>2. 效能問題要算「錢花在哪」，不是「哪步最慢」。</strong><br>硬解的解碼從 64ms 降到 14ms 是巨大的勝利，但同期多了 95ms 的別的開銷，淨收益是負的。慢的那一步（memcpy 43ms）根本不是最初懷疑的那一步（解碼）。</p>
+<p><strong>3. 第三方元件的能力邊界要靠看清單，不靠猜。</strong><br><code>mplayer -vo help</code> 這一行列出十個 vo，沒有 v4l2 和 dri——mplayer 就不可能參與 GPU 合成，這是不需要讀一行原始碼就能確認的事實。而 <code>strings | grep hwaccel</code> 空著，就說明沒有硬解框架。比「我覺得 MPlayer 應該支援」可靠得多。</p>
+<hr>
+<h2 id="附：本文涉及的關鍵事實"><a href="#附：本文涉及的關鍵事實" class="headerlink" title="附：本文涉及的關鍵事實"></a>附：本文涉及的關鍵事實</h2><ul>
+<li>mplayer 位置：<code>/home/lvgl_demo/lvgl_demo/libs/mplayer/mplayer</code>，MPlayer 1.4-13 靜態編譯，<strong>不在 PATH</strong></li>
+<li>軟解上限 25.0fps &#x2F; 40ms 每影格（<code>VC</code> 佔 99.33%）</li>
+<li>現有 y4m 鏈路 7.9fps，真瓶頸是檔案 IO + scale 濾鏡</li>
+<li>硬解基線 15.7fps，牆鐘 116ms（DRIVE 21.1 + memcpy 43.4 + 渲染 31.8）</li>
+<li>直讀 ION 反證：fb_render 335ms，慢 10 倍</li>
+<li><code>/mnt/android_sys/lib/libomx_avcdec_hw_sprd.so</code> 存在，但需要 Android media stack 才能用</li>
+<li>Alpine 的 ffmpeg 6.1.2 無 VSP hwaccel，且未安裝</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文連結：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B5%90%E8%AB%96"><span class="toc-number">1.</span> <span class="toc-text">一句話結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E6%8A%8A-mplayer-%E9%80%99%E6%A2%9D%E8%B7%AF%E6%91%B8%E6%B8%85%E6%A5%9A"><span class="toc-number">2.</span> <span class="toc-text">一、先把 mplayer 這條路摸清楚</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%AE%83%E5%9C%A8%E5%93%AA%E3%80%81%E6%9C%89%E6%B2%92%E6%9C%89%E7%A1%AC%E8%A7%A3"><span class="toc-number">2.1.</span> <span class="toc-text">1. 它在哪、有沒有硬解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AE%83%E8%83%BD%E5%BE%80%E5%93%AA%E5%85%92%E8%BC%B8%E5%87%BA"><span class="toc-number">2.2.</span> <span class="toc-text">2. 它能往哪兒輸出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-ffmpeg-%E4%B9%9F%E4%B8%8D%E6%95%91%E5%A0%B4"><span class="toc-number">2.3.</span> <span class="toc-text">3. ffmpeg 也不救場</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%9C%9F%E6%AD%A3%E7%9A%84%E5%B0%8D%E7%85%A7%E5%AF%A6%E9%A9%97"><span class="toc-number">3.</span> <span class="toc-text">二、真正的對照實驗</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#A-%E7%B5%84%EF%BC%9Amplayer-%E7%B4%94%E8%A7%A3%E7%A2%BC%E4%B8%8A%E9%99%90"><span class="toc-number">3.1.</span> <span class="toc-text">A 組：mplayer 純解碼上限</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-%E7%B5%84%EF%BC%9A%E7%8F%BE%E6%9C%89%E8%BB%9F%E8%A7%A3%E9%8F%88%E8%B7%AF%EF%BC%88y4m-%E4%B8%AD%E8%BD%89%EF%BC%89"><span class="toc-number">3.2.</span> <span class="toc-text">B 組：現有軟解鏈路（y4m 中轉）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#C-%E7%B5%84%EF%BC%9A%E6%88%91%E5%80%91%E8%87%AA%E7%A0%94-VSP-%E7%A1%AC%E8%A7%A3"><span class="toc-number">3.3.</span> <span class="toc-text">C 組：我們自研 VSP 硬解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E7%B5%84%E4%B8%A6%E6%8E%92%E7%9C%8B"><span class="toc-number">3.4.</span> <span class="toc-text">三組並排看</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%80%99%E5%80%8B%E7%B5%90%E6%9E%9C%E7%82%BA%E4%BB%80%E9%BA%BC%E5%8F%8D%E7%9B%B4%E8%A6%BA"><span class="toc-number">4.</span> <span class="toc-text">三、這個結果為什麼反直覺</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%A0%86%E6%89%8B%E7%99%BC%E7%8F%BE%E7%9A%84%E5%85%A9%E6%A2%9D%E7%9C%9F%E7%A1%AC%E8%A7%A3%E8%B7%AF%E7%B7%9A"><span class="toc-number">5.</span> <span class="toc-text">四、順手發現的兩條真硬解路線</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#libomx-avcdec-hw-sprd-so"><span class="toc-number">5.1.</span> <span class="toc-text">libomx_avcdec_hw_sprd.so</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ION-cached-%E6%98%A0%E5%B0%84"><span class="toc-number">5.2.</span> <span class="toc-text">ION cached 映射</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%89%80%E4%BB%A5%E6%8E%A5%E4%B8%8B%E4%BE%86%E5%81%9A%E4%BB%80%E9%BA%BC"><span class="toc-number">6.</span> <span class="toc-text">五、所以接下來做什麼</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E6%96%B9%E6%B3%95%E8%AB%96%E5%B1%A4%E9%9D%A2%E7%9A%84%E4%B8%89%E6%A2%9D"><span class="toc-number">7.</span> <span class="toc-text">六、方法論層面的三條</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E6%9C%AC%E6%96%87%E6%B6%89%E5%8F%8A%E7%9A%84%E9%97%9C%E9%8D%B5%E4%BA%8B%E5%AF%A6"><span class="toc-number">8.</span> <span class="toc-text">附：本文涉及的關鍵事實</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&text=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&title=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&is_video=false&description=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗&body=Check out this article: https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&title=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&title=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&title=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&title=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/&name=nettv-16：硬解比軟解還慢——一次把「解碼慢」這個假設徹底推翻的對照實驗&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
