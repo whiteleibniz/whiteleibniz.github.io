@@ -13,6 +13,9 @@ tags:
   - ARM
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/)
+
+
 > 系列第 15 篇。上一篇（nettv-14）我们把“卡”定性成了 ptsync 正反馈和 O_SYNC 日志，
 > 拿到 17fps 基线。这一篇是从 17fps 往 25fps 冲的过程——**基本全是反面教材**：
 > 五个看起来很合理的优化，四个被 A/B 实验直接证伪，一个把设备重启了两次。

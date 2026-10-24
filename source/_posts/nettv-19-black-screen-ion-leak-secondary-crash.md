@@ -15,6 +15,9 @@ tags:
 
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash-en/)
+
+
 用户推门进来就一句："网络电视黑屏无反应了。"
 
 设备 ping 通、SSH 正常、桌面进程 `lvgl_demo` 还活着——但播放器 `nettv_player` 的 monitor 看门狗正在无限重启循环，每一轮 worker 都以 `exit 11` 收场，屏幕自然永远黑着。

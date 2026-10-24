@@ -8,6 +8,9 @@ tags: [VSP, 硬解, PTS, 音视频同步, 正反馈, 性能优化, 展讯, nettv
 date: 2026-10-20 02:00:00
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/)
+
+
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
 前面十篇一直在跟「崩」死磕：内核崩、挂死、绿屏、黑屏。等这些都解决了，能连续播 4800 帧之后，剩下的最后一个字是——**卡**。240 秒只上屏 19 帧，约 0.08fps，画面基本是幻灯片。

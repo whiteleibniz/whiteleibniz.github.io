@@ -8,6 +8,9 @@ tags: [VSP, 硬解, framebuffer, NV12, 旋转, 性能优化, 展讯]
 date: 2026-10-17 02:00:00
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass/) · [繁體中文](https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/)
+
+
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
 前面几篇把 VSP 硬解、mbinfo 假物理地址、GOP 重播这些坑都填了，画面能出，但**只有 4fps**。采样器一抓，100% CPU 全花在 `fb_render` 上——不是厂商库死锁，就是我们自己的 NV12→ARGB+旋转 90°+缩放。这篇记录怎么把它从 250ms/帧 干到 19-21ms/帧。

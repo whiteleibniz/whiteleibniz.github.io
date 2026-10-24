@@ -15,6 +15,9 @@ tag:
 - 故障修复
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys/) · [繁體中文](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/)
+
+
 # 设备重启后 netTV 全线瘫痪
 
 ## 一、现象：一次重启，三件事同时坏
@@ -23,14 +26,14 @@ tag:
 
 | 现象 | 判据 | 第一反应（错的） |
 |---|---|---|
-| 设备不上外网 | `curl` 返回 `000`，但 `ip route` 里 `default via 192.168.137.1` 在 | 以为频道源又挂了 |
+| 设备不上外网 | `curl` 返回 `000`，但 `ip route` 里 `default via <RNDIS-GW>` 在 | 以为频道源又挂了 |
 | 播放器起不来 | `CANNOT LINK EXECUTABLE: library "libc.so" not found` | 以为二进制被改坏了 |
 
 两条都不是真的：**源没挂，二进制也没坏**。坏的是两台机器之间的那层「共享上网」，以及设备重启后被遗忘的一个挂载点。
 
 ## 二、坑一：ICS 重绑必须「先清 IP、先私后公」
 
-设备上网链路是 `USB RNDIS (192.168.137.x) → PC ICS NAT → PC WiFi`。PC 自己上网 200，设备 000，路由表也在——这就是标准的 **ICS 掉绑定**。
+设备上网链路是 `USB RNDIS（RNDIS 网段） → PC ICS NAT → PC WiFi`。PC 自己上网 200，设备 000，路由表也在——这就是标准的 **ICS 掉绑定**。
 
 旧脚本的做法是：找到 WLAN（public）和 RNDIS（private）两个连接，`DisableSharing` 之后 `EnableSharing`。这次它直接失败：
 
@@ -38,7 +41,7 @@ tag:
 EnableSharing(0) → COMException 0x80040201
 ```
 
-更坑的是补救动作：手工用 `New-NetIPAddress` 给 RNDIS 网卡设上 `192.168.137.1/24`，地址确实出现了，ping 设备也通，但设备照样上不了网。因为 **ICS 不认这个手工地址**——它接管网卡时会自己重新配置，手工地址会被顶掉，网卡退化成 **APIPA 169.254.x**，NAT 表压根没建立。
+更坑的是补救动作：手工用 `New-NetIPAddress` 给 RNDIS 网卡设上 `<RNDIS-GW>/24`，地址确实出现了，ping 设备也通，但设备照样上不了网。因为 **ICS 不认这个手工地址**——它接管网卡时会自己重新配置，手工地址会被顶掉，网卡退化成 **APIPA 169.254.x**，NAT 表压根没建立。
 
 正确顺序（已固化成脚本）：
 
@@ -48,10 +51,10 @@ EnableSharing(0) → COMException 0x80040201
 # 3. ★ 把 private 网卡上【所有】IPv4 地址删干净 —— 留任何一个 ICS 都不重配
 # 4. private.EnableSharing(1)   ← 先私
 # 5. public.EnableSharing(0)    ← 后公
-# 6. 等 10s，ICS 自行把 private 配成 192.168.137.1/24
+# 6. 等 10s，ICS 自行把 private 配成 <RNDIS-GW>/24
 ```
 
-验证点只有一个：`Get-NetIPAddress -InterfaceAlias 以太网` 里出现 `192.168.137.1`。出现即通，不出现就是没成，别拿 ping 通当判据。
+验证点只有一个：`Get-NetIPAddress -InterfaceAlias 以太网` 里出现 ICS 私有地址。出现即通，不出现就是没成，别拿 ping 通当判据。
 
 **教训**：Windows ICS 的私有侧地址必须由 ICS 自己创建。你替它设好的地址，它不认，还会把网卡甩到 169.254 去。
 

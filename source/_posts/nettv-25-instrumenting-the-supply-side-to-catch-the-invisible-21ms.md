@@ -8,6 +8,9 @@ tags: [VSP, 硬解, 帧率, rb_take, m3u8, 性能剖析, 直播, 展讯]
 date: 2026-10-24 02:00:00
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms/) · [繁體中文](https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-en/)
+
+
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
 上一篇把连续播放拉到 386 秒，稳定性达标，却留下一笔**对不上的账**：AU 平均墙钟 62.6 ms，而所有分段计时器加起来只有 40.4 ms，**21.6 ms 没有任何计时器认领**。这次设备离线（RNDIS 未枚举、WiFi 也不通），没法上机测，那就干离线最该干的事——**把仪表装好**，让下一轮开机就能直接读出那 21.6 ms 是谁。
@@ -79,7 +82,7 @@ date: 2026-10-24 02:00:00
 
 ## 六、状态
 
-本次**设备离线**（RNDIS 未枚举、192.168.137.100/101、192.168.1.30 全不通，PC 侧无 RNDIS 网卡），改动尚未编译上机：
+本次**设备离线**（RNDIS 未枚举，PC 侧无 RNDIS 网卡），改动尚未编译上机：
 
 - 源码：`outputs/sprd_msg_np_v2.c`（供数侧仪器化，md5 `c15e558f`）
 - 验收脚本：`outputs/_sup1024.sh`（编译 v18 + 跑 150 s）、`outputs/_sup1024_fin.sh`（取判据）

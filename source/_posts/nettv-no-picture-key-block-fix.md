@@ -13,6 +13,9 @@ tag:
 - 故障修复
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix/) · [繁體中文](https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/12/nettv-no-picture-key-block-fix-en/)
+
+
 # nettv 播放器无画面与按键阻塞故障修复
 
 ## 一、故障现象

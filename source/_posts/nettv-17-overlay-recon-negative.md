@@ -14,6 +14,9 @@ tags:
   - recon
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/)
+
+
 ## 背景：一句话交代
 
 昨天我们把帧率瓶颈精确定位到 **「YUV→RGB→framebuffer」这一步**（三条完全不同的链路撞同一堵墙），所以我把「显示控制器硬件 overlay 直吃 NV12」列为唯一出路。

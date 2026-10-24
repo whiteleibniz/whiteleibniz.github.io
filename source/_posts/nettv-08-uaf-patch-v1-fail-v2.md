@@ -8,6 +8,9 @@ tags: [VSP, 硬解, h264dec, UAF, ARM汇编, 二进制补丁, 展讯, SIGSEGV]
 date: 2026-10-18 02:00:00
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/) · [繁體中文](https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2-en/)
+
+
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
 前一篇把厂商库 `libstagefright_sprd_h264dec.so` 里那个"每 GOP 边界必踩坏链表节点"的 UAF 定性了，我兴冲冲地打了个二进制补丁：三处链表遍历加节点合法性校验。结果部署上去——**一张帧都出不来了**。这篇记录翻车原因（活寄存器被我当成了临时变量）和 v2 补丁的写法，顺带把 `addr=0x747474` 这个悬了半天的崩溃签名给结案了。

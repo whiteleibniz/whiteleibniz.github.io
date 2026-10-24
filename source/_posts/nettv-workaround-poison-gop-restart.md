@@ -7,6 +7,9 @@ tags: [VSP, 硬解, HLS, OMX, LVGL, 展讯]
 date: 2026-10-15 02:00:00
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/15/nettv-workaround-poison-gop-restart/) · [繁體中文](https://whiteleibniz.github.io/2026/10/15/nettv-workaround-poison-gop-restart-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/15/nettv-workaround-poison-gop-restart-en/)
+
+
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
 前两篇把 1080p 直播流在 SC9832A 上用 VSP 硬解跑通了，也修掉了「第 5 块 mbinfo 分配失败 → 组件永久切软解」的真因。按理说接下来就该是丝滑播放了，结果真机上画面永远是**同一段 2.7 秒反复循环**。这篇记录怎么把这个最后一层窗户纸捅破的。

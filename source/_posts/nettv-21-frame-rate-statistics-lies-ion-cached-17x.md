@@ -16,6 +16,9 @@ tags:
 
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/)
+
+
 上一轮刚把"UI 点频道黑屏"修完，用户就丢了一句：**"播放效果有改进，但完全达不到正常观看标准。"**
 
 这句话的价值在于它逼我回头看那些"已经优化过很多轮"的数字。结果一查不要紧——**我们盯了三个月的帧率，从头到尾都是错的。**

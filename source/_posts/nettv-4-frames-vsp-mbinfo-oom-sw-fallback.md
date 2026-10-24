@@ -14,6 +14,9 @@ tag:
 - 故障修复
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/) · [繁體中文](https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/)
+
+
 # netTV 只出 4 帧的真因
 
 ## 一、现象

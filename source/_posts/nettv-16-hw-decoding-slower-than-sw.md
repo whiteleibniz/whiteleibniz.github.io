@@ -16,6 +16,9 @@ tags:
   - 性能分析
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/)
+
+
 ## 一句话结论
 
 我们花了三周把 VSP 硬解链路从"零帧"调到"15.7fps"，然后我用同一条流、同一个播放器二进制跑了一次软解对照：

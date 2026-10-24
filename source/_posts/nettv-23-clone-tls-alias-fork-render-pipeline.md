@@ -8,6 +8,9 @@ tags: [VSP, 硬解, SIGSEGV, clone, TLS, fork, 流水线, 展讯, 裸clone线程
 date: 2026-10-22 14:00:00
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/) · [繁體中文](https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/)
+
+
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
 上一篇把"治拖影"的翻页线程钉死之后（默认关掉，21.9fps 保平安），自然的问题就是：**帧率还有提升空间吗？** 账本摆在那儿——每帧 41.3ms = 厂商同步解码 14.1ms（硬底线）+ 读帧 2.7ms + 渲染 23.9ms。解码侧已经拆无可拆，唯一的便宜是把**渲染搬到第二个执行单元上和解码流水线化**：worker 侧只要 16.8ms，渲染侧 24.1ms，稳态帧率 = max(两者) ≈ 24ms ≈ 理论上限 41fps。这篇讲这个"档 2"方案的第一版实现——**又是必崩**，以及这次挖出来的、能一口气解释三次历史悬案的病根。

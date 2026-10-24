@@ -7,6 +7,9 @@ tags: [VSP, 硬解, fb, 日志, m3u8, 展讯, 嵌入式]
 date: 2026-10-16 16:00:00
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality/) · [繁體中文](https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/16/nettv-log-flood-and-source-quality-en/)
+
+
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
 上一篇（四）把"假物理地址"修掉了，第二个 IDR 不再崩、也不再切软解。这次接着在真机上验证，结果顺手抓出一个跟画面无关、但足以让整机"慢性死亡"的问题：**播放器把系统盘写爆了**。同时把"到底修好没修好"这件事，拆成两个更准确的结论：画面质量其实强依赖源，而 IDR 挂死才是真正的拦路虎。

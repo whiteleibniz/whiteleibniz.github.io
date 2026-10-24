@@ -8,6 +8,9 @@ tags: [VSP, 硬解, 稳定性, ION, CPU热插拔, rb_take, 帧率, 展讯]
 date: 2026-10-23 02:00:00
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms/) · [繁體中文](https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/)
+
+
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
 前面二十几篇基本都在跟"崩溃"和"帧率"缠斗，而且**绝大多数结论只跑过 60 秒**。60 秒能证明"能出帧"，证明不了"能一直看"。这次把窗口拉到 6 分钟，拿一批以前没量过的东西：ION 有没有缓慢泄漏、帧率会不会随时间衰减、热不热、以及一个意外翻案——**这台机器到底有几个核在干活**。

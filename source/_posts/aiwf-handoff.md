@@ -18,8 +18,8 @@ tag:
 
 ## 1. 连接与工具（必读）
 
-- 设备经 PC ICS NAT 上网：USB RNDIS(192.168.137.x) → PC → WiFi。环境变量 `DEV_IP`（当前 192.168.137.100）。
-- **SSH 一律走工程里的 `ssh_tools/dev.py`**（paramiko）：`DEV_IP=192.168.137.100 python dev.py "<cmd>"`；跑本地脚本 `python dev.py --run <script> [timeout]`；传文件 `MSYS_NO_PATHCONV=1 python devput.py <local> <remote>`（**必须带 MSYS_NO_PATHCONV=1**，否则 Git Bash 吃掉远端路径）。裸 `ssh` 会被拒（非密钥登录）。
+- 设备经 PC ICS NAT 上网：USB RNDIS(RNDIS 网段) → PC → WiFi。环境变量 `DEV_IP`（当前 <设备IP>）。
+- **SSH 一律走工程里的 `ssh_tools/dev.py`**（paramiko）：`DEV_IP=<设备IP> python dev.py "<cmd>"`；跑本地脚本 `python dev.py --run <script> [timeout]`；传文件 `MSYS_NO_PATHCONV=1 python devput.py <local> <remote>`（**必须带 MSYS_NO_PATHCONV=1**，否则 Git Bash 吃掉远端路径）。裸 `ssh` 会被拒（非密钥登录）。
 - ★ 本机 sandbox 会 SIGTERM 跑久的命令 → **SSH 命令一律 <20s 完成**；长任务用 `--run` 后台跑。被杀的 SSH 会话泄漏会耗尽 dropbear（症状：TCP22 通但 banner 立即断，只能设备断电重启）。
 - ★ 设备 SFTP 损坏 → 不要用 dev.py --get 拉大文件；文本/小文件用 devput（inline base64）。
 - 设备有 python3.12、GNU ld 2.43.1（无 gold/lld）、gcc14（apk 升级过，新工具链产物老 bionic linker 不认，见 §3）。
@@ -53,7 +53,7 @@ MINIRETRO_SHOW_FPS=1 timeout -k 3 30 ./miniretro_psp_hw ./ppsspp_libretro_hw.so 
 
 ## 3. ★★ 重启后必做清单（不做全是坑）
 
-1. **默认路由**：设备跑 `route add default gw 192.168.137.1`（否则上不了外网）。
+1. **默认路由**：设备跑 `route add default gw <RNDIS-GW>`（否则上不了外网）。
 2. **PC 侧 ICS 重绑**：RNDIS 重新枚举后 PC 跑 `outputs/_ics_rebind.ps1`。判据：GW_OK+EXT_FAIL=ICS 掉了。
 3. **mount p17**：`mount -r /dev/mmcblk0p17 /mnt/android_sys`（重启后 gpu_env_ensure 的 stamp 兜底**不生效**；不挂 → /system/lib/libEGL.so 断链 → EGL 失败静默退软渲 20fps）。
 4. **insmod mali**：`insmod /lib/modules/mali.ko`（硬件加速默认关、app 不拉驱动；不加载同样静默退软渲）。

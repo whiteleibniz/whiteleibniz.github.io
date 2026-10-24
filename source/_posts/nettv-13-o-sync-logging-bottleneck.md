@@ -1,12 +1,15 @@
-\---  
-title: 展讯 SC9832A 网络电视攻坚（十三）：每帧 11 次 O_SYNC——「取证日志」才是帧率杀手  
-categories:  
-  \- [嵌入式, 展讯平台]  
-  \- [嵌入式, 音视频]  
-  \- [调试技术, 性能优化]  
+---
+title: 展讯 SC9832A 网络电视攻坚（十三）：每帧 11 次 O_SYNC——「取证日志」才是帧率杀手
+categories:
+  - [嵌入式, 展讯平台]
+  - [嵌入式, 音视频]
+  - [调试技术, 性能优化]
 tags: [VSP, 硬解, 帧率, O_SYNC, fsync, 日志开销, 性能分析, 展讯, nettv]  
 date: 2026-10-20 14:00:00  
-\---
+---
+
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/)
+
 
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 

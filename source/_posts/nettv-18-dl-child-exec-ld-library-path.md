@@ -15,6 +15,9 @@ tags:
   - 排障
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-en/)
+
+
 ## 背景：一句话交代
 
 播放器连续两轮 A/B 都是 **零帧**，日志里刷屏：

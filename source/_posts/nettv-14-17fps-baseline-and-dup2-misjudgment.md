@@ -14,6 +14,9 @@ tags:
   - 性能分析
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/)
+
+
 > 系列第 14 篇。上一篇（十三）把「O_SYNC 日志」定为隐形帧率杀手并默认关掉了它，
 > 本篇回答：关掉之后到底跑多少帧？结论是 **17fps**——以及我是怎么被 `dup2`
 > 误导、差点把"能跑"误判成"0 帧"的。

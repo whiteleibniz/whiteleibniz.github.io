@@ -8,6 +8,9 @@ tags: [VSP, 硬解, DMA, SIGKILL, 内核崩溃, OpenRC, stdio缓冲, 展讯, net
 date: 2026-10-19 02:00:00
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/)
+
+
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
 前几篇一直在跟「第二个 IDR 必挂死」死磕，日志断层、证据反复丢失。这次本来只想加一个诊断开关跑 60 秒，结果**把设备连着打成两次重启**。复盘下来，事故本身就是最有价值的结论：**解码中用 `kill -9` 打断 nettv_player，等于让内核去收拾 VSP 没排空的 DMA，直接崩**。顺带还清掉了两个长期误判。
@@ -74,7 +77,7 @@ depend() { need localmount; }
 start() {
     mount | grep -q android_sys || mount -t ext4 -o ro /dev/mmcblk0p17 /mnt/android_sys
     printf 'nameserver 8.8.8.8\nnameserver 114.114.114.114\n' > /etc/resolv.conf
-    ip route | grep -q default || route add default gw 192.168.137.1
+    ip route | grep -q default || route add default gw <RNDIS-GW>
 }
 ```
 

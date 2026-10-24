@@ -8,6 +8,9 @@ tags: [VSP, 硬解, SIGSEGV, vsync, framebuffer, LVGL, 展讯, 裸clone线程]
 date: 2026-10-22 02:00:00
 ---
 
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv/) · [繁體中文](https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/22/nettv-22-vsync-pan-thread-idr-segv-en/)
+
+
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
 上一篇我们把帧率从 14.3fps 推到 21.8fps，顺手还塞进两个"用户体验修复"：curl 抗弱网（治卡顿）和**独立 vsync 翻页线程**（治拖影）。结果第二天一跑——**零帧，每次喂 IDR 就 SIGSEGV，看门狗无限重启**。这篇讲怎么用一次干净的背靠背 A/B 把真凶钉死，以及一个更值钱的教训：**崩溃现场的日志，往往是最会骗人的那一层**。
