@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 27 篇。上一篇把「稳态 14.2fps」归因为源本身只有 14.6fps，本篇用 PTS 把这条结论推翻了，然后把真正的 10 秒黑洞拆成两张账单。  一、先翻案：源是 25fps，不是 14.6fps上一篇的算法是「一段 155 帧 ÷ 段间隙 10.6s &#x3D; 14.6fps」。问题出在分母：段间隙是墙钟，不是段内">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 27 篇。上一篇把「稳态 14.2fps」归因为源本身只有 14.6fps，本篇用 PTS 把这条结论推翻了，然后把真正的 10 秒黑洞拆成两张账单。  一、先翻案：源是 25fps，不是 14.6fps上一篇的算法是「一段 155 帧 ÷ 段间隙 10.6s &#x3D; 14.6fps」。问题出在分母：段间隙是墙钟，不是段内">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-24T18:35:00.000Z">
+<meta property="article:modified_time" content="2026-10-24T18:34:23.405Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="性能剖析">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="HLS 直播">
+<meta property="article:tag" content="展讯 SC9832A">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&text=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&title=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&is_video=false&description=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解&body=Check out this article: https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&title=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&title=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&title=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&title=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&name=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%BF%BB%E6%A1%88%EF%BC%9A%E6%BA%90%E6%98%AF-25fps%EF%BC%8C%E4%B8%8D%E6%98%AF-14-6fps"><span class="toc-number">1.</span> <span class="toc-text">一、先翻案：源是 25fps，不是 14.6fps</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%8110-3-%E7%A7%92%E7%9A%84%E8%B4%A6%E5%8D%95"><span class="toc-number">2.</span> <span class="toc-text">二、10.3 秒的账单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%9A%E5%BC%82%E6%AD%A5%E9%9F%B3%E9%A2%91%E6%B3%B5"><span class="toc-number">3.</span> <span class="toc-text">三、修法：异步音频泵</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%89%A9%E4%B8%8B%E7%9A%84-8-2-%E7%A7%92%E5%BD%92%E8%B0%81"><span class="toc-number">4.</span> <span class="toc-text">四、剩下的 8.2 秒归谁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E8%BF%99%E4%B8%80%E8%BD%AE%E7%9A%84%E6%95%99%E8%AE%AD"><span class="toc-number">5.</span> <span class="toc-text">五、这一轮的教训</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-24T18:35:00.000Z" itemprop="datePublished">2026-10-25</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/HLS-%E7%9B%B4%E6%92%AD/" rel="tag">HLS 直播</a>, <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF-SC9832A/" rel="tag">展讯 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E6%80%A7%E8%83%BD%E5%89%96%E6%9E%90/" rel="tag">性能剖析</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 27 篇。上一篇把「稳态 14.2fps」归因为源本身只有 14.6fps，本篇用 PTS 把这条结论<strong>推翻</strong>了，然后把真正的 10 秒黑洞拆成两张账单。</p>
+</blockquote>
+<h2 id="一、先翻案：源是-25fps，不是-14-6fps"><a href="#一、先翻案：源是-25fps，不是-14-6fps" class="headerlink" title="一、先翻案：源是 25fps，不是 14.6fps"></a>一、先翻案：源是 25fps，不是 14.6fps</h2><p>上一篇的算法是「一段 155 帧 ÷ 段间隙 10.6s &#x3D; 14.6fps」。问题出在分母：<strong>段间隙是墙钟，不是段内容时长</strong>。要拿真帧率，只能问码流自己。</p>
+<p>于是写了 <code>nalcount.c</code>：按 188 字节切包，在 PUSI 处解析 PES 头取 PTS，用「AU 数 ÷ PTS 跨度」算真帧率，同时用「平均 PTS 间隔」交叉验证。泸县源一个分片的实测：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">packets=14034 pes=150 au(pts)=150</span><br><span class="line">nal: idr=5 nonidr=145 sps=5 pps=5 sei=5 aud=150</span><br><span class="line">pts_span=5.960s  fps_by_span=25.00</span><br><span class="line">avg_pts_delta=3600.00 ticks  fps_by_delta=25.00</span><br></pre></td></tr></table></figure>
+
+<p><strong>150 帧 &#x2F; 5.96s &#x2F; PTS 间隔恒定 3600 ticks（90000&#x2F;25）—— 真 25fps，铁证。</strong> 两种算法互相印证，不存在丢帧或 VFR。</p>
+<p>也就是说：我们把 5.96 秒的内容播了 10.3 秒，<strong>慢的从来不是源，是我们</strong>。「提帧到 25fps」重新变成物理可达的目标。</p>
+<p>顺带一个坑：<code>mplayer -identify</code> 报的 <code>ID_VIDEO_FPS=25.000</code> 对 MPEG-TS 基本是容器默认值，不能当证据（它对钱江、CloudFront 也报 25.000，但那两路的平均 PTS 间隔是 8359&#x2F;8704 ticks ≈ 10.8fps，明显是另一回事）。</p>
+<p>六个源的普查结果：</p>
+<table>
+<thead>
+<tr>
+<th>源</th>
+<th>分辨率</th>
+<th>AU&#x2F;段</th>
+<th>PTS 跨度</th>
+<th>真帧率</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>泸县</td>
+<td>1920×1088</td>
+<td>150</td>
+<td>5.96s</td>
+<td><strong>25.00</strong></td>
+</tr>
+<tr>
+<td>上虞</td>
+<td>1920×1088</td>
+<td>200</td>
+<td>7.96s</td>
+<td><strong>25.00</strong></td>
+</tr>
+<tr>
+<td>松潘</td>
+<td>1920×1088</td>
+<td>270</td>
+<td>10.76s</td>
+<td><strong>25.00</strong></td>
+</tr>
+<tr>
+<td>钱江</td>
+<td>1920×1088</td>
+<td>200</td>
+<td>7.92s</td>
+<td>25.13（间隔不均）</td>
+</tr>
+<tr>
+<td>CloudFront</td>
+<td>960×544</td>
+<td>100</td>
+<td>3.96s</td>
+<td>25.00</td>
+</tr>
+<tr>
+<td>北方广电</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>拉不到列表</td>
+</tr>
+</tbody></table>
+<h2 id="二、10-3-秒的账单"><a href="#二、10-3-秒的账单" class="headerlink" title="二、10.3 秒的账单"></a>二、10.3 秒的账单</h2><p>给 dl 循环的每一段都装上计时（<code>g_dl_t_pick / pref / af / hist</code>），现网默认配置跑一轮：</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>段间隙</th>
+<th>选段</th>
+<th>预取(含下载)</th>
+<th>音频</th>
+<th>下载解析</th>
+<th>入池</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2</td>
+<td>10439ms</td>
+<td>4983ms</td>
+<td>5236ms</td>
+<td>5231ms</td>
+<td>212ms</td>
+<td>6ms</td>
+</tr>
+<tr>
+<td>3</td>
+<td>10470ms</td>
+<td>5075ms</td>
+<td>5172ms</td>
+<td>5167ms</td>
+<td>214ms</td>
+<td>6ms</td>
+</tr>
+<tr>
+<td>4</td>
+<td>10402ms</td>
+<td>4980ms</td>
+<td>5211ms</td>
+<td>5206ms</td>
+<td>213ms</td>
+<td>6ms</td>
+</tr>
+</tbody></table>
+<p>（累计计时器，逐行相减即为单段值。）</p>
+<p>结论非常干净：**下载 0.21s、入池 6ms，加起来不到 3%**；10.3 秒里 5.2 秒是 <code>audio_feed()</code>、5.0 秒是 <code>pick_seg()</code>。</p>
+<p><code>audio_feed()</code> 为什么是 5.2 秒？它把整段 2.6MB 的 TS 写进一个 64KB 的 fifo，mplayer 按实时 1x 排空——<strong>这不是背压，这是物理排空时间</strong>，等于段内容时长。而它偏偏写在了「选下一段 + 预取」的<strong>前面</strong>，于是每一轮循环都被音频锁死。</p>
+<p>这里有个容易上当的地方：<code>NETTV_AF_RETRY</code> 只限制「停滞重试次数」（默认 300 次 × 20ms），治不了整段排空。实测把它调成 1，帧率 16.0 → 19.0，段间隙只掉到 8.1s；再把 mplayer 临时改名让音频彻底失效，段间隙<strong>还是 8.1s</strong>、帧率还是 19.0。这两组对照说明：音频只占 2.2s 的停滞，5.2s 的主体必须靠改结构，不能靠调参。</p>
+<h2 id="三、修法：异步音频泵"><a href="#三、修法：异步音频泵" class="headerlink" title="三、修法：异步音频泵"></a>三、修法：异步音频泵</h2><p>思路很简单——dl 解析完一段之后，这份 raw 文件对它已经没用了，<code>rename</code> 给一个子进程独占，让子进程慢慢喂，dl 立刻进下一轮：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">audio_feed_async</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *path)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (g_afifo &lt; <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">if</span> (g_aud_pump &gt; <span class="number">0</span>) &#123;                 <span class="comment">/* 非阻塞收尸; 还活着就跳过本段 */</span></span><br><span class="line">        <span class="type">int</span> st = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">if</span> (waitpid(g_aud_pump, &amp;st, WNOHANG) == <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">        g_aud_pump = <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">snprintf</span>(sp, <span class="keyword">sizeof</span> sp, <span class="string">&quot;%s.aud&quot;</span>, path);</span><br><span class="line">    rename(path, sp);                     <span class="comment">/* dl 已解析完, 交给音频子进程 */</span></span><br><span class="line">    <span class="type">pid_t</span> p = fork();</span><br><span class="line">    <span class="keyword">if</span> (p == <span class="number">0</span>) &#123; signal(SIGPIPE, SIG_IGN); audio_feed(sp); unlink(sp); _exit(<span class="number">0</span>); &#125;</span><br><span class="line">    <span class="keyword">if</span> (p &gt; <span class="number">0</span>) g_aud_pump = p;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>三个细节不能省：</p>
+<ol>
+<li><strong>必须 <code>waitpid(WNOHANG)</code> 收尸，不能用 <code>kill(pid,0)</code> 判活</strong>。僵尸进程的 <code>kill(pid,0)</code> 照样返回 0，会让泵永远被判定为「还活着」，音频从第二段起就再也不喂了。</li>
+<li><strong>必须 <code>rename</code> 而不是直接 fork 读原路径</strong>：2 槽轮转，子进程还在慢慢读的时候原路径会被下一段下载覆盖，读出来的就是半截段。</li>
+<li>上一段没喂完就跳过本段——<strong>视频优先</strong>，宁可音频有间隙也不让音频拖住供数。</li>
+</ol>
+<p>实测（同源、同 95s、同二进制，唯一变量 <code>NETTV_AUDIO_ASYNC</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>配置</th>
+<th>段间隙</th>
+<th>音频</th>
+<th>选段</th>
+<th>稳态帧率</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>现网默认</td>
+<td>10309ms</td>
+<td>5231ms</td>
+<td>4983ms</td>
+<td>15.2</td>
+</tr>
+<tr>
+<td><code>AF_RETRY=1</code></td>
+<td>8100ms</td>
+<td>—</td>
+<td>—</td>
+<td>19.0</td>
+</tr>
+<tr>
+<td>音频链路移除</td>
+<td>8100ms</td>
+<td>0</td>
+<td>—</td>
+<td>19.0</td>
+</tr>
+<tr>
+<td><strong>异步音频泵</strong></td>
+<td><strong>8228ms</strong></td>
+<td><strong>1ms</strong></td>
+<td>5104ms</td>
+<td><strong>19.8</strong></td>
+</tr>
+</tbody></table>
+<p>音频那 5.2 秒被彻底抹掉（5231ms → 1ms），帧率 **15.2 → 19.8，+30%**。</p>
+<h2 id="四、剩下的-8-2-秒归谁"><a href="#四、剩下的-8-2-秒归谁" class="headerlink" title="四、剩下的 8.2 秒归谁"></a>四、剩下的 8.2 秒归谁</h2><p>异步泵跑完，账单重排：<strong>选段 5.1s + 下载 2.9s &#x3D; 8.2s</strong>，而段内容只有 5.96s。</p>
+<ul>
+<li>下载 2.9s 是硬成本（2.6MB ÷ 约 900KB&#x2F;s），而且已经是异步预取了，跟别的事重叠着。</li>
+<li><strong>选段 5.1s 是纯浪费</strong>，现在是头号目标。<code>pick_seg()</code> → <code>hls_pick()</code> 拉一次播放列表，没拿到新段就 <code>sleep(1)</code> 重试，最多 4 次——4 次重试 + 4 次列表拉取正好 5 秒左右。但日志里一条「无新段」都没打，说明最后那次是成功的，即<strong>每轮都要白等 3 次左右</strong>。</li>
+</ul>
+<p>为什么明明落后于直播还在等新段？这是下一个待解问题：要么播放列表的滑动窗口比想象中窄，要么 <code>g_last_seg</code> 的比较逻辑在某个环节失效（比如 URL 带 query 参数、重定向后 URL 变了）。下一步就是把 <code>hls_pick()</code> 的重试次数和每次拉列表的耗时分别打点。</p>
+<h2 id="五、这一轮的教训"><a href="#五、这一轮的教训" class="headerlink" title="五、这一轮的教训"></a>五、这一轮的教训</h2><ol>
+<li><strong>别拿墙钟当内容时长。</strong> 上一条错误结论活了整整一轮，就因为「段间隙」这个名字起得太顺手。凡是「X 秒」都要问一句：这是内容的秒还是我们耗掉的秒。</li>
+<li><strong>调参的收益有天花板，改结构没有。</strong> <code>AF_RETRY</code> 从 300 调到 1 只拿回 2.2s，因为 5.2s 的主体是排空时间不是重试；把整段活挪出主循环才拿回全部。</li>
+<li><strong>A&#x2F;B 要两个方向都做。</strong> 只做「AF_RETRY&#x3D;1」会得出「音频背压是主因」的错误结论；补一组「彻底关掉音频」才发现它俩一样，说明那个参数动的是别的东西。</li>
+<li><strong>取证工具要能自证。</strong> <code>nalcount</code> 同时给「跨度法」和「间隔法」两个帧率，两个对得上才敢拿去推翻前一轮的结论。</li>
+</ol>
+<hr>
+<p>系列第 27 篇。当前状态：源真 25fps，管线稳态 19.8fps（异步音频泵后），头号瓶颈转为 <code>pick_seg()</code> 的 5.1 秒。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%BF%BB%E6%A1%88%EF%BC%9A%E6%BA%90%E6%98%AF-25fps%EF%BC%8C%E4%B8%8D%E6%98%AF-14-6fps"><span class="toc-number">1.</span> <span class="toc-text">一、先翻案：源是 25fps，不是 14.6fps</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%8110-3-%E7%A7%92%E7%9A%84%E8%B4%A6%E5%8D%95"><span class="toc-number">2.</span> <span class="toc-text">二、10.3 秒的账单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%9A%E5%BC%82%E6%AD%A5%E9%9F%B3%E9%A2%91%E6%B3%B5"><span class="toc-number">3.</span> <span class="toc-text">三、修法：异步音频泵</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%89%A9%E4%B8%8B%E7%9A%84-8-2-%E7%A7%92%E5%BD%92%E8%B0%81"><span class="toc-number">4.</span> <span class="toc-text">四、剩下的 8.2 秒归谁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E8%BF%99%E4%B8%80%E8%BD%AE%E7%9A%84%E6%95%99%E8%AE%AD"><span class="toc-number">5.</span> <span class="toc-text">五、这一轮的教训</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&text=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&title=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&is_video=false&description=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解&body=Check out this article: https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&title=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&title=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&title=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&title=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/&name=netTV 硬解攻坚(27)：源是 25fps，我们只播 15fps——段间隙成分拆解&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 28 篇。上一篇把 10.3 秒的段間隙拆成「選段 5.0s + 音頻排空 5.2s」，本篇先把選段這 5 秒量出來，再把它砍到 0.3 秒。根因說出來有點丟人：我們一直在等一個還沒生成的分片，而窗口裡躺著 4 段現成內容沒播。  一、先給選段裝表上一篇的儀器化只到 pick_seg() 這一層，只知道「選段一共 5.0 秒」，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 28 篇。上一篇把 10.3 秒的段間隙拆成「選段 5.0s + 音頻排空 5.2s」，本篇先把選段這 5 秒量出來，再把它砍到 0.3 秒。根因說出來有點丟人：我們一直在等一個還沒生成的分片，而窗口裡躺著 4 段現成內容沒播。  一、先給選段裝表上一篇的儀器化只到 pick_seg() 這一層，只知道「選段一共 5.0 秒」，">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-25T18:45:00.000Z">
+<meta property="article:modified_time" content="2026-10-25T18:37:56.593Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="性能剖析">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="展訊 SC9832A">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="HLS 直播">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2026/10/26/nettv-28-hls-playlist-window-sequential-advance/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&text=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&title=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&is_video=false&description=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價&body=Check out this article: https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&title=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&title=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&title=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&title=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&name=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%B5%A6%E9%81%B8%E6%AE%B5%E8%A3%9D%E8%A1%A8"><span class="toc-number">1.</span> <span class="toc-text">一、先給選段裝表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%815-%E7%A7%92%E7%A9%BA%E7%AD%89%E7%9A%84%E7%9C%9F%E8%BA%AB"><span class="toc-number">2.</span> <span class="toc-text">二、5 秒空等的真身</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%9A%E7%AA%97%E5%8F%A3%E5%85%A7%E9%A0%86%E5%BA%8F%E6%8E%A8%E9%80%B2"><span class="toc-number">3.</span> <span class="toc-text">三、修法：窗口內順序推進</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%AF%A6%E6%B8%AC"><span class="toc-number">4.</span> <span class="toc-text">四、實測</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%BB%A3%E5%83%B9%E8%88%87%E5%8F%96%E6%8D%A8"><span class="toc-number">5.</span> <span class="toc-text">五、代價與取捨</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%8B%E4%B8%80%E5%88%80"><span class="toc-number">6.</span> <span class="toc-text">六、下一刀</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E6%9C%AC%E6%AC%A1%E8%B8%A9%E5%88%B0%E7%9A%84%E5%85%A9%E5%80%8B%E5%9D%91"><span class="toc-number">7.</span> <span class="toc-text">附：本次踩到的兩個坑</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-25T18:45:00.000Z" itemprop="datePublished">2026-10-26</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/HLS-%E7%9B%B4%E6%92%AD/" rel="tag">HLS 直播</a>, <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A-SC9832A/" rel="tag">展訊 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E6%80%A7%E8%83%BD%E5%89%96%E6%9E%90/" rel="tag">性能剖析</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 28 篇。上一篇把 10.3 秒的段間隙拆成「選段 5.0s + 音頻排空 5.2s」，本篇先把選段這 5 秒<strong>量出來</strong>，再把它<strong>砍到 0.3 秒</strong>。根因說出來有點丟人：我們一直在等一個還沒生成的分片，而窗口裡躺著 4 段現成內容沒播。</p>
+</blockquote>
+<h2 id="一、先給選段裝表"><a href="#一、先給選段裝表" class="headerlink" title="一、先給選段裝表"></a>一、先給選段裝表</h2><p>上一篇的儀器化只到 <code>pick_seg()</code> 這一層，只知道「選段一共 5.0 秒」，不知道這 5 秒是<strong>在下載</strong>、<strong>在 sleep</strong>、還是<strong>在重試</strong>。所以第一步是給 <code>hls_pick()</code> 每次拉列表計時，並統計段條數、末段名、<code>g_last_seg</code> 命中的位置。</p>
+<p>改動純計時 + 日誌，行為零改變。瀘縣源跑一輪，打點長這樣：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[hls] 拉列表 2330ms 段数=5 r=1 末=seg/Num15825010.ts 首=seg/Num15825006.ts</span><br><span class="line">[hls] 选段 总=2330ms 拉列表=2330ms/1次 段数=5 命中=1 失败=0</span><br><span class="line">[hls] 拉列表  215ms 段数=5 r=0 末=seg/Num15825010.ts 首=seg/Num15825006.ts</span><br><span class="line">[hls] 拉列表  245ms 段数=5 r=0 末=seg/Num15825010.ts 首=seg/Num15825006.ts</span><br><span class="line">[hls] 拉列表  245ms 段数=5 r=0 末=seg/Num15825010.ts 首=seg/Num15825006.ts</span><br><span class="line">[hls] 拉列表  276ms 段数=5 r=0 末=seg/Num15825010.ts 首=seg/Num15825006.ts</span><br><span class="line">[hls] 选段 总=4981ms 拉列表=981ms/4次 段数=5 命中=0 失败=0</span><br><span class="line">&gt;&gt;&gt; [hls] 无新段: 重播上一段保持画面</span><br></pre></td></tr></table></figure>
+
+<p>帳單立刻清楚了：<strong>4 次重試裡拉列表一共只花 981ms（每次約 250ms），剩下 4000ms 全是 <code>sleep(1)</code> 空等</strong>。網路不是瓶頸，邏輯才是。</p>
+<h2 id="二、5-秒空等的真身"><a href="#二、5-秒空等的真身" class="headerlink" title="二、5 秒空等的真身"></a>二、5 秒空等的真身</h2><p>把三行資訊擺在一起看，結論幾乎是自證的：</p>
+<table>
+<thead>
+<tr>
+<th>觀察</th>
+<th>數字</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>播放列表裡的分片數</td>
+<td><strong>5 段</strong>（Num15825006 ~ Num15825010）</td>
+</tr>
+<tr>
+<td>我們每輪實際取的</td>
+<td><strong>只有最後一條</strong> Num15825010</td>
+</tr>
+<tr>
+<td>4 次重試結果</td>
+<td>全部 <code>r=0</code>（末段沒變）</td>
+</tr>
+<tr>
+<td>兜底動作</td>
+<td><strong>重播上一段</strong></td>
+</tr>
+</tbody></table>
+<p>舊邏輯是「取列表最後一條 → 跟上一段比 → 相同就 sleep 1 秒重試 4 次 → 還相同就重播上一段」。它隱含一個假設：<strong>我們總是貼著直播邊緣在播，所以只有最新那一段值得播，下一塊內容只能等伺服器生成。</strong></p>
+<p>可我們根本不貼著邊緣——每輪段間隙 10.3 秒，一段內容才 5.96 秒，我們比直播<strong>越落越遠</strong>。窗口裡 4 段沒播過的現成內容就這麼躺在那兒，我們一邊空等、一邊把剛播過的那一段再播一遍。</p>
+<p>「重播上一段」這個兜底當初是為了<strong>畫面別黑</strong>（見第 15 篇），但它在源刷新慢時會變成「畫面原地循環」。日誌裡 3&#x2F;3 輪都是 <code>命中=0</code>。</p>
+<p>順帶一個意外發現：<strong>瀘縣源當天凌晨的末段號 Num15825010 在兩輪共 15 分鐘裡紋絲不動</strong>，源已經停止刷新了。這既解釋了為什麼怎麼測都是 15fps，也說明「拿一個源測到底」這件事本身有風險。</p>
+<h2 id="三、修法：窗口內順序推進"><a href="#三、修法：窗口內順序推進" class="headerlink" title="三、修法：窗口內順序推進"></a>三、修法：窗口內順序推進</h2><p>思路很直白——<strong>別只盯最後一條，在窗口裡找到上次播的那一段，播它的下一段</strong>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* 列表全量解析进 g_segs[](不再只留 best) */</span></span><br><span class="line"><span class="type">int</span> at = <span class="number">-1</span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; g_segs_n; i++)</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(g_segs[i], g_last_seg)) &#123; at = i; <span class="keyword">break</span>; &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (at &gt;= <span class="number">0</span> &amp;&amp; at + <span class="number">1</span> &lt; g_segs_n) &#123;</span><br><span class="line">    <span class="comment">/* 窗口内还有下一段: 立刻前进, 零等待 */</span></span><br><span class="line">    <span class="built_in">snprintf</span>(full, <span class="keyword">sizeof</span> full, <span class="string">&quot;%s&quot;</span>, g_segs[at + <span class="number">1</span>]);</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (at &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="comment">/* 已经播到窗口末尾: 只有末尾真的更新了才前进, 否则返回 0 等新段 */</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">strcmp</span>(g_segs[g_segs_n - <span class="number">1</span>], g_last_seg))</span><br><span class="line">        <span class="built_in">snprintf</span>(full, <span class="keyword">sizeof</span> full, <span class="string">&quot;%s&quot;</span>, g_segs[g_segs_n - <span class="number">1</span>]);</span><br><span class="line">    <span class="keyword">else</span> &#123; r = <span class="number">0</span>; <span class="keyword">goto</span> done; &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">/* 首播 或 g_last_seg 已滑出窗口: 从倒数第 (1+HLSBUF) 段起播, 主动建缓冲 */</span></span><br><span class="line">    <span class="type">int</span> off = <span class="number">1</span> + hlsbuf(); <span class="keyword">if</span> (off &gt; g_segs_n) off = g_segs_n;</span><br><span class="line">    <span class="built_in">snprintf</span>(full, <span class="keyword">sizeof</span> full, <span class="string">&quot;%s&quot;</span>, g_segs[g_segs_n - off]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>三個分支對應三種處境：窗口內有存量 → 白拿；真到邊緣 → 才等；首播&#x2F;滑出 → 主動往回退幾段<strong>建緩衝</strong>。</p>
+<p>最後這個分支是關鍵。<code>NETTV_HLSBUF</code>（預設 3）讓首次取段從「倒數第 4 段」開始，等於一上來就攢了 3 段約 18 秒的餘量。之後每播完一段就往前挪一格，只要伺服器按段時長出貨，就永遠有下一段可播——<strong>等待從常態變成例外</strong>。</p>
+<h2 id="四、實測"><a href="#四、實測" class="headerlink" title="四、實測"></a>四、實測</h2><p>修復後瀘縣源（窗口裡那 4 段存量）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hls] 选段 总=2311ms 拉列表=2311ms/1次 段数=5 命中=1 位=-1   ← 首播, 建缓冲</span><br><span class="line">[hls] 选段 总= 225ms 拉列表= 225ms/1次 段数=5 命中=1 位=1</span><br><span class="line">[hls] 选段 总= 202ms 拉列表= 202ms/1次 段数=5 命中=1 位=2</span><br><span class="line">[hls] 选段 总= 225ms 拉列表= 225ms/1次 段数=5 命中=1 位=3</span><br></pre></td></tr></table></figure>
+
+<p>選段從 <strong>4981ms → 225ms（-95%）</strong>，「重播上一段」在存量耗盡前一次都沒觸發。對應的段間隙：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[供数] 段2: 段间隙=6029ms  成分: 选段=250ms   预取=5557ms 音频=5009ms</span><br><span class="line">[供数] 段3: 段间隙=6431ms  成分: 选段=481ms   预取=11541ms 音频=10987ms</span><br><span class="line">[供数] 段4: 段间隙=6234ms  成分: 选段=705ms   预取=17333ms 音频=16774ms</span><br></pre></td></tr></table></figure>
+
+<p>段間隙 <strong>10309ms → 6029~6431ms（-40%）</strong>。剩下的 5 秒清一色是 <code>音频</code>——那是上一篇定位的 <code>audio_feed()</code> 物理排空，屬於下一刀。</p>
+<p>為了拿到真穩態（瀘縣源已停刷），換到仍在刷新的松潘源跑 120 秒：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[hls] 选段 总=304ms 命中=1 段数=3      ← 11 段全部命中, 无一次重播</span><br><span class="line">[hls] 选段 总=322ms 命中=1 段数=3</span><br><span class="line">[hls] 选段 总=331ms 命中=1 段数=3</span><br><span class="line">...</span><br><span class="line">[STAT] frames=5125 real=2439 elapsed=111993ms fps_x10=217</span><br><span class="line">signal=11 = 0</span><br></pre></td></tr></table></figure>
+
+<p><strong>21.7fps，零崩潰</strong>，選段穩定在 310ms 上下。段間隙仍顯示 11.2 秒，但那是因為松潘一段內容本來就約 10 秒、且 <code>音频</code> 一項佔了 8.6 秒——<strong>選段已經不是瓶頸</strong>。</p>
+<p>不過只報修復後的數字是沒有說服力的，所以補了一組同二進位族對照（v23 &#x3D; 修復前的選段邏輯），同樣是松潘源、同樣 120 秒：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>fps</th>
+<th>段間隙 EMA</th>
+<th>選段</th>
+<th>rb 深度</th>
+<th>命中率</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>v23（舊選段）</td>
+<td><strong>14.2</strong></td>
+<td>19029ms</td>
+<td>~310ms</td>
+<td>296 → 146（被抽乾）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>v28（新選段）</td>
+<td><strong>21.7</strong></td>
+<td>11400ms</td>
+<td>304~338ms</td>
+<td>377 → 489（持續漲）</td>
+<td>11&#x2F;11</td>
+</tr>
+</tbody></table>
+<p>有意思的是：<strong>松潘源上舊邏輯其實也不空等</strong>——這個源刷新夠快，拉列表時總有新段，選段同樣只要 310ms。差距不來自 sleep，而來自<strong>緩衝深度</strong>：舊邏輯貼著直播邊緣跑，rb 一路被抽乾到 146（worker 等米下鍋）；新邏輯首播就建了 2~3 段餘量，rb 一路漲到 489。所以幀率差 53% 的真實原因是<strong>供數不再斷頓</strong>，而不是省下了那幾次 <code>sleep(1)</code>。</p>
+<p>換句話說：這個修法在源刷新快時靠「建緩衝」，在源刷新慢時靠「吃窗口存量」，兩種處境都能兜住。</p>
+<h2 id="五、代價與取捨"><a href="#五、代價與取捨" class="headerlink" title="五、代價與取捨"></a>五、代價與取捨</h2><p>天下沒有免費的幀率。這個修法把「延遲低但卡頓」換成了「流暢但延遲高」：起播時主動往回退 <code>HLSBUF</code> 段，預設 3 段約 18 秒延遲。</p>
+<p>對電視直播來說我認為這筆交易划算：18 秒延遲用戶基本無感，而「每 10 秒卡一下 + 畫面原地循環」是肉眼可見的糟。真要貼直播邊緣，<code>NETTV_HLSBUF=0</code> 就能退回舊行為。</p>
+<p>另外提醒一句：<strong>這套邏輯依賴 <code>g_last_seg</code> 能在列表裡精確匹配到</strong>。如果源在 URL 上掛了會變的 query 參數（鑑權串、<code>?m=</code> 時間戳之類），匹配會失敗並退化成「每輪都跳回建緩衝」。實測的源段名是穩定路徑，沒踩到，但換源時值得先看一眼 <code>[hls] 拉列表 ... 位=</code> 這一列——<strong>正常應該是 -1 之後遞增，如果一直是 -1，就是匹配壞了</strong>。</p>
+<h2 id="六、下一刀"><a href="#六、下一刀" class="headerlink" title="六、下一刀"></a>六、下一刀</h2><p>段間隙的帳單現在長這樣：</p>
+<table>
+<thead>
+<tr>
+<th>項</th>
+<th>修復前</th>
+<th>現在</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>選段</td>
+<td>4918ms</td>
+<td><strong>~320ms</strong></td>
+</tr>
+<tr>
+<td>音頻排空</td>
+<td>5231ms</td>
+<td><strong>5231ms（未動）</strong></td>
+</tr>
+<tr>
+<td>下載 + 入池</td>
+<td>~220ms</td>
+<td>~220ms</td>
+</tr>
+</tbody></table>
+<p>77% 的黑洞已經集中在 <code>audio_feed()</code> 一家身上。第 27 篇做好的<strong>非同步音頻泵</strong>（<code>NETTV_AUDIO_ASYNC=1</code>，把整段 <code>rename</code> 給子行程慢餵）單獨測過能把音頻從 5231ms 壓到 1ms、幀率 +30%。兩刀疊加後，段週期會短於段內容時長，瓶頸將正式交給 worker 側（渲染 23.2ms）——那時候才是真的打硬仗。</p>
+<h2 id="附：本次踩到的兩個坑"><a href="#附：本次踩到的兩個坑" class="headerlink" title="附：本次踩到的兩個坑"></a>附：本次踩到的兩個坑</h2><ol>
+<li><strong>日誌被重生截斷</strong>：<code>child_log_bound()</code> 用 <code>O_TRUNC</code> 打開 <code>/tmp/nettv_child.log</code>，monitor 每重啟一次子行程，前面的 <code>[STAT]</code>&#x2F;<code>[供数]</code> 全沒了。95 秒跑出 973 幀，日誌裡卻只剩 1 條 <code>[供数]</code>——差點誤判成「一開局就崩」。已改成 <code>O_APPEND</code> + 每次重生打分隔標記。</li>
+<li><strong>別拿一個源測到底</strong>：瀘縣源凌晨停刷，同一份程式碼測出來是 15fps；換松潘源是 21.7fps。<strong>偏離結論的往往不是程式碼，是源的狀態</strong>。判源活沒活，隔 9 秒拉兩次 m3u8 比末段號就夠了。</li>
+</ol>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E7%B5%A6%E9%81%B8%E6%AE%B5%E8%A3%9D%E8%A1%A8"><span class="toc-number">1.</span> <span class="toc-text">一、先給選段裝表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%815-%E7%A7%92%E7%A9%BA%E7%AD%89%E7%9A%84%E7%9C%9F%E8%BA%AB"><span class="toc-number">2.</span> <span class="toc-text">二、5 秒空等的真身</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%9A%E7%AA%97%E5%8F%A3%E5%85%A7%E9%A0%86%E5%BA%8F%E6%8E%A8%E9%80%B2"><span class="toc-number">3.</span> <span class="toc-text">三、修法：窗口內順序推進</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%AF%A6%E6%B8%AC"><span class="toc-number">4.</span> <span class="toc-text">四、實測</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%BB%A3%E5%83%B9%E8%88%87%E5%8F%96%E6%8D%A8"><span class="toc-number">5.</span> <span class="toc-text">五、代價與取捨</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%8B%E4%B8%80%E5%88%80"><span class="toc-number">6.</span> <span class="toc-text">六、下一刀</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E6%9C%AC%E6%AC%A1%E8%B8%A9%E5%88%B0%E7%9A%84%E5%85%A9%E5%80%8B%E5%9D%91"><span class="toc-number">7.</span> <span class="toc-text">附：本次踩到的兩個坑</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&text=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&title=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&is_video=false&description=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價&body=Check out this article: https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&title=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&title=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&title=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&title=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/&name=netTV 硬解攻堅(28)：選段 5 秒空等——只盯播放列表最後一條的代價&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
