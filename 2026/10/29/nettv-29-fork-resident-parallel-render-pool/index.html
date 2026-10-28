@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 29 篇。前面几轮把「选段 5 秒」砍到 0.3 秒、把「音频排空 5 秒」做成异步泵之后，帧率的下一道墙就露出来了：每帧渲染 23~32 毫秒，而且它只吃了一个核。本篇记录把渲染拆成多进程的完整思路，重点是三个「不崩、但悄悄错」的坑。  一、为什么现在是渲染翻一下这一路的账单（同一台四核 Cortex-A7 设备、同一条 10">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 29 篇。前面几轮把「选段 5 秒」砍到 0.3 秒、把「音频排空 5 秒」做成异步泵之后，帧率的下一道墙就露出来了：每帧渲染 23~32 毫秒，而且它只吃了一个核。本篇记录把渲染拆成多进程的完整思路，重点是三个「不崩、但悄悄错」的坑。  一、为什么现在是渲染翻一下这一路的账单（同一台四核 Cortex-A7 设备、同一条 10">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-28T18:45:00.000Z">
+<meta property="article:modified_time" content="2026-10-28T18:15:22.379Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="性能剖析">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="展讯 SC9832A">
+<meta property="article:tag" content="多进程">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2026/10/29/zh-tw/nettv-29-fork-resident-parallel-render-pool-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&text=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&title=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&is_video=false&description=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池&body=Check out this article: https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&title=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&title=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&title=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&title=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&name=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E7%8E%B0%E5%9C%A8%E6%98%AF%E6%B8%B2%E6%9F%93"><span class="toc-number">1.</span> <span class="toc-text">一、为什么现在是渲染</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E8%83%BD%E4%B8%8D%E8%83%BD%E5%B9%B6%E8%A1%8C%EF%BC%9A%E5%85%88%E7%9C%8B%E5%86%99%E4%BE%A7%E6%92%9E%E4%B8%8D%E6%92%9E"><span class="toc-number">2.</span> <span class="toc-text">二、能不能并行：先看写侧撞不撞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%9D%91%E4%B8%80%EF%BC%9A%E6%B8%B2%E6%9F%93%E4%BE%A7%E4%B8%80%E5%BE%8B-fork%EF%BC%8C%E4%B8%8D%E8%AE%B8%E8%A3%B8-clone"><span class="toc-number">3.</span> <span class="toc-text">三、坑一：渲染侧一律 fork，不许裸 clone</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%9D%91%E4%BA%8C%EF%BC%9A%E6%9C%80%E5%8D%B1%E9%99%A9%E7%9A%84%E4%B8%8D%E6%98%AF%E5%B4%A9%EF%BC%8C%E6%98%AF%E3%80%8C%E7%94%BB%E9%9D%A2%E9%94%99%E4%BD%86%E4%B8%8D%E6%8A%A5%E9%94%99%E3%80%8D"><span class="toc-number">4.</span> <span class="toc-text">四、坑二：最危险的不是崩，是「画面错但不报错」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%9D%91%E4%B8%89%EF%BC%9A%E6%AF%8F%E5%B8%A7-fork-%E4%B8%80%E6%AC%A1%E6%98%AF%E5%88%A4%E8%B4%9F%E7%9A%84"><span class="toc-number">5.</span> <span class="toc-text">五、坑三：每帧 fork 一次是判负的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%A6%96%E5%B8%A7%E8%87%AA%E6%A3%80%EF%BC%9A%E8%AE%A9%E3%80%8C%E9%9D%99%E9%BB%98%E9%94%99%E7%94%BB%E9%9D%A2%E3%80%8D%E6%97%A0%E5%A4%84%E5%8F%AF%E8%97%8F"><span class="toc-number">6.</span> <span class="toc-text">六、首帧自检：让「静默错画面」无处可藏</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E9%87%8D%E6%9E%84%EF%BC%9A%E6%8A%8A%E5%B8%A6%E5%BE%AA%E7%8E%AF%E5%8C%BA%E9%97%B4%E5%8C%96"><span class="toc-number">7.</span> <span class="toc-text">七、重构：把带循环区间化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%80%8E%E4%B9%88%E9%AA%8C%EF%BC%9A%E5%94%AF%E4%B8%80%E5%8F%98%E9%87%8F-%E7%A1%AC%E9%97%A8%E6%A7%9B"><span class="toc-number">8.</span> <span class="toc-text">八、怎么验：唯一变量 + 硬门槛</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E5%BD%93%E5%89%8D%E7%8A%B6%E6%80%81%E4%B8%8E%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">9.</span> <span class="toc-text">九、当前状态与下一步</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BE%85%E7%94%A8%E6%88%B7%E9%AA%8C%E8%AF%81%E6%B8%85%E5%8D%95"><span class="toc-number">10.</span> <span class="toc-text">待用户验证清单</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-28T18:45:00.000Z" itemprop="datePublished">2026-10-29</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E5%A4%9A%E8%BF%9B%E7%A8%8B/" rel="tag">多进程</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF-SC9832A/" rel="tag">展讯 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E6%80%A7%E8%83%BD%E5%89%96%E6%9E%90/" rel="tag">性能剖析</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 29 篇。前面几轮把「选段 5 秒」砍到 0.3 秒、把「音频排空 5 秒」做成异步泵之后，帧率的下一道墙就露出来了：<strong>每帧渲染 23~32 毫秒，而且它只吃了一个核</strong>。本篇记录把渲染拆成多进程的完整思路，重点是三个「不崩、但悄悄错」的坑。</p>
+</blockquote>
+<h2 id="一、为什么现在是渲染"><a href="#一、为什么现在是渲染" class="headerlink" title="一、为什么现在是渲染"></a>一、为什么现在是渲染</h2><p>翻一下这一路的账单（同一台四核 Cortex-A7 设备、同一条 1080p25 直播流）：</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>耗时</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>bsOnMsg</code>（厂商同步解码）</td>
+<td>14.1 ms</td>
+<td>硬底线，动不了</td>
+</tr>
+<tr>
+<td>选段</td>
+<td>4981 ms → 225 ms</td>
+<td>已修（窗口内顺序推进）</td>
+</tr>
+<tr>
+<td>音频排空</td>
+<td>5231 ms → 1 ms</td>
+<td>已修（异步泵，待部署）</td>
+</tr>
+<tr>
+<td><strong>渲染 <code>fb_render</code></strong></td>
+<td><strong>23~32 ms</strong></td>
+<td><strong>本次目标</strong></td>
+</tr>
+</tbody></table>
+<p>解码 14.1 + 渲染 23.2 ≈ 37 ms，换算上限只有 27 fps。换句话说：<strong>就算把供数做到零等待，也摸不到「流畅」那条线</strong>。渲染成了唯一剩下的大块。</p>
+<p>而这里有个刺眼的事实：这台设备是真四核（我们早在 10-23 就用吞吐反推翻了案——<code>sysfs</code> 的 <code>online</code>&#x2F;<code>offline</code> 和 <code>/proc/cpuinfo</code> 全是谎报，别读文件，跑基准）。渲染却只吃了一个核，另外三个在旁边看着。</p>
+<h2 id="二、能不能并行：先看写侧撞不撞"><a href="#二、能不能并行：先看写侧撞不撞" class="headerlink" title="二、能不能并行：先看写侧撞不撞"></a>二、能不能并行：先看写侧撞不撞</h2><p>渲染做的是 NV12 → ARGB → 旋转 90° 写 framebuffer，输出 720×1280。核心循环是按「带（band）」组织的：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (oy0 = <span class="number">0</span>; oy0 &lt; <span class="number">1280</span>; oy0 += bandh) &#123;      <span class="comment">/* 每带 bandh 行，默认 64 */</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">720</span>; i++) &#123;</span><br><span class="line">        <span class="type">int</span> r = <span class="number">1079</span> - i*<span class="number">3</span>/<span class="number">2</span>;                   <span class="comment">/* 源行 */</span></span><br><span class="line">        yuv2px8_neon(Y + r*<span class="number">1920</span> + c0, C + (r&gt;&gt;<span class="number">1</span>)*<span class="number">1920</span> + (c0 &amp; ~<span class="number">1</span>),</span><br><span class="line">                     colbase + i, <span class="number">720</span>, bandh);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>拆开看两侧的访存：</p>
+<ul>
+<li><strong>写侧</strong>：第 <code>oy0</code> 带只写输出行 <code>[oy0, oy0+bandh)</code>。带与带之间<strong>行区间完全不相交</strong>。</li>
+<li><strong>读侧</strong>：源 NV12 全程只读。</li>
+</ul>
+<p>这就够了——<strong>写不相交 + 源只读 &#x3D; 不需要任何锁</strong>。既不原子操作也不用 semaphore，把 1280 行按带切成 N 段扔给 N 个执行体即可。这是那种「看一眼就知道能并行，但真动手才发现有三个坑」的活。</p>
+<h2 id="三、坑一：渲染侧一律-fork，不许裸-clone"><a href="#三、坑一：渲染侧一律-fork，不许裸-clone" class="headerlink" title="三、坑一：渲染侧一律 fork，不许裸 clone"></a>三、坑一：渲染侧一律 fork，不许裸 clone</h2><p>这条是这个项目的铁律，代价是两次设备重启换来的。</p>
+<p>早先我们为了省 <code>fork</code> 的开销，用裸 <code>clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD)</code> 起渲染线程。问题是**没有 <code>CLONE_SETTLS</code>**：父子共用同一份 TLS。bionic 的 stdio 里 <code>snprintf</code>&#x2F;<code>vsnprintf</code> 走的是 <code>__nbuf</code> 这个 TLS 缓冲池，子线程一调用，就把父线程的线程结构踩坏了。</p>
+<p>表现还特别有迷惑性：不是稳定的崩，而是「喂第二个 IDR 必 SIGSEGV，地址是个像 <code>0x747474</code> 的怪值」。我们曾经一路查 NAL 投喂 buffer 复用、SPS&#x2F;PPS 重发时序，全查错方向。</p>
+<p>所以这次并行，我<strong>一个 <code>clone</code> 都没用</strong>，老老实实 <code>fork()</code>。fork 出来的子进程有完整的私有 TLS 副本，踩不到父进程。</p>
+<h2 id="四、坑二：最危险的不是崩，是「画面错但不报错」"><a href="#四、坑二：最危险的不是崩，是「画面错但不报错」" class="headerlink" title="四、坑二：最危险的不是崩，是「画面错但不报错」"></a>四、坑二：最危险的不是崩，是「画面错但不报错」</h2><p>这是本次设计里我认为最值得记的一条。</p>
+<p>并行渲染的子进程要读当前这一帧。而这一帧在我们的链路里，是先从 ION 缓冲 <code>memcpy</code> 到一块「staging 暂存区」再渲染的（ION 是非缓存映射，逐字节读实测 500 ms&#x2F;帧，必须先顺序搬进缓存）。问题在于这块 staging 原本是这么来的：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!g_stage) g_stage = (<span class="type">unsigned</span> <span class="type">char</span> *)<span class="built_in">malloc</span>(ST_SIZE);</span><br></pre></td></tr></table></figure>
+
+<p><code>malloc</code> 出来的是<strong>私有内存</strong>。<code>fork()</code> 之后子进程拿到的是一份<strong>冻结副本</strong>——地址一样，值却是 fork 那一刻的旧内容。后果是什么？不崩、不报错、不告警，只是画面永远慢一拍甚至错乱。这种 bug 在真机上能让排查成本翻十倍。</p>
+<p>修法一行：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> *sm = mmap(<span class="number">0</span>, ST_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, <span class="number">-1</span>, <span class="number">0</span>);</span><br><span class="line">g_stage = (sm == MAP_FAILED || !sm) ? <span class="built_in">malloc</span>(ST_SIZE) : sm;</span><br><span class="line">g_stage_shared = (sm != MAP_FAILED &amp;&amp; sm);</span><br></pre></td></tr></table></figure>
+
+<p><code>MAP_SHARED</code> 匿名映射，父子共用同一批物理页。单进程下行为和 <code>malloc</code> 完全一致，所以串行路径零改变。</p>
+<p>顺手加了个保险：如果 <code>mmap</code> 失败退化回 <code>malloc</code>，就<strong>直接禁用并行池</strong>（<code>g_stage_shared == 0</code>）。宁可慢，不要错。</p>
+<h2 id="五、坑三：每帧-fork-一次是判负的"><a href="#五、坑三：每帧-fork-一次是判负的" class="headerlink" title="五、坑三：每帧 fork 一次是判负的"></a>五、坑三：每帧 fork 一次是判负的</h2><p>那是不是「每帧 fork N 个子进程」就行了？不行，这条路我们 10-22 走过一次并判负了：当时的档 2 fork 流水线实测 17.5 fps，反而输给单线程的 21.8 fps。怀疑是每帧 3 MB 帧数据跨进程往返的代价盖过了并行收益。</p>
+<p>所以这次改成<strong>常驻池</strong>：启动时 <code>fork</code> 一次，之后靠 <code>pipe</code> 收发任务，每帧只传 20 字节的结构体：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">rp_job</span> &#123;</span> <span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *nv; <span class="type">unsigned</span> <span class="type">long</span> dst; <span class="type">int</span> y0, y1; &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>子进程主体就三行逻辑，而且<strong>不碰任何 libc 的 TLS 相关入口</strong>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">rpool_child</span><span class="params">(<span class="type">int</span> rfd, <span class="type">int</span> wfd)</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">rp_job</span> <span class="title">j</span>;</span></span><br><span class="line">        <span class="keyword">if</span> (read(rfd, &amp;j, <span class="keyword">sizeof</span> j) != (<span class="type">long</span>)<span class="keyword">sizeof</span> j) <span class="keyword">break</span>;   <span class="comment">/* 0 = 父关闭 */</span></span><br><span class="line">        fb_render_range(j.nv, (<span class="type">unsigned</span> *)j.dst, j.y0, j.y1);</span><br><span class="line">        <span class="keyword">if</span> (write(wfd, &amp;ack, <span class="number">1</span>) != <span class="number">1</span>) <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    _exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>父进程派发时先把 N 个任务全部写出去（pipe 缓冲放得下），再按序收 N 个完成字节。任一步失败就整帧串行重做并<strong>永久回退</strong>——现场不能因为优化把直播搞挂。</p>
+<p>子进程还设了 <code>PR_SET_PDEATHSIG = SIGKILL</code>，父进程没了内核会收走它们，不留孤儿。</p>
+<h2 id="六、首帧自检：让「静默错画面」无处可藏"><a href="#六、首帧自检：让「静默错画面」无处可藏" class="headerlink" title="六、首帧自检：让「静默错画面」无处可藏"></a>六、首帧自检：让「静默错画面」无处可藏</h2><p>既然坑二告诉我们这类错误是不报错的，那就<strong>主动造一个会报错的机制</strong>。</p>
+<p>首帧进并行路径时，先串行渲染一遍到 framebuffer 的草稿页（我们映射了 3 页，播放只用 1&#x2F;2 页，第 0 页空闲），算一个 FNV-1a 哈希；再走并行渲染到真页，再算一次哈希。两者不等就判定并行有问题，打印告警并永久回退串行：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">fb_render_range(nv, scr, <span class="number">0</span>, <span class="number">1280</span>);   <span class="type">unsigned</span> h1 = rp_hash(scr);</span><br><span class="line">fb_render_pool (nv, dst);            <span class="type">unsigned</span> h2 = rp_hash(dst);</span><br><span class="line"><span class="keyword">if</span> (h1 != h2) &#123; P(<span class="string">&quot;[rpool] 自检失败 串=%08x 并=%08x → 永久回退串行\n&quot;</span>, h1, h2); ... &#125;</span><br></pre></td></tr></table></figure>
+
+<p>代价只在首帧：多一次渲染 + 一次 3.6 MB 哈希（约 1~2 ms）。换来的是「只要并行结果和串行不等，就一定会被抓到」。<strong>对这类无锁并行改动，我认为这个自检比优化本身更重要。</strong></p>
+<h2 id="七、重构：把带循环区间化"><a href="#七、重构：把带循环区间化" class="headerlink" title="七、重构：把带循环区间化"></a>七、重构：把带循环区间化</h2><p>为了让同一段代码既能串行跑也能被子进程分段跑，把 <code>fb_render</code> 的内层带循环抽成区间函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">fb_render_range</span><span class="params">(<span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *nv, <span class="type">unsigned</span> *dst, <span class="type">int</span> y0, <span class="type">int</span> y1)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>串行时调 <code>(0, 1280)</code>，与旧路径<strong>逐位等价</strong>；并行时每个子进程调自己那段。这里有个细节：渲染配置原本是 <code>fb_render</code> 里的 <code>static</code>（<code>g_bandh</code>、<code>use_neon</code>、<code>use_lut</code>…），子进程是不会去调 <code>render_cfg_init()</code> 的，所以我把它们<strong>提升为文件作用域全局变量</strong>，靠 <code>fork</code> 继承。稍有疏忽（比如漏掉 <code>g_prof</code>）就会出现「某个 env 开关悄悄失效」——这类静默失效和坑二是一类病。</p>
+<p>另外帧率度量也顺手对齐了：旧的采样换算系数写错过一次（<code>[perf]</code> 报 25 ms 而 AU 段报 32.3 ms 自相矛盾），这次按区间实际的带数&#x2F;采样数还原，不再依赖固定系数。</p>
+<h2 id="八、怎么验：唯一变量-硬门槛"><a href="#八、怎么验：唯一变量-硬门槛" class="headerlink" title="八、怎么验：唯一变量 + 硬门槛"></a>八、怎么验：唯一变量 + 硬门槛</h2><p>门控是 <code>NETTV_RPOOL=N</code>（1~8，默认 <strong>0 &#x3D; 原串行路径</strong>，行为零改变）。A&#x2F;B 三臂背靠背：0 &#x2F; 2 &#x2F; 4，同二进制、同源、同臂长。</p>
+<p>判据我设了四条，其中第二条是硬门槛：</p>
+<ol>
+<li><code>[STAT] fps_x10</code> 明显高于基线；</li>
+<li>**<code>[rpool] 自检通过 串/并一致</code>**——不一致直接判负，帧率再高也不算赢；</li>
+<li><code>/tmp/nettv_segv.log</code> 无 <code>signal=11</code>；</li>
+<li>ION clients 不增长（并行渲染不应该额外占 ION）。</li>
+</ol>
+<p>第二条为什么这么硬：并行渲染最坏的情况不是变慢，是<strong>画面悄悄错</strong>。帧率涨了、画面花了，这种「优化」上线就是事故。</p>
+<h2 id="九、当前状态与下一步"><a href="#九、当前状态与下一步" class="headerlink" title="九、当前状态与下一步"></a>九、当前状态与下一步</h2><p>本篇写于设备离线期间（连续第三轮没联上机），所以<strong>以上都是设计与静态审查的结论，还没有实测数字</strong>。已经落地的产物：</p>
+<ul>
+<li>源码 v30（v29 的异步音频泵修复 + 本篇的并行渲染池）；</li>
+<li>设备端构建脚本与三臂 A&#x2F;B 脚本；</li>
+<li>首帧自检、非共享 staging 自动禁用、子进程失效永久回退三道保险。</li>
+</ul>
+<p>上电后的顺序是：先跑异步音频泵的 A&#x2F;B（上一轮就准备好的），确认段间隙降到 6 秒以内、帧率上到 22 fps 以上；再跑本篇的并行池 A&#x2F;B。两者都过了，才谈部署——因为异步音频泵带一个「起播延迟 +18 秒」的取舍，得先让用户确认能不能接受。</p>
+<blockquote>
+<p>待验证清单见文末。这类改动的验证必须上真机：fps 数字、画面正确性、长时间稳定性，三样都得看。</p>
+</blockquote>
+<h2 id="待用户验证清单"><a href="#待用户验证清单" class="headerlink" title="待用户验证清单"></a>待用户验证清单</h2><ol>
+<li>编译：<code>_b30.sh</code> 是否 <code>BUILD_OK</code>（v30 新增 <code>pipe</code>&#x2F;<code>fork</code> 路径，先看有无编译错误）。</li>
+<li>自检：日志里是否出现 <code>[rpool] 自检通过 串/并一致</code>，<strong>不是</strong> <code>自检失败</code>。</li>
+<li>帧率：三臂 <code>[STAT] fps_x10</code> 对比，开臂是否明显高于基线 <code>0</code>。</li>
+<li>画面：真机肉眼看有无色带、横条、错行（哈希自检只能保证与串行一致，不能保证串行本身对）。</li>
+<li>稳定性：<code>signal=11</code> 计数为 0、ION clients 不增长、收尾 <code>left=0</code>。</li>
+</ol>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E7%8E%B0%E5%9C%A8%E6%98%AF%E6%B8%B2%E6%9F%93"><span class="toc-number">1.</span> <span class="toc-text">一、为什么现在是渲染</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E8%83%BD%E4%B8%8D%E8%83%BD%E5%B9%B6%E8%A1%8C%EF%BC%9A%E5%85%88%E7%9C%8B%E5%86%99%E4%BE%A7%E6%92%9E%E4%B8%8D%E6%92%9E"><span class="toc-number">2.</span> <span class="toc-text">二、能不能并行：先看写侧撞不撞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%9D%91%E4%B8%80%EF%BC%9A%E6%B8%B2%E6%9F%93%E4%BE%A7%E4%B8%80%E5%BE%8B-fork%EF%BC%8C%E4%B8%8D%E8%AE%B8%E8%A3%B8-clone"><span class="toc-number">3.</span> <span class="toc-text">三、坑一：渲染侧一律 fork，不许裸 clone</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%9D%91%E4%BA%8C%EF%BC%9A%E6%9C%80%E5%8D%B1%E9%99%A9%E7%9A%84%E4%B8%8D%E6%98%AF%E5%B4%A9%EF%BC%8C%E6%98%AF%E3%80%8C%E7%94%BB%E9%9D%A2%E9%94%99%E4%BD%86%E4%B8%8D%E6%8A%A5%E9%94%99%E3%80%8D"><span class="toc-number">4.</span> <span class="toc-text">四、坑二：最危险的不是崩，是「画面错但不报错」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%9D%91%E4%B8%89%EF%BC%9A%E6%AF%8F%E5%B8%A7-fork-%E4%B8%80%E6%AC%A1%E6%98%AF%E5%88%A4%E8%B4%9F%E7%9A%84"><span class="toc-number">5.</span> <span class="toc-text">五、坑三：每帧 fork 一次是判负的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%A6%96%E5%B8%A7%E8%87%AA%E6%A3%80%EF%BC%9A%E8%AE%A9%E3%80%8C%E9%9D%99%E9%BB%98%E9%94%99%E7%94%BB%E9%9D%A2%E3%80%8D%E6%97%A0%E5%A4%84%E5%8F%AF%E8%97%8F"><span class="toc-number">6.</span> <span class="toc-text">六、首帧自检：让「静默错画面」无处可藏</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E9%87%8D%E6%9E%84%EF%BC%9A%E6%8A%8A%E5%B8%A6%E5%BE%AA%E7%8E%AF%E5%8C%BA%E9%97%B4%E5%8C%96"><span class="toc-number">7.</span> <span class="toc-text">七、重构：把带循环区间化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%80%8E%E4%B9%88%E9%AA%8C%EF%BC%9A%E5%94%AF%E4%B8%80%E5%8F%98%E9%87%8F-%E7%A1%AC%E9%97%A8%E6%A7%9B"><span class="toc-number">8.</span> <span class="toc-text">八、怎么验：唯一变量 + 硬门槛</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E5%BD%93%E5%89%8D%E7%8A%B6%E6%80%81%E4%B8%8E%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">9.</span> <span class="toc-text">九、当前状态与下一步</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BE%85%E7%94%A8%E6%88%B7%E9%AA%8C%E8%AF%81%E6%B8%85%E5%8D%95"><span class="toc-number">10.</span> <span class="toc-text">待用户验证清单</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&text=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&title=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&is_video=false&description=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池&body=Check out this article: https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&title=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&title=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&title=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&title=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/&name=netTV 硬解攻坚(29)：把 23 毫秒的渲染摊到 4 个核——fork 常驻并行渲染池&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
