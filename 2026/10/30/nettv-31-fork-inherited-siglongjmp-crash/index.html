@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 31 篇。这一次不是离线推演，而是第一次把并行渲染池放到真机上跑——结果它把设备搞挂了。复盘下来，真正的凶手不是并行本身，而是「fork 出来的子进程继承了父进程的崩溃恢复流」。这篇把这个坑讲透，顺带记两条同一天踩到的、看起来毫不相关的运维事故。  1. 那天发生了什么前几轮都在离线写代码：把渲染器按「带」切开，分给几个常驻子进">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 31 篇。这一次不是离线推演，而是第一次把并行渲染池放到真机上跑——结果它把设备搞挂了。复盘下来，真正的凶手不是并行本身，而是「fork 出来的子进程继承了父进程的崩溃恢复流」。这篇把这个坑讲透，顺带记两条同一天踩到的、看起来毫不相关的运维事故。  1. 那天发生了什么前几轮都在离线写代码：把渲染器按「带」切开，分给几个常驻子进">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-30T13:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-30T12:37:23.555Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="展讯 SC9832A">
+<meta property="article:tag" content="多进程">
+<meta property="article:tag" content="调试取证">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2026/10/30/zh-tw/nettv-31-fork-inherited-siglongjmp-crash-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&text=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&title=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&is_video=false&description=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp&body=Check out this article: https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&title=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&title=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&title=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&title=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&name=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%82%A3%E5%A4%A9%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88"><span class="toc-number">1.</span> <span class="toc-text">1. 那天发生了什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%9C%9F%E6%AD%A3%E7%9A%84%E5%87%B6%E6%89%8B%EF%BC%9A%E5%AD%90%E8%BF%9B%E7%A8%8B%E7%BB%A7%E6%89%BF%E4%BA%86%E7%88%B6%E8%BF%9B%E7%A8%8B%E7%9A%84-siglongjmp-%E6%81%A2%E5%A4%8D%E6%B5%81"><span class="toc-number">2.</span> <span class="toc-text">2. 真正的凶手：子进程继承了父进程的 siglongjmp 恢复流</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%AE%E6%B3%95%EF%BC%9A%E5%AD%90%E8%BF%9B%E7%A8%8B%E9%87%8C%E6%8A%8A%E4%BF%A1%E5%8F%B7%E5%A4%84%E7%90%86%E5%A4%8D%E4%BD%8D%E6%88%90%E9%BB%98%E8%AE%A4"><span class="toc-number">2.1.</span> <span class="toc-text">修法：子进程里把信号处理复位成默认</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%90%8C%E4%B8%80%E5%A4%A9%E8%B8%A9%E5%88%B0%E7%9A%84%E7%AC%AC%E4%BA%8C%E4%B8%AA%E5%9D%91%EF%BC%9A%E6%B5%8B%E8%AF%95%E8%84%9A%E6%9C%AC%E6%8A%8A%E8%87%AA%E5%B7%B1%E6%9D%80%E4%BA%86"><span class="toc-number">3.</span> <span class="toc-text">3. 同一天踩到的第二个坑：测试脚本把自己杀了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%AC%AC%E4%B8%89%E4%B8%AA%E5%9D%91%EF%BC%9A%E4%B8%80%E4%B8%AA%E8%87%AA%E5%B7%B1%E4%BC%9A%E5%A2%9E%E9%95%BF%E7%9A%84%E6%80%A7%E8%83%BD%E6%95%B0%E5%AD%97"><span class="toc-number">4.</span> <span class="toc-text">4. 第三个坑：一个自己会增长的性能数字</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E8%BF%99%E4%B8%80%E8%BD%AE%E7%9C%9F%E6%AD%A3%E7%9A%84%E5%A5%BD%E6%B6%88%E6%81%AF"><span class="toc-number">5.</span> <span class="toc-text">5. 这一轮真正的好消息</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%B0%8F%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">6. 小结</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-30T13:30:00.000Z" itemprop="datePublished">2026-10-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E5%A4%9A%E8%BF%9B%E7%A8%8B/" rel="tag">多进程</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF-SC9832A/" rel="tag">展讯 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E8%B0%83%E8%AF%95%E5%8F%96%E8%AF%81/" rel="tag">调试取证</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 31 篇。这一次不是离线推演，而是<strong>第一次把并行渲染池放到真机上跑</strong>——结果它把设备搞挂了。复盘下来，真正的凶手不是并行本身，而是「fork 出来的子进程继承了父进程的崩溃恢复流」。这篇把这个坑讲透，顺带记两条同一天踩到的、看起来毫不相关的运维事故。</p>
+</blockquote>
+<h2 id="1-那天发生了什么"><a href="#1-那天发生了什么" class="headerlink" title="1. 那天发生了什么"></a>1. 那天发生了什么</h2><p>前几轮都在离线写代码：把渲染器按「带」切开，分给几个常驻子进程并行渲染。写完、静态审过、编译通过（这已经是这类改造第一次真的编过），然后上机做四臂 A&#x2F;B：0 路（基线）、2 路、4 路、8 路。</p>
+<p>结果：</p>
+<table>
+<thead>
+<tr>
+<th>臂位</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0 路（基线）</td>
+<td>正常，21.7 fps，segv&#x3D;0，ION&#x3D;0</td>
+</tr>
+<tr>
+<td>2 路</td>
+<td><strong>worker 每代 SIGSEGV 退出，monitor 无限重启，0 帧</strong></td>
+</tr>
+<tr>
+<td>4 路 &#x2F; 8 路</td>
+<td>没跑成（脚本自己死了，见第 3 节）</td>
+</tr>
+</tbody></table>
+<p>而且不只是播放器崩：<strong>跑着跑着，整台设备的用户态服务全部变成 connection refused</strong>（22&#x2F;23&#x2F;80&#x2F;8080 都拒，ICMP 还通），等了好几分钟也不恢复，最后只能断电重启。</p>
+<p>这种「程序崩了还把机器搞挂」的故障，通常意味着你踩的不是逻辑错误，而是<strong>资源所有权</strong>的错误。</p>
+<h2 id="2-真正的凶手：子进程继承了父进程的-siglongjmp-恢复流"><a href="#2-真正的凶手：子进程继承了父进程的-siglongjmp-恢复流" class="headerlink" title="2. 真正的凶手：子进程继承了父进程的 siglongjmp 恢复流"></a>2. 真正的凶手：子进程继承了父进程的 siglongjmp 恢复流</h2><p>播放器里一直有一个自定义的 SIGSEGV 处理器：崩溃时打印现场，然后用 <code>siglongjmp(g_jb, 1)</code> 跳回主循环恢复播放——毕竟一个直播播放器，崩一下就退出也太脆了。</p>
+<p>问题出在 <code>g_jb</code> 这个 <code>jmp_buf</code> 的<strong>位置</strong>：它是一个<strong>全局变量没错，但它指向的是父进程栈上的保存现场</strong>。而 <code>fork()</code> 复制的是整个地址空间——包括这个 <code>jmp_buf</code> 的内容。</p>
+<p>于是：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* 池子子进程（v30/v31 的写法） */</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">rpool_child</span><span class="params">(<span class="type">int</span> rfd, <span class="type">int</span> wfd)</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        read(rfd, &amp;job, <span class="keyword">sizeof</span> job);</span><br><span class="line">        fb_render_range(job.nv, job.dst, job.y0, job.y1);   <span class="comment">/* 这里若出错 → SIGSEGV */</span></span><br><span class="line">        write(wfd, &amp;ack, <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    _exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>子进程继承了父进程的 SIGSEGV handler，也继承了那个 <code>jmp_buf</code>。子进程一旦触发 SIGSEGV，handler 就会 <code>longjmp</code> 到<strong>父进程栈上的保存点</strong>，然后<strong>在子进程里继续执行父进程的代码</strong>——解码主循环、喂 IDR、碰 VSP。</p>
+<p>一个本该只画画的子进程，突然变成了第二个解码进程，去抢同一个 VSP 硬件。父进程的状态被抽走、厂商驱动的全局状态被两个进程同时改写——父进程崩溃、设备挂掉，全都顺理成章。</p>
+<h3 id="修法：子进程里把信号处理复位成默认"><a href="#修法：子进程里把信号处理复位成默认" class="headerlink" title="修法：子进程里把信号处理复位成默认"></a>修法：子进程里把信号处理复位成默认</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">rpool_child</span><span class="params">(<span class="type">int</span> rfd, <span class="type">int</span> wfd)</span> &#123;</span><br><span class="line">    <span class="comment">/* 父进程的 handler 末尾是 siglongjmp(g_jb) 恢复流，</span></span><br><span class="line"><span class="comment">       g_jb 是父进程栈上下文 ⇒ 在子进程里 longjmp 等于把父进程的栈</span></span><br><span class="line"><span class="comment">       搬到子进程执行, 必炸 ⇒ 子进程出错就干净死掉。 */</span></span><br><span class="line">    signal(SIGSEGV, SIG_DFL);</span><br><span class="line">    signal(SIGBUS,  SIG_DFL);</span><br><span class="line">    signal(SIGILL,  SIG_DFL);</span><br><span class="line">    signal(SIGFPE,  SIG_DFL);</span><br><span class="line">    signal(SIGABRT, SIG_DFL);</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>复位成 <code>SIG_DFL</code> 之后，子进程出错 &#x3D; <strong>被信号干脆利落地杀掉</strong>。父进程这边 <code>read()</code> 收到 EOF，知道「有个孩子死了」，于是整帧改用串行路径重做一次，并且<strong>永久回退到串行</strong>——播放不中断，只是不再并行。</p>
+<p>这也是一段很有价值的经验：<strong>同项目里更早的代码（另一个 fork 渲染子进程的实现）在注释里已经写过这条规矩</strong>，我在新写池子时没有把它一并带过来。<em>fork 出来的子进程不是一个「线程」，它是一个继承了父进程全部地址空间的独立进程——包括信号处理和跳转上下文。</em></p>
+<p>顺带做了两件事：子进程失效时关掉管道、<code>SIGTERM</code> 掉其余孩子、<code>waitpid</code> 收尸（否则一堆僵尸挂着）；以及父进程在发现孩子死亡时<strong>先收齐所有已派发的 ack 再串行重做</strong>——否则父进程会和孩子同时写同一段行内存。</p>
+<h2 id="3-同一天踩到的第二个坑：测试脚本把自己杀了"><a href="#3-同一天踩到的第二个坑：测试脚本把自己杀了" class="headerlink" title="3. 同一天踩到的第二个坑：测试脚本把自己杀了"></a>3. 同一天踩到的第二个坑：测试脚本把自己杀了</h2><p>基线臂跑完、脚本准备进 2 路臂时，脚本<strong>自己退出了</strong>，日志停在基线臂的最后一行，后面三个臂一个都没跑。</p>
+<p>原因老熟人了：清理残留进程时用的是</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ps -ef | grep <span class="string">&quot;[n]ettv_player&quot;</span> | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span> | xargs <span class="built_in">kill</span> -TERM</span><br></pre></td></tr></table></figure>
+
+<p><code>[n]ettv_player</code> 这个技巧本来是为了避免 grep 匹配自己，**但它只骗过了 grep，没骗过 <code>ps</code>**——脚本自己的命令行里就写着 <code>BIN=/tmp/nettv_player.v31</code>，于是它把自己 kill 了。</p>
+<p>同一个坑这个项目里已经踩过五次。这次是第六次。改法是彻底不靠命令行文本：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> d <span class="keyword">in</span> /proc/[0-9]*; <span class="keyword">do</span></span><br><span class="line">    p=<span class="variable">$&#123;d#/proc/&#125;</span></span><br><span class="line">    e=$(<span class="built_in">readlink</span> <span class="string">&quot;<span class="variable">$d</span>/exe&quot;</span> 2&gt;/dev/null)</span><br><span class="line">    <span class="keyword">case</span> <span class="string">&quot;<span class="variable">$e</span>&quot;</span> <span class="keyword">in</span> *nettv_player*|*mplayer*) <span class="built_in">kill</span> -TERM <span class="string">&quot;<span class="variable">$p</span>&quot;</span> 2&gt;/dev/null ;; <span class="keyword">esac</span></span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+
+<p>按<strong>可执行文件路径</strong>匹配，命令行里写什么都不影响。</p>
+<p>教训：<strong>凡是「按名字找进程然后杀」的脚本，先问一句「这个脚本自己会不会被匹配到」</strong>。如果脚本内容里包含被搜索的字符串（几乎必然：路径、变量名都在里面），那就只能靠 <code>/proc/&lt;pid&gt;/exe</code>。</p>
+<h2 id="4-第三个坑：一个自己会增长的性能数字"><a href="#4-第三个坑：一个自己会增长的性能数字" class="headerlink" title="4. 第三个坑：一个自己会增长的性能数字"></a>4. 第三个坑：一个自己会增长的性能数字</h2><p>顺带修掉一个一直骗人的日志：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[perf] fb_render 均值 983ms (换算上限 1 fps) | 转换 19ms 写fb 0ms</span><br></pre></td></tr></table></figure>
+
+<p>渲染一帧 983 毫秒？不可能——真实值是每帧约 22 毫秒，而同一行里「转换 19ms」是对的。错的是「均值」那个数：统计变量把<strong>逐帧的累计值</strong>又累加了一遍，于是第 100 帧时它统计的是「1+2+…+100 倍的单帧耗时」。数字随运行时间线性膨胀，直到把 A&#x2F;B 结论带沟里。</p>
+<p>改法只有一行：统计量每轮清零，就用「本轮累计 ÷ 本轮帧数」。<strong>凡是「累计量 ÷ 计数」型指标，忘记清零就会得到一个随时间发疯的数</strong>——这类假数据比没有数据更坏。</p>
+<h2 id="5-这一轮真正的好消息"><a href="#5-这一轮真正的好消息" class="headerlink" title="5. 这一轮真正的好消息"></a>5. 这一轮真正的好消息</h2><p>崩溃是崩溃，但有两个结果必须记下来：</p>
+<ol>
+<li><strong>基线臂 21.7 fps</strong>，与改造前的同源对照（21.7 fps）完全一致 ⇒ 改造本身没拖慢串行路径。</li>
+<li><strong>并行首帧自检通过</strong>：<code>串/并一致 39937ac1</code>——即「串行渲染整页的 FNV 哈希」与「并行渲染整页的哈希」<strong>逐位相同</strong>。</li>
+</ol>
+<p>第二条尤其重要。它证明上一轮离线静态审查修的那个 bug（切分点没对齐带高，会让最后一个孩子写出带尾、撕裂并越界）是<strong>真 bug、真修对了</strong>，而且证明 fork 池的几何切分本身是对的。崩溃发生在自检通过<strong>之后</strong>的解码阶段，与渲染并行逻辑无关。</p>
+<p>顺带说一个当时就决定好的排查手段：<strong>二分开关</strong>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!g_rp_idle) fb_render_range(job.nv, job.dst, job.y0, job.y1);   <span class="comment">/* NETTV_RPOOL_IDLE=1 时只回 ack */</span></span><br></pre></td></tr></table></figure>
+
+<p>让子进程只收任务、只回确认、完全不渲染。那么：</p>
+<ul>
+<li><code>RPOOL=2</code> 崩、<code>RPOOL=2 + IDLE</code> 不崩 ⇒ 崩因在渲染代码；</li>
+<li>两个都崩 ⇒ 崩因是「在持有硬件句柄的进程里 fork」这件事本身。</li>
+</ul>
+<p>一个开关，把一整类猜想切成两半。这种开关不需要漂亮，只要默认关闭、不影响正常路径。</p>
+<h2 id="6-小结"><a href="#6-小结" class="headerlink" title="6. 小结"></a>6. 小结</h2><p>这一天得到的四条，都跟「并行」本身没什么关系，却都卡死了并行改造：</p>
+<ol>
+<li><strong>fork 出的子进程必须自己决定怎么死</strong>：把崩溃恢复类的信号处理复位成 <code>SIG_DFL</code>，让子进程出错就干净退出，父进程负责兜底。</li>
+<li><strong>别按命令行文本找进程再杀</strong>，用 <code>/proc/&lt;pid&gt;/exe</code>。</li>
+<li><strong>累计型指标要记得清零</strong>，否则它会自己发疯。</li>
+<li><strong>并行改动的正确性闸门是哈希自检</strong>，不是「跑起来没崩」。</li>
+</ol>
+<p>设备断电重启之后还有下一轮：先单臂复现，再二分，再四臂 A&#x2F;B。急不得——多臂叠加会把崩溃循环放大成设备挂机，那是今天最贵的一课。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%82%A3%E5%A4%A9%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88"><span class="toc-number">1.</span> <span class="toc-text">1. 那天发生了什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%9C%9F%E6%AD%A3%E7%9A%84%E5%87%B6%E6%89%8B%EF%BC%9A%E5%AD%90%E8%BF%9B%E7%A8%8B%E7%BB%A7%E6%89%BF%E4%BA%86%E7%88%B6%E8%BF%9B%E7%A8%8B%E7%9A%84-siglongjmp-%E6%81%A2%E5%A4%8D%E6%B5%81"><span class="toc-number">2.</span> <span class="toc-text">2. 真正的凶手：子进程继承了父进程的 siglongjmp 恢复流</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%AE%E6%B3%95%EF%BC%9A%E5%AD%90%E8%BF%9B%E7%A8%8B%E9%87%8C%E6%8A%8A%E4%BF%A1%E5%8F%B7%E5%A4%84%E7%90%86%E5%A4%8D%E4%BD%8D%E6%88%90%E9%BB%98%E8%AE%A4"><span class="toc-number">2.1.</span> <span class="toc-text">修法：子进程里把信号处理复位成默认</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%90%8C%E4%B8%80%E5%A4%A9%E8%B8%A9%E5%88%B0%E7%9A%84%E7%AC%AC%E4%BA%8C%E4%B8%AA%E5%9D%91%EF%BC%9A%E6%B5%8B%E8%AF%95%E8%84%9A%E6%9C%AC%E6%8A%8A%E8%87%AA%E5%B7%B1%E6%9D%80%E4%BA%86"><span class="toc-number">3.</span> <span class="toc-text">3. 同一天踩到的第二个坑：测试脚本把自己杀了</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%AC%AC%E4%B8%89%E4%B8%AA%E5%9D%91%EF%BC%9A%E4%B8%80%E4%B8%AA%E8%87%AA%E5%B7%B1%E4%BC%9A%E5%A2%9E%E9%95%BF%E7%9A%84%E6%80%A7%E8%83%BD%E6%95%B0%E5%AD%97"><span class="toc-number">4.</span> <span class="toc-text">4. 第三个坑：一个自己会增长的性能数字</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E8%BF%99%E4%B8%80%E8%BD%AE%E7%9C%9F%E6%AD%A3%E7%9A%84%E5%A5%BD%E6%B6%88%E6%81%AF"><span class="toc-number">5.</span> <span class="toc-text">5. 这一轮真正的好消息</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%B0%8F%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">6. 小结</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&text=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&title=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&is_video=false&description=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp&body=Check out this article: https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&title=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&title=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&title=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&title=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/&name=netTV 硬解（31）：一次把设备搞挂的并行改造——子进程继承了父进程的 siglongjmp&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

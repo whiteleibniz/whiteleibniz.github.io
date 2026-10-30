@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 30 篇。目标板连续四轮（10-27 ~ 10-30）处于离线状态，第 29 篇写的「常驻 fork 并行渲染池」一次都没有编译过。本篇记录一种在设备不在手边时仍然能真推进的做法：面向「不崩但悄悄错」的静态审查，以及它在这次审查里挖出来的四处真实缺陷。  1. 离线不等于停摆，但也不能瞎改这个项目有个很尴尬的现状：唯一的交叉编译">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 30 篇。目标板连续四轮（10-27 ~ 10-30）处于离线状态，第 29 篇写的「常驻 fork 并行渲染池」一次都没有编译过。本篇记录一种在设备不在手边时仍然能真推进的做法：面向「不崩但悄悄错」的静态审查，以及它在这次审查里挖出来的四处真实缺陷。  1. 离线不等于停摆，但也不能瞎改这个项目有个很尴尬的现状：唯一的交叉编译">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-29T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-29T18:10:35.363Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="展讯 SC9832A">
+<meta property="article:tag" content="多进程">
+<meta property="article:tag" content="代码审查">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/30/zh-tw/nettv-31-fork-inherited-siglongjmp-crash-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/30/zh-tw/nettv-30-offline-audit-parallel-render-pool-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&text=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&title=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&is_video=false&description=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查&body=Check out this article: https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&title=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&title=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&title=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&title=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&name=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%A6%BB%E7%BA%BF%E4%B8%8D%E7%AD%89%E4%BA%8E%E5%81%9C%E6%91%86%EF%BC%8C%E4%BD%86%E4%B9%9F%E4%B8%8D%E8%83%BD%E7%9E%8E%E6%94%B9"><span class="toc-number">1.</span> <span class="toc-text">1. 离线不等于停摆，但也不能瞎改</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%BC%BA%E9%99%B7%E4%B8%80%EF%BC%9A%E5%88%87%E5%88%86%E7%82%B9%E6%B2%A1%E5%AF%B9%E9%BD%90%E5%B8%A6%E9%AB%98%EF%BC%88%E4%BC%9A%E6%92%95%E8%A3%82%EF%BC%8C%E4%B9%9F%E4%BC%9A%E8%B6%8A%E7%95%8C%E5%86%99%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">2. 缺陷一：切分点没对齐带高（会撕裂，也会越界写）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%BC%BA%E9%99%B7%E4%BA%8C%EF%BC%9A%E5%A4%B1%E8%B4%A5%E5%9B%9E%E9%80%80%E6%97%B6%E4%BC%9A%E5%92%8C%E5%AD%A9%E5%AD%90%E6%8A%A2%E7%9D%80%E5%86%99%E5%90%8C%E4%B8%80%E6%AE%B5%E8%A1%8C"><span class="toc-number">3.</span> <span class="toc-text">3. 缺陷二：失败回退时会和孩子抢着写同一段行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%BC%BA%E9%99%B7%E4%B8%89%EF%BC%9A%E5%B8%B8%E9%A9%BB%E5%AD%90%E8%BF%9B%E7%A8%8B%E4%BC%9A%E4%B8%80%E7%9B%B4%E6%94%A5%E7%9D%80-ION-%E7%BC%93%E5%86%B2%E4%B8%8D%E6%94%BE"><span class="toc-number">4.</span> <span class="toc-text">4. 缺陷三：常驻子进程会一直攥着 ION 缓冲不放</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E7%BC%BA%E9%99%B7%E5%9B%9B%EF%BC%9A%E8%87%AA%E6%A3%80%E7%94%A8%E7%9A%84%E8%8D%89%E7%A8%BF%E5%8C%BA%E4%B8%8D%E8%83%BD%E6%8B%BF-fb-%E9%A1%B5-0-%E9%A1%B6"><span class="toc-number">5.</span> <span class="toc-text">5. 缺陷四：自检用的草稿区不能拿 fb 页 0 顶</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E6%96%B9%E6%B3%95%E8%AE%BA%E5%B0%8F%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">6. 方法论小结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%8E%B0%E7%8A%B6%E4%B8%8E%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">7.</span> <span class="toc-text">7. 现状与下一步</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-29T18:30:00.000Z" itemprop="datePublished">2026-10-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" rel="tag">代码审查</a>, <a class="tag-link-link" href="/tags/%E5%A4%9A%E8%BF%9B%E7%A8%8B/" rel="tag">多进程</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF-SC9832A/" rel="tag">展讯 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 30 篇。目标板连续四轮（10-27 ~ 10-30）处于离线状态，第 29 篇写的「常驻 fork 并行渲染池」<strong>一次都没有编译过</strong>。本篇记录一种在设备不在手边时仍然能真推进的做法：<strong>面向「不崩但悄悄错」的静态审查</strong>，以及它在这次审查里挖出来的四处真实缺陷。</p>
+</blockquote>
+<h2 id="1-离线不等于停摆，但也不能瞎改"><a href="#1-离线不等于停摆，但也不能瞎改" class="headerlink" title="1. 离线不等于停摆，但也不能瞎改"></a>1. 离线不等于停摆，但也不能瞎改</h2><p>这个项目有个很尴尬的现状：唯一的交叉编译器在目标板上，源码本地写、设备上编。设备一断电，新代码就变成「写完没验证」的悬空债——攒得越多，下次上电那一轮越容易全耗在编译报错上。</p>
+<p>所以离线时的正确姿势不是继续写新功能，而是<strong>把已写未验的代码当成审查对象</strong>。审查要有靶心，我用的判据只有一条：</p>
+<blockquote>
+<p>优先找<strong>不会崩、不会报错、只会悄悄错</strong>的问题。</p>
+</blockquote>
+<p>理由很实在：编译错误和崩溃在下一次联机时会立刻暴露，五分钟就能修；而「画面偶尔错位」「帧率数字是假的」「资源慢慢泄漏」这三类，上线后能骗你好几轮实验，甚至让你得出反向结论。第 29 篇里「私有 staging &#x3D; 冻结副本」就是典型——它不崩，只是子进程一直在渲染上一帧。</p>
+<h2 id="2-缺陷一：切分点没对齐带高（会撕裂，也会越界写）"><a href="#2-缺陷一：切分点没对齐带高（会撕裂，也会越界写）" class="headerlink" title="2. 缺陷一：切分点没对齐带高（会撕裂，也会越界写）"></a>2. 缺陷一：切分点没对齐带高（会撕裂，也会越界写）</h2><p>渲染被切成若干「带」（band），每带渲染输出行 <code>[oy0, oy0+bandh)</code>。并行派发时我原来的切法极其自然：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> rows = <span class="number">1280</span> / n;                 <span class="comment">/* 每个子进程分到的输出行数 */</span></span><br><span class="line">j.y0 = i * rows;</span><br><span class="line">j.y1 = (i == n - <span class="number">1</span>) ? <span class="number">1280</span> : (i + <span class="number">1</span>) * rows;</span><br></pre></td></tr></table></figure>
+
+<p>问题在于 <code>fb_render_range</code> 的内层循环<strong>永远渲染整条带</strong>，它不认识 <code>y1</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> oy0 = y0; oy0 &lt; y1; oy0 += g_bandh)</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; g_bandh; j++)</span><br><span class="line">        <span class="built_in">memcpy</span>(dst + (oy0 + j) * <span class="number">720</span>, band[j], <span class="number">720</span> * <span class="number">4</span>);   <span class="comment">/* 写满 bandh 行 */</span></span><br></pre></td></tr></table></figure>
+
+<p>只要 <code>(y1 - y0)</code> 不是 <code>bandh</code> 的整数倍，最后一个子进程就会写出 <code>[y1, oy0+bandh)</code>：既覆盖下一个子进程负责的行（画面撕裂），末段还会越过 fb 页尾（SIGSEGV）。默认带高 64 时，逐个档位算一遍：</p>
+<table>
+<thead>
+<tr>
+<th>路数 n</th>
+<th>rows &#x3D; 1280&#x2F;n</th>
+<th>是否 64 的倍数</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2</td>
+<td>640</td>
+<td>✅</td>
+<td>安全</td>
+</tr>
+<tr>
+<td>3</td>
+<td>426</td>
+<td>❌</td>
+<td>撕裂 + 越界</td>
+</tr>
+<tr>
+<td>4</td>
+<td>320</td>
+<td>✅</td>
+<td>安全</td>
+</tr>
+<tr>
+<td>6</td>
+<td>213</td>
+<td>❌</td>
+<td>撕裂 + 越界</td>
+</tr>
+<tr>
+<td>7</td>
+<td>182</td>
+<td>❌</td>
+<td>撕裂 + 越界</td>
+</tr>
+<tr>
+<td>8</td>
+<td>160</td>
+<td>❌</td>
+<td>撕裂 + 越界</td>
+</tr>
+</tbody></table>
+<p>也就是说，<strong>原本计划里要测的三臂（2&#x2F;4）恰好都躲开了这个坑</strong>，而最能体现并行的 8 路一定会炸。这种「测过的档位恰好没问题」是并行改动里最阴的失败模式。</p>
+<p>修法不是去改内层循环（要把 <code>g_bandh</code> 换成逐带的 <code>bh</code>，十来处，容易漏），而是让切分点落到 <code>bandh</code> 的倍数上——因为 <code>1280 % bandh == 0</code>（bandh 只允许 16&#x2F;32&#x2F;64&#x2F;128&#x2F;256），只要 <code>rows</code> 也是倍数，所有边界就都是倍数，永远不存在残缺带：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> rows = ((<span class="number">1280</span> / n) + g_bandh - <span class="number">1</span>) / g_bandh * g_bandh;</span><br><span class="line"><span class="keyword">if</span> (rows &lt; g_bandh) rows = g_bandh;</span><br><span class="line">j.y0 = i * rows;  <span class="keyword">if</span> (j.y0 &gt; <span class="number">1280</span>) j.y0 = <span class="number">1280</span>;      <span class="comment">/* 末尾可能有空任务 */</span></span><br><span class="line">j.y1 = j.y0 + rows; <span class="keyword">if</span> (j.y1 &gt; <span class="number">1280</span>) j.y1 = <span class="number">1280</span>;</span><br></pre></td></tr></table></figure>
+
+<p>代价是负载略有不均（8 路时前 6 路各 192 行、第 7 路 128 行、第 8 路空转），换来的是<strong>结构性地不可能越界</strong>。</p>
+<h2 id="3-缺陷二：失败回退时会和孩子抢着写同一段行"><a href="#3-缺陷二：失败回退时会和孩子抢着写同一段行" class="headerlink" title="3. 缺陷二：失败回退时会和孩子抢着写同一段行"></a>3. 缺陷二：失败回退时会和孩子抢着写同一段行</h2><p>原版派发逻辑一遇到读写失败就 <code>break</code>，然后父进程立刻串行重渲整帧：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (i...) <span class="keyword">if</span> (read(g_rp_c2p[i], &amp;ack, <span class="number">1</span>) != <span class="number">1</span>) &#123; bad = <span class="number">1</span>; <span class="keyword">break</span>; &#125;</span><br><span class="line"><span class="keyword">if</span> (bad) fb_render_range(nv, dst, <span class="number">0</span>, <span class="number">1280</span>);    <span class="comment">/* 整帧重做 */</span></span><br></pre></td></tr></table></figure>
+
+<p>但此时 <code>i+1 … n-1</code> 号子进程<strong>已经拿到任务、正在写自己的行</strong>。父进程紧接着覆盖全 1280 行，两边同时写同一段内存——画面撕裂，而且是「只在子进程异常退出时出现」的偶发撕裂，极难复现。</p>
+<p>修法：<strong>先把已派发的 ack 全部收齐，再判定失败</strong>。收齐意味着所有孩子都已写完（或已确认死亡），此后串行重做才是独占的：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; sent; i++)</span><br><span class="line">    <span class="keyword">if</span> (read(g_rp_c2p[i], &amp;ack, <span class="number">1</span>) != <span class="number">1</span>) bad = <span class="number">1</span>;   <span class="comment">/* 不 break */</span></span><br><span class="line"><span class="keyword">if</span> (bad) &#123; g_rp_dead = <span class="number">1</span>; g_rp_on = <span class="number">0</span>; fb_render_range(nv, dst, <span class="number">0</span>, <span class="number">1280</span>); &#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意这里读失败也要继续往下读：管道读是阻塞的，活着的孩子一定会回 ack，不会卡死；死掉的孩子返回 0，正好作为「确认已死」的凭证。</p>
+<h2 id="4-缺陷三：常驻子进程会一直攥着-ION-缓冲不放"><a href="#4-缺陷三：常驻子进程会一直攥着-ION-缓冲不放" class="headerlink" title="4. 缺陷三：常驻子进程会一直攥着 ION 缓冲不放"></a>4. 缺陷三：常驻子进程会一直攥着 ION 缓冲不放</h2><p>池是在<strong>第一帧</strong>才 fork 的——那时父进程已经打开了一批 ION &#x2F; dmabuf 的 fd。fork 会把 fd 表整个复制给孩子，于是每个常驻子进程都持有一份引用。父进程那边 <code>close()</code> 了，缓冲并不会释放，因为孩子的引用还在。</p>
+<p>这个平台的 carveout 池只有 640KB，ION 泄漏的结局是黑屏且必须重启（见本系列「黑屏 SOP」）。孩子什么设备都不碰，所以直接把它们不需要的 fd 全关掉：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> fd = <span class="number">3</span>; fd &lt; <span class="number">64</span>; fd++)</span><br><span class="line">    <span class="keyword">if</span> (fd != rfd &amp;&amp; fd != wfd) close(fd);</span><br></pre></td></tr></table></figure>
+
+<p>顺带一个教训：<strong>任何 long-lived fork 子进程，都该显式收缩自己的 fd 表</strong>。每帧 fork 的短命进程不用管（马上就退），常驻池必须管。</p>
+<h2 id="5-缺陷四：自检用的草稿区不能拿-fb-页-0-顶"><a href="#5-缺陷四：自检用的草稿区不能拿-fb-页-0-顶" class="headerlink" title="5. 缺陷四：自检用的草稿区不能拿 fb 页 0 顶"></a>5. 缺陷四：自检用的草稿区不能拿 fb 页 0 顶</h2><p>首帧自检要串行渲一遍、并行渲一遍、比哈希。我原先图省事直接拿 fb 的页 0 当草稿区（播放只用页 1&#x2F;2）。</p>
+<p>但页 0 是<strong>归位页</strong>：退出播放时 <code>fb_home()</code> 会 PAN 回它。往里写一整帧的结果，就是退出后桌面停在最后一帧的残影上。改成一次性 <code>malloc</code> 的私有内存即可——串行参考渲染的目标地址根本不需要是显存。</p>
+<p>同一次审查里还顺手改了一处<strong>测量口径</strong>问题：并行模式下「转换 &#x2F; 写 fb」两项分项耗时恒为 0，因为子进程各改各的私有副本，父进程看不到。原版照打这个 0，下一轮 A&#x2F;B 极可能有人拿它当证据。改成只报墙钟并注明口径：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[perf] fb_render 池4路 均值 Xms (上限 Y fps) [墙钟] (转换/写fb 为子进程私有, 此处不计)</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-方法论小结"><a href="#6-方法论小结" class="headerlink" title="6. 方法论小结"></a>6. 方法论小结</h2><p>离线审查能挖出这些，靠的不是仔细，而是<strong>换了提问方式</strong>。把「这段代码对不对」换成下面四问，命中率明显高：</p>
+<ol>
+<li><strong>边界和余数</strong>：切分、分块、取模，余数是怎么处理的？内层循环认不认边界？</li>
+<li><strong>失败路径的并发</strong>：异常发生时，别人还在跑吗？我的兜底动作和它们是互斥的吗？</li>
+<li><strong>资源的隐性持有者</strong>：fork 出来的常驻进程攥着什么？谁在替它计数？</li>
+<li><strong>测量口径</strong>：这个数字是谁在写、谁能读到？它可能是恒 0 的假数吗？</li>
+</ol>
+<p>还有一个排序经验：<strong>并行改动的失败模式，按危害排是「悄悄错」＞「崩」＞「慢」</strong>。所以并行优化里，首帧哈希自检（串行 vs 并行比整页 FNV）比优化本身更重要——它是唯一能挡住第一类失败的闸门。这次的 A&#x2F;B 脚本也专门补了 8 路这一臂，用最可能踩坑的档位去证明修复真的生效，而不是只测「恰好没问题的那几档」。</p>
+<h2 id="7-现状与下一步"><a href="#7-现状与下一步" class="headerlink" title="7. 现状与下一步"></a>7. 现状与下一步</h2><ul>
+<li>源码 v31 &#x3D; v30 + 上述四处修复，默认行为零改变（<code>NETTV_RPOOL</code> 默认 0，仍走原串行路径）。</li>
+<li>仍<strong>未编译</strong>（设备离线第四轮），下次上电顺序：传源码 → 构建 → 跑 <code>RPOOL=0/2/4/8</code> 四臂背靠背 A&#x2F;B。</li>
+<li>判据不变：<code>fps_x10</code> 明显高于基线、自检必须打印「串&#x2F;并一致」、无 <code>signal=11</code>、ION clients 不增长。</li>
+</ul>
+<p>设备一旦上电，这篇的数字会被实测替换掉；但在那之前，这四处修复已经把「8 路必炸」从计划里删掉了。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%A6%BB%E7%BA%BF%E4%B8%8D%E7%AD%89%E4%BA%8E%E5%81%9C%E6%91%86%EF%BC%8C%E4%BD%86%E4%B9%9F%E4%B8%8D%E8%83%BD%E7%9E%8E%E6%94%B9"><span class="toc-number">1.</span> <span class="toc-text">1. 离线不等于停摆，但也不能瞎改</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%BC%BA%E9%99%B7%E4%B8%80%EF%BC%9A%E5%88%87%E5%88%86%E7%82%B9%E6%B2%A1%E5%AF%B9%E9%BD%90%E5%B8%A6%E9%AB%98%EF%BC%88%E4%BC%9A%E6%92%95%E8%A3%82%EF%BC%8C%E4%B9%9F%E4%BC%9A%E8%B6%8A%E7%95%8C%E5%86%99%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">2. 缺陷一：切分点没对齐带高（会撕裂，也会越界写）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%BC%BA%E9%99%B7%E4%BA%8C%EF%BC%9A%E5%A4%B1%E8%B4%A5%E5%9B%9E%E9%80%80%E6%97%B6%E4%BC%9A%E5%92%8C%E5%AD%A9%E5%AD%90%E6%8A%A2%E7%9D%80%E5%86%99%E5%90%8C%E4%B8%80%E6%AE%B5%E8%A1%8C"><span class="toc-number">3.</span> <span class="toc-text">3. 缺陷二：失败回退时会和孩子抢着写同一段行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%BC%BA%E9%99%B7%E4%B8%89%EF%BC%9A%E5%B8%B8%E9%A9%BB%E5%AD%90%E8%BF%9B%E7%A8%8B%E4%BC%9A%E4%B8%80%E7%9B%B4%E6%94%A5%E7%9D%80-ION-%E7%BC%93%E5%86%B2%E4%B8%8D%E6%94%BE"><span class="toc-number">4.</span> <span class="toc-text">4. 缺陷三：常驻子进程会一直攥着 ION 缓冲不放</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E7%BC%BA%E9%99%B7%E5%9B%9B%EF%BC%9A%E8%87%AA%E6%A3%80%E7%94%A8%E7%9A%84%E8%8D%89%E7%A8%BF%E5%8C%BA%E4%B8%8D%E8%83%BD%E6%8B%BF-fb-%E9%A1%B5-0-%E9%A1%B6"><span class="toc-number">5.</span> <span class="toc-text">5. 缺陷四：自检用的草稿区不能拿 fb 页 0 顶</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E6%96%B9%E6%B3%95%E8%AE%BA%E5%B0%8F%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">6. 方法论小结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%8E%B0%E7%8A%B6%E4%B8%8E%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">7.</span> <span class="toc-text">7. 现状与下一步</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&text=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&title=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&is_video=false&description=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查&body=Check out this article: https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&title=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&title=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&title=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&title=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/&name=netTV 硬解（30）：设备离线时该怎么推进——一次并行渲染池的静态审查&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
