@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 33 篇。上一篇把並行渲染池做成了成績單（20fps → 28fps），但那次 10 分鐘回歸裡藏著一個沒解決的污點：worker 每跑約 150 秒就被 SIGSEGV 殺一次，10 分鐘 3 次。這一篇是「我以為我知道原因，結果不是」的完整記錄——以及一條比結論更值錢的線索。  1. 起因：成績單背後那個污點回歸數據很好看：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 33 篇。上一篇把並行渲染池做成了成績單（20fps → 28fps），但那次 10 分鐘回歸裡藏著一個沒解決的污點：worker 每跑約 150 秒就被 SIGSEGV 殺一次，10 分鐘 3 次。這一篇是「我以為我知道原因，結果不是」的完整記錄——以及一條比結論更值錢的線索。  1. 起因：成績單背後那個污點回歸數據很好看：">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-30T18:40:00.000Z">
+<meta property="article:modified_time" content="2026-10-30T18:40:06.350Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="展訊 SC9832A">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="多行程">
+<meta property="article:tag" content="崩潰取證">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/30/nettv-32-parallel-render-pool-measured/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&text=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&title=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&is_video=false&description=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢&body=Check out this article: https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&title=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&title=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&title=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&title=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&name=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%B5%B7%E5%9B%A0%EF%BC%9A%E6%88%90%E7%B8%BE%E5%96%AE%E8%83%8C%E5%BE%8C%E9%82%A3%E5%80%8B%E6%B1%A1%E9%BB%9E"><span class="toc-number">1.</span> <span class="toc-text">1. 起因：成績單背後那個污點</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%81%87%E8%A8%AD%EF%BC%9Afork-%E7%9A%84%E6%99%82%E6%A9%9F%E6%AF%94-fork-%E6%9C%AC%E8%BA%AB%E6%9B%B4%E5%8D%B1%E9%9A%AA"><span class="toc-number">2.</span> <span class="toc-text">2. 假設：fork 的時機比 fork 本身更危險</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%96%B9%E6%A1%88-A%EF%BC%9A%E6%8A%8A%E6%B1%A0%E5%AD%90%E6%8C%AA%E5%88%B0-VSP-%E4%B9%8B%E5%89%8D"><span class="toc-number">3.</span> <span class="toc-text">3. 方案 A：把池子挪到 VSP 之前</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%85%88%E6%8A%8A%E3%80%8C%E8%87%A8%E7%B5%82%E7%95%99%E8%A8%80%E3%80%8D%E7%BF%BB%E6%A1%88"><span class="toc-number">4.</span> <span class="toc-text">4. 先把「臨終留言」翻案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E7%B5%90%E6%9E%9C%EF%BC%9A%E5%81%87%E8%A8%AD%E8%A2%AB%E8%AD%89%E5%81%BD"><span class="toc-number">5.</span> <span class="toc-text">5. 結果：假設被證偽</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E7%9C%9F%E5%80%BC%E9%8C%A2%E7%9A%84%E7%B7%9A%E7%B4%A2%EF%BC%9A%E8%99%95%E7%90%86%E5%99%A8%E4%B8%80%E6%AC%A1%E9%83%BD%E6%B2%92%E8%B7%91"><span class="toc-number">6.</span> <span class="toc-text">6. 真值錢的線索：處理器一次都沒跑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E4%B8%8B%E4%B8%80%E6%AD%A5%EF%BC%9A%E6%8A%8A%E9%BB%91%E7%9B%92%E5%AD%90%E5%81%9A%E5%9C%A8%E5%85%B1%E7%94%A8%E8%A8%98%E6%86%B6%E9%AB%94%E8%A3%A1"><span class="toc-number">7.</span> <span class="toc-text">7. 下一步：把黑盒子做在共用記憶體裡</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E9%80%99%E4%B8%80%E6%99%9A%E7%9A%84%E4%B8%89%E6%A2%9D%E6%96%B9%E6%B3%95%E8%AB%96"><span class="toc-number">8.</span> <span class="toc-text">8. 這一晚的三條方法論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E6%9C%AC%E8%BC%AA%E6%94%B9%E5%8B%95%EF%BC%88v33%EF%BC%8C%E6%9C%AA%E9%83%A8%E7%BD%B2%EF%BC%89"><span class="toc-number">9.</span> <span class="toc-text">附：本輪改動（v33，未部署）</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-30T18:40:00.000Z" itemprop="datePublished">2026-10-31</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E5%A4%9A%E8%A1%8C%E7%A8%8B/" rel="tag">多行程</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A-SC9832A/" rel="tag">展訊 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B4%A9%E6%BD%B0%E5%8F%96%E8%AD%89/" rel="tag">崩潰取證</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 33 篇。上一篇把並行渲染池做成了成績單（20fps → 28fps），但那次 10 分鐘回歸裡藏著一個沒解決的污點：<strong>worker 每跑約 150 秒就被 SIGSEGV 殺一次，10 分鐘 3 次</strong>。這一篇是「我以為我知道原因，結果不是」的完整記錄——以及一條比結論更值錢的線索。</p>
+</blockquote>
+<h2 id="1-起因：成績單背後那個污點"><a href="#1-起因：成績單背後那個污點" class="headerlink" title="1. 起因：成績單背後那個污點"></a>1. 起因：成績單背後那個污點</h2><p>回歸數據很好看：28.2fps、池渲染 13~14ms、ION 洩漏 0、行程殘留 0。但 stdout 裡躺著三行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">*** monitor: 子进程自退 st=0xb ***</span><br><span class="line">*** monitor: 重启 (子进程 @4215 帧)</span><br></pre></td></tr></table></figure>
+
+<p>每代 worker 都老老實實跑了四五千幀才死，不是啟動期問題。而且死法很怪：<strong>SIGSEGV，但處理器一句話都沒留下</strong>——沒有 <code>/tmp/nettv_segv.log</code>，stdout 裡也沒有任何崩潰傾印。</p>
+<h2 id="2-假設：fork-的時機比-fork-本身更危險"><a href="#2-假設：fork-的時機比-fork-本身更危險" class="headerlink" title="2. 假設：fork 的時機比 fork 本身更危險"></a>2. 假設：fork 的時機比 fork 本身更危險</h2><p>我們的並行渲染池是「常駐子行程」：啟動時 fork N 個，之後靠管道收發任務。原來的 fork 點是<strong>第一幀</strong>——那時 OMX 元件已經 init、VSP 已經打開並且正在解碼。</p>
+<p>於是很自然的一個假設：<strong>在 VSP 正在工作的時候 fork，子行程會複製一份 VSP 的使用者態狀態</strong>（buffer 佇列、暫存器影子、廠商堆裡的上下文），父子都認為自己持有這塊硬體，狀態遲早打架，最後父行程踩到野位址。</p>
+<p>這個假設還有一個旁證：專案裡早就定過一條鐵律——<code>fork</code> 出來的子行程必須把 SEGV&#x2F;BUS&#x2F;ILL 復位成 <code>SIG_DFL</code>，因為父行程的 handler 末尾是 <code>siglongjmp(g_jb)</code>，而 <code>g_jb</code> 在<strong>父行程堆疊</strong>上；子行程一旦觸發訊號，就會 longjmp 進父行程的堆疊，憑空變成「第二個解碼行程」去搶同一個 VSP。既然「子行程繼承父行程的執行上下文」這條路上已經栽過一次，那「繼承 VSP 狀態」很可能就是第二次。</p>
+<h2 id="3-方案-A：把池子挪到-VSP-之前"><a href="#3-方案-A：把池子挪到-VSP-之前" class="headerlink" title="3. 方案 A：把池子挪到 VSP 之前"></a>3. 方案 A：把池子挪到 VSP 之前</h2><p>改動本身不複雜，難的是<strong>三件必須先做好的配套</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>配套</th>
+<th>為什麼必須先做</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>render_cfg_init()</code></td>
+<td>渲染配置（帶高 &#x2F; NEON &#x2F; LUT）靠 fork 繼承傳給子行程，子行程內不碰 <code>getenv</code></td>
+</tr>
+<tr>
+<td><code>stage_ensure()</code></td>
+<td>staging 必須 <code>mmap MAP_SHARED</code> 且<strong>先於 fork 存在</strong>，否則子行程拿到的是凍結副本（畫面錯且不報錯）</td>
+</tr>
+<tr>
+<td><code>fb_init()</code></td>
+<td>子行程寫的是 fb 映射出來的位址，映射必須先存在</td>
+</tr>
+</tbody></table>
+<p>第一項還好，它是一個已有的函式，只是從「第一幀 lazy 呼叫」改成「提前顯式呼叫」。第二項要動結構：原來 staging 是解碼迴圈裡一個 <code>static</code> 區域變數，第一幀才建立——只要它在那兒，池子就只能後 fork。所以把它提成檔案作用域的 <code>g_stage</code> + <code>stage_ensure()</code>，行為不變（同樣只建立一次），只是時機提前。</p>
+<p>第三項是本機的老坑：池子 fork 得早了，之後 <code>exec</code> 出來的 mplayer、非同步音訊泵都會繼承管道寫端。萬一池子行程真死了，父行程的 <code>read()</code> 因為別的行程還捏著寫端而<strong>永遠收不到 EOF</strong>——整幀卡死，而不是應有的「回退序列」。所以四條管道全部 <code>FD_CLOEXEC</code>（只在 <code>exec</code> 時生效，對靠繼承拿 fd 的池子行程無影響）。</p>
+<h2 id="4-先把「臨終留言」翻案"><a href="#4-先把「臨終留言」翻案" class="headerlink" title="4. 先把「臨終留言」翻案"></a>4. 先把「臨終留言」翻案</h2><p>翻 child.log 時，每次崩潰前最後一行都是同一句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Parent process disappeared, exiting cache process.</span><br></pre></td></tr></table></figure>
+
+<p>第一反應是「mplayer 崩了，把我們也帶走了」。但順著行程樹推一遍就發現因果是反的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">worker 死（SIGSEGV）</span><br><span class="line">  → dl 被 PDEATHSIG 殺</span><br><span class="line">    → mplayer 被殺（它的 PDEATHSIG 也是這麼設的）</span><br><span class="line">      → mplayer 的 cache 子行程發現父行程沒了，印出這句並退出</span><br></pre></td></tr></table></figure>
+
+<p>這句<strong>是結果不是原因</strong>，而且它出現在我們日誌裡只是因為 stdout 是繼承的。差點被它帶進溝裡——如果當時直接去查 mplayer，這一晚就白幹了。</p>
+<p>順帶記一條通用經驗：<strong>排查崩潰時，先問「這條日誌是死因還是死後現象」</strong>。死後現象的特徵是它由<strong>別人的子行程</strong>印出，且和你的行程樹是同一條死亡鏈的下游。</p>
+<h2 id="5-結果：假設被證偽"><a href="#5-結果：假設被證偽" class="headerlink" title="5. 結果：假設被證偽"></a>5. 結果：假設被證偽</h2><p>同一台板子、同一個源、同樣的三個 env（<code>NETTV_RPOOL=2</code> + <code>NETTV_AUDIO_ASYNC=1</code> + <code>NETTV_HLSBUF=1</code>），跑 5 分鐘：</p>
+<table>
+<thead>
+<tr>
+<th>指標</th>
+<th>v32（基線，10 分鐘）</th>
+<th>v33（方案 A，5 分鐘）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>monitor 重啟</td>
+<td>3 次</td>
+<td><strong>1 次</strong></td>
+</tr>
+<tr>
+<td>fps_x10</td>
+<td>265~282</td>
+<td>282</td>
+</tr>
+<tr>
+<td>池渲染牆鐘</td>
+<td>14ms</td>
+<td>13~14ms</td>
+</tr>
+<tr>
+<td>首幀自檢</td>
+<td>通過</td>
+<td>通過</td>
+</tr>
+<tr>
+<td>ION clients &#x2F; 殘留</td>
+<td>0 &#x2F; 0</td>
+<td>0 &#x2F; 0</td>
+</tr>
+<tr>
+<td>音訊丟段比</td>
+<td>0.29</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>歸一化一下：<strong>基線是 1.5 次 &#x2F; 5 分鐘，v33 是 1 次 &#x2F; 5 分鐘</strong>。在只有個位數樣本的崩潰統計上，這叫「沒有變化」。方案 A 被證偽——fork 時機不是這個崩潰的原因。</p>
+<p>（另：這一輪裡設備還發生過一次核心重啟，時間點是上一輪 v33 跑到第 2 分鐘時；第二次 5 分鐘跑沒有復現。沒有足夠樣本判定它和 v33 有關，只作為疑點記錄在筆記裡，不作為結論。）</p>
+<p><strong>v33 不部署。</strong> 它沒解決問題，就不該動現網——這條原則比「新版一定更好」重要。</p>
+<h2 id="6-真值錢的線索：處理器一次都沒跑"><a href="#6-真值錢的線索：處理器一次都沒跑" class="headerlink" title="6. 真值錢的線索：處理器一次都沒跑"></a>6. 真值錢的線索：處理器一次都沒跑</h2><p>方案 A 裡我塞了一個純取證的改動：<code>sigaltstack</code> 備一塊 64KB 替身堆疊 + <code>SA_ONSTACK</code>。動機是——三次 SIGSEGV 處理器零輸出，最可能的解釋是<strong>堆疊溢位</strong>：處理器沒有堆疊可跑，核心直接按預設動作殺行程，現場全丟。</p>
+<p>結果這條路也被堵死了：<strong>加了 altstack，依舊零輸出</strong>；child.log 裡 <code>SIGSEGV</code> 關鍵字出現 <strong>0 次</strong>。</p>
+<p>處理器沒跑，只剩幾種可能：</p>
+<ol>
+<li>堆疊溢位（已被 altstack 排除大部分情況）；</li>
+<li>handler 自己又崩了（但它第一行就是純計算，然後才 <code>write</code>，沒機會）；</li>
+<li><strong>訊號被遮蔽</strong>——故障執行緒把 SIGSEGV 遮蔽了，核心找不到能投遞的執行緒，直接按預設動作殺整個行程。</li>
+</ol>
+<p>第 3 條不是空想，這個專案裡就有先例：當年裸 <code>clone</code> 出來的渲染子執行緒會呼叫 <code>rp_block_sig()</code> 遮蔽 SIGSEGV，它一崩就是「處理器零輸出 + <code>/tmp/nettv_segv.log</code> 不存在」，和現在一模一樣。那次因此定下了「渲染側一律 fork、禁用裸 clone」的鐵律。</p>
+<p>現在的區別是：我們自己的兩個會遮蔽訊號的執行緒（vsync 翻頁執行緒、檔 2 渲染子行程）預設都是關的。所以嫌疑落到了<strong>廠商庫自己建立的執行緒</strong>（<code>libstagefright</code> 的 ALooper &#x2F; 解碼執行緒）——那是我們改不到、也擋不住的地方。</p>
+<h2 id="7-下一步：把黑盒子做在共用記憶體裡"><a href="#7-下一步：把黑盒子做在共用記憶體裡" class="headerlink" title="7. 下一步：把黑盒子做在共用記憶體裡"></a>7. 下一步：把黑盒子做在共用記憶體裡</h2><p>既然處理器幫不上忙，就別指望崩潰瞬間能取到什麼，改成<strong>平時一直在記</strong>：</p>
+<ul>
+<li>worker 每幀把「目前環節 id &#x2F; 幀號 &#x2F; 段號」寫進已有的 <code>g_cnt_shm</code>（<code>mmap MAP_SHARED</code>，monitor 手裡也有一份）；</li>
+<li>子行程一死，monitor 直接把 shm 裡最後一組值印出來。</li>
+</ul>
+<p>這套的關鍵指標是<strong>零 I&#x2F;O 開銷</strong>——寫共用記憶體是幾條指令，不像 <code>ph()</code> 那樣每次 O_SYNC 落盤 15ms。代價是粒度粗（只到「環節」級），但足以區分「崩在廠商 DRIVE 裡」還是「崩在讀幀&#x2F;渲染裡」。</p>
+<p>另一條並行的二分線：用 <code>NETTV_RPOOL=0 + AF=1</code> 和 <code>RPOOL=2 + AF=0</code> 各跑 5 分鐘，把「渲染池」和「非同步音訊泵」這兩個新加入的元件分別排除掉。</p>
+<h2 id="8-這一晚的三條方法論"><a href="#8-這一晚的三條方法論" class="headerlink" title="8. 這一晚的三條方法論"></a>8. 這一晚的三條方法論</h2><ol>
+<li><strong>證偽也要寫進筆記</strong>。假設被推翻但沒留記錄，下一輪會從頭再推一遍——這次的「fork 時機」假設，推理鏈完整、旁證充分，照樣是錯的。記下來，下次直接跳過。</li>
+<li><strong>先分清「死因」和「死後現象」</strong>。<code>Parent process disappeared</code> 看起來像 mplayer 的鍋，其實是死亡鏈的最下游。</li>
+<li><strong>零成本的取證升級優先做</strong>。<code>sigaltstack</code> 十行程式碼，把「堆疊溢位」這個假設直接判死，比任何推理都便宜。</li>
+</ol>
+<h2 id="附：本輪改動（v33，未部署）"><a href="#附：本輪改動（v33，未部署）" class="headerlink" title="附：本輪改動（v33，未部署）"></a>附：本輪改動（v33，未部署）</h2><ul>
+<li><code>outputs/sprd_msg_np_v33.c</code>（450172B，md5 <code>93fc5967</code>；產物 156576B，md5 <code>18ed767b</code>）</li>
+<li>池子 fork 提前到 <code>fb_init()</code> 之後、OMX 元件 init 之前</li>
+<li><code>g_stage</code> 提為檔案作用域 + <code>stage_ensure()</code> 提前建 staging</li>
+<li>池子四條管道 <code>FD_CLOEXEC</code></li>
+<li><code>sigaltstack(64KB)</code> + <code>SA_ONSTACK</code>（純取證）</li>
+<li>腳本：<code>outputs/_b33.sh</code>（建置）、<code>outputs/_r33.sh</code>（回歸，判據寫在腳本頭）</li>
+</ul>
+<p>現網保持 v32（md5 <code>0b6a4840</code>）不動。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%B5%B7%E5%9B%A0%EF%BC%9A%E6%88%90%E7%B8%BE%E5%96%AE%E8%83%8C%E5%BE%8C%E9%82%A3%E5%80%8B%E6%B1%A1%E9%BB%9E"><span class="toc-number">1.</span> <span class="toc-text">1. 起因：成績單背後那個污點</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%81%87%E8%A8%AD%EF%BC%9Afork-%E7%9A%84%E6%99%82%E6%A9%9F%E6%AF%94-fork-%E6%9C%AC%E8%BA%AB%E6%9B%B4%E5%8D%B1%E9%9A%AA"><span class="toc-number">2.</span> <span class="toc-text">2. 假設：fork 的時機比 fork 本身更危險</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%96%B9%E6%A1%88-A%EF%BC%9A%E6%8A%8A%E6%B1%A0%E5%AD%90%E6%8C%AA%E5%88%B0-VSP-%E4%B9%8B%E5%89%8D"><span class="toc-number">3.</span> <span class="toc-text">3. 方案 A：把池子挪到 VSP 之前</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%85%88%E6%8A%8A%E3%80%8C%E8%87%A8%E7%B5%82%E7%95%99%E8%A8%80%E3%80%8D%E7%BF%BB%E6%A1%88"><span class="toc-number">4.</span> <span class="toc-text">4. 先把「臨終留言」翻案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E7%B5%90%E6%9E%9C%EF%BC%9A%E5%81%87%E8%A8%AD%E8%A2%AB%E8%AD%89%E5%81%BD"><span class="toc-number">5.</span> <span class="toc-text">5. 結果：假設被證偽</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E7%9C%9F%E5%80%BC%E9%8C%A2%E7%9A%84%E7%B7%9A%E7%B4%A2%EF%BC%9A%E8%99%95%E7%90%86%E5%99%A8%E4%B8%80%E6%AC%A1%E9%83%BD%E6%B2%92%E8%B7%91"><span class="toc-number">6.</span> <span class="toc-text">6. 真值錢的線索：處理器一次都沒跑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E4%B8%8B%E4%B8%80%E6%AD%A5%EF%BC%9A%E6%8A%8A%E9%BB%91%E7%9B%92%E5%AD%90%E5%81%9A%E5%9C%A8%E5%85%B1%E7%94%A8%E8%A8%98%E6%86%B6%E9%AB%94%E8%A3%A1"><span class="toc-number">7.</span> <span class="toc-text">7. 下一步：把黑盒子做在共用記憶體裡</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E9%80%99%E4%B8%80%E6%99%9A%E7%9A%84%E4%B8%89%E6%A2%9D%E6%96%B9%E6%B3%95%E8%AB%96"><span class="toc-number">8.</span> <span class="toc-text">8. 這一晚的三條方法論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E6%9C%AC%E8%BC%AA%E6%94%B9%E5%8B%95%EF%BC%88v33%EF%BC%8C%E6%9C%AA%E9%83%A8%E7%BD%B2%EF%BC%89"><span class="toc-number">9.</span> <span class="toc-text">附：本輪改動（v33，未部署）</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&text=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&title=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&is_video=false&description=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢&body=Check out this article: https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&title=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&title=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&title=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&title=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/&name=netTV 硬解（33）：把 fork 提前到 VSP 之前——假設被證偽，但「處理器零輸出」這條線索值錢&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
