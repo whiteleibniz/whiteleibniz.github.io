@@ -95,6 +95,31 @@ Start sampler → clear leftovers → start the player → wait → summarize. T
 
 It runs unattended on the device: the script returns within 2 seconds and the PC side just short-polls `/tmp/cr34.log` — a habit forced by the connection constraints (the local sandbox SIGTERMs long-running SSH calls, leaking sessions until dropbear runs out).
 
+### Addition from static reading: we might be the ones blocking SIGSEGV
+
+Reading back through v33 turned up a candidate that needs no device time to confirm:
+
+```c
+/* v33:4427 — blocks SEGV/BUS/ILL/ALRM/TERM/INT/PIPE */
+static void rp_block_sig(void) {
+    int sg[] = { SIGSEGV, SIGBUS, SIGILL, SIGALRM, SIGTERM, SIGINT, SIGPIPE, 0 };
+    syscall(175 /* rt_sigprocmask */, 0 /* SIG_BLOCK */, set, 0, 8);
+}
+static void render_child(void) {
+    rp_block_sig();                       /* render pool child */
+    signal(SIGSEGV, SIG_DFL); signal(SIGBUS, SIG_DFL); signal(SIGILL, SIG_DFL);
+    ...
+}
+```
+
+The bug hides in the ordering: `signal(..., SIG_DFL)` resets the **action** but never **unblocks** the signal. So when a render pool child stomps memory, it dies exactly the observed way — no handler output, silent kill — and the parent sees one line:
+
+```
+  [rpool] child invalid → permanently falling back to serial
+```
+
+Meaning H2 is not necessarily the vendor library's fault at all — **our own forked pool children fit the profile perfectly**. It also hands us a free discriminator: did that line appear in `child.log` before the crash? The summary script now greps for it.
+
 ## 5. Verdict table: what to do with the numbers
 
 | Measured result | Verdict | Next move |

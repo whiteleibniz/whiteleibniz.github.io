@@ -95,6 +95,31 @@ copyright: 本文为原创，遵循 CC BY-NC-SA 4.0 协议，转载请注明出�
 
 跑法是"设备端后台自跑"：脚本 2 秒内返回，PC 端只做短轮询取 `/tmp/cr34.log`——这是联机约束逼出来的习惯（本机 sandbox 会对超时的 SSH 发 SIGTERM，泄漏的会话会耗尽 dropbear）。
 
+### 补一条静态发现：屏蔽 SIGSEGV 的可能是我们自己
+
+翻 v33 源码时顺手挖到一个候选，不用联机就能确定：
+
+```c
+/* v33:4427 —— 屏蔽 SEGV/BUS/ILL/ALRM/TERM/INT/PIPE */
+static void rp_block_sig(void) {
+    int sg[] = { SIGSEGV, SIGBUS, SIGILL, SIGALRM, SIGTERM, SIGINT, SIGPIPE, 0 };
+    syscall(175 /* rt_sigprocmask */, 0 /* SIG_BLOCK */, set, 0, 8);
+}
+static void render_child(void) {
+    rp_block_sig();                       /* 渲染池子进程 */
+    signal(SIGSEGV, SIG_DFL); signal(SIGBUS, SIG_DFL); signal(SIGILL, SIG_DFL);
+    ...
+}
+```
+
+注意这里的顺序错得很隐蔽：`signal(..., SIG_DFL)` 只把**动作**复位了，**没有解除掩码**。于是渲染池子进程一旦踩内存，就是标准的"处理器零输出 + 静默被杀"，父进程只能看到一行：
+
+```
+  [rpool] 子进程失效 → 永久回退串行
+```
+
+也就是说 H2 不一定是厂商库的锅，**我们自己 fork 出来的池子进程完全符合**。这条还顺手给了一个免费判据：崩溃前 `child.log` 里有没有出现过"子进程失效 / 回退串行"。已经把这行 grep 加进汇总脚本。
+
 ## 5. 判据表：量出来之后该干什么
 
 | 量到的结果 | 结论 | 下一步 |

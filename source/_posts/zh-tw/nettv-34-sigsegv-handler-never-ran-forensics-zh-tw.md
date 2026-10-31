@@ -95,6 +95,31 @@ copyright: 本文為原創，遵循 CC BY-NC-SA 4.0 協議，轉載請註明出�
 
 跑法是「設備端背景自跑」：腳本 2 秒內返回，PC 端只做短輪詢取 `/tmp/cr34.log`——這是連線約束逼出來的習慣（本機 sandbox 會對超時的 SSH 發 SIGTERM，洩漏的會話會耗盡 dropbear）。
 
+### 補一條靜態發現：遮蔽 SIGSEGV 的可能就是我們自己
+
+回頭翻 v33 原始碼時順手挖到一個候選，不用連線就能確定：
+
+```c
+/* v33:4427 —— 遮蔽 SEGV/BUS/ILL/ALRM/TERM/INT/PIPE */
+static void rp_block_sig(void) {
+    int sg[] = { SIGSEGV, SIGBUS, SIGILL, SIGALRM, SIGTERM, SIGINT, SIGPIPE, 0 };
+    syscall(175 /* rt_sigprocmask */, 0 /* SIG_BLOCK */, set, 0, 8);
+}
+static void render_child(void) {
+    rp_block_sig();                       /* 渲染池子行程 */
+    signal(SIGSEGV, SIG_DFL); signal(SIGBUS, SIG_DFL); signal(SIGILL, SIG_DFL);
+    ...
+}
+```
+
+這裡的順序錯得很隱蔽：`signal(..., SIG_DFL)` 只把**動作**復位了，**沒有解除遮罩**。於是渲染池子行程一旦踩記憶體，就是標準的「處理器零輸出 + 靜默被殺」，父行程只能看到一行：
+
+```
+  [rpool] 子进程失效 → 永久回退串行
+```
+
+也就是說 H2 不一定是廠商函式庫的鍋，**我們自己 fork 出來的池子行程完全符合**。這條還順手給了一個免費判據：崩潰前 `child.log` 裡有沒有出現過「子进程失效 / 回退串行」。已經把這行 grep 加進彙總腳本。
+
 ## 5. 判據表：量出來之後該做什麼
 
 | 量到的結果 | 結論 | 下一步 |
