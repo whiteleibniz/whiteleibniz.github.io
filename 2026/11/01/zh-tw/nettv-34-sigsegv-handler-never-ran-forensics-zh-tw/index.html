@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 34 篇。上一輪把「fork 提前到 VSP 之前」這個假設證偽之後，手上只剩一條線索：worker 每跑 4000~5000 幀被 SIGSEGV 殺一次，而我們的 SIGSEGV 處理器一次都沒有執行過。這一篇不修 bug，先把「為什麼處理器跑不到」在核心層面解釋清楚，再把剩下的三種可能做成各自可以被否定的測量，並配一套零改">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 34 篇。上一輪把「fork 提前到 VSP 之前」這個假設證偽之後，手上只剩一條線索：worker 每跑 4000~5000 幀被 SIGSEGV 殺一次，而我們的 SIGSEGV 處理器一次都沒有執行過。這一篇不修 bug，先把「為什麼處理器跑不到」在核心層面解釋清楚，再把剩下的三種可能做成各自可以被否定的測量，並配一套零改">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-31T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-31T18:18:40.581Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="展訊 SC9832A">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="崩潰取證">
+<meta property="article:tag" content="Linux 信號">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&text=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&title=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&is_video=false&description=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」&body=Check out this article: https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&title=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&title=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&title=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&title=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&name=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%8A%E4%B8%80%E8%BC%AA%E7%95%99%E4%B8%8B%E7%9A%84%E9%82%A3%E6%A2%9D%E7%B7%9A%E7%B4%A2"><span class="toc-number">1.</span> <span class="toc-text">1. 上一輪留下的那條線索</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E5%B1%A4%E9%9D%A2%EF%BC%9A%E7%82%BA%E4%BB%80%E9%BA%BC%E8%99%95%E7%90%86%E5%99%A8%E5%BF%85%E7%84%B6%E8%B7%91%E4%B8%8D%E5%88%B0"><span class="toc-number">2.</span> <span class="toc-text">2. 核心層面：為什麼處理器必然跑不到</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%B8%89%E6%A2%9D%E4%BA%92%E6%96%A5%E5%81%87%E8%AA%AA%EF%BC%8C%E5%90%84%E8%87%AA%E9%85%8D%E4%B8%80%E6%A2%9D%E8%83%BD%E5%90%A6%E5%AE%9A%E7%9A%84%E5%88%A4%E6%93%9A"><span class="toc-number">3.</span> <span class="toc-text">3. 三條互斥假說，各自配一條能否定的判據</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%82%BA%E4%BB%80%E9%BA%BC%E9%80%99%E4%B8%80%E8%BC%AA%E5%A0%85%E6%8C%81%E3%80%8C%E9%9B%B6%E6%94%B9%E7%A2%BC%E5%8F%96%E8%AD%89%E3%80%8D"><span class="toc-number">4.</span> <span class="toc-text">4. 為什麼這一輪堅持「零改碼取證」</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#hw34-sh%EF%BC%9A%E7%B4%94-proc-%E6%8E%A1%E6%A8%A3%E5%99%A8"><span class="toc-number">4.1.</span> <span class="toc-text">_hw34.sh：純 &#x2F;proc 採樣器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#crash34-sh%EF%BC%9A%E4%B8%80%E6%A2%9D%E5%91%BD%E4%BB%A4%E7%9A%84%E7%B7%A8%E6%8E%92-%E8%87%AA%E5%8B%95%E5%BD%99%E7%B8%BD"><span class="toc-number">4.2.</span> <span class="toc-text">_crash34.sh：一條命令的編排 + 自動彙總</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A3%9C%E4%B8%80%E6%A2%9D%E9%9D%9C%E6%85%8B%E7%99%BC%E7%8F%BE%EF%BC%9A%E9%81%AE%E8%94%BD-SIGSEGV-%E7%9A%84%E5%8F%AF%E8%83%BD%E5%B0%B1%E6%98%AF%E6%88%91%E5%80%91%E8%87%AA%E5%B7%B1"><span class="toc-number">4.3.</span> <span class="toc-text">補一條靜態發現：遮蔽 SIGSEGV 的可能就是我們自己</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%88%A4%E6%93%9A%E8%A1%A8%EF%BC%9A%E9%87%8F%E5%87%BA%E4%BE%86%E4%B9%8B%E5%BE%8C%E8%A9%B2%E5%81%9A%E4%BB%80%E9%BA%BC"><span class="toc-number">5.</span> <span class="toc-text">5. 判據表：量出來之後該做什麼</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%89%E6%A2%9D%E6%96%B9%E6%B3%95%E8%AB%96%E5%9B%9E%E9%A1%A7"><span class="toc-number">6.</span> <span class="toc-text">6. 三條方法論回顧</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E6%9C%AC%E8%BC%AA%E7%94%A2%E5%87%BA"><span class="toc-number">7.</span> <span class="toc-text">附：本輪產出</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-31T18:30:00.000Z" itemprop="datePublished">2026-11-01</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Linux-%E4%BF%A1%E8%99%9F/" rel="tag">Linux 信號</a>, <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A-SC9832A/" rel="tag">展訊 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B4%A9%E6%BD%B0%E5%8F%96%E8%AD%89/" rel="tag">崩潰取證</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 34 篇。上一輪把「fork 提前到 VSP 之前」這個假設證偽之後，手上只剩一條線索：<strong>worker 每跑 4000~5000 幀被 SIGSEGV 殺一次，而我們的 SIGSEGV 處理器一次都沒有執行過</strong>。這一篇不修 bug，先把「為什麼處理器跑不到」在核心層面解釋清楚，再把剩下的三種可能做成<strong>各自可以被否定的測量</strong>，並配一套零改碼的取證工具。</p>
+</blockquote>
+<h2 id="1-上一輪留下的那條線索"><a href="#1-上一輪留下的那條線索" class="headerlink" title="1. 上一輪留下的那條線索"></a>1. 上一輪留下的那條線索</h2><p>10 分鐘回歸裡出現了三次：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">*** monitor: 子进程自退 st=0xb ***</span><br><span class="line">*** monitor: 重启 (子进程 @4215 帧)</span><br></pre></td></tr></table></figure>
+
+<p><code>st=0xb</code> &#x3D; 被 SIGSEGV 殺死。詭異的地方有三點：</p>
+<ol>
+<li>不是啟動期就死，而是老老實實跑了四五千幀才死（約 150 秒）；</li>
+<li><code>/tmp/nettv_segv.log</code> 根本不存在——處理器一次都沒進去；</li>
+<li>加過 <code>sigaltstack</code> + <code>SA_ONSTACK</code> 之後依然零輸出，於是<strong>堆疊溢位</strong>這條被排除。</li>
+</ol>
+<h2 id="2-核心層面：為什麼處理器必然跑不到"><a href="#2-核心層面：為什麼處理器必然跑不到" class="headerlink" title="2. 核心層面：為什麼處理器必然跑不到"></a>2. 核心層面：為什麼處理器必然跑不到</h2><p>排除掉「處理器本身寫崩了」之後，只剩一種系統性解釋：<strong>產生故障的那個執行緒把 SIGSEGV 遮蔽了</strong>。</p>
+<p>關鍵點在核心的 <code>force_sig_info()</code>：硬體同步異常（缺頁、越界）產生的是<strong>執行緒導向</strong>信號，如果這個執行緒把該信號遮蔽了，核心不會讓行程掛住，而是——</p>
+<ul>
+<li>把該信號的動作**強制改回 <code>SIG_DFL</code>**；</li>
+<li>把該執行緒遮罩裡這一位<strong>清掉</strong>；</li>
+<li>然後立刻按預設動作殺掉整個行程。</li>
+</ul>
+<p>於是現場表現恰好就是：<strong>行程死於 SIGSEGV，但使用者態處理器一次都不會被呼叫</strong>。這條語義把現象完全解釋通了，也把排查方向從「哪裡踩了記憶體」換成「哪個執行緒在遮蔽 SIGSEGV」。</p>
+<p>順帶記一個便宜的讀取方式：執行緒的信號遮罩就在 <code>/proc/&lt;pid&gt;/task/&lt;tid&gt;/status</code> 的 <code>SigBlk:</code> 裡，是一個 16 位十六進位遮罩，信號 n 對應 bit (n-1)。SIGSEGV &#x3D; 11 → bit 10 → <code>0x400</code>。按末四位十六進位拆：</p>
+<table>
+<thead>
+<tr>
+<th>末四位位置</th>
+<th>覆蓋信號</th>
+<th>SIGSEGV 落在哪</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>d1（右數第 4 位）</td>
+<td>13~16</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>d2（右數第 3 位）</strong></td>
+<td><strong>9~12</strong></td>
+<td><strong>是這一位</strong></td>
+</tr>
+<tr>
+<td>d3（右數第 2 位）</td>
+<td>5~8</td>
+<td>—</td>
+</tr>
+<tr>
+<td>d4（右數第 1 位）</td>
+<td>1~4</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>所以判定口訣只有一句：<strong>末四位右數第 3 個字元落在 <code>&#123;4,5,6,7,c,d,e,f&#125;</code> 裡，這個執行緒就遮蔽了 SIGSEGV</strong>。</p>
+<h2 id="3-三條互斥假說，各自配一條能否定的判據"><a href="#3-三條互斥假說，各自配一條能否定的判據" class="headerlink" title="3. 三條互斥假說，各自配一條能否定的判據"></a>3. 三條互斥假說，各自配一條能否定的判據</h2><table>
+<thead>
+<tr>
+<th>假說</th>
+<th>內容</th>
+<th>判據（看到什麼算成立）</th>
+<th>被否定的樣子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H1</td>
+<td>資源洩漏觸頂（每幀&#x2F;每段&#x2F;每 GOP 漏一樣東西）</td>
+<td>執行緒數 &#x2F; RSS &#x2F; VSZ &#x2F; fd &#x2F; ION clients 單調上漲，死亡點落在峰值附近</td>
+<td>曲線平坦，死亡點隨機</td>
+</tr>
+<tr>
+<td>H2</td>
+<td>某執行緒遮蔽 SIGSEGV（廠商函式庫自建執行緒最常見）</td>
+<td>存在 <code>SigBlk</code> 命中上面那條口訣的執行緒</td>
+<td>所有執行緒 <code>SigBlk</code> 為 0</td>
+</tr>
+<tr>
+<td>H3</td>
+<td>真的隨機踩記憶體</td>
+<td>H1、H2 雙雙被否</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>三條假說都寫成「可以被否定的形狀」，價值在於：<strong>跑一次實驗，無論結果如何都有進展</strong>。這比「再猜一個原因改一版程式碼」便宜得多。</p>
+<h2 id="4-為什麼這一輪堅持「零改碼取證」"><a href="#4-為什麼這一輪堅持「零改碼取證」" class="headerlink" title="4. 為什麼這一輪堅持「零改碼取證」"></a>4. 為什麼這一輪堅持「零改碼取證」</h2><ul>
+<li><strong>改碼會改變被觀測的對象</strong>。上一輪 v33 為了做假設改了 fork 時機，結果既沒修好崩潰，又引入了一個難以重現的核心重置疑點。</li>
+<li><strong>在這個環境裡加日誌不便宜</strong>。播放器是裸 bionic（<code>nostdlib</code> + <code>--entry=main</code>），日誌只能靠手寫 <code>write</code>；歷史上就因為無節制寫日誌把磁碟撐到過 1GB。</li>
+<li><strong>這套環境最貴的是連線時間</strong>。設備經常不在線（這幾輪連著幾次都是沒上電），能連線時應該先做「零編譯、零部署、結果確定」的動作。</li>
+</ul>
+<p>所以本輪只做兩個腳本，不動一行 C：</p>
+<h3 id="hw34-sh：純-proc-採樣器"><a href="#hw34-sh：純-proc-採樣器" class="headerlink" title="_hw34.sh：純 /proc 採樣器"></a><code>_hw34.sh</code>：純 <code>/proc</code> 採樣器</h3><p>每 3 秒採一輪，三個日誌檔：</p>
+<ul>
+<li><code>nettv_health.log</code>：每個 nettv 行程一行 —— 執行緒數、RSS、VSZ、fd 數；</li>
+<li><code>nettv_thr.log</code>：每 18 秒記一次 worker 的<strong>逐執行緒</strong>明細 —— tid、執行緒名、<code>SigBlk</code>、<code>SigCgt</code>；</li>
+<li><code>nettv_sys.log</code>：系統面 —— <code>MemFree</code>、<code>CmaFree</code>、ION clients 數。</li>
+</ul>
+<p>三個日誌都做了 400KB 封頂旋轉，避免重蹈 1GB 的覆轍。</p>
+<h3 id="crash34-sh：一條命令的編排-自動彙總"><a href="#crash34-sh：一條命令的編排-自動彙總" class="headerlink" title="_crash34.sh：一條命令的編排 + 自動彙總"></a><code>_crash34.sh</code>：一條命令的編排 + 自動彙總</h3><p>起採樣器 → 清殘留 → 起播放器 → 坐等 → 彙總。彙總裡直接給出：</p>
+<ul>
+<li>worker 的<strong>首個 &#x2F; 末個 &#x2F; 峰值</strong>樣本（一眼看出是不是單調上漲）；</li>
+<li>執行緒數時間線；</li>
+<li>執行緒名分布（出現新名字 &#x3D; 執行緒洩漏的指紋）；</li>
+<li><strong>命中 SIGSEGV 遮蔽口訣的執行緒（去重）</strong>；</li>
+<li>最接近崩潰那一幀的完整執行緒快照。</li>
+</ul>
+<p>跑法是「設備端背景自跑」：腳本 2 秒內返回，PC 端只做短輪詢取 <code>/tmp/cr34.log</code>——這是連線約束逼出來的習慣（本機 sandbox 會對超時的 SSH 發 SIGTERM，洩漏的會話會耗盡 dropbear）。</p>
+<h3 id="補一條靜態發現：遮蔽-SIGSEGV-的可能就是我們自己"><a href="#補一條靜態發現：遮蔽-SIGSEGV-的可能就是我們自己" class="headerlink" title="補一條靜態發現：遮蔽 SIGSEGV 的可能就是我們自己"></a>補一條靜態發現：遮蔽 SIGSEGV 的可能就是我們自己</h3><p>回頭翻 v33 原始碼時順手挖到一個候選，不用連線就能確定：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* v33:4427 —— 遮蔽 SEGV/BUS/ILL/ALRM/TERM/INT/PIPE */</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">rp_block_sig</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">int</span> sg[] = &#123; SIGSEGV, SIGBUS, SIGILL, SIGALRM, SIGTERM, SIGINT, SIGPIPE, <span class="number">0</span> &#125;;</span><br><span class="line">    syscall(<span class="number">175</span> <span class="comment">/* rt_sigprocmask */</span>, <span class="number">0</span> <span class="comment">/* SIG_BLOCK */</span>, <span class="built_in">set</span>, <span class="number">0</span>, <span class="number">8</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">render_child</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    rp_block_sig();                       <span class="comment">/* 渲染池子行程 */</span></span><br><span class="line">    signal(SIGSEGV, SIG_DFL); signal(SIGBUS, SIG_DFL); signal(SIGILL, SIG_DFL);</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>這裡的順序錯得很隱蔽：<code>signal(..., SIG_DFL)</code> 只把<strong>動作</strong>復位了，<strong>沒有解除遮罩</strong>。於是渲染池子行程一旦踩記憶體，就是標準的「處理器零輸出 + 靜默被殺」，父行程只能看到一行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[rpool] 子进程失效 → 永久回退串行</span><br></pre></td></tr></table></figure>
+
+<p>也就是說 H2 不一定是廠商函式庫的鍋，<strong>我們自己 fork 出來的池子行程完全符合</strong>。這條還順手給了一個免費判據：崩潰前 <code>child.log</code> 裡有沒有出現過「子进程失效 &#x2F; 回退串行」。已經把這行 grep 加進彙總腳本。</p>
+<h2 id="5-判據表：量出來之後該做什麼"><a href="#5-判據表：量出來之後該做什麼" class="headerlink" title="5. 判據表：量出來之後該做什麼"></a>5. 判據表：量出來之後該做什麼</h2><table>
+<thead>
+<tr>
+<th>量到的結果</th>
+<th>結論</th>
+<th>下一步</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>某個廠商執行緒 <code>SigBlk</code> 命中</td>
+<td>H2 成立：崩潰被靜默化</td>
+<td>在 fork 出的子行程裡顯式復位信號遮罩；能攔到就要攔 <code>pthread_create</code></td>
+</tr>
+<tr>
+<td>執行緒數 &#x2F; fd &#x2F; ION 單調漲到閾值就死</td>
+<td>H1 成立：洩漏觸頂</td>
+<td>按漲的那個量追分配點；順手把「每 N 段主動重生」作為兜底</td>
+</tr>
+<tr>
+<td>全部平坦、無人遮蔽 SIGSEGV</td>
+<td>H3</td>
+<td>才輪到 shm 黑盒子（每幀寫環節 id&#x2F;幀號&#x2F;段號，monitor 死後列印）</td>
+</tr>
+<tr>
+<td>ION clients 一路漲</td>
+<td>與 H1 同源，但更具體</td>
+<td>回收路徑查 dmabuf fd 繼承（渲染池曾踩過）</td>
+</tr>
+</tbody></table>
+<h2 id="6-三條方法論回顧"><a href="#6-三條方法論回顧" class="headerlink" title="6. 三條方法論回顧"></a>6. 三條方法論回顧</h2><ol>
+<li><strong>「處理器沒跑到」本身就是最強的一條線索</strong>。它把原因空間從「所有可能的記憶體踩踏」壓縮到「信號被遮蔽的執行流」。</li>
+<li><strong>先做能否定的測量，再改程式碼</strong>。三個假說都預先寫好否定條件，跑一次就有進展，不至於「改了一版、結果沒變、什麼都沒學到」。</li>
+<li><strong>零改碼取證優先</strong>。不改二進位意味著結果可以和現網基線直接對比，也意味著設備不在線時照樣能把工具寫好。</li>
+</ol>
+<h2 id="附：本輪產出"><a href="#附：本輪產出" class="headerlink" title="附：本輪產出"></a>附：本輪產出</h2><ul>
+<li><code>outputs/_hw34.sh</code> —— 資源趨勢 + 執行緒信號遮罩採樣器（純 <code>/proc</code>，無需編譯）</li>
+<li><code>outputs/_crash34.sh</code> —— 取證編排與自動彙總（預設跑現網 v32 wrapper，與基線可比）</li>
+<li>現網二進位與原始碼均未改動；設備端 git 未提交</li>
+</ul>
+<p>下一輪（設備在線）：<code>sh /tmp/_crash34.sh 900</code> 跑 15 分鐘，按上表對號入座。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%8A%E4%B8%80%E8%BC%AA%E7%95%99%E4%B8%8B%E7%9A%84%E9%82%A3%E6%A2%9D%E7%B7%9A%E7%B4%A2"><span class="toc-number">1.</span> <span class="toc-text">1. 上一輪留下的那條線索</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E5%B1%A4%E9%9D%A2%EF%BC%9A%E7%82%BA%E4%BB%80%E9%BA%BC%E8%99%95%E7%90%86%E5%99%A8%E5%BF%85%E7%84%B6%E8%B7%91%E4%B8%8D%E5%88%B0"><span class="toc-number">2.</span> <span class="toc-text">2. 核心層面：為什麼處理器必然跑不到</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%B8%89%E6%A2%9D%E4%BA%92%E6%96%A5%E5%81%87%E8%AA%AA%EF%BC%8C%E5%90%84%E8%87%AA%E9%85%8D%E4%B8%80%E6%A2%9D%E8%83%BD%E5%90%A6%E5%AE%9A%E7%9A%84%E5%88%A4%E6%93%9A"><span class="toc-number">3.</span> <span class="toc-text">3. 三條互斥假說，各自配一條能否定的判據</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%82%BA%E4%BB%80%E9%BA%BC%E9%80%99%E4%B8%80%E8%BC%AA%E5%A0%85%E6%8C%81%E3%80%8C%E9%9B%B6%E6%94%B9%E7%A2%BC%E5%8F%96%E8%AD%89%E3%80%8D"><span class="toc-number">4.</span> <span class="toc-text">4. 為什麼這一輪堅持「零改碼取證」</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#hw34-sh%EF%BC%9A%E7%B4%94-proc-%E6%8E%A1%E6%A8%A3%E5%99%A8"><span class="toc-number">4.1.</span> <span class="toc-text">_hw34.sh：純 &#x2F;proc 採樣器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#crash34-sh%EF%BC%9A%E4%B8%80%E6%A2%9D%E5%91%BD%E4%BB%A4%E7%9A%84%E7%B7%A8%E6%8E%92-%E8%87%AA%E5%8B%95%E5%BD%99%E7%B8%BD"><span class="toc-number">4.2.</span> <span class="toc-text">_crash34.sh：一條命令的編排 + 自動彙總</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A3%9C%E4%B8%80%E6%A2%9D%E9%9D%9C%E6%85%8B%E7%99%BC%E7%8F%BE%EF%BC%9A%E9%81%AE%E8%94%BD-SIGSEGV-%E7%9A%84%E5%8F%AF%E8%83%BD%E5%B0%B1%E6%98%AF%E6%88%91%E5%80%91%E8%87%AA%E5%B7%B1"><span class="toc-number">4.3.</span> <span class="toc-text">補一條靜態發現：遮蔽 SIGSEGV 的可能就是我們自己</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%88%A4%E6%93%9A%E8%A1%A8%EF%BC%9A%E9%87%8F%E5%87%BA%E4%BE%86%E4%B9%8B%E5%BE%8C%E8%A9%B2%E5%81%9A%E4%BB%80%E9%BA%BC"><span class="toc-number">5.</span> <span class="toc-text">5. 判據表：量出來之後該做什麼</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%89%E6%A2%9D%E6%96%B9%E6%B3%95%E8%AB%96%E5%9B%9E%E9%A1%A7"><span class="toc-number">6.</span> <span class="toc-text">6. 三條方法論回顧</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E6%9C%AC%E8%BC%AA%E7%94%A2%E5%87%BA"><span class="toc-number">7.</span> <span class="toc-text">附：本輪產出</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&text=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&title=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&is_video=false&description=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」&body=Check out this article: https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&title=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&title=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&title=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&title=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/&name=netTV 硬解（34）：SIGSEGV 處理器一次都沒跑到——把「猜」換成「可證偽的測量」&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
