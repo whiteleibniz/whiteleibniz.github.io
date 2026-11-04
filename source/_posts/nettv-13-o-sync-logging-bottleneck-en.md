@@ -19,7 +19,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-13-o-sync-logging-bottleneck-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/)
 
 > Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.
 

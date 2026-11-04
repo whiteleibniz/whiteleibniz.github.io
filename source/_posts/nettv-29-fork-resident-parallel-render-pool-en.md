@@ -10,10 +10,10 @@ tags:
 categories:
   - [Project Notes, netTV Hardware Decode]
   - [Embedded, Spreadtrum Platform]
-copyright: Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io
+copyright: "Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io"
 ---
 
-> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/)
+> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/10/29/zh-tw/nettv-29-fork-resident-parallel-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/)
 
 > Post 29 in the series. After earlier rounds cut segment picking from 5 s to 0.3 s and made audio draining asynchronous, the next frame-rate wall showed up: **23–32 ms per frame in the renderer, using exactly one core**. This post walks through splitting the renderer across processes — and through three traps that do not crash, they quietly corrupt.
 

@@ -13,7 +13,7 @@ categories:
 copyright: 本文为原创，遵循 CC BY-NC-SA 4.0 协议，转载请注明出处：whiteleibniz.github.io
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/zh-tw/nettv-30-offline-audit-parallel-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/)
 
 > 系列第 30 篇。目标板连续四轮（10-27 ~ 10-30）处于离线状态，第 29 篇写的「常驻 fork 并行渲染池」**一次都没有编译过**。本篇记录一种在设备不在手边时仍然能真推进的做法：**面向「不崩但悄悄错」的静态审查**，以及它在这次审查里挖出来的四处真实缺陷。
 

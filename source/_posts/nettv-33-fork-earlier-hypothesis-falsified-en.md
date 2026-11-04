@@ -10,10 +10,10 @@ tags:
 categories:
   - [Project Notes, netTV Hardware Decode]
   - [Embedded, Spreadtrum Platform]
-copyright: Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io
+copyright: "Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io"
 ---
 
-> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified/) · [繁體中文](https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/)
+> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified/) · [繁體中文](https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/)
 
 > Post 33 in the series. The last post was the parallel render pool's report card (20 fps → 28 fps), but that 10-minute regression hid one unresolved blemish: **the worker was killed by SIGSEGV roughly every 150 seconds — three times in ten minutes**. This post is the full record of "I thought I knew why, and I didn't" — plus one clue that turned out to be worth more than the fix.
 

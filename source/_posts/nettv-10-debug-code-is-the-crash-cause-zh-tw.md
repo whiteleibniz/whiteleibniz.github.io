@@ -15,7 +15,7 @@ copyright: 原創文章，遵循 CC BY-NC-SA 4.0 版權協議，轉載請註明�
 lang: zh-TW
 ---
 
-> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/)
+> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/zh-tw/nettv-10-debug-code-is-the-crash-cause-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/)
 
 # 除錯程式自己就是崩因：一次 VSP 核心崩潰的 8 層證偽
 

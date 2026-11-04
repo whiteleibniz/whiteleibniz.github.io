@@ -10,10 +10,10 @@ tags:
 categories:
   - [Project Notes, netTV Hardware Decode]
   - [Embedded, Spreadtrum Platform]
-copyright: Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io
+copyright: "Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io"
 ---
 
-> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/)
+> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/zh-tw/nettv-31-fork-inherited-siglongjmp-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/)
 
 > Post 31 in the series. This time it was not offline reasoning: the parallel render pool went onto real hardware for the first time — and it took the board down with it. The culprit was not parallelism itself, but the fact that **a forked child inherited the parent's crash-recovery context**. This post explains that trap, and also two operational mishaps from the same day that look completely unrelated.
 

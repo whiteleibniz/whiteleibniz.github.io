@@ -8,7 +8,7 @@ tags: [VSP, 硬解, 帧率, O_SYNC, fsync, 日志开销, 性能分析, 展讯, n
 date: 2026-10-20 14:00:00  
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-13-o-sync-logging-bottleneck-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-13-o-sync-logging-bottleneck-en/)
 
 
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。

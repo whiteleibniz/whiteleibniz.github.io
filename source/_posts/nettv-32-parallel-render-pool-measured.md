@@ -13,7 +13,7 @@ categories:
 copyright: 本文为原创，遵循 CC BY-NC-SA 4.0 协议，转载请注明出处：whiteleibniz.github.io
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/zh-tw/nettv-32-parallel-render-pool-measured-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured/)
 
 > 系列第 32 篇。上一篇修好了池子崩溃（子进程继承了父进程的 siglongjmp），这一篇是它的成绩单：同一台板子、同一个源、同一份二进制，**20~22fps 干到 28.4fps**。顺带得到一条反直觉的结论——**并行度不是越高越好，2 路就是最优**。
 

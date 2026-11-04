@@ -10,10 +10,10 @@ tags:
 categories:
   - [Project Notes, netTV Hardware Decoding]
   - [Embedded, Spreadtrum Platform]
-copyright: Original work by whiteleibniz, licensed under CC BY-NC-SA 4.0. Reproduction must credit the source: whiteleibniz.github.io
+copyright: "Original work by whiteleibniz, licensed under CC BY-NC-SA 4.0. Reproduction must credit the source: whiteleibniz.github.io"
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/11/03/zh-tw/nettv-36-crash-bisect-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/)
 
 > Part 36 of the series. The last two rounds chased "why the SIGSEGV handler never ran at all" down into the kernel's `force_sig_info`, and even produced v34 — the unblocking code. This round I stopped and checked something far more basic: **every long-duration measurement we own was taken with the render pool enabled.** In other words, "is the crash caused by the pool?" has never actually been measured.
 

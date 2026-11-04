@@ -10,7 +10,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/zh-tw/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/)
 
 > Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.
 

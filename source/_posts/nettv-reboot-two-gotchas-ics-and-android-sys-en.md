@@ -15,7 +15,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys/) · [繁體中文](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys/) · [繁體中文](https://whiteleibniz.github.io/2026/10/14/zh-tw/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/)
 
 > Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.
 

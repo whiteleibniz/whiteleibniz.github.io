@@ -10,10 +10,10 @@ tags:
 categories:
   - [Project Notes, netTV Hardware Decode]
   - [Embedded, Spreadtrum Platform]
-copyright: Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io
+copyright: "Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io"
 ---
 
-> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/)
+> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/zh-tw/nettv-30-offline-audit-parallel-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/)
 
 > Post 30 in the series. The board has been offline for four consecutive rounds (10-27 through 10-30), which means the resident-fork parallel render pool from post 29 has **never once been compiled**. This post is about a way to make real progress with the hardware out of reach: a static audit aimed specifically at defects that *do not crash, they quietly corrupt* — and the four real bugs it turned up.
 

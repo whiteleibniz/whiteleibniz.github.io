@@ -5,7 +5,7 @@ tags: [nettv, vsp, 展讯, sc9830, 内核崩溃, 绿屏, framebuffer, 调试方�
 categories: [技术]
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/zh-tw/nettv-11-from-crash-loop-to-stable-playback-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/)
 
 
 # 把网络电视调通：从一天崩三次到连续播 4800 帧

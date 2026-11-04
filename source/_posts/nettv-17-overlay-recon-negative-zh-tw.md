@@ -16,7 +16,7 @@ copyright: 原創文章，遵循 CC BY-NC-SA 4.0 版權協議，轉載請註明�
 lang: zh-TW
 ---
 
-> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/)
+> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-17-overlay-recon-negative-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-17-overlay-recon-negative-en/)
 
 
 ## 背景：一句話交代

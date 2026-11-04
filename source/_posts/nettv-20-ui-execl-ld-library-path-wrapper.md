@@ -15,7 +15,7 @@ tags:
 
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/zh-tw/nettv-20-ui-execl-ld-library-path-wrapper-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-20-ui-execl-ld-library-path-wrapper-en/)
 
 
 上午刚用「pkill 大法」把黑屏的电视救回来，下午用户又点了个频道——**还是黑的**。后台进程明明活着。得，这台设备的黑屏有两张完全不同的脸。

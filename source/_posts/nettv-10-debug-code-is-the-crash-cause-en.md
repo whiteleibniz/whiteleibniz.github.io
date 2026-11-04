@@ -15,7 +15,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/zh-tw/nettv-10-debug-code-is-the-crash-cause-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/)
 
 # The Debug Code Was the Crash Cause: 8 Layers of Falsification for One VSP Kernel Crash
 

@@ -14,7 +14,7 @@ copyright: 原創文章，遵循 CC BY-NC-SA 4.0 版權協議，轉載請註明�
 lang: zh-TW
 ---
 
-> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/) · [繁體中文](https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/)
+> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/) · [繁體中文](https://whiteleibniz.github.io/2026/10/24/zh-tw/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/)
 
 
 > 系列第 26 篇。上一篇給供數側裝了儀表，這一篇上機把帳對平——結論把整個專案的最佳化方向都改寫了。

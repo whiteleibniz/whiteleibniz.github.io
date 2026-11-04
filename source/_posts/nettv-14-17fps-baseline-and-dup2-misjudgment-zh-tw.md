@@ -16,7 +16,7 @@ copyright: 原創文章，遵循 CC BY-NC-SA 4.0 版權協議，轉載請註明�
 lang: zh-TW
 ---
 
-> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/)
+> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-14-17fps-baseline-and-dup2-misjudgment-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-14-17fps-baseline-and-dup2-misjudgment-en/)
 
 > 系列第 14 篇。上一篇（十三）把「O_SYNC 日誌」定為隱形影格率殺手並預設關掉了它，
 > 本篇回答：關掉之後到底跑多少影格？結論是 **17fps**——以及我是怎麼被 `dup2`

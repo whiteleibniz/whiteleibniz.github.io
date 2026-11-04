@@ -7,7 +7,7 @@ tags: [VSP, 硬解, HLS, OMX, LVGL, 展讯]
 date: 2026-10-15 02:00:00
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/15/nettv-workaround-poison-gop-restart/) · [繁體中文](https://whiteleibniz.github.io/2026/10/15/nettv-workaround-poison-gop-restart-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/15/nettv-workaround-poison-gop-restart-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/15/nettv-workaround-poison-gop-restart/) · [繁體中文](https://whiteleibniz.github.io/2026/10/15/zh-tw/nettv-workaround-poison-gop-restart-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/15/nettv-workaround-poison-gop-restart-en/)
 
 
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。

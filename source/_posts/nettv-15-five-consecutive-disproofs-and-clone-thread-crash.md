@@ -13,7 +13,7 @@ tags:
   - ARM
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/)
 
 
 > 系列第 15 篇。上一篇（nettv-14）我们把“卡”定性成了 ptsync 正反馈和 O_SYNC 日志，

@@ -15,7 +15,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/)
 
 > Part 15 of the series. In the previous part (nettv-14) we had pinned the stutter on ptsync positive feedback and O_SYNC logging,
 > reaching a 17fps baseline. This part is the push from 17fps toward 25fps — **almost entirely a catalog of cautionary tales**:

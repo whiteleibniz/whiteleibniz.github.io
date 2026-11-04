@@ -10,10 +10,10 @@ tags:
 categories:
   - [Project Notes, netTV Hardware Decode]
   - [Embedded, Spreadtrum Platform]
-copyright: Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io
+copyright: "Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io"
 ---
 
-> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics/) · [繁體中文](https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/)
+> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics/) · [繁體中文](https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/)
 
 > Post 34 in the series. After the previous round falsified the "fork earlier than the VSP" hypothesis, one clue was left: **the worker gets killed by SIGSEGV every 4000–5000 frames, and our SIGSEGV handler never once executed**. This post fixes no bugs. It explains at the kernel level why the handler cannot run, then turns the remaining possibilities into measurements that each carry their own falsification condition — plus a zero-code-change forensics toolkit.
 

@@ -10,10 +10,10 @@ tags:
 categories:
   - [Project Notes, netTV Hardware Decode]
   - [Embedded, Spreadtrum Platform]
-copyright: Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io
+copyright: "Original article under CC BY-NC-SA 4.0. Republish with attribution: whiteleibniz.github.io"
 ---
 
-> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured/)
+> 🌐 Language: [简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/zh-tw/nettv-32-parallel-render-pool-measured-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured/)
 
 > Post 32 in the series. The previous post fixed the pool crashing (a child process had inherited the parent's `siglongjmp` recovery context). This one is its report card: same board, same source, same binary, **20–22 fps turned into 28.4 fps** — plus one counterintuitive finding: **more workers is not better; two is the optimum**.
 

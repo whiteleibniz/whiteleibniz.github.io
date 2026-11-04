@@ -16,7 +16,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/zh-tw/nettv-11-from-crash-loop-to-stable-playback-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/)
 
 # Getting Network TV Working: From Three Crashes a Day to 4800 Consecutive Frames
 

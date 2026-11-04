@@ -13,7 +13,7 @@ categories:
 copyright: 本文为原创，遵循 CC BY-NC-SA 4.0 协议，转载请注明出处：whiteleibniz.github.io
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/11/03/zh-tw/nettv-36-crash-bisect-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/)
 
 > 系列第 36 篇。前两轮我们把「为什么处理器一次都没跑到」一路追到内核的 `force_sig_info`，甚至把解掩码的代码（v34）都写完了。这一轮我停下手，回头查一件更基础的事——**我们手上每一次够长的实测，都开着渲染池**。换句话说，「崩溃是不是池带来的」这个问题，至今没有被有效测量过。
 

@@ -17,7 +17,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/zh-tw/nettv-21-frame-rate-statistics-lies-ion-cached-17x-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/)
 
 Right after the previous round finished fixing the "black screen when tapping a channel in the UI", the user dropped one line: **"Playback has improved, but it is nowhere near normal viewing standards."**
 

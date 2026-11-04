@@ -13,7 +13,7 @@ categories:
 copyright: 本文为原创，遵循 CC BY-NC-SA 4.0 协议，转载请注明出处：whiteleibniz.github.io
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics/) · [繁體中文](https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics/) · [繁體中文](https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/)
 
 > 系列第 34 篇。上一轮把「fork 提前到 VSP 之前」这个假设证伪之后，手上只剩一条线索：**worker 每跑 4000~5000 帧被 SIGSEGV 杀一次，而我们的 SIGSEGV 处理器一次都没有执行过**。这一篇不修 bug，先把"为什么处理器跑不到"在内核层面解释清楚，再把剩下的三种可能做成**各自可以被否定的测量**，配一套零改码的取证工具。
 

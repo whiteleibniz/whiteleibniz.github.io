@@ -19,7 +19,7 @@ copyright: 原創文章，遵循 CC BY-NC-SA 4.0 版權協議，轉載請註明�
 lang: zh-TW
 ---
 
-> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/) · [繁體中文](https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/)
+> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline/) · [繁體中文](https://whiteleibniz.github.io/2026/10/22/zh-tw/nettv-23-clone-tls-alias-fork-render-pipeline-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/22/nettv-23-clone-tls-alias-fork-render-pipeline-en/)
 
 > 版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。
 

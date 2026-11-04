@@ -13,7 +13,7 @@ categories:
 copyright: 本文為原創，遵循 CC BY-NC-SA 4.0 協議，轉載請註明出處：whiteleibniz.github.io
 ---
 
-> 🌐 語言：[简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/)
+> 🌐 語言：[简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/zh-tw/nettv-31-fork-inherited-siglongjmp-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/)
 
 > 系列第 31 篇。這一次不是離線推演，而是**第一次把並行渲染池放到真機上跑**——結果它把設備搞掛了。複盤下來，真正的兇手不是並行本身，而是「fork 出來的子行程繼承了父行程的崩潰恢復流」。這篇把這個坑講透，順帶記兩條同一天踩到的、看起來毫不相關的維運事故。
 

@@ -14,7 +14,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/) · [繁體中文](https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself/) · [繁體中文](https://whiteleibniz.github.io/2026/10/24/zh-tw/nettv-26-the-invisible-21ms-was-the-source-itself-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/24/nettv-26-the-invisible-21ms-was-the-source-itself-en/)
 
 
 > Part 26 of the series. The previous part instrumented the supply side; this one takes it on-device and balances the books — and the conclusion rewrites the project's entire optimization direction.

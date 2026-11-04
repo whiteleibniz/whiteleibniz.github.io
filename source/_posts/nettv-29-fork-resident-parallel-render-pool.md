@@ -13,7 +13,7 @@ categories:
 copyright: 原创文章，遵循 CC BY-NC-SA 4.0 版权协议，转载请注明出处：whiteleibniz.github.io
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/) · [繁體中文](https://whiteleibniz.github.io/2026/10/29/zh-tw/nettv-29-fork-resident-parallel-render-pool-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/)
 
 > 系列第 29 篇。前面几轮把「选段 5 秒」砍到 0.3 秒、把「音频排空 5 秒」做成异步泵之后，帧率的下一道墙就露出来了：**每帧渲染 23~32 毫秒，而且它只吃了一个核**。本篇记录把渲染拆成多进程的完整思路，重点是三个「不崩、但悄悄错」的坑。
 

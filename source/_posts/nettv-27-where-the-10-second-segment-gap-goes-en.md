@@ -10,10 +10,10 @@ tags:
 categories:
   - [Projects, netTV hardware decoding]
   - [Embedded, Spreadtrum]
-copyright: Original article under CC BY-NC-SA 4.0. Attribution required when republishing: whiteleibniz.github.io
+copyright: "Original article under CC BY-NC-SA 4.0. Attribution required when republishing: whiteleibniz.github.io"
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/) · [繁體中文](https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/) · [繁體中文](https://whiteleibniz.github.io/2026/10/25/zh-tw/nettv-27-where-the-10-second-segment-gap-goes-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes-en/)
 
 > Part 27. The previous post blamed the 14.2fps steady state on the source being 14.6fps. This post **overturns** that with PTS evidence, then itemizes the real 10-second black hole into two line items.
 

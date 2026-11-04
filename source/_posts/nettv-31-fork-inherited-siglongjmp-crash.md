@@ -13,7 +13,7 @@ categories:
 copyright: 本文为原创，遵循 CC BY-NC-SA 4.0 协议，转载请注明出处：whiteleibniz.github.io
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/30/zh-tw/nettv-31-fork-inherited-siglongjmp-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/)
 
 > 系列第 31 篇。这一次不是离线推演，而是**第一次把并行渲染池放到真机上跑**——结果它把设备搞挂了。复盘下来，真正的凶手不是并行本身，而是「fork 出来的子进程继承了父进程的崩溃恢复流」。这篇把这个坑讲透，顺带记两条同一天踩到的、看起来毫不相关的运维事故。
 

@@ -13,7 +13,7 @@ categories:
 copyright: 本文为原创，遵循 CC BY-NC-SA 4.0 协议，转载请注明出处：whiteleibniz.github.io
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/) · [繁體中文](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/) · [繁體中文](https://whiteleibniz.github.io/2026/11/02/zh-tw/nettv-35-signal-mask-blocks-sigsegv-handler-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/)
 
 > 系列第 35 篇。上一轮把「处理器为什么一次都没跑到」在内核层面解释成了**可证伪的假说**，这一轮动手把它做成**代码**：给处理器装一个"我到底进没进来"的二值探针，把我们自己造的每一条执行流上的信号屏蔽解掉，再用一个 `pthread_create` 钩子把厂商库自建的线程也覆盖进去。顺手挖出一个差点踩进去的经典坑：**`setjmp` 不能包进函数**。
 

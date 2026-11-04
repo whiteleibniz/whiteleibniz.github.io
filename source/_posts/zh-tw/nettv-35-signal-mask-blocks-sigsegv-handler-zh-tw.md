@@ -13,7 +13,7 @@ categories:
 copyright: 本文為原創，遵循 CC BY-NC-SA 4.0 協議，轉載請註明出處：whiteleibniz.github.io
 ---
 
-> 🌐 語言：[简体中文](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/) · [繁體中文](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/)
+> 🌐 語言：[简体中文](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/) · [繁體中文](https://whiteleibniz.github.io/2026/11/02/zh-tw/nettv-35-signal-mask-blocks-sigsegv-handler-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/)
 
 > 系列第 35 篇。上一輪把「處理器為什麼一次都沒跑到」在核心層面解釋成**可被否證的假說**，這一輪動手把它做成**程式碼**：給處理器裝一個「我到底進沒進來」的二值探針，把我們自己造的每一條執行流上的訊號遮罩解掉，再用一個 `pthread_create` 鉤子把廠商函式庫自建的執行緒也覆蓋進去。順手挖出一個差點踩進去的經典坑：**`setjmp` 不能包進函式**。
 

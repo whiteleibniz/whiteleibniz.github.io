@@ -8,7 +8,7 @@ tags: [VSP, 硬解, 帧率, rb_take, m3u8, 性能剖析, 直播, 展讯]
 date: 2026-10-24 02:00:00
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms/) · [繁體中文](https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms/) · [繁體中文](https://whiteleibniz.github.io/2026/10/24/zh-tw/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/24/nettv-25-instrumenting-the-supply-side-to-catch-the-invisible-21ms-en/)
 
 
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。

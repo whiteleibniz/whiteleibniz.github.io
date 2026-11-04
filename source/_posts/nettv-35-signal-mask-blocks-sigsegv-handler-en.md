@@ -10,10 +10,10 @@ tags:
 categories:
   - [Project Notes, netTV Hardware Decoding]
   - [Embedded, Spreadtrum Platform]
-copyright: Original work licensed under CC BY-NC-SA 4.0. Source: whiteleibniz.github.io
+copyright: "Original work licensed under CC BY-NC-SA 4.0. Source: whiteleibniz.github.io"
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/) · [繁體中文](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/) · [繁體中文](https://whiteleibniz.github.io/2026/11/02/zh-tw/nettv-35-signal-mask-blocks-sigsegv-handler-zh-tw/) · [English](https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/)
 
 > Post 35 in the series. Last round I turned "why did our SIGSEGV handler never run" into a *falsifiable hypothesis* at kernel level. This round I turn it into *code*: a binary probe that tells us whether the handler was entered at all, a mask cleanup for every execution flow we create ourselves, and a `pthread_create` hook so threads created by the vendor library get cleaned up too. Along the way I nearly walked into a classic trap: **`setjmp` must not be wrapped in a function**.
 

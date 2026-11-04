@@ -19,7 +19,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-12-ptsync-positive-feedback-stall-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/)
 
 The first ten parts were all spent wrestling with "crashes": kernel crashes, hangs, green screens, black screens. Once those were solved and 4800 consecutive frames became possible, the only enemy left was — **stutter**. 240 seconds produced only 19 frames on screen, about 0.08fps; the picture was basically a slideshow.
 

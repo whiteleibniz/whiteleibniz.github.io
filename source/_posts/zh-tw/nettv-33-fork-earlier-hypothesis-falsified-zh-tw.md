@@ -13,7 +13,7 @@ categories:
 copyright: 本文為原創，遵循 CC BY-NC-SA 4.0 協議，轉載請註明出處：whiteleibniz.github.io
 ---
 
-> 🌐 語言：[简体中文](https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified/) · [繁體中文](https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/)
+> 🌐 語言：[简体中文](https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified/) · [繁體中文](https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/)
 
 > 系列第 33 篇。上一篇把並行渲染池做成了成績單（20fps → 28fps），但那次 10 分鐘回歸裡藏著一個沒解決的污點：**worker 每跑約 150 秒就被 SIGSEGV 殺一次，10 分鐘 3 次**。這一篇是「我以為我知道原因，結果不是」的完整記錄——以及一條比結論更值錢的線索。
 

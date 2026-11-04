@@ -18,7 +18,7 @@ copyright: 原創文章，遵循 CC BY-NC-SA 4.0 版權協議，轉載請註明�
 lang: zh-TW
 ---
 
-> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/)
+> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-16-hw-decoding-slower-than-sw-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/)
 
 
 ## 一句話結論

@@ -15,7 +15,7 @@ tag:
 - 故障修复
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys/) · [繁體中文](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys/) · [繁體中文](https://whiteleibniz.github.io/2026/10/14/zh-tw/nettv-reboot-two-gotchas-ics-and-android-sys-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/14/nettv-reboot-two-gotchas-ics-and-android-sys-en/)
 
 
 # 设备重启后 netTV 全线瘫痪
