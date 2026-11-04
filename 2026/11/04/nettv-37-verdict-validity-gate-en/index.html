@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Part 37 of the series. Last round I designed a three-arm environment-variable bisect intended to settle, in 40 minutes, whether the periodic crash comes from the">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A&#x2F;B Tests">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Part 37 of the series. Last round I designed a three-arm environment-variable bisect intended to settle, in 40 minutes, whether the periodic crash comes from the">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-03T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-03T18:18:23.436Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Crash Forensics">
+<meta property="article:tag" content="Experiment Design">
+<meta property="article:tag" content="Observability">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/03/nettv-36-crash-bisect-render-pool/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&text=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&title=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&is_video=false&description=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests&body=Check out this article: https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&title=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&title=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&title=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&title=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&name=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Background-an-experiment-that-prints-its-own-verdict"><span class="toc-number">1.</span> <span class="toc-text">1. Background: an experiment that prints its own verdict</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-six-holes"><span class="toc-number">2.</span> <span class="toc-text">2. The six holes</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-The-crash-metric-reads-the-wrong-file"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 The crash metric reads the wrong file</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-A-permanently-zero-piece-of-fake-evidence"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 A permanently-zero piece of fake evidence</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-No-hard-gate-for-%E2%80%9Cdid-this-arm-actually-play-%E2%80%9D"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 No hard gate for “did this arm actually play?”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-The-effective-env-check-was-printed-never-enforced"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 The effective-env check was printed, never enforced</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-It-broke-the-rule-we-had-just-established"><span class="toc-number">2.5.</span> <span class="toc-text">2.5 It broke the rule we had just established</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-6-Order-bias-had-no-control"><span class="toc-number">2.6.</span> <span class="toc-text">2.6 Order bias had no control</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-One-rule-worth-more-than-the-code"><span class="toc-number">3.</span> <span class="toc-text">3. One rule worth more than the code</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-The-hardened-verdict-order"><span class="toc-number">4.</span> <span class="toc-text">4. The hardened verdict order</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-A-note-on-the-offline-rhythm"><span class="toc-number">5.</span> <span class="toc-text">5. A note on the offline rhythm</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-03T18:30:00.000Z" itemprop="datePublished">2026-11-04</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Crash-Forensics/" rel="tag">Crash Forensics</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Experiment-Design/" rel="tag">Experiment Design</a>, <a class="tag-link-link" href="/tags/Observability/" rel="tag">Observability</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Part 37 of the series. Last round I designed a three-arm environment-variable bisect intended to settle, in 40 minutes, whether the periodic crash comes from the render pool. The device is still unpowered this round, so instead of writing new code I audited that script end to end — and found that <strong>it was quite capable of producing a verdict that looks authoritative and is completely wrong</strong>. This post records the six holes and one rule worth more than the code.</p>
+</blockquote>
+<h2 id="1-Background-an-experiment-that-prints-its-own-verdict"><a href="#1-Background-an-experiment-that-prints-its-own-verdict" class="headerlink" title="1. Background: an experiment that prints its own verdict"></a>1. Background: an experiment that prints its own verdict</h2><p>The production player is killed by SIGSEGV roughly every 150 seconds; a watchdog respawns it and the cycle repeats. Last round established that “is the crash caused by the pool?” had never actually been measured, so I designed a zero-code-change three-arm experiment that only varies environment variables:</p>
+<table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>Config</th>
+<th>What it isolates</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>C (control)</td>
+<td>pool on</td>
+<td>production as-is, expected to reproduce</td>
+</tr>
+<tr>
+<td>A</td>
+<td>pool off</td>
+<td>no child processes at all</td>
+</tr>
+<tr>
+<td>B</td>
+<td>pool on + idle children</td>
+<td>forking happens, but children only ack and never render</td>
+</tr>
+</tbody></table>
+<p>C crashes &#x2F; A clean &#x2F; B clean ⇒ the crash is in the child’s render code. A clean &#x2F; B crashes ⇒ forking itself is toxic. A also crashes ⇒ unrelated to the pool. The script runs unattended on the device and prints a <code>VERDICT</code> block at the end; a human only has to read that one line.</p>
+<p>That last property is exactly where the trouble starts.</p>
+<h2 id="2-The-six-holes"><a href="#2-The-six-holes" class="headerlink" title="2. The six holes"></a>2. The six holes</h2><h3 id="2-1-The-crash-metric-reads-the-wrong-file"><a href="#2-1-The-crash-metric-reads-the-wrong-file" class="headerlink" title="2.1 The crash metric reads the wrong file"></a>2.1 The crash metric reads the wrong file</h3><p>The script counted <code>child respawn</code> separator markers in <code>child.log</code> as crashes. But this project has a standing ruling: <strong>crash forensics reads <code>phase.log</code>; <code>child.log</code> is not used to judge crashes</strong>. <code>respawn</code> is a marker printed on <em>every</em> worker respawn, including normal exits (end of stream, frame-count self-exit, shutdown signal). It is not a crash.</p>
+<p>More ironically, the script terminates each arm with <code>timeout -s TERM</code>, and <strong>that shutdown itself creates at least one respawn</strong>. So the script manufactures a baseline, guesses at it, and subtracts it again with a <code>&gt; 1</code> threshold.</p>
+<p>The correct quantity is <code>mon-child-signal=11</code> in <code>phase.log</code>, written with <code>O_SYNC</code> appends so it survives a crash — and a shutdown TERM is never recorded as signal 11. The hardened version switches to that and demotes <code>respawn</code> to a printed auxiliary figure.</p>
+<h3 id="2-2-A-permanently-zero-piece-of-fake-evidence"><a href="#2-2-A-permanently-zero-piece-of-fake-evidence" class="headerlink" title="2.2 A permanently-zero piece of fake evidence"></a>2.2 A permanently-zero piece of fake evidence</h3><p>The script also counted <code>signal=11</code> occurrences in <code>nettv_segv.log</code> and printed them in the verdict. Earlier rounds established that <strong>the SIGSEGV handler never ran at all and that file does not exist</strong>. All three numbers are therefore always zero. They change no branch, yet they quietly suggest “no segv scene &#x3D; no crash” to anyone reading the report.</p>
+<p>A known-constant zero field in a verdict is more dangerous than no field at all. The hardened version states explicitly: file known to be absent, not used as a criterion.</p>
+<h3 id="2-3-No-hard-gate-for-“did-this-arm-actually-play-”"><a href="#2-3-No-hard-gate-for-“did-this-arm-actually-play-”" class="headerlink" title="2.3 No hard gate for “did this arm actually play?”"></a>2.3 No hard gate for “did this arm actually play?”</h3><p>This is the worst of the six. The project has an iron rule: <strong>two arms both at zero frames means an environment problem, not an experimental result</strong>. When the ION carveout pool is exhausted, this player can run over a thousand generations producing zero frames; a dead source or degraded uptime does the same.</p>
+<p>If all three arms produce zero frames, none of them will crash — and the script declares “all three clean, not reproduced this round.” If one arm happens to log an extra respawn, it declares “forking is toxic” or “the crash is in the child’s render code,” <strong>translating an environment fault into a code conclusion</strong>, after which someone goes off to build a patch or scrap the entire render pool.</p>
+<p>The hardened version adds a frame-evidence gate per arm: at least 3 <code>[STAT]</code> lines and a peak <code>fps_x10</code> of at least 50, otherwise that arm is invalid.</p>
+<h3 id="2-4-The-effective-env-check-was-printed-never-enforced"><a href="#2-4-The-effective-env-check-was-printed-never-enforced" class="headerlink" title="2.4 The effective-env check was printed, never enforced"></a>2.4 The effective-env check was printed, never enforced</h3><p>Last round identified the “wrapper overwrites your env” trap and wrote a check: 25 seconds after launch, scan <code>/proc/&lt;pid&gt;/environ</code>, print the effective values, with a comment saying “declare this arm void if they don’t match.”</p>
+<p>But in the code, the <code>envscan</code> result is only <code>cat</code>‘d into the log — <strong>the VERDICT never reads it at all</strong>. All three arms could run with identical configuration and the script would still emit a mutually-exclusive verdict. The gate the comment promised simply did not exist.</p>
+<p>The hardened version turns it into a hard check: each key must have <strong>exactly one value</strong>, equal to that arm’s expectation. Two distinct values mean a leftover process is mixed in, or the wrapper overwrote us again — void either way.</p>
+<p>A related unchecked trap was fixed too: arms are built by “drop the wrapper’s last line → insert env → re-append the last line.” If that last line carries its own env assignment, re-appending it overwrites what was just inserted. The hardened version makes the last-line check a whole-run gate.</p>
+<h3 id="2-5-It-broke-the-rule-we-had-just-established"><a href="#2-5-It-broke-the-rule-we-had-just-established" class="headerlink" title="2.5 It broke the rule we had just established"></a>2.5 It broke the rule we had just established</h3><p>The most valuable conclusion from last round was: <strong>to claim “config X does not crash,” the observation window must be at least 4–5× the known failure period</strong> (period 150 s ⇒ arm ≥600 s; Poisson zero-crash probability falls from 37% to 1.8% &#x2F; 0.7%).</p>
+<p>Yet the script said: if control arm C doesn’t crash, shorten A&#x2F;B to 300 s “so we don’t burn 40 minutes for nothing” — and then <strong>run the verdict as usual</strong>. 300 s is only 2× the period, with a 13.5% chance of a false clean. That answers the same question with less statistical power; it just gets the answer sooner.</p>
+<p>The hardened version removes the shortening. If C stays clean the verdict is <code>NOT_REPRODUCED</code>, explicitly noting “A&#x2F;B still ran the full arm, but with no reproduction in the control arm their ‘clean’ carries no verdict weight,” and gives no causal conclusion.</p>
+<h3 id="2-6-Order-bias-had-no-control"><a href="#2-6-Order-bias-had-no-control" class="headerlink" title="2.6 Order bias had no control"></a>2.6 Order bias had no control</h3><p>C runs first, A&#x2F;B later, while uptime degradation and ION leaks accumulate over time — <strong>later arms inherently run in a worse environment</strong>. A single fixed order with no retest cannot separate configuration effects from order effects.</p>
+<p>The hardened version adds a C’ control retest at the end. If C and C’ differ by more than one crash, the verdict is “order drift, whole run void,” with advice to reorder the arms or clear the ION pool first.</p>
+<h2 id="3-One-rule-worth-more-than-the-code"><a href="#3-One-rule-worth-more-than-the-code" class="headerlink" title="3. One rule worth more than the code"></a>3. One rule worth more than the code</h2><p>Grouped together, all six holes are variants of the same mistake:</p>
+<blockquote>
+<p><strong>Verdict validity must be verified independently of, and before, the experimental result. Any automatic verdict script must first make “this arm actually performed the behaviour under test” a hard gate, and only then talk about results.</strong></p>
+</blockquote>
+<p>Three gates, none optional:</p>
+<ol>
+<li><strong>Environment gate</strong>: zero leftover processes before the arm starts, or the previous arm writes into this arm’s logs.</li>
+<li><strong>Configuration gate</strong>: effective env matches expectations key by key, or the arms aren’t running different configurations at all.</li>
+<li><strong>Output gate</strong>: the arm actually produced the behaviour under test (here, frames), because “didn’t crash” may simply mean “didn’t run.”</li>
+</ol>
+<p>Why is this so easy to miss? Because <strong>the cheapest path — zero frames, exit on startup, config never applied — always looks the cleanest</strong>. It produces no anomaly, and so it is silently read as “config X does not crash.” What automatic verdicts do best is package “nothing happened” as “everything passed.”</p>
+<p>Two corollaries:</p>
+<ul>
+<li>When the control arm fails to reproduce, you cannot shorten the test arms and still draw the usual conclusion. Earlier is not the same as more credible.</li>
+<li>Don’t put permanently-zero or unverified-source fields in a verdict report. They don’t feed any branch, but they contaminate the reader.</li>
+</ul>
+<h2 id="4-The-hardened-verdict-order"><a href="#4-The-hardened-verdict-order" class="headerlink" title="4. The hardened verdict order"></a>4. The hardened verdict order</h2><p>Four gates run before any verdict; failing any one voids the run and <strong>gives no causal conclusion at all</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">G0  any arm invalid (leftovers / env mismatch / zero frames / wrapper last line carries env) → INVALID</span><br><span class="line">G1  control arms C and C&#x27; differ by &gt;1 crash                                              → INVALID (order drift)</span><br><span class="line">G2  control arm crash count &lt;2                                                          → NOT_REPRODUCED</span><br><span class="line">G3  only now, the three mutually exclusive causal branches</span><br></pre></td></tr></table></figure>
+
+<p>The <code>INVALID</code> branch contains one deliberately hard-coded sentence: “do not use this round’s result to decide on a patch or on scrapping the pool.” Because the typical cost of this class of error isn’t 40 wasted minutes — it’s <strong>changing code on the strength of a beautifully formatted verdict</strong>.</p>
+<p>The script passes <code>sh -n</code>, and the verdict logic was extracted into a pure function and checked against seven simulated datasets: three causal branches, two void cases, non-reproduction, and order drift — all routed as intended. The device is still offline and the script has never run on hardware. That distinction matters: verified verdict logic is not a verified experimental conclusion.</p>
+<h2 id="5-A-note-on-the-offline-rhythm"><a href="#5-A-note-on-the-offline-rhythm" class="headerlink" title="5. A note on the offline rhythm"></a>5. A note on the offline rhythm</h2><p>The device has now been unpowered for seven consecutive rounds. In earlier offline rounds I kept writing new source versions, accumulating four that were never compiled — each one adding a debt of “first check whether it even builds once power returns.” Offline output now consists of <strong>zero-code-change measurement tools, plus audits of those tools</strong>, with not one line of player code touched.</p>
+<p>This round changed no player code and produced no new conclusion about the root cause of the crash. It only moved the experiment that was about to go on-device from “it runs” to “its conclusion can be trusted.” That felt like a better deal than one more uncompiled version.</p>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: Original work by whiteleibniz (compiled with AI assistance). All rights reserved, licensed under CC BY-NC-SA 4.0. Reproduction must credit the source and original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Background-an-experiment-that-prints-its-own-verdict"><span class="toc-number">1.</span> <span class="toc-text">1. Background: an experiment that prints its own verdict</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-six-holes"><span class="toc-number">2.</span> <span class="toc-text">2. The six holes</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-The-crash-metric-reads-the-wrong-file"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 The crash metric reads the wrong file</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-A-permanently-zero-piece-of-fake-evidence"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 A permanently-zero piece of fake evidence</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-No-hard-gate-for-%E2%80%9Cdid-this-arm-actually-play-%E2%80%9D"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 No hard gate for “did this arm actually play?”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-The-effective-env-check-was-printed-never-enforced"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 The effective-env check was printed, never enforced</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-It-broke-the-rule-we-had-just-established"><span class="toc-number">2.5.</span> <span class="toc-text">2.5 It broke the rule we had just established</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-6-Order-bias-had-no-control"><span class="toc-number">2.6.</span> <span class="toc-text">2.6 Order bias had no control</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-One-rule-worth-more-than-the-code"><span class="toc-number">3.</span> <span class="toc-text">3. One rule worth more than the code</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-The-hardened-verdict-order"><span class="toc-number">4.</span> <span class="toc-text">4. The hardened verdict order</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-A-note-on-the-offline-rhythm"><span class="toc-number">5.</span> <span class="toc-text">5. A note on the offline rhythm</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&text=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&title=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&is_video=false&description=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests&body=Check out this article: https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&title=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&title=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&title=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&title=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/&name=netTV Hardware Decoding (37): The Experiment Finished, but the Verdict May Be Fake — Adding a Validity Gate to Automated A/B Tests&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Part 36 of the series. The last two rounds chased “why the SIGSEGV handler never ran at all” down into the kernel’s force_sig_info, and even produced v34 — the u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 简体中文 · 繁體中文 · English   Part 36 of the series. The last two rounds chased “why the SIGSEGV handler never ran at all” down into the kernel’s force_sig_info, and even produced v34 — the u">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-02T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-04T18:03:40.446Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Crash Forensics">
+<meta property="article:tag" content="Experiment Design">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/03/zh-tw/nettv-36-crash-bisect-render-pool-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&text=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&title=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&is_video=false&description=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On&body=Check out this article: https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&title=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&title=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&title=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&title=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&name=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-A-measurement-hole-we-walked-straight-past"><span class="toc-number">1.</span> <span class="toc-text">1. A measurement hole we walked straight past</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Method-arm-length-must-be-far-larger-than-the-failure-period"><span class="toc-number">2.</span> <span class="toc-text">2. Method: arm length must be far larger than the failure period</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Three-arms-the-only-variable-is-whether-the-child-actually-renders"><span class="toc-number">3.</span> <span class="toc-text">3. Three arms: the only variable is whether the child actually renders</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Three-engineering-traps-that-silently-void-the-run"><span class="toc-number">4.</span> <span class="toc-text">4. Three engineering traps that silently void the run</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-The-wrapper-overwrites-your-env"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 The wrapper overwrites your env</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Verify-the-effective-env"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 Verify the effective env</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Match-processes-by-proc-exe-never-by-command-line"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 Match processes by &#x2F;proc&#x2F;&lt;pid&gt;&#x2F;exe, never by command line</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verdict-table-emitted-automatically-at-the-end-of-the-script"><span class="toc-number">5.</span> <span class="toc-text">5. Verdict table (emitted automatically at the end of the script)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Aside-the-offline-online-rhythm-of-this-project"><span class="toc-number">6.</span> <span class="toc-text">6. Aside: the offline&#x2F;online rhythm of this project</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-02T18:30:00.000Z" itemprop="datePublished">2026-11-03</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Crash-Forensics/" rel="tag">Crash Forensics</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Experiment-Design/" rel="tag">Experiment Design</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/03/zh-tw/nettv-36-crash-bisect-render-pool-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Part 36 of the series. The last two rounds chased “why the SIGSEGV handler never ran at all” down into the kernel’s <code>force_sig_info</code>, and even produced v34 — the unblocking code. This round I stopped and checked something far more basic: <strong>every long-duration measurement we own was taken with the render pool enabled.</strong> In other words, “is the crash caused by the pool?” has never actually been measured.</p>
+</blockquote>
+<h2 id="1-A-measurement-hole-we-walked-straight-past"><a href="#1-A-measurement-hole-we-walked-straight-past" class="headerlink" title="1. A measurement hole we walked straight past"></a>1. A measurement hole we walked straight past</h2><p>The production crash looks like this: the worker decodes roughly 4000–5000 frames (≈150 s), then gets killed by SIGSEGV, the monitor respawns it, and the cycle repeats.</p>
+<p>Here is every continuous-playback measurement in the project’s history:</p>
+<table>
+<thead>
+<tr>
+<th>When</th>
+<th>Build &#x2F; config</th>
+<th>Duration</th>
+<th>Crashed?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>10-26</td>
+<td>v28 (<strong>no render pool existed yet</strong>)</td>
+<td>120 s</td>
+<td>signal&#x3D;11 &#x3D; 0</td>
+</tr>
+<tr>
+<td>10-30</td>
+<td>v31, <code>NETTV_RPOOL=0</code></td>
+<td>45 s</td>
+<td>0</td>
+</tr>
+<tr>
+<td>10-30</td>
+<td>v31, <code>RPOOL=2/4/8</code></td>
+<td>45 s</td>
+<td>one infinite-crash episode on 2 (fixed in v32)</td>
+</tr>
+<tr>
+<td>10-31</td>
+<td>v33, <code>RPOOL=2 + AF=1 + HLSBUF=1</code></td>
+<td>300 s</td>
+<td>1</td>
+</tr>
+<tr>
+<td>production</td>
+<td>v32, <code>RPOOL=2 + AF=1 + HLSBUF=1</code></td>
+<td>600 s</td>
+<td>3</td>
+</tr>
+</tbody></table>
+<p>See the problem? <strong>Every run of 150 s or longer had <code>NETTV_RPOOL=2</code>.</strong> The only two runs with <code>RPOOL=0</code> lasted 45 s and 120 s — neither survived a single crash period.</p>
+<p>That is a hard flaw in experiment design. With a 150 s crash period, a 120 s “clean” result proves nothing; it simply hadn’t crashed yet. And yet we kept using it as if it established “the serial path is safe.”</p>
+<h2 id="2-Method-arm-length-must-be-far-larger-than-the-failure-period"><a href="#2-Method-arm-length-must-be-far-larger-than-the-failure-period" class="headerlink" title="2. Method: arm length must be far larger than the failure period"></a>2. Method: arm length must be far larger than the failure period</h2><p>This is the takeaway I most want to keep from this round — worth more than the code:</p>
+<blockquote>
+<p>To claim “config X does not crash,” the observation window must be at least <strong>4–5× the known failure period</strong>. Period 150 s ⇒ arm ≥ 600 s.</p>
+</blockquote>
+<p>The reasoning is plain: failures are roughly Poisson. With period <code>T</code>, the probability of surviving <code>t</code> seconds crash-free is <code>e^(-t/T)</code>. At <code>t = T</code> that is 37% — <strong>a one-in-three chance of declaring a crashing configuration clean.</strong> At <code>t = 4T</code> it drops to 1.8%; at <code>5T</code>, 0.7%. Only then can you conclude anything.</p>
+<p>This also explains why earlier A&#x2F;B rounds always “looked fine”: they were designed to compare frame rate, not to catch crashes. 45 s is plenty for fps and nowhere near enough for MTTF.</p>
+<h2 id="3-Three-arms-the-only-variable-is-whether-the-child-actually-renders"><a href="#3-Three-arms-the-only-variable-is-whether-the-child-actually-renders" class="headerlink" title="3. Three arms: the only variable is whether the child actually renders"></a>3. Three arms: the only variable is whether the child actually renders</h2><p>The good news is the cost of testing this is near zero — the bisect switch is already in the production binary. No code change at all:</p>
+<table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>Config</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>C (control)</td>
+<td><code>RPOOL=2 AF=1 HLSBUF=1</code></td>
+<td>production as-is; expected to reproduce the crash</td>
+</tr>
+<tr>
+<td>A</td>
+<td><code>RPOOL=0 AF=1 HLSBUF=1</code></td>
+<td>no pool at all, serial rendering</td>
+</tr>
+<tr>
+<td>B</td>
+<td><code>RPOOL=2 IDLE=1 AF=1</code></td>
+<td>pool children fork normally but <strong>only ack, never render</strong> (a switch v32 already ships)</td>
+</tr>
+</tbody></table>
+<p>Arm B is the key. It separates “the act of forking” from “running render code in the child”:</p>
+<ul>
+<li>A clean, B clean, C crashes ⇒ the crash is in <strong>the child’s render code</strong>; fork is merely the vehicle;</li>
+<li>A clean, B crashes ⇒ <strong>forking itself is toxic</strong> (forking inside a process holding the VSP);</li>
+<li>A crashes too ⇒ nothing to do with the pool; look at decode &#x2F; feed &#x2F; audio.</li>
+</ul>
+<p>Mutually exclusive, and after the run you just match your result to the row. No more guessing.</p>
+<p><strong>Run the control arm first.</strong> If C doesn’t crash this round, the premise is broken and the remaining two arms are shortened to 300 s as confirmation only — otherwise you burn 40 minutes for nothing.</p>
+<h2 id="4-Three-engineering-traps-that-silently-void-the-run"><a href="#4-Three-engineering-traps-that-silently-void-the-run" class="headerlink" title="4. Three engineering traps that silently void the run"></a>4. Three engineering traps that silently void the run</h2><h3 id="4-1-The-wrapper-overwrites-your-env"><a href="#4-1-The-wrapper-overwrites-your-env" class="headerlink" title="4.1 The wrapper overwrites your env"></a>4.1 The wrapper overwrites your env</h3><p>The production entry point <code>/usr/local/bin/nettv_player</code> is a shell wrapper with <code>RPOOL/AF/HLSBUF</code> baked in. If you <code>export NETTV_RPOOL=0</code> and then call it, <strong>the wrapper’s own <code>export</code> overwrites your value</strong> — all three arms run the same config, the experiment is void, and nothing in the log shows it.</p>
+<p>Build each arm like this instead: copy the wrapper, drop the last line (the <code>exec</code>), append that arm’s env, then put the last line back:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  sed -e <span class="string">&quot;s/NETTV_RPOOL=[0-9]*/NETTV_RPOOL=<span class="variable">$rp</span>/&quot;</span> ... <span class="variable">$WRAP</span> | sed <span class="string">&#x27;$d&#x27;</span></span><br><span class="line">  <span class="built_in">echo</span> <span class="string">&quot;export NETTV_RPOOL=<span class="variable">$rp</span>&quot;</span></span><br><span class="line">  <span class="built_in">echo</span> <span class="string">&quot;export NETTV_RPOOL_IDLE=<span class="variable">$idle</span>&quot;</span></span><br><span class="line">  <span class="built_in">tail</span> -1 <span class="variable">$WRAP</span>          <span class="comment"># re-append the exec line</span></span><br><span class="line">&#125; &gt; /tmp/w_<span class="variable">$tag</span>.sh</span><br></pre></td></tr></table></figure>
+
+<p>This keeps every environment setting the wrapper provides (<code>LD_LIBRARY_PATH</code> and friends) while guaranteeing our values are the last ones applied before <code>exec</code>.</p>
+<h3 id="4-2-Verify-the-effective-env"><a href="#4-2-Verify-the-effective-env" class="headerlink" title="4.2 Verify the effective env"></a>4.2 Verify the effective env</h3><p>Building it right isn’t enough — <strong>verify</strong>. Twenty-five seconds after launch, scan the live process environment blocks:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> d <span class="keyword">in</span> /proc/[0-9]*; <span class="keyword">do</span></span><br><span class="line">  e=$(<span class="built_in">readlink</span> <span class="string">&quot;<span class="variable">$d</span>/exe&quot;</span> 2&gt;/dev/null)</span><br><span class="line">  <span class="keyword">case</span> <span class="string">&quot;<span class="variable">$e</span>&quot;</span> <span class="keyword">in</span> *nettv_player*) <span class="built_in">tr</span> <span class="string">&#x27;\0&#x27;</span> <span class="string">&#x27;\n&#x27;</span> &lt; <span class="string">&quot;<span class="variable">$d</span>/environ&quot;</span> | grep -a NETTV_ ;; <span class="keyword">esac</span></span><br><span class="line"><span class="keyword">done</span> | <span class="built_in">sort</span> -u</span><br></pre></td></tr></table></figure>
+
+<p>The log prints an explicit “effective env” section; if <code>IDLE</code> doesn’t match, that arm is declared void on the spot. Far cheaper than staring at results afterwards wondering what went wrong.</p>
+<h3 id="4-3-Match-processes-by-proc-exe-never-by-command-line"><a href="#4-3-Match-processes-by-proc-exe-never-by-command-line" class="headerlink" title="4.3 Match processes by /proc/&lt;pid&gt;/exe, never by command line"></a>4.3 Match processes by <code>/proc/&lt;pid&gt;/exe</code>, never by command line</h3><p>This one has bitten this project five times now: <code>ps -ef | grep nettv_player</code> to find processes to kill, while the script’s own command line contains <code>nettv_player</code> ⇒ <strong>it matches itself.</strong> The 10-30 A&#x2F;B script killed itself this way — the baseline arm finished, then the script TERM’d itself and the remaining three arms never ran.</p>
+<p>Always match on the resolved target of <code>/proc/&lt;pid&gt;/exe</code>. What appears in the command line then becomes irrelevant.</p>
+<h2 id="5-Verdict-table-emitted-automatically-at-the-end-of-the-script"><a href="#5-Verdict-table-emitted-automatically-at-the-end-of-the-script" class="headerlink" title="5. Verdict table (emitted automatically at the end of the script)"></a>5. Verdict table (emitted automatically at the end of the script)</h2><table>
+<thead>
+<tr>
+<th>A (<code>RPOOL=0</code>)</th>
+<th>B (<code>+IDLE</code>)</th>
+<th>C (control)</th>
+<th>Verdict</th>
+<th>Next step</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>clean</td>
+<td>clean</td>
+<td>crash</td>
+<td>crash is in the child’s render code</td>
+<td>build v34 (unblock + handler probe), confirm zero crashes at <code>RPOOL=2</code>, then request deployment</td>
+</tr>
+<tr>
+<td>clean</td>
+<td>crash</td>
+<td>crash</td>
+<td>forking itself is toxic</td>
+<td>move the pool into a separate process, or pin <code>RPOOL=0</code>; move optimisation effort back to single-core <code>fb_render</code></td>
+</tr>
+<tr>
+<td>crash</td>
+<td>crash</td>
+<td>crash</td>
+<td>unrelated to the pool</td>
+<td>keep bisecting <code>AF</code> &#x2F; <code>HLSBUF</code>; run resource-trend sampling in parallel</td>
+</tr>
+<tr>
+<td>clean</td>
+<td>clean</td>
+<td>clean</td>
+<td>not reproduced this round</td>
+<td>extend arms to 1200 s, or trigger playback through the UI entry point</td>
+</tr>
+</tbody></table>
+<h2 id="6-Aside-the-offline-online-rhythm-of-this-project"><a href="#6-Aside-the-offline-online-rhythm-of-this-project" class="headerlink" title="6. Aside: the offline&#x2F;online rhythm of this project"></a>6. Aside: the offline&#x2F;online rhythm of this project</h2><p>The device has now been offline (unpowered) for six consecutive rounds. The earlier coping strategy was “keep writing new source versions offline,” which piled up v29, v30, v31 and v34 — <strong>none of them ever compiled.</strong> Each new version adds a debt: “once it powers on, first verify it even builds.”</p>
+<p>This round took a different line: <strong>offline rounds produce zero-code-change measurement tools only.</strong> No player modifications; just the production binary plus env combinations, compressing the uncertainty into a single 40-minute automated script. The moment the device powers on, one command yields a verdict instead of adding another compile debt.</p>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: Original work by whiteleibniz (compiled with AI assistance). All rights reserved. Reproduction must credit the source and original link: <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-A-measurement-hole-we-walked-straight-past"><span class="toc-number">1.</span> <span class="toc-text">1. A measurement hole we walked straight past</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Method-arm-length-must-be-far-larger-than-the-failure-period"><span class="toc-number">2.</span> <span class="toc-text">2. Method: arm length must be far larger than the failure period</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Three-arms-the-only-variable-is-whether-the-child-actually-renders"><span class="toc-number">3.</span> <span class="toc-text">3. Three arms: the only variable is whether the child actually renders</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Three-engineering-traps-that-silently-void-the-run"><span class="toc-number">4.</span> <span class="toc-text">4. Three engineering traps that silently void the run</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-The-wrapper-overwrites-your-env"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 The wrapper overwrites your env</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Verify-the-effective-env"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 Verify the effective env</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Match-processes-by-proc-exe-never-by-command-line"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 Match processes by &#x2F;proc&#x2F;&lt;pid&gt;&#x2F;exe, never by command line</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verdict-table-emitted-automatically-at-the-end-of-the-script"><span class="toc-number">5.</span> <span class="toc-text">5. Verdict table (emitted automatically at the end of the script)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Aside-the-offline-online-rhythm-of-this-project"><span class="toc-number">6.</span> <span class="toc-text">6. Aside: the offline&#x2F;online rhythm of this project</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&text=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&title=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&is_video=false&description=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On&body=Check out this article: https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&title=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&title=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&title=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&title=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/&name=netTV Hardware Decoding (36): The Crash Period Is 150s — Yet Every Long Run We Did Had the Render Pool On&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

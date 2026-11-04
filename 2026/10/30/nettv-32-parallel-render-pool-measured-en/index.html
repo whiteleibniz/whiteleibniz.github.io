@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Language: 简体中文 · 繁體中文 · English   Post 32 in the series. The previous post fixed the pool crashing (a child process had inherited the parent’s siglongjmp recovery context). This one is its report">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Language: 简体中文 · 繁體中文 · English   Post 32 in the series. The previous post fixed the pool crashing (a child process had inherited the parent’s siglongjmp recovery context). This one is its report">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-30T14:10:00.000Z">
+<meta property="article:modified_time" content="2026-11-04T18:03:40.441Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="VSP decode">
+<meta property="article:tag" content="Multiprocess">
+<meta property="article:tag" content="Performance measurement">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/30/zh-tw/nettv-32-parallel-render-pool-measured-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/30/nettv-31-fork-inherited-siglongjmp-crash/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&text=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&title=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&is_video=false&description=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better&body=Check out this article: https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&title=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&title=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&title=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&title=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&name=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Crashes-first-performance-later"><span class="toc-number">1.</span> <span class="toc-text">1. Crashes first, performance later</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Measurements"><span class="toc-number">2.</span> <span class="toc-text">2. Measurements</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Three-conclusions"><span class="toc-number">3.</span> <span class="toc-text">3. Three conclusions</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-The-parallel-pool-works-%E2%80%94-and-two-workers-is-the-optimum"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 The parallel pool works — and two workers is the optimum</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-The-8-worker-arm-passing-proves-the-offline-fix-was-a-real-fix"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 The 8-worker arm passing proves the offline fix was a real fix</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-The-bottleneck-moved-rendering-is-no-longer-the-problem-the-source-and-audio-are"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 The bottleneck moved: rendering is no longer the problem, the source and audio are</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-One-problem-still-open"><span class="toc-number">4.</span> <span class="toc-text">4. One problem still open</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Checklist-worth-keeping"><span class="toc-number">5.</span> <span class="toc-text">5. Checklist worth keeping</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-30T14:10:00.000Z" itemprop="datePublished">2026-10-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Multiprocess/" rel="tag">Multiprocess</a>, <a class="tag-link-link" href="/tags/Performance-measurement/" rel="tag">Performance measurement</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP-decode/" rel="tag">VSP decode</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/30/zh-tw/nettv-32-parallel-render-pool-measured-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Post 32 in the series. The previous post fixed the pool crashing (a child process had inherited the parent’s <code>siglongjmp</code> recovery context). This one is its report card: same board, same source, same binary, <strong>20–22 fps turned into 28.4 fps</strong> — plus one counterintuitive finding: <strong>more workers is not better; two is the optimum</strong>.</p>
+</blockquote>
+<h2 id="1-Crashes-first-performance-later"><a href="#1-Crashes-first-performance-later" class="headerlink" title="1. Crashes first, performance later"></a>1. Crashes first, performance later</h2><p>Last time the pool went onto hardware it crashed: the worker died with SIGSEGV every generation, the monitor restarted forever, and the board eventually hung and needed a power cycle. The root cause: the pool’s child inherited the parent’s SIGSEGV handler, and that handler ends in <code>siglongjmp(g_jb)</code> — with <code>g_jb</code> living on the <strong>parent’s stack</strong>. So the moment the child faulted, it long-jumped into the parent’s stack and turned into a “second decoder” fighting over the same VSP.</p>
+<p>The fix is one line: reset SEGV&#x2F;BUS&#x2F;ILL&#x2F;FPE&#x2F;ABRT to <code>SIG_DFL</code> inside the child, so it dies cleanly on a fault and the parent redoes that one frame serially on EOF.</p>
+<p>After that, one single-arm reproduction (never stacked arms) to confirm it no longer crashed — and only then the real measurements.</p>
+<h2 id="2-Measurements"><a href="#2-Measurements" class="headerlink" title="2. Measurements"></a>2. Measurements</h2><p>Same Spreadtrum SC9832A (quad-core Cortex-A7, 1080p25 live source), same v32 binary (<code>md5 0b6a4840</code>), 45 seconds per arm, one arm at a time:</p>
+<table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>fps×10</th>
+<th>Render wall clock</th>
+<th>Segment gap</th>
+<th>Audio drain</th>
+<th>rb depth</th>
+<th>Dropped-audio ratio</th>
+<th>First-frame self-check</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RPOOL&#x3D;0 (control ①)</td>
+<td>202</td>
+<td>18 ms (serial)</td>
+<td>14.7 s</td>
+<td>19.9 s</td>
+<td>298</td>
+<td>0</td>
+<td>—</td>
+</tr>
+<tr>
+<td>RPOOL&#x3D;0 (control ②, closing)</td>
+<td>222</td>
+<td>19 ms (serial)</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>0</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>RPOOL&#x3D;2</strong></td>
+<td><strong>269</strong></td>
+<td>14 ms</td>
+<td>10.5 s</td>
+<td>9.5–19.1 s</td>
+<td>296</td>
+<td>0</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>RPOOL&#x3D;4</td>
+<td>261</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>0</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>RPOOL&#x3D;8</td>
+<td>257</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>0</td>
+<td><strong>pass</strong></td>
+</tr>
+<tr>
+<td><strong>RPOOL&#x3D;2 + async audio</strong></td>
+<td><strong>284</strong></td>
+<td>13 ms</td>
+<td><strong>4.0–5.0 s</strong></td>
+<td><strong>3 ms</strong></td>
+<td>926–978</td>
+<td>0.6 ⚠</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>RPOOL&#x3D;2 + async audio + HLSBUF&#x3D;1</td>
+<td>282</td>
+<td>—</td>
+<td>5.5–6.6 s</td>
+<td>2–3 ms</td>
+<td>752–771</td>
+<td>0.4 ⚠</td>
+<td>pass</td>
+</tr>
+</tbody></table>
+<p>The “first-frame self-check” column deserves its own note: it means the FNV hash of the whole page rendered serially equals the hash rendered in parallel, <strong>bit for bit</strong>. That is the only correctness gate a parallel rewrite can have.</p>
+<h2 id="3-Three-conclusions"><a href="#3-Three-conclusions" class="headerlink" title="3. Three conclusions"></a>3. Three conclusions</h2><h3 id="3-1-The-parallel-pool-works-—-and-two-workers-is-the-optimum"><a href="#3-1-The-parallel-pool-works-—-and-two-workers-is-the-optimum" class="headerlink" title="3.1 The parallel pool works — and two workers is the optimum"></a>3.1 The parallel pool works — and two workers is the optimum</h3><p>Serial 20–22 fps, two workers 26–27 fps: <strong>+25 % to +33 %</strong>, with render wall clock dropping from 18–19 ms to 14 ms.</p>
+<p>Then the counterintuitive part: <strong>four workers gave 261 and eight gave 257 — both below two.</strong> The board is simultaneously running the decoder, the downloader and an audio player; every extra pool worker means more CPU contention, one more pipe round trip and one more ack to wait for. And rendering was never a pure compute bottleneck in the first place (it is dominated by memory-access misses), so slicing it finer only shrinks each worker’s working set and makes the cache worse.</p>
+<blockquote>
+<p>More parallelism is not better. <strong>Measure the 1→2→4 curve, find the knee, and stop.</strong> This holds for just about every “several roles contending for one quad-core board” situation.</p>
+</blockquote>
+<h3 id="3-2-The-8-worker-arm-passing-proves-the-offline-fix-was-a-real-fix"><a href="#3-2-The-8-worker-arm-passing-proves-the-offline-fix-was-a-real-fix" class="headerlink" title="3.2 The 8-worker arm passing proves the offline fix was a real fix"></a>3.2 The 8-worker arm passing proves the offline fix was a real fix</h3><p>The 8-worker configuration was <em>guaranteed</em> to crash before the fix: with split points not aligned to the band height, the last child wrote past its band — tearing the picture and running off the end of the framebuffer page. And that bug was found and fixed while completely offline, by static reasoning alone. The arithmetic was:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">with band height 64, n=3/6/7/8 ⇒ rows=426/213/182/160, none a multiple of 64 ⇒ partial band ⇒ overrun</span><br></pre></td></tr></table></figure>
+
+<p>Now, on real hardware, the 8-worker arm ran 45 seconds, the self-check reported “serial&#x2F;parallel identical”, zero crashes, zero leftover processes, and the ION client count did not grow. <strong>The offline static audit was validated by the device.</strong></p>
+<p>Worth noting: the originally planned three arms (0&#x2F;2&#x2F;4) happened to be exactly the “safe” configurations — the one that would have caught this (8) was not in the plan. That is precisely why 8 was later added to the A&#x2F;B matrix.</p>
+<h3 id="3-3-The-bottleneck-moved-rendering-is-no-longer-the-problem-the-source-and-audio-are"><a href="#3-3-The-bottleneck-moved-rendering-is-no-longer-the-problem-the-source-and-audio-are" class="headerlink" title="3.3 The bottleneck moved: rendering is no longer the problem, the source and audio are"></a>3.3 The bottleneck moved: rendering is no longer the problem, the source and audio are</h3><p>Add the asynchronous audio pump and the numbers change shape: audio drain <strong>19.9 s → 3 ms</strong>, segment gap <strong>14.7 s → 4.0–5.0 s</strong>, fps <strong>28.4</strong>.</p>
+<p>28.4 fps is <strong>above the source’s own 25 fps</strong> — so rendering is definitively no longer the bottleneck (no amount of extra parallelism creates frames the source does not have).</p>
+<p>What, then, causes the remaining 4–5 s gap? I went and probed the source: that particular m3u8 has a <strong>window of only three segments</strong> with roughly ten seconds between segments. So “segment pick 5.7–13.3 s” is mostly <strong>waiting for the source to refresh</strong>, not a shortage of buffer depth. That also settled an open question:</p>
+<table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>fps</th>
+<th>Segment gap</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HLSBUF&#x3D;3 (buffer a few more segments)</td>
+<td>284</td>
+<td>4.0–5.0 s</td>
+</tr>
+<tr>
+<td>HLSBUF&#x3D;1 (less buffering, faster startup)</td>
+<td>282</td>
+<td>5.5–6.6 s</td>
+</tr>
+</tbody></table>
+<p>Steady state is essentially identical. <strong>Live latency of ~5–10 s is a property of the source, not something the player can engineer away</strong> — a source that emits a segment every ten seconds has its latency floor right there. This also dissolves the “does the user accept +18 s of startup delay?” question I had been carrying: since HLSBUF&#x3D;1 starts faster with no steady-state cost, use 1.</p>
+<h2 id="4-One-problem-still-open"><a href="#4-One-problem-still-open" class="headerlink" title="4. One problem still open"></a>4. One problem still open</h2><p>The asynchronous audio pump’s dropped-segment ratio came out at <strong>0.4–0.6</strong>, above the 0.35 threshold I set for myself. The mechanism: while the pump is busy, an incoming whole audio segment is <strong>silently discarded</strong>, and the log shows the backlog growing to 38–63 KB.</p>
+<p>The consequence is audio&#x2F;video drift that accumulates over time. Two candidate fixes: turn the pump into a single queued worker (busy means enqueue, not drop), or raise its concurrency. <strong>Noted for the next round; no extra variable stacked on top of this one.</strong></p>
+<h2 id="5-Checklist-worth-keeping"><a href="#5-Checklist-worth-keeping" class="headerlink" title="5. Checklist worth keeping"></a>5. Checklist worth keeping</h2><p>The genuinely valuable output of this round is not the fps number but these six points:</p>
+<ol>
+<li><strong>Zero the crashes before discussing performance.</strong> Until the self-check and the graceful fallback work, no fps figure is trustworthy.</li>
+<li><strong>Measure the parallel curve and find the knee</strong> — more workers is not better; on a quad-core board two is often the answer.</li>
+<li><strong>Run one arm at a time.</strong> Stacking four arms let the first arm’s crash loop hang the board (that is exactly how it died last round).</li>
+<li><strong>The end-to-end bottleneck is a chain</strong>: segment pick → audio → decode → render. Each fix exposes the next link; measure the share of every link before touching one.</li>
+<li><strong>Latency is sometimes a property of the source.</strong> Count how many segments the m3u8 window holds and how many seconds apart they are — the answer is usually right there.</li>
+<li><strong>Offline static auditing is worth doing</strong>, provided you aim at the right target: the defects that neither crash nor log, only corrupt quietly. Whether the fix can be validated later depends on somebody remembering to run the configuration most likely to break.</li>
+</ol>
+<p>Next round: deploy v32 together with <code>NETTV_RPOOL=2</code> and <code>NETTV_AUDIO_ASYNC=1</code> to the live image, then run long-duration stability and channel-switch regression; and rework the audio pump from “drop when busy” into a queued single worker.</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Crashes-first-performance-later"><span class="toc-number">1.</span> <span class="toc-text">1. Crashes first, performance later</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Measurements"><span class="toc-number">2.</span> <span class="toc-text">2. Measurements</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Three-conclusions"><span class="toc-number">3.</span> <span class="toc-text">3. Three conclusions</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-The-parallel-pool-works-%E2%80%94-and-two-workers-is-the-optimum"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 The parallel pool works — and two workers is the optimum</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-The-8-worker-arm-passing-proves-the-offline-fix-was-a-real-fix"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 The 8-worker arm passing proves the offline fix was a real fix</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-The-bottleneck-moved-rendering-is-no-longer-the-problem-the-source-and-audio-are"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 The bottleneck moved: rendering is no longer the problem, the source and audio are</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-One-problem-still-open"><span class="toc-number">4.</span> <span class="toc-text">4. One problem still open</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Checklist-worth-keeping"><span class="toc-number">5.</span> <span class="toc-text">5. Checklist worth keeping</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&text=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&title=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&is_video=false&description=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better&body=Check out this article: https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&title=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&title=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&title=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&title=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/30/nettv-32-parallel-render-pool-measured-en/&name=netTV Hardware Decode (32): The Parallel Render Pool, Measured — 20 fps to 28 fps, and Why More Workers Is Not Better&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

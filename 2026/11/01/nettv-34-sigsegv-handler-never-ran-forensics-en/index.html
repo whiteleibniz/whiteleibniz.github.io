@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Language: 简体中文 · 繁體中文 · English   Post 34 in the series. After the previous round falsified the “fork earlier than the VSP” hypothesis, one clue was left: the worker gets killed by SIGSEGV every 4">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Language: 简体中文 · 繁體中文 · English   Post 34 in the series. After the previous round falsified the “fork earlier than the VSP” hypothesis, one clue was left: the worker gets killed by SIGSEGV every 4">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-31T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-04T18:03:40.443Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="VSP decode">
+<meta property="article:tag" content="Crash forensics">
+<meta property="article:tag" content="Linux signals">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&text=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&title=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&is_video=false&description=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements&body=Check out this article: https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&title=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&title=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&title=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&title=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&name=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-The-clue-left-over-from-last-round"><span class="toc-number">1.</span> <span class="toc-text">1. The clue left over from last round</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Kernel-level-why-the-handler-cannot-possibly-run"><span class="toc-number">2.</span> <span class="toc-text">2. Kernel level: why the handler cannot possibly run</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Three-mutually-exclusive-hypotheses-each-with-a-falsification-criterion"><span class="toc-number">3.</span> <span class="toc-text">3. Three mutually exclusive hypotheses, each with a falsification criterion</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Why-this-round-insists-on-zero-code-changes"><span class="toc-number">4.</span> <span class="toc-text">4. Why this round insists on zero code changes</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#hw34-sh-a-pure-proc-sampler"><span class="toc-number">4.1.</span> <span class="toc-text">_hw34.sh: a pure &#x2F;proc sampler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#crash34-sh-one-command-orchestration-and-automatic-summary"><span class="toc-number">4.2.</span> <span class="toc-text">_crash34.sh: one-command orchestration and automatic summary</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Addition-from-static-reading-we-might-be-the-ones-blocking-SIGSEGV"><span class="toc-number">4.3.</span> <span class="toc-text">Addition from static reading: we might be the ones blocking SIGSEGV</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verdict-table-what-to-do-with-the-numbers"><span class="toc-number">5.</span> <span class="toc-text">5. Verdict table: what to do with the numbers</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Three-methodology-notes"><span class="toc-number">6.</span> <span class="toc-text">6. Three methodology notes</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-artefacts-from-this-round"><span class="toc-number">7.</span> <span class="toc-text">Appendix: artefacts from this round</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-31T18:30:00.000Z" itemprop="datePublished">2026-11-01</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Crash-forensics/" rel="tag">Crash forensics</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Linux-signals/" rel="tag">Linux signals</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP-decode/" rel="tag">VSP decode</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/01/zh-tw/nettv-34-sigsegv-handler-never-ran-forensics-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Post 34 in the series. After the previous round falsified the “fork earlier than the VSP” hypothesis, one clue was left: <strong>the worker gets killed by SIGSEGV every 4000–5000 frames, and our SIGSEGV handler never once executed</strong>. This post fixes no bugs. It explains at the kernel level why the handler cannot run, then turns the remaining possibilities into measurements that each carry their own falsification condition — plus a zero-code-change forensics toolkit.</p>
+</blockquote>
+<h2 id="1-The-clue-left-over-from-last-round"><a href="#1-The-clue-left-over-from-last-round" class="headerlink" title="1. The clue left over from last round"></a>1. The clue left over from last round</h2><p>Three times in a ten-minute regression:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">*** monitor: 子进程自退 st=0xb ***</span><br><span class="line">*** monitor: 重启 (子进程 @4215 帧)</span><br></pre></td></tr></table></figure>
+
+<p><code>st=0xb</code> means killed by SIGSEGV. Three things are odd:</p>
+<ol>
+<li>It is not a startup failure — the worker runs a solid four to five thousand frames (~150 s) before dying;</li>
+<li><code>/tmp/nettv_segv.log</code> does not exist at all — the handler was never entered;</li>
+<li>Adding <code>sigaltstack</code> + <code>SA_ONSTACK</code> still produced zero output, which rules out <strong>stack overflow</strong>.</li>
+</ol>
+<h2 id="2-Kernel-level-why-the-handler-cannot-possibly-run"><a href="#2-Kernel-level-why-the-handler-cannot-possibly-run" class="headerlink" title="2. Kernel level: why the handler cannot possibly run"></a>2. Kernel level: why the handler cannot possibly run</h2><p>Once “the handler itself crashed” is ruled out, one systemic explanation remains: <strong>the faulting thread has SIGSEGV blocked</strong>.</p>
+<p>The key is the kernel’s <code>force_sig_info()</code>. A hardware synchronous fault (page fault, out-of-bounds) raises a <strong>thread-directed</strong> signal. If that thread has the signal blocked, the kernel does not let the process hang; instead it:</p>
+<ul>
+<li><strong>forces the signal’s action back to <code>SIG_DFL</code></strong>;</li>
+<li><strong>clears that bit</strong> in the thread’s mask;</li>
+<li>then kills the whole process by the default action, immediately.</li>
+</ul>
+<p>Which produces exactly the observed behaviour: <strong>the process dies of SIGSEGV, but the userspace handler is never invoked.</strong> That single semantic explains the symptom completely, and it shifts the investigation from “where did we stomp memory” to “which thread is blocking SIGSEGV”.</p>
+<p>A cheap way to read it: each thread’s signal mask sits in <code>SigBlk:</code> in <code>/proc/&lt;pid&gt;/task/&lt;tid&gt;/status</code>, a 16-hex-digit mask where signal n maps to bit (n-1). SIGSEGV &#x3D; 11 → bit 10 → <code>0x400</code>. Splitting the last four hex digits:</p>
+<table>
+<thead>
+<tr>
+<th>Last-four position</th>
+<th>Signals covered</th>
+<th>Where SIGSEGV lands</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>d1 (4th from right)</td>
+<td>13–16</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>d2 (3rd from right)</strong></td>
+<td><strong>9–12</strong></td>
+<td><strong>this one</strong></td>
+</tr>
+<tr>
+<td>d3 (2nd from right)</td>
+<td>5–8</td>
+<td>—</td>
+</tr>
+<tr>
+<td>d4 (1st from right)</td>
+<td>1–4</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>So the entire test fits in one sentence: <strong>if the 3rd character from the right falls in <code>&#123;4,5,6,7,c,d,e,f&#125;</code>, that thread blocks SIGSEGV.</strong></p>
+<h2 id="3-Three-mutually-exclusive-hypotheses-each-with-a-falsification-criterion"><a href="#3-Three-mutually-exclusive-hypotheses-each-with-a-falsification-criterion" class="headerlink" title="3. Three mutually exclusive hypotheses, each with a falsification criterion"></a>3. Three mutually exclusive hypotheses, each with a falsification criterion</h2><table>
+<thead>
+<tr>
+<th>Hypothesis</th>
+<th>Content</th>
+<th>Evidence that confirms it</th>
+<th>What falsifies it</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H1</td>
+<td>Resource leak hitting a ceiling (per frame &#x2F; segment &#x2F; GOP)</td>
+<td>Thread count &#x2F; RSS &#x2F; VSZ &#x2F; fd &#x2F; ION clients climb monotonically, death lands near the peak</td>
+<td>Flat curves, random death point</td>
+</tr>
+<tr>
+<td>H2</td>
+<td>Some thread blocks SIGSEGV (typical of vendor-library threads)</td>
+<td>A thread whose <code>SigBlk</code> matches the rule above</td>
+<td>Every thread’s <code>SigBlk</code> is zero</td>
+</tr>
+<tr>
+<td>H3</td>
+<td>Genuinely random memory stomping</td>
+<td>Both H1 and H2 falsified</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>Writing all three in falsifiable form is the point: <strong>one experiment advances the case no matter which way it goes.</strong> Far cheaper than “guess another cause, ship another build”.</p>
+<h2 id="4-Why-this-round-insists-on-zero-code-changes"><a href="#4-Why-this-round-insists-on-zero-code-changes" class="headerlink" title="4. Why this round insists on zero code changes"></a>4. Why this round insists on zero code changes</h2><ul>
+<li><strong>Changing the code changes the thing under observation.</strong> Last round’s v33 moved the fork point to test a hypothesis; it fixed nothing and introduced a hard-to-reproduce kernel reset.</li>
+<li><strong>Logging is not cheap here.</strong> The player is bare bionic (<code>nostdlib</code> + <code>--entry=main</code>), so logging means hand-written <code>write</code>; unchecked logging once filled the disk to 1 GB.</li>
+<li><strong>Online time is the scarcest resource.</strong> The device is frequently offline (several rounds in a row it simply had no power), so when it <em>is</em> reachable, the first moves should be zero-compile, zero-deploy, definite-result actions.</li>
+</ul>
+<p>So this round ships two scripts and touches zero lines of C:</p>
+<h3 id="hw34-sh-a-pure-proc-sampler"><a href="#hw34-sh-a-pure-proc-sampler" class="headerlink" title="_hw34.sh: a pure /proc sampler"></a><code>_hw34.sh</code>: a pure <code>/proc</code> sampler</h3><p>One sample every 3 seconds into three logs:</p>
+<ul>
+<li><code>nettv_health.log</code>: one line per nettv process — thread count, RSS, VSZ, fd count;</li>
+<li><code>nettv_thr.log</code>: every 18 s, a <strong>per-thread</strong> dump of the worker — tid, thread name, <code>SigBlk</code>, <code>SigCgt</code>;</li>
+<li><code>nettv_sys.log</code>: system view — <code>MemFree</code>, <code>CmaFree</code>, ION client count.</li>
+</ul>
+<p>All three rotate at a 400 KB cap so history does not repeat itself.</p>
+<h3 id="crash34-sh-one-command-orchestration-and-automatic-summary"><a href="#crash34-sh-one-command-orchestration-and-automatic-summary" class="headerlink" title="_crash34.sh: one-command orchestration and automatic summary"></a><code>_crash34.sh</code>: one-command orchestration and automatic summary</h3><p>Start sampler → clear leftovers → start the player → wait → summarize. The summary prints:</p>
+<ul>
+<li>the worker’s <strong>first &#x2F; last &#x2F; peak</strong> sample (one glance tells you whether the curve climbs);</li>
+<li>the thread-count timeline;</li>
+<li>thread-name distribution (a new name appearing is the fingerprint of a thread leak);</li>
+<li><strong>threads whose mask matches the SIGSEGV rule (deduplicated)</strong>;</li>
+<li>the full thread snapshot closest to the crash.</li>
+</ul>
+<p>It runs unattended on the device: the script returns within 2 seconds and the PC side just short-polls <code>/tmp/cr34.log</code> — a habit forced by the connection constraints (the local sandbox SIGTERMs long-running SSH calls, leaking sessions until dropbear runs out).</p>
+<h3 id="Addition-from-static-reading-we-might-be-the-ones-blocking-SIGSEGV"><a href="#Addition-from-static-reading-we-might-be-the-ones-blocking-SIGSEGV" class="headerlink" title="Addition from static reading: we might be the ones blocking SIGSEGV"></a>Addition from static reading: we might be the ones blocking SIGSEGV</h3><p>Reading back through v33 turned up a candidate that needs no device time to confirm:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* v33:4427 — blocks SEGV/BUS/ILL/ALRM/TERM/INT/PIPE */</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">rp_block_sig</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">int</span> sg[] = &#123; SIGSEGV, SIGBUS, SIGILL, SIGALRM, SIGTERM, SIGINT, SIGPIPE, <span class="number">0</span> &#125;;</span><br><span class="line">    syscall(<span class="number">175</span> <span class="comment">/* rt_sigprocmask */</span>, <span class="number">0</span> <span class="comment">/* SIG_BLOCK */</span>, <span class="built_in">set</span>, <span class="number">0</span>, <span class="number">8</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">render_child</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    rp_block_sig();                       <span class="comment">/* render pool child */</span></span><br><span class="line">    signal(SIGSEGV, SIG_DFL); signal(SIGBUS, SIG_DFL); signal(SIGILL, SIG_DFL);</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The bug hides in the ordering: <code>signal(..., SIG_DFL)</code> resets the <strong>action</strong> but never <strong>unblocks</strong> the signal. So when a render pool child stomps memory, it dies exactly the observed way — no handler output, silent kill — and the parent sees one line:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[rpool] child invalid → permanently falling back to serial</span><br></pre></td></tr></table></figure>
+
+<p>Meaning H2 is not necessarily the vendor library’s fault at all — <strong>our own forked pool children fit the profile perfectly</strong>. It also hands us a free discriminator: did that line appear in <code>child.log</code> before the crash? The summary script now greps for it.</p>
+<h2 id="5-Verdict-table-what-to-do-with-the-numbers"><a href="#5-Verdict-table-what-to-do-with-the-numbers" class="headerlink" title="5. Verdict table: what to do with the numbers"></a>5. Verdict table: what to do with the numbers</h2><table>
+<thead>
+<tr>
+<th>Measured result</th>
+<th>Verdict</th>
+<th>Next move</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A vendor thread’s <code>SigBlk</code> matches</td>
+<td>H2 confirmed: the crash is silenced</td>
+<td>Explicitly reset signal masks in forked children; interpose <code>pthread_create</code> if reachable</td>
+</tr>
+<tr>
+<td>Threads &#x2F; fd &#x2F; ION climb to a threshold and then death</td>
+<td>H1 confirmed: leak exhaustion</td>
+<td>Chase the allocator for whichever counter climbed; keep “respawn every N segments” as a stopgap</td>
+</tr>
+<tr>
+<td>Everything flat, nobody blocks SIGSEGV</td>
+<td>H3</td>
+<td>Only now bring out the shm black box (per-frame phase id &#x2F; frame no &#x2F; segment no, dumped by the monitor after death)</td>
+</tr>
+<tr>
+<td>ION clients climbing throughout</td>
+<td>Same family as H1, but sharper</td>
+<td>Audit dmabuf fd inheritance on the reclaim path (the render pool hit this before)</td>
+</tr>
+</tbody></table>
+<h2 id="6-Three-methodology-notes"><a href="#6-Three-methodology-notes" class="headerlink" title="6. Three methodology notes"></a>6. Three methodology notes</h2><ol>
+<li><strong>“The handler never ran” is itself the strongest clue.</strong> It compresses the cause space from “every possible memory stomp” to “the execution flow that has the signal blocked”.</li>
+<li><strong>Do falsifiable measurements before writing code.</strong> With falsification conditions written up front, one run always teaches something.</li>
+<li><strong>Prefer zero-code-change forensics.</strong> Leaving the binary untouched means the result is comparable against the live baseline — and the tooling can be written even while the device is offline.</li>
+</ol>
+<h2 id="Appendix-artefacts-from-this-round"><a href="#Appendix-artefacts-from-this-round" class="headerlink" title="Appendix: artefacts from this round"></a>Appendix: artefacts from this round</h2><ul>
+<li><code>outputs/_hw34.sh</code> — resource trend + per-thread signal mask sampler (pure <code>/proc</code>, no build needed)</li>
+<li><code>outputs/_crash34.sh</code> — forensics orchestration and automatic summary (defaults to the live v32 wrapper, so it is baseline-comparable)</li>
+<li>No binary and no source changes; nothing committed on the device-side git</li>
+</ul>
+<p>Next round (device online): run <code>sh /tmp/_crash34.sh 900</code> for 15 minutes and match the result against the table above.</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-The-clue-left-over-from-last-round"><span class="toc-number">1.</span> <span class="toc-text">1. The clue left over from last round</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Kernel-level-why-the-handler-cannot-possibly-run"><span class="toc-number">2.</span> <span class="toc-text">2. Kernel level: why the handler cannot possibly run</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Three-mutually-exclusive-hypotheses-each-with-a-falsification-criterion"><span class="toc-number">3.</span> <span class="toc-text">3. Three mutually exclusive hypotheses, each with a falsification criterion</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Why-this-round-insists-on-zero-code-changes"><span class="toc-number">4.</span> <span class="toc-text">4. Why this round insists on zero code changes</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#hw34-sh-a-pure-proc-sampler"><span class="toc-number">4.1.</span> <span class="toc-text">_hw34.sh: a pure &#x2F;proc sampler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#crash34-sh-one-command-orchestration-and-automatic-summary"><span class="toc-number">4.2.</span> <span class="toc-text">_crash34.sh: one-command orchestration and automatic summary</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Addition-from-static-reading-we-might-be-the-ones-blocking-SIGSEGV"><span class="toc-number">4.3.</span> <span class="toc-text">Addition from static reading: we might be the ones blocking SIGSEGV</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Verdict-table-what-to-do-with-the-numbers"><span class="toc-number">5.</span> <span class="toc-text">5. Verdict table: what to do with the numbers</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Three-methodology-notes"><span class="toc-number">6.</span> <span class="toc-text">6. Three methodology notes</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-artefacts-from-this-round"><span class="toc-number">7.</span> <span class="toc-text">Appendix: artefacts from this round</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&text=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&title=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&is_video=false&description=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements&body=Check out this article: https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&title=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&title=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&title=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&title=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics-en/&name=netTV Hardware Decode (34): The SIGSEGV Handler Never Ran — Turning Guesses Into Falsifiable Measurements&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

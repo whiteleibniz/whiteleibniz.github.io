@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Language: 简体中文 · 繁體中文 · English   Post 29 in the series. After earlier rounds cut segment picking from 5 s to 0.3 s and made audio draining asynchronous, the next frame-rate wall showed up: 23–32">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Language: 简体中文 · 繁體中文 · English   Post 29 in the series. After earlier rounds cut segment picking from 5 s to 0.3 s and made audio draining asynchronous, the next frame-rate wall showed up: 23–32">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-28T18:45:00.000Z">
+<meta property="article:modified_time" content="2026-11-04T18:03:40.437Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Profiling">
+<meta property="article:tag" content="VSP decode">
+<meta property="article:tag" content="Multiprocess">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/29/zh-tw/nettv-29-fork-resident-parallel-render-pool-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&text=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&title=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&is_video=false&description=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool&body=Check out this article: https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&title=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&title=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&title=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&title=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&name=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Why-the-renderer-is-the-target-now"><span class="toc-number">1.</span> <span class="toc-text">1. Why the renderer is the target now</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Can-it-be-parallelised-Check-the-write-side-first"><span class="toc-number">2.</span> <span class="toc-text">2. Can it be parallelised? Check the write side first</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Trap-one-fork-for-rendering-never-a-bare-clone"><span class="toc-number">3.</span> <span class="toc-text">3. Trap one: fork() for rendering, never a bare clone</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Trap-two-the-dangerous-failure-is-wrong-pixels-not-a-crash"><span class="toc-number">4.</span> <span class="toc-text">4. Trap two: the dangerous failure is wrong pixels, not a crash</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Trap-three-forking-once-per-frame-already-lost-once"><span class="toc-number">5.</span> <span class="toc-text">5. Trap three: forking once per frame already lost once</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-First-frame-self-check-make-silent-corruption-impossible-to-miss"><span class="toc-number">6.</span> <span class="toc-text">6. First-frame self-check: make silent corruption impossible to miss</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Refactor-make-the-band-loop-take-a-range"><span class="toc-number">7.</span> <span class="toc-text">7. Refactor: make the band loop take a range</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-How-to-validate-one-variable-plus-a-hard-gate"><span class="toc-number">8.</span> <span class="toc-text">8. How to validate: one variable, plus a hard gate</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-Status-and-next-steps"><span class="toc-number">9.</span> <span class="toc-text">9. Status and next steps</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Verification-checklist-for-the-user"><span class="toc-number">10.</span> <span class="toc-text">Verification checklist for the user</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-28T18:45:00.000Z" itemprop="datePublished">2026-10-29</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Multiprocess/" rel="tag">Multiprocess</a>, <a class="tag-link-link" href="/tags/Profiling/" rel="tag">Profiling</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP-decode/" rel="tag">VSP decode</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/10/29/zh-tw/nettv-29-fork-resident-parallel-render-pool-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Post 29 in the series. After earlier rounds cut segment picking from 5 s to 0.3 s and made audio draining asynchronous, the next frame-rate wall showed up: <strong>23–32 ms per frame in the renderer, using exactly one core</strong>. This post walks through splitting the renderer across processes — and through three traps that do not crash, they quietly corrupt.</p>
+</blockquote>
+<h2 id="1-Why-the-renderer-is-the-target-now"><a href="#1-Why-the-renderer-is-the-target-now" class="headerlink" title="1. Why the renderer is the target now"></a>1. Why the renderer is the target now</h2><p>The bill so far, on the same quad-core Cortex-A7 board with the same 1080p25 live stream:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Cost</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>bsOnMsg</code> (vendor synchronous decode)</td>
+<td>14.1 ms</td>
+<td>hard floor, untouchable</td>
+</tr>
+<tr>
+<td>Segment picking</td>
+<td>4981 ms → 225 ms</td>
+<td>fixed (sequential advance inside the HLS window)</td>
+</tr>
+<tr>
+<td>Audio draining</td>
+<td>5231 ms → 1 ms</td>
+<td>fixed (async pump, not yet deployed)</td>
+</tr>
+<tr>
+<td><strong>Render (<code>fb_render</code>)</strong></td>
+<td><strong>23–32 ms</strong></td>
+<td><strong>this post</strong></td>
+</tr>
+</tbody></table>
+<p>Decode 14.1 + render 23.2 ≈ 37 ms, i.e. a 27 fps ceiling. <strong>Even with zero supply-side stalls, “smooth” stays out of reach.</strong> The renderer is the only large block left.</p>
+<p>And there is an uncomfortable detail: this board really is quad-core (we overturned that on 10-23 by measuring throughput — <code>sysfs</code> <code>online</code>&#x2F;<code>offline</code> and <code>/proc/cpuinfo</code> both lie here; run a benchmark instead of reading files). The renderer was using one core while three idled.</p>
+<h2 id="2-Can-it-be-parallelised-Check-the-write-side-first"><a href="#2-Can-it-be-parallelised-Check-the-write-side-first" class="headerlink" title="2. Can it be parallelised? Check the write side first"></a>2. Can it be parallelised? Check the write side first</h2><p>The renderer converts NV12 → ARGB, rotates 90°, and writes the framebuffer at 720×1280. The core loop is organised in bands:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (oy0 = <span class="number">0</span>; oy0 &lt; <span class="number">1280</span>; oy0 += bandh) &#123;      <span class="comment">/* bandh rows per band, default 64 */</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">720</span>; i++) &#123;</span><br><span class="line">        <span class="type">int</span> r = <span class="number">1079</span> - i*<span class="number">3</span>/<span class="number">2</span>;                   <span class="comment">/* source row */</span></span><br><span class="line">        yuv2px8_neon(Y + r*<span class="number">1920</span> + c0, C + (r&gt;&gt;<span class="number">1</span>)*<span class="number">1920</span> + (c0 &amp; ~<span class="number">1</span>),</span><br><span class="line">                     colbase + i, <span class="number">720</span>, bandh);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Look at both sides of the memory traffic:</p>
+<ul>
+<li><strong>Writes</strong>: band <code>oy0</code> only touches output rows <code>[oy0, oy0+bandh)</code>. Bands are <strong>row-disjoint</strong>.</li>
+<li><strong>Reads</strong>: the source NV12 is read-only throughout.</li>
+</ul>
+<p>That is sufficient: <strong>disjoint writes + read-only source &#x3D; no locking at all</strong>. No atomics, no semaphores — just slice the 1280 rows into N ranges and hand them to N workers. It is the kind of change that looks trivially parallel, and then hands you three traps.</p>
+<h2 id="3-Trap-one-fork-for-rendering-never-a-bare-clone"><a href="#3-Trap-one-fork-for-rendering-never-a-bare-clone" class="headerlink" title="3. Trap one: fork() for rendering, never a bare clone"></a>3. Trap one: fork() for rendering, never a bare clone</h2><p>This is a hard rule on this project, bought with two device reboots.</p>
+<p>To avoid <code>fork</code> overhead we once spawned the render thread with a bare <code>clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD)</code>. The problem: <strong>no <code>CLONE_SETTLS</code></strong>, so parent and child share TLS. bionic’s stdio routes <code>snprintf</code>&#x2F;<code>vsnprintf</code> through the <code>__nbuf</code> TLS buffer pool, so a single call from the child corrupts the parent thread’s structures.</p>
+<p>The symptom was actively misleading: not a clean crash but “the second IDR always SIGSEGVs at a nonsense address like <code>0x747474</code>“. We spent a long time auditing NAL feed buffer reuse and SPS&#x2F;PPS re-send timing — all the wrong direction.</p>
+<p>So this time: <strong>not one <code>clone</code></strong>, plain <code>fork()</code>. A forked child gets a full private copy of TLS and cannot stomp the parent.</p>
+<h2 id="4-Trap-two-the-dangerous-failure-is-wrong-pixels-not-a-crash"><a href="#4-Trap-two-the-dangerous-failure-is-wrong-pixels-not-a-crash" class="headerlink" title="4. Trap two: the dangerous failure is wrong pixels, not a crash"></a>4. Trap two: the dangerous failure is wrong pixels, not a crash</h2><p>This is the lesson I would most want to keep.</p>
+<p>A render child must read the current frame. In our pipeline that frame is first <code>memcpy</code>‘d out of the ION buffer into a staging area (ION is mapped uncached; byte-wise reads measured 500 ms&#x2F;frame, so it has to be pulled into cache first). The staging buffer used to be allocated like this:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!g_stage) g_stage = (<span class="type">unsigned</span> <span class="type">char</span> *)<span class="built_in">malloc</span>(ST_SIZE);</span><br></pre></td></tr></table></figure>
+
+<p><code>malloc</code> returns <strong>private</strong> memory. After <code>fork()</code>, the child gets a <strong>frozen copy</strong> — same address, stale contents from the fork instant. The result: no crash, no error, no warning. Just a picture that lags or scrambles. On real hardware that class of bug multiplies debugging cost by ten.</p>
+<p>The fix is one line:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> *sm = mmap(<span class="number">0</span>, ST_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, <span class="number">-1</span>, <span class="number">0</span>);</span><br><span class="line">g_stage = (sm == MAP_FAILED || !sm) ? <span class="built_in">malloc</span>(ST_SIZE) : sm;</span><br><span class="line">g_stage_shared = (sm != MAP_FAILED &amp;&amp; sm);</span><br></pre></td></tr></table></figure>
+
+<p>A <code>MAP_SHARED</code> anonymous mapping shares physical pages between parent and child. Single-process behaviour is identical to <code>malloc</code>, so the serial path is unchanged.</p>
+<p>As a belt-and-braces measure, if <code>mmap</code> fails and we fall back to <code>malloc</code>, the pool is <strong>disabled outright</strong> (<code>g_stage_shared == 0</code>). Slow is acceptable; wrong is not.</p>
+<h2 id="5-Trap-three-forking-once-per-frame-already-lost-once"><a href="#5-Trap-three-forking-once-per-frame-already-lost-once" class="headerlink" title="5. Trap three: forking once per frame already lost once"></a>5. Trap three: forking once per frame already lost once</h2><p>So is “fork N children per frame” enough? No — we tried that on 10-22 and it lost: the fork pipeline measured 17.5 fps against 21.8 fps single-threaded. The suspicion is that shipping 3 MB of frame data across a process boundary each frame costs more than the parallelism gains.</p>
+<p>Hence a <strong>resident pool</strong>: <code>fork</code> once at startup, then pass jobs over <code>pipe</code>. Each frame sends a 20-byte struct:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">rp_job</span> &#123;</span> <span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *nv; <span class="type">unsigned</span> <span class="type">long</span> dst; <span class="type">int</span> y0, y1; &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>The child body is three lines and touches no TLS-dependent libc entry points:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">rpool_child</span><span class="params">(<span class="type">int</span> rfd, <span class="type">int</span> wfd)</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">rp_job</span> <span class="title">j</span>;</span></span><br><span class="line">        <span class="keyword">if</span> (read(rfd, &amp;j, <span class="keyword">sizeof</span> j) != (<span class="type">long</span>)<span class="keyword">sizeof</span> j) <span class="keyword">break</span>;   <span class="comment">/* 0 = parent closed */</span></span><br><span class="line">        fb_render_range(j.nv, (<span class="type">unsigned</span> *)j.dst, j.y0, j.y1);</span><br><span class="line">        <span class="keyword">if</span> (write(wfd, &amp;ack, <span class="number">1</span>) != <span class="number">1</span>) <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    _exit(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The parent writes all N jobs first (they fit in the pipe buffer), then collects N completion bytes in order. Any failure re-renders the whole frame serially and <strong>falls back permanently</strong> — an optimisation must never take a live stream down.</p>
+<p>Children also set <code>PR_SET_PDEATHSIG = SIGKILL</code>, so the kernel reaps them if the parent goes away.</p>
+<h2 id="6-First-frame-self-check-make-silent-corruption-impossible-to-miss"><a href="#6-First-frame-self-check-make-silent-corruption-impossible-to-miss" class="headerlink" title="6. First-frame self-check: make silent corruption impossible to miss"></a>6. First-frame self-check: make silent corruption impossible to miss</h2><p>Since trap two tells us this failure mode is silent, we build something that is not silent.</p>
+<p>On the first frame through the parallel path, render serially into a scratch framebuffer page (we map 3 pages; playback only uses pages 1 and 2, so page 0 is free), hash it with FNV-1a; then render in parallel into the real page and hash that. If the hashes differ, the pool is judged broken, logs a warning, and falls back to serial permanently:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">fb_render_range(nv, scr, <span class="number">0</span>, <span class="number">1280</span>);   <span class="type">unsigned</span> h1 = rp_hash(scr);</span><br><span class="line">fb_render_pool (nv, dst);            <span class="type">unsigned</span> h2 = rp_hash(dst);</span><br><span class="line"><span class="keyword">if</span> (h1 != h2) &#123; P(<span class="string">&quot;[rpool] self-check failed serial=%08x pool=%08x -&gt; permanent serial fallback\n&quot;</span>, h1, h2); ... &#125;</span><br></pre></td></tr></table></figure>
+
+<p>The cost is paid once: one extra render plus a 3.6 MB hash (~1–2 ms). In exchange, <strong>any divergence between parallel and serial output is caught</strong>. For a lock-free parallel change like this, I rate the self-check above the optimisation itself.</p>
+<h2 id="7-Refactor-make-the-band-loop-take-a-range"><a href="#7-Refactor-make-the-band-loop-take-a-range" class="headerlink" title="7. Refactor: make the band loop take a range"></a>7. Refactor: make the band loop take a range</h2><p>So the same code can run serially or as a child’s slice, the inner band loop becomes a ranged function:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">fb_render_range</span><span class="params">(<span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *nv, <span class="type">unsigned</span> *dst, <span class="type">int</span> y0, <span class="type">int</span> y1)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>Serial calls it with <code>(0, 1280)</code>, <strong>bit-for-bit equivalent</strong> to the old path; each child calls it with its own slice. One subtlety here: the render config used to live in <code>static</code>s inside <code>fb_render</code> (<code>g_bandh</code>, <code>use_neon</code>, <code>use_lut</code>, …), and children never call <code>render_cfg_init()</code>. So I promoted them to <strong>file-scope globals</strong> and let <code>fork</code> inherit them. Miss one (say <code>g_prof</code>) and an env switch silently stops working — the same disease as trap two.</p>
+<p>Frame-rate accounting got aligned too: the old sampling multiplier was once wrong (<code>[perf]</code> reported 25 ms while the AU section reported 32.3 ms, contradicting each other). The new code reconstructs from the actual band count and sample count of the range instead of a fixed factor.</p>
+<h2 id="8-How-to-validate-one-variable-plus-a-hard-gate"><a href="#8-How-to-validate-one-variable-plus-a-hard-gate" class="headerlink" title="8. How to validate: one variable, plus a hard gate"></a>8. How to validate: one variable, plus a hard gate</h2><p>The gate is <code>NETTV_RPOOL=N</code> (1–8, default <strong>0 &#x3D; original serial path</strong>, behaviour unchanged). The A&#x2F;B runs three arms back to back: 0 &#x2F; 2 &#x2F; 4, same binary, same source, same duration.</p>
+<p>Four criteria, the second one non-negotiable:</p>
+<ol>
+<li><code>[STAT] fps_x10</code> clearly above the baseline;</li>
+<li><strong><code>[rpool] self-check passed, serial/pool identical</code></strong> — divergence is an automatic loss, no matter how high the frame rate;</li>
+<li>no <code>signal=11</code> in the crash log;</li>
+<li>ION clients do not grow (parallel rendering must not consume extra ION memory).</li>
+</ol>
+<p>Why criterion 2 is absolute: the worst outcome of parallel rendering is not slowness, it is <strong>quietly wrong pixels</strong>. More frames with a scrambled picture is an incident, not an optimisation.</p>
+<h2 id="9-Status-and-next-steps"><a href="#9-Status-and-next-steps" class="headerlink" title="9. Status and next steps"></a>9. Status and next steps</h2><p>This post was written while the board was offline (third consecutive run without a link), so <strong>everything above is design and static review — no measurements yet</strong>. What exists:</p>
+<ul>
+<li>source v30 (v29’s async audio pump fixes plus this render pool);</li>
+<li>a device-side build script and a three-arm A&#x2F;B script;</li>
+<li>three safeguards: first-frame self-check, auto-disable on non-shared staging, permanent fallback on child failure.</li>
+</ul>
+<p>Once the board is up: run the async audio pump A&#x2F;B first (prepared last round), confirm the segment gap drops below 6 s and the frame rate passes 22 fps; then run this pool A&#x2F;B. Only if both pass do we talk deployment — the async pump carries a “+18 s startup delay” trade-off that the user has to accept first.</p>
+<blockquote>
+<p>See the checklist below. This kind of change has to be validated on real hardware: frame rate, picture correctness, and long-run stability.</p>
+</blockquote>
+<h2 id="Verification-checklist-for-the-user"><a href="#Verification-checklist-for-the-user" class="headerlink" title="Verification checklist for the user"></a>Verification checklist for the user</h2><ol>
+<li>Build: does <code>_b30.sh</code> report <code>BUILD_OK</code>? (v30 adds a <code>pipe</code>&#x2F;<code>fork</code> path — check for compile errors first.)</li>
+<li>Self-check: does the log show the pool self-check <strong>passed</strong>, not failed?</li>
+<li>Frame rate: compare <code>[STAT] fps_x10</code> across the three arms; the enabled arms should be clearly above baseline <code>0</code>.</li>
+<li>Picture: look for colour bands, horizontal stripes, or shifted rows on the real screen (the hash check only proves parity with serial, not that serial itself is right).</li>
+<li>Stability: <code>signal=11</code> count is 0, ION clients do not grow, and cleanup ends with <code>left=0</code>.</li>
+</ol>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Why-the-renderer-is-the-target-now"><span class="toc-number">1.</span> <span class="toc-text">1. Why the renderer is the target now</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Can-it-be-parallelised-Check-the-write-side-first"><span class="toc-number">2.</span> <span class="toc-text">2. Can it be parallelised? Check the write side first</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Trap-one-fork-for-rendering-never-a-bare-clone"><span class="toc-number">3.</span> <span class="toc-text">3. Trap one: fork() for rendering, never a bare clone</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Trap-two-the-dangerous-failure-is-wrong-pixels-not-a-crash"><span class="toc-number">4.</span> <span class="toc-text">4. Trap two: the dangerous failure is wrong pixels, not a crash</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Trap-three-forking-once-per-frame-already-lost-once"><span class="toc-number">5.</span> <span class="toc-text">5. Trap three: forking once per frame already lost once</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-First-frame-self-check-make-silent-corruption-impossible-to-miss"><span class="toc-number">6.</span> <span class="toc-text">6. First-frame self-check: make silent corruption impossible to miss</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Refactor-make-the-band-loop-take-a-range"><span class="toc-number">7.</span> <span class="toc-text">7. Refactor: make the band loop take a range</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-How-to-validate-one-variable-plus-a-hard-gate"><span class="toc-number">8.</span> <span class="toc-text">8. How to validate: one variable, plus a hard gate</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-Status-and-next-steps"><span class="toc-number">9.</span> <span class="toc-text">9. Status and next steps</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Verification-checklist-for-the-user"><span class="toc-number">10.</span> <span class="toc-text">Verification checklist for the user</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&text=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&title=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&is_video=false&description=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool&body=Check out this article: https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&title=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&title=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&title=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&title=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/10/29/nettv-29-fork-resident-parallel-render-pool-en/&name=netTV Hardware Decode (29): Spreading a 23 ms Render Across 4 Cores — A Resident fork() Render Pool&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

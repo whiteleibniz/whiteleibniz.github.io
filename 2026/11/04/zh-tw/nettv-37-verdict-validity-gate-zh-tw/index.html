@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 37 篇。上一輪設計了一個三臂 env 二分實驗，打算用 40 分鐘把「崩潰是不是渲染池帶來的」一次判死。這一輪設備仍然沒上電，我沒寫新程式碼，而是把那個腳本從頭到尾審了一遍——結果發現它很可能給出一個看起來很權威、實際上完全錯誤的結論。這輪記的是這 6 個洞，以及一條比程式碼值錢的規矩。  1. 背景：一個自動出判決的實驗現網">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A&#x2F;B 加一道「判決有效性門檻」">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 37 篇。上一輪設計了一個三臂 env 二分實驗，打算用 40 分鐘把「崩潰是不是渲染池帶來的」一次判死。這一輪設備仍然沒上電，我沒寫新程式碼，而是把那個腳本從頭到尾審了一遍——結果發現它很可能給出一個看起來很權威、實際上完全錯誤的結論。這輪記的是這 6 個洞，以及一條比程式碼值錢的規矩。  1. 背景：一個自動出判決的實驗現網">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-03T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-03T18:18:16.919Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="展訊 SC9832A">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="崩潰取證">
+<meta property="article:tag" content="A&#x2F;B 實驗設計">
+<meta property="article:tag" content="可觀測性">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/04/nettv-37-verdict-validity-gate/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/04/nettv-37-verdict-validity-gate-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&text=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&title=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&is_video=false&description=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」&body=Check out this article: https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&title=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&title=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&title=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&title=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&name=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%83%8C%E6%99%AF%EF%BC%9A%E4%B8%80%E5%80%8B%E8%87%AA%E5%8B%95%E5%87%BA%E5%88%A4%E6%B1%BA%E7%9A%84%E5%AF%A6%E9%A9%97"><span class="toc-number">1.</span> <span class="toc-text">1. 背景：一個自動出判決的實驗</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AF%A9%E5%87%BA%E4%BE%86%E7%9A%84-6-%E5%80%8B%E6%B4%9E"><span class="toc-number">2.</span> <span class="toc-text">2. 審出來的 6 個洞</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E5%B4%A9%E6%BD%B0%E5%88%A4%E6%93%9A%E8%AE%80%E9%8C%AF%E4%BA%86%E6%AA%94%E6%A1%88"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 崩潰判據讀錯了檔案</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E4%B8%80%E6%A2%9D%E6%81%86%E7%82%BA-0-%E7%9A%84%E5%81%87%E8%AD%89%E6%93%9A"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 一條恆為 0 的假證據</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E6%B2%92%E6%9C%89%E3%80%8C%E6%9C%AC%E8%87%82%E6%98%AF%E5%90%A6%E7%9C%9F%E7%9A%84%E5%9C%A8%E6%92%AD%E3%80%8D%E7%9A%84%E7%A1%AC%E9%96%80%E6%AA%BB"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 沒有「本臂是否真的在播」的硬門檻</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-%E7%94%9F%E6%95%88-env-%E8%87%AA%E6%AA%A2%E5%8F%AA%E6%98%AF%E5%8D%B0%E5%87%BA%EF%BC%8C%E6%B2%92%E6%9C%89%E5%88%A4%E5%BB%A2"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 生效 env 自檢只是印出，沒有判廢</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-%E9%81%95%E5%8F%8D%E4%BA%86%E8%87%AA%E5%B7%B1%E4%B8%8A%E4%B8%80%E8%BC%AA%E5%89%9B%E7%AB%8B%E7%9A%84%E8%A6%8F%E7%9F%A9"><span class="toc-number">2.5.</span> <span class="toc-text">2.5 違反了自己上一輪剛立的規矩</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-6-%E9%A0%86%E5%BA%8F%E5%81%8F%E5%80%9A%E6%B2%92%E6%9C%89%E5%B0%8D%E7%85%A7"><span class="toc-number">2.6.</span> <span class="toc-text">2.6 順序偏倚沒有對照</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%B8%80%E6%A2%9D%E6%AF%94%E7%A8%8B%E5%BC%8F%E7%A2%BC%E5%80%BC%E9%8C%A2%E7%9A%84%E8%A6%8F%E7%9F%A9"><span class="toc-number">3.</span> <span class="toc-text">3. 一條比程式碼值錢的規矩</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%8A%A0%E5%9B%BA%E5%BE%8C%E7%9A%84%E5%88%A4%E6%B1%BA%E9%A0%86%E5%BA%8F"><span class="toc-number">4.</span> <span class="toc-text">4. 加固後的判決順序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%9B%A2%E7%B7%9A%E7%AF%80%E5%A5%8F%E7%9A%84%E4%B8%80%E9%BB%9E%E9%AB%94%E6%9C%83"><span class="toc-number">5.</span> <span class="toc-text">5. 離線節奏的一點體會</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-03T18:30:00.000Z" itemprop="datePublished">2026-11-04</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/A-B-%E5%AF%A6%E9%A9%97%E8%A8%AD%E8%A8%88/" rel="tag">A/B 實驗設計</a>, <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E5%8F%AF%E8%A7%80%E6%B8%AC%E6%80%A7/" rel="tag">可觀測性</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A-SC9832A/" rel="tag">展訊 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B4%A9%E6%BD%B0%E5%8F%96%E8%AD%89/" rel="tag">崩潰取證</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/04/nettv-37-verdict-validity-gate-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 37 篇。上一輪設計了一個三臂 env 二分實驗，打算用 40 分鐘把「崩潰是不是渲染池帶來的」一次判死。這一輪設備仍然沒上電，我沒寫新程式碼，而是把那個腳本從頭到尾審了一遍——結果發現<strong>它很可能給出一個看起來很權威、實際上完全錯誤的結論</strong>。這輪記的是這 6 個洞，以及一條比程式碼值錢的規矩。</p>
+</blockquote>
+<h2 id="1-背景：一個自動出判決的實驗"><a href="#1-背景：一個自動出判決的實驗" class="headerlink" title="1. 背景：一個自動出判決的實驗"></a>1. 背景：一個自動出判決的實驗</h2><p>現網播放器每跑約 150 秒會被 SIGSEGV 殺掉一次，看門狗重啟，週而復始。上一輪查明「崩潰是不是池帶來的」從未被有效測量過，於是設計了一個零改碼的三臂實驗，只改環境變數：</p>
+<table>
+<thead>
+<tr>
+<th>臂</th>
+<th>配置</th>
+<th>想分離的東西</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>C（對照）</td>
+<td>池開啟</td>
+<td>現網原樣，預期重現崩潰</td>
+</tr>
+<tr>
+<td>A</td>
+<td>池關閉</td>
+<td>完全不起子行程</td>
+</tr>
+<tr>
+<td>B</td>
+<td>池開啟 + 子行程空轉</td>
+<td>fork 照做，但子行程只回 ack 不渲染</td>
+</tr>
+</tbody></table>
+<p>C 崩、A 潔、B 潔 ⇒ 崩在子行程渲染程式碼；A 潔、B 崩 ⇒ fork 本身有毒；A 也崩 ⇒ 與池無關。腳本在設備端背景自轉，末尾自動印一段 <code>VERDICT</code>，人只要讀那一行就夠了。</p>
+<p>問題恰恰出在「人只要讀那一行」。</p>
+<h2 id="2-審出來的-6-個洞"><a href="#2-審出來的-6-個洞" class="headerlink" title="2. 審出來的 6 個洞"></a>2. 審出來的 6 個洞</h2><h3 id="2-1-崩潰判據讀錯了檔案"><a href="#2-1-崩潰判據讀錯了檔案" class="headerlink" title="2.1 崩潰判據讀錯了檔案"></a>2.1 崩潰判據讀錯了檔案</h3><p>腳本用 <code>child.log</code> 裡的 <code>child respawn</code> 分隔標記數當崩潰數。但這個專案早就定過案：<strong>崩潰取證看 <code>phase.log</code>，不看 <code>child.log</code> 判崩潰</strong>。<code>respawn</code> 是每次 worker 重生都印的分隔標記，正常退出（串流結束、幀數上限自退、收尾信號）也會重生，它根本不等於崩潰。</p>
+<p>更諷刺的是，腳本自己用 <code>timeout -s TERM</code> 收尾，<strong>這次收尾就會製造至少一次 respawn</strong>。也就是說它被寫進計數裡，然後腳本又拿 <code>&gt; 1</code> 當閾值去抵消它——一個自己製造、自己猜測、自己扣除的基線。</p>
+<p>正確的量在 <code>phase.log</code> 的 <code>mon-child-signal=11</code>，那是以 <code>O_SYNC</code> 追加寫的軌跡，行程崩了也不丟，收尾的 TERM 也不會被記成 signal 11。加固版直接換成這個，<code>respawn</code> 降為只印出的輔助量。</p>
+<h3 id="2-2-一條恆為-0-的假證據"><a href="#2-2-一條恆為-0-的假證據" class="headerlink" title="2.2 一條恆為 0 的假證據"></a>2.2 一條恆為 0 的假證據</h3><p>腳本還統計了 <code>nettv_segv.log</code> 裡 <code>signal=11</code> 的次數並打進判決。可前幾輪已經查明：<strong>SIGSEGV 處理器一次都沒跑到，這個檔案根本不存在</strong>。所以這三個數恆等於 0。它們不會改變任何分支，卻會讓人讀判決時下意識覺得「沒有 segv 現場 &#x3D; 沒崩」。</p>
+<p>判讀報告裡放一個已知恆為 0 的欄位，比不放更危險。加固版改成顯式寫明「此檔案已知不存在，不作判據」。</p>
+<h3 id="2-3-沒有「本臂是否真的在播」的硬門檻"><a href="#2-3-沒有「本臂是否真的在播」的硬門檻" class="headerlink" title="2.3 沒有「本臂是否真的在播」的硬門檻"></a>2.3 沒有「本臂是否真的在播」的硬門檻</h3><p>這是 6 個洞裡最要命的。專案有條鐵律：<strong>兩組同時零幀 &#x3D; 環境問題，不是實驗結果</strong>。這個播放器在 ION 池被吃乾時會連續上千代 0 幀，源失效、uptime 劣化也會 0 幀。</p>
+<p>如果三臂都 0 幀，誰都不會崩——腳本會判成「三臂全潔，本輪未重現」。如果其中某臂碰巧多了一次重生，它會判成「fork 有毒」或者「崩在子行程渲染程式碼」，<strong>直接把一個環境問題翻譯成程式碼結論</strong>，然後人就去編譯補丁或棄用整個渲染池。</p>
+<p>加固版給每臂加了幀證據門檻：<code>[STAT]</code> 行數 ≥3 且 <code>fps_x10</code> 峰值 ≥50，達不到就判該臂無效。</p>
+<h3 id="2-4-生效-env-自檢只是印出，沒有判廢"><a href="#2-4-生效-env-自檢只是印出，沒有判廢" class="headerlink" title="2.4 生效 env 自檢只是印出，沒有判廢"></a>2.4 生效 env 自檢只是印出，沒有判廢</h3><p>上一輪已經識別出「wrapper 會覆蓋外部 env」這個坑，也寫了自檢：起臂 25 秒後掃 <code>/proc/&lt;pid&gt;/environ</code>，把生效值打進日誌，註解還寫著「對不上當臂判廢」。</p>
+<p>但程式碼裡 <code>envscan</code> 的結果只被 <code>cat</code> 進日誌，<strong>VERDICT 從頭到尾沒讀過它</strong>。也就是說三臂跑成同一臂，實驗照樣輸出一份互斥判決。註解宣稱的門禁，實作裡根本不存在。</p>
+<p>加固版把自檢改成硬校驗：每個鍵必須<strong>恰好一個取值</strong>且等於本臂期望值。出現兩個不同值，代表有殘留行程混入或 wrapper 又覆蓋了，一律判廢。</p>
+<p>順帶補了另一個未校驗的坑：造臂是「刪 wrapper 末行 → 插 env → 把末行接回來」，如果末行本身帶 env 賦值，接回來就會蓋掉剛插入的值。加固版把末行檢查也做成了全輪門禁。</p>
+<h3 id="2-5-違反了自己上一輪剛立的規矩"><a href="#2-5-違反了自己上一輪剛立的規矩" class="headerlink" title="2.5 違反了自己上一輪剛立的規矩"></a>2.5 違反了自己上一輪剛立的規矩</h3><p>上一輪最值錢的結論是：<strong>要斷言「配置 X 不會崩」，觀測時長至少是故障週期的 4~5 倍</strong>（週期 150 秒 ⇒ 單臂 ≥600 秒，泊松零崩機率從 37% 降到 1.8% &#x2F; 0.7%）。</p>
+<p>而腳本裡寫著：如果對照臂 C 這輪不崩，就把 A&#x2F;B 縮到 300 秒「別白燒 40 分鐘」，然後<strong>照常進判決</strong>。300 秒只有 2 倍週期，零崩機率還有 13.5%。等於用更低的統計功效去回答同一個問題，只是讓結論更早到手。</p>
+<p>加固版刪掉縮臂：C 不崩就判 <code>NOT_REPRODUCED</code>，明確寫「A&#x2F;B 仍跑滿，但對照臂不重現時它們的『潔』不具判決力」，不給任何因果結論。</p>
+<h3 id="2-6-順序偏倚沒有對照"><a href="#2-6-順序偏倚沒有對照" class="headerlink" title="2.6 順序偏倚沒有對照"></a>2.6 順序偏倚沒有對照</h3><p>C 先跑、A&#x2F;B 後跑，而 uptime 劣化、ION 洩漏是隨時間累積的，<strong>後跑的臂天然處於更差的環境</strong>。單順序、無複測，無法區分「配置效應」和「順序效應」。</p>
+<p>加固版在末尾加一個 C’ 首尾複測：C 與 C’ 的崩潰數相差超過 1，就判「順序漂移，整輪作廢」，建議重排臂序或先清 ION 池再跑。</p>
+<h2 id="3-一條比程式碼值錢的規矩"><a href="#3-一條比程式碼值錢的規矩" class="headerlink" title="3. 一條比程式碼值錢的規矩"></a>3. 一條比程式碼值錢的規矩</h2><p>把 6 個洞歸到一起，其實都是同一個錯誤的變體：</p>
+<blockquote>
+<p><strong>「判決有效性」必須獨立於「實驗結果」先驗證。任何自動判讀腳本，都要先把「本臂確實執行了被測行為」做成硬門檻，再談結果。</strong></p>
+</blockquote>
+<p>三個門檻缺一不可：</p>
+<ol>
+<li><strong>環境門檻</strong>：起臂前殘留行程數為 0，否則上一臂會往本臂日誌裡寫。</li>
+<li><strong>配置門檻</strong>：生效 env 與期望逐項一致，否則各臂跑的根本不是不同配置。</li>
+<li><strong>產出門檻</strong>：本臂確實有被測行為的產出（這裡是幀），否則「沒崩」只是「沒跑」。</li>
+</ol>
+<p>為什麼這條容易被忽略？因為<strong>最省事的那條路徑（0 幀、啟動即退、配置沒生效）永遠看起來最乾淨</strong>。它不產生任何異常，於是被引默解讀成「配置 X 不崩」。自動判決最擅長的，就是把「什麼都沒發生」包裝成「結果良好」。</p>
+<p>配套還有兩條：</p>
+<ul>
+<li>對照臂不重現時，不能縮短實驗臂後照常下結論——結論更早到手 ≠ 更可信。</li>
+<li>判讀報告裡別放恆為 0 或來源未驗證的欄位，它們不參與分支，卻會污染讀報告的人。</li>
+</ul>
+<h2 id="4-加固後的判決順序"><a href="#4-加固後的判決順序" class="headerlink" title="4. 加固後的判決順序"></a>4. 加固後的判決順序</h2><p>判決前先過四道閘，任一不過就直接作廢、<strong>不下任何因果結論</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">G0  任一臂無效（殘留 / env 不符 / 零幀 / wrapper 末行帶 env） → INVALID</span><br><span class="line">G1  首尾對照 C 與 C&#x27; 崩潰數相差 &gt;1                          → INVALID（順序漂移）</span><br><span class="line">G2  對照臂崩潰數 &lt;2                                        → NOT_REPRODUCED</span><br><span class="line">G3  才進入三條互斥的因果分支</span><br></pre></td></tr></table></figure>
+
+<p><code>INVALID</code> 分支裡我特意寫死了一句：「禁止據本輪結果決定補丁 &#x2F; 棄池」。因為這一類錯誤最典型的代價，不是白跑 40 分鐘，而是<strong>拿著一份格式漂亮的判決去改程式碼</strong>。</p>
+<p>腳本本機做了 <code>sh -n</code> 語法檢查，判決邏輯抽成純函數後用 7 組模擬資料驗證分流：三條因果分支、兩種作廢、未重現、順序漂移，全部命中預期。設備仍然離線，腳本沒有上機跑過——這一點必須寫清楚，判決邏輯驗證過不等於實驗結論成立。</p>
+<h2 id="5-離線節奏的一點體會"><a href="#5-離線節奏的一點體會" class="headerlink" title="5. 離線節奏的一點體會"></a>5. 離線節奏的一點體會</h2><p>設備已經連續 7 輪沒上電。前幾輪離線時我一直在寫新版本原始碼，堆了四個從未編譯過的版本，每多一個就多一筆「上電後先驗證能不能編譯」的債。現在離線的產出改成<strong>零改碼的測量工具 + 對測量工具本身的審查</strong>，不再動播放器一行程式碼。</p>
+<p>這輪沒改任何播放器程式碼，也沒得出任何關於崩潰根因的新結論——它只是把上一輪那個即將上機的實驗，從「能跑」變成「跑完的結論可信」。我覺得這比再多寫一個未編譯的版本划算。</p>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，遵循 CC BY-NC-SA 4.0 協議，轉載請註明出處與原文連結：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%83%8C%E6%99%AF%EF%BC%9A%E4%B8%80%E5%80%8B%E8%87%AA%E5%8B%95%E5%87%BA%E5%88%A4%E6%B1%BA%E7%9A%84%E5%AF%A6%E9%A9%97"><span class="toc-number">1.</span> <span class="toc-text">1. 背景：一個自動出判決的實驗</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AF%A9%E5%87%BA%E4%BE%86%E7%9A%84-6-%E5%80%8B%E6%B4%9E"><span class="toc-number">2.</span> <span class="toc-text">2. 審出來的 6 個洞</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E5%B4%A9%E6%BD%B0%E5%88%A4%E6%93%9A%E8%AE%80%E9%8C%AF%E4%BA%86%E6%AA%94%E6%A1%88"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 崩潰判據讀錯了檔案</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E4%B8%80%E6%A2%9D%E6%81%86%E7%82%BA-0-%E7%9A%84%E5%81%87%E8%AD%89%E6%93%9A"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 一條恆為 0 的假證據</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E6%B2%92%E6%9C%89%E3%80%8C%E6%9C%AC%E8%87%82%E6%98%AF%E5%90%A6%E7%9C%9F%E7%9A%84%E5%9C%A8%E6%92%AD%E3%80%8D%E7%9A%84%E7%A1%AC%E9%96%80%E6%AA%BB"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 沒有「本臂是否真的在播」的硬門檻</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-%E7%94%9F%E6%95%88-env-%E8%87%AA%E6%AA%A2%E5%8F%AA%E6%98%AF%E5%8D%B0%E5%87%BA%EF%BC%8C%E6%B2%92%E6%9C%89%E5%88%A4%E5%BB%A2"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 生效 env 自檢只是印出，沒有判廢</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-%E9%81%95%E5%8F%8D%E4%BA%86%E8%87%AA%E5%B7%B1%E4%B8%8A%E4%B8%80%E8%BC%AA%E5%89%9B%E7%AB%8B%E7%9A%84%E8%A6%8F%E7%9F%A9"><span class="toc-number">2.5.</span> <span class="toc-text">2.5 違反了自己上一輪剛立的規矩</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-6-%E9%A0%86%E5%BA%8F%E5%81%8F%E5%80%9A%E6%B2%92%E6%9C%89%E5%B0%8D%E7%85%A7"><span class="toc-number">2.6.</span> <span class="toc-text">2.6 順序偏倚沒有對照</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%B8%80%E6%A2%9D%E6%AF%94%E7%A8%8B%E5%BC%8F%E7%A2%BC%E5%80%BC%E9%8C%A2%E7%9A%84%E8%A6%8F%E7%9F%A9"><span class="toc-number">3.</span> <span class="toc-text">3. 一條比程式碼值錢的規矩</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%8A%A0%E5%9B%BA%E5%BE%8C%E7%9A%84%E5%88%A4%E6%B1%BA%E9%A0%86%E5%BA%8F"><span class="toc-number">4.</span> <span class="toc-text">4. 加固後的判決順序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E9%9B%A2%E7%B7%9A%E7%AF%80%E5%A5%8F%E7%9A%84%E4%B8%80%E9%BB%9E%E9%AB%94%E6%9C%83"><span class="toc-number">5.</span> <span class="toc-text">5. 離線節奏的一點體會</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&text=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&title=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&is_video=false&description=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」&body=Check out this article: https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&title=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&title=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&title=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&title=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/04/zh-tw/nettv-37-verdict-validity-gate-zh-tw/&name=netTV 硬解（37）：實驗跑完了，判決卻可能是假的——給自動化 A/B 加一道「判決有效性門檻」&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
