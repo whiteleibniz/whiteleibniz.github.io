@@ -17,7 +17,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/zh-tw/nettv-18-dl-child-exec-ld-library-path-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-18-dl-child-exec-ld-library-path-en/)
 
 > Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.
 

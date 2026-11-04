@@ -8,7 +8,7 @@ tags: [VSP, 硬解, h264dec, UAF, ARM汇编, 二进制补丁, 展讯, SIGSEGV]
 date: 2026-10-18 02:00:00
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/) · [繁體中文](https://whiteleibniz.github.io/2026/10/18/zh-tw/nettv-08-uaf-patch-v1-fail-v2-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2/) · [繁體中文](https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/18/nettv-08-uaf-patch-v1-fail-v2-en/)
 
 
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。

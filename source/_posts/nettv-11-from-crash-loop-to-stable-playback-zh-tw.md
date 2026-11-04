@@ -16,7 +16,7 @@ copyright: 原創文章，遵循 CC BY-NC-SA 4.0 版權協議，轉載請註明�
 lang: zh-TW
 ---
 
-> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/zh-tw/nettv-11-from-crash-loop-to-stable-playback-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/)
+> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-11-from-crash-loop-to-stable-playback-en/)
 
 # 把網路電視調通：從一天崩三次到連續播 4800 幀
 

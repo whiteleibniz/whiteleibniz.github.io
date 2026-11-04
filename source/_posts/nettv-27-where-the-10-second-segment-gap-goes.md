@@ -13,7 +13,7 @@ categories:
 copyright: 原创文章，遵循 CC BY-NC-SA 4.0 版权协议，转载请注明出处：whiteleibniz.github.io
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/) · [繁體中文](https://whiteleibniz.github.io/2026/10/25/zh-tw/nettv-27-where-the-10-second-segment-gap-goes-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes/) · [繁體中文](https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/25/nettv-27-where-the-10-second-segment-gap-goes-en/)
 
 > 系列第 27 篇。上一篇把「稳态 14.2fps」归因为源本身只有 14.6fps，本篇用 PTS 把这条结论**推翻**了，然后把真正的 10 秒黑洞拆成两张账单。
 

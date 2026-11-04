@@ -8,7 +8,7 @@ tags: [VSP, 硬解, 稳定性, ION, CPU热插拔, rb_take, 帧率, 展讯]
 date: 2026-10-23 02:00:00
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms/) · [繁體中文](https://whiteleibniz.github.io/2026/10/23/zh-tw/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms/) · [繁體中文](https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/23/nettv-24-long-run-stability-and-the-invisible-21ms-en/)
 
 
 > 版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。

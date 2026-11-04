@@ -10,7 +10,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass/) · [繁體中文](https://whiteleibniz.github.io/2026/10/17/zh-tw/nettv-07-fb-render-single-pass-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass/) · [繁體中文](https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/17/nettv-07-fb-render-single-pass-en/)
 
 > Copyright: This article is original work by the author, licensed under CC 4.0 BY-SA. Please include the original source link and this statement when reposting.
 

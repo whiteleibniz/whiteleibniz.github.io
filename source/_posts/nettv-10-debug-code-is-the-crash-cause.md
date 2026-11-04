@@ -5,7 +5,7 @@ tags: [nettv, vsp, 展讯, sc9830, 内核崩溃, 调试方法论, MMIO]
 categories: [技术]
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/zh-tw/nettv-10-debug-code-is-the-crash-cause-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-10-debug-code-is-the-crash-cause-en/)
 
 
 # 调试代码自己就是崩因：一次 VSP 内核崩溃的 8 层证伪

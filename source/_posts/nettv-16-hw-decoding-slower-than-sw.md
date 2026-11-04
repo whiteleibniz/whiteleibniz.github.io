@@ -16,7 +16,7 @@ tags:
   - 性能分析
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-16-hw-decoding-slower-than-sw-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/)
 
 
 ## 一句话结论

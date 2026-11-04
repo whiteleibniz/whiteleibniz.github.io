@@ -19,7 +19,7 @@ copyright: 原創文章，遵循 CC BY-NC-SA 4.0 版權協議，轉載請註明�
 lang: zh-TW
 ---
 
-> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-12-ptsync-positive-feedback-stall-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/)
+> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/)
 
 前十篇一直在跟「崩」死磕：核心崩、掛死、綠畫面、黑畫面。等這些都解決了，能連續播 4800 幀之後，剩下最後一個字是——**卡**。240 秒只上螢幕 19 幀，約 0.08fps，畫面基本是幻燈片。
 

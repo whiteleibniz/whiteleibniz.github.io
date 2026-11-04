@@ -13,7 +13,7 @@ categories:
 copyright: 原创文章，遵循 CC BY-NC-SA 4.0 版权协议，转载请注明出处：whiteleibniz.github.io
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance/) · [繁體中文](https://whiteleibniz.github.io/2026/10/26/zh-tw/nettv-28-hls-playlist-window-sequential-advance-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance/) · [繁體中文](https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-en/)
 
 > Post 28 in the series. The previous one broke the 10.3-second inter-segment gap into "5.0s picking a segment + 5.2s draining audio". This post first **measures** those 5 seconds, then **cuts them down to 0.3s**. The root cause is a little embarrassing to admit: we were waiting for a segment that hadn't been generated yet, while four ready-to-play segments were sitting in the playlist window untouched.
 

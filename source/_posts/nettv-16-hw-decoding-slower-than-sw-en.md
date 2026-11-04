@@ -18,7 +18,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/zh-tw/nettv-16-hw-decoding-slower-than-sw-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw/) · [繁體中文](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/20/nettv-16-hw-decoding-slower-than-sw-en/)
 
 
 ## One-Line Conclusion

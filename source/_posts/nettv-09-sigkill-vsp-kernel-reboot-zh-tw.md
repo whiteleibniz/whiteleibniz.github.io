@@ -10,7 +10,7 @@ copyright: 原創文章，遵循 CC BY-NC-SA 4.0 版權協議，轉載請註明�
 lang: zh-TW
 ---
 
-> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/zh-tw/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/)
+> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot/) · [繁體中文](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/19/nettv-09-sigkill-vsp-kernel-reboot-en/)
 
 > 版權聲明：本文為筆者原創文章，遵循 CC 4.0 BY-SA 版權協議，轉載請附上原文出處連結和本聲明。
 

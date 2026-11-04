@@ -17,7 +17,7 @@ copyright: 原創文章，遵循 CC BY-NC-SA 4.0 版權協議，轉載請註明�
 lang: zh-TW
 ---
 
-> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/zh-tw/nettv-21-frame-rate-statistics-lies-ion-cached-17x-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/)
+> 🌐 語言切換：[简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-21-frame-rate-statistics-lies-ion-cached-17x-en/)
 
 上一輪剛把「UI 點頻道黑畫面」修完，使用者就丟了一句：**「播放效果有改進，但完全達不到正常觀看標準。」**
 

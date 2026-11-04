@@ -13,7 +13,7 @@ categories:
 copyright: 原创文章，遵循 CC BY-NC-SA 4.0 版权协议，转载请注明出处：whiteleibniz.github.io
 ---
 
-> 🌐 語言：[简体中文](https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance/) · [繁體中文](https://whiteleibniz.github.io/2026/10/26/zh-tw/nettv-28-hls-playlist-window-sequential-advance-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-en/)
+> 🌐 語言：[简体中文](https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance/) · [繁體中文](https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/26/nettv-28-hls-playlist-window-sequential-advance-en/)
 
 > 系列第 28 篇。上一篇把 10.3 秒的段間隙拆成「選段 5.0s + 音頻排空 5.2s」，本篇先把選段這 5 秒**量出來**，再把它**砍到 0.3 秒**。根因說出來有點丟人：我們一直在等一個還沒生成的分片，而窗口裡躺著 4 段現成內容沒播。
 

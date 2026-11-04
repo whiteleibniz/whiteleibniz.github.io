@@ -15,7 +15,7 @@ tags:
 
 ---
 
-> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/zh-tw/nettv-19-black-screen-ion-leak-secondary-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash-en/)
+> 🌐 语言：[简体中文](https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash/) · [繁體中文](https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/21/nettv-19-black-screen-ion-leak-secondary-crash-en/)
 
 
 用户推门进来就一句："网络电视黑屏无反应了。"

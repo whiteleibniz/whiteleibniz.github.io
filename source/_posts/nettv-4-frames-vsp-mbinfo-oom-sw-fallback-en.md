@@ -14,7 +14,7 @@ copyright: "Original article, licensed under CC BY-NC-SA 4.0. Please credit the 
 lang: en
 ---
 
-> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/) · [繁體中文](https://whiteleibniz.github.io/2026/10/13/zh-tw/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/)
+> 🌐 Languages: [简体中文](https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback/) · [繁體中文](https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-zh-tw/) · [English](https://whiteleibniz.github.io/2026/10/13/nettv-4-frames-vsp-mbinfo-oom-sw-fallback-en/)
 
 # The Real Reason netTV Only Outputs 4 Frames
 
