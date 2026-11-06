@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 38 篇。裝置這一輪仍然沒有上電（連續第 10 輪），所以我又一次只能做離線的事。這次回頭查了一件一直被當成「已知條件」的東西：我們選的直播源，裝置到底播不播得動。結論不太好看——現網在用的那個源，位元率是裝置頻寬的 1.4 倍，所謂「流暢播放」其實是靠不停跳到最新分片偽裝出來的。  1. 一個從沒被量過的前提這個專案裡，選源的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 38 篇。裝置這一輪仍然沒有上電（連續第 10 輪），所以我又一次只能做離線的事。這次回頭查了一件一直被當成「已知條件」的東西：我們選的直播源，裝置到底播不播得動。結論不太好看——現網在用的那個源，位元率是裝置頻寬的 1.4 倍，所謂「流暢播放」其實是靠不停跳到最新分片偽裝出來的。  1. 一個從沒被量過的前提這個專案裡，選源的">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-06T18:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-06T18:07:50.492Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="HLS">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="展訊 SC9832A">
+<meta property="article:tag" content="直播流">
+<meta property="article:tag" content="測量方法">
+<meta property="article:tag" content="實驗設計">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/07/nettv-38-source-bitrate-budget/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/04/nettv-37-verdict-validity-gate/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&text=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&title=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&is_video=false&description=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據&body=Check out this article: https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&title=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&title=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&title=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&title=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&name=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%80%E5%80%8B%E5%BE%9E%E6%B2%92%E8%A2%AB%E9%87%8F%E9%81%8E%E7%9A%84%E5%89%8D%E6%8F%90"><span class="toc-number">1.</span> <span class="toc-text">1. 一個從沒被量過的前提</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%80%8E%E9%BA%BC%E9%87%8F%EF%BC%9A%E4%B8%89%E5%80%8B%E6%95%B8%E5%B0%B1%E8%83%BD%E5%AE%9A%E6%80%A7"><span class="toc-number">2.</span> <span class="toc-text">2. 怎麼量：三個數就能定性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%80%99%E5%BC%B5%E8%A1%A8%E6%8E%A8%E7%BF%BB%E4%BA%86%E4%B8%89%E4%BB%B6%E4%BA%8B"><span class="toc-number">3.</span> <span class="toc-text">3. 這張表推翻了三件事</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%A0%86%E6%89%8B%E8%B8%A9%E5%88%B0%E4%B8%80%E5%80%8B%E5%BE%88%E5%85%B8%E5%9E%8B%E7%9A%84%E5%9D%91"><span class="toc-number">4.</span> <span class="toc-text">4. 順手踩到一個很典型的坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%96%BC%E6%98%AF%E6%8A%8A%E5%AE%83%E5%81%9A%E6%88%90%E4%B8%80%E9%81%93%E9%96%98%E9%96%80"><span class="toc-number">5.</span> <span class="toc-text">5. 於是把它做成一道閘門</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E5%8F%AF%E4%BB%A5%E5%B8%B6%E8%B5%B0%E7%9A%84%E8%A9%B1"><span class="toc-number">6.</span> <span class="toc-text">6. 一句可以帶走的話</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-06T18:40:00.000Z" itemprop="datePublished">2026-11-07</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/HLS/" rel="tag">HLS</a>, <a class="tag-link-link" href="/tags/%E5%AF%A6%E9%A9%97%E8%A8%AD%E8%A8%88/" rel="tag">實驗設計</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A-SC9832A/" rel="tag">展訊 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E6%B8%AC%E9%87%8F%E6%96%B9%E6%B3%95/" rel="tag">測量方法</a>, <a class="tag-link-link" href="/tags/%E7%9B%B4%E6%92%AD%E6%B5%81/" rel="tag">直播流</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 38 篇。裝置這一輪仍然沒有上電（連續第 10 輪），所以我又一次只能做離線的事。這次回頭查了一件一直被當成「已知條件」的東西：<strong>我們選的直播源，裝置到底播不播得動</strong>。結論不太好看——現網在用的那個源，位元率是裝置頻寬的 1.4 倍，所謂「流暢播放」其實是靠不停跳到最新分片偽裝出來的。</p>
+</blockquote>
+<h2 id="1-一個從沒被量過的前提"><a href="#1-一個從沒被量過的前提" class="headerlink" title="1. 一個從沒被量過的前提"></a>1. 一個從沒被量過的前提</h2><p>這個專案裡，選源的判據從第一天起就是兩條：m3u8 回傳 200，第一個分片能取到 200&#x2F;206。過了就算「源可用」，寫進頻道表。</p>
+<p>這條判據本身沒錯，但它只回答「源還活著嗎」，不回答「裝置能不能跟上」。而裝置側是有硬上限的：前幾輪實測下載吞吐大約 300 KB&#x2F;s，換算 2400 kbps。<strong>只要直播流位元率高於這條線，播放器就永遠追不上直播邊緣</strong>——它只能不斷丟棄已經過期的分片，直接跳到最新那個。</p>
+<p>症狀就是我們一直在抱怨的那幾個：起播要等 6 秒，播著播著卡一下，換台慢。以前我把這些都歸給解碼、渲染、緩衝策略，從來沒算過位元率這一筆。</p>
+<h2 id="2-怎麼量：三個數就能定性"><a href="#2-怎麼量：三個數就能定性" class="headerlink" title="2. 怎麼量：三個數就能定性"></a>2. 怎麼量：三個數就能定性</h2><p>不需要專業工具，三條資訊足夠：</p>
+<ol>
+<li>分片位元組數（下載一個完整分片即可）</li>
+<li>分片時長（播放清單裡的 <code>#EXTINF</code>）</li>
+<li>實測吞吐（同一個分片，計時）</li>
+</ol>
+<p>於是<strong>位元率 &#x3D; 分片位元組 × 8 ÷ 分片時長</strong>，<strong>餘量 &#x3D; 裝置頻寬 ÷ 位元率</strong>。餘量低於 1.3 就意味著「平均意義上追不上」，只能靠跳段維持。</p>
+<p>我把 12 個候選源全量跑了一遍（腳本留在倉庫裡，一條命令可複跑）。結果按餘量排序後，畫面完全不同了：</p>
+<table>
+<thead>
+<tr>
+<th>源（按地區&#x2F;台名）</th>
+<th>分片</th>
+<th>時長</th>
+<th>位元率</th>
+<th>餘量</th>
+<th>結論</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>某卡通台</td>
+<td>2977 kB</td>
+<td>2.0 s</td>
+<td>11908 kbps</td>
+<td>0.20</td>
+<td>遠超頻寬</td>
+</tr>
+<tr>
+<td>某國際台西語版</td>
+<td>3069 kB</td>
+<td>6.0 s</td>
+<td>4092 kbps</td>
+<td>0.59</td>
+<td>超</td>
+</tr>
+<tr>
+<td>瀘縣新聞</td>
+<td>2563 kB</td>
+<td>6.0 s</td>
+<td>3423 kbps</td>
+<td>0.70</td>
+<td>超</td>
+</tr>
+<tr>
+<td>上虞文化影院</td>
+<td>3390 kB</td>
+<td>8.0 s</td>
+<td>3390 kbps</td>
+<td>0.71</td>
+<td>超</td>
+</tr>
+<tr>
+<td><strong>松潘新聞（現網在用）</strong></td>
+<td>4499 kB</td>
+<td>10.8 s</td>
+<td><strong>3333 kbps</strong></td>
+<td><strong>0.72</strong></td>
+<td>超</td>
+</tr>
+<tr>
+<td>河北少兒科教</td>
+<td>1054 kB</td>
+<td>3.1 s</td>
+<td>2702 kbps</td>
+<td>0.89</td>
+<td>邊緣</td>
+</tr>
+<tr>
+<td>錢江都市</td>
+<td>1807 kB</td>
+<td>8.0 s</td>
+<td>1807 kbps</td>
+<td>1.33</td>
+<td>剛過線</td>
+</tr>
+<tr>
+<td>浙江國際 720p</td>
+<td>813 kB</td>
+<td>8.0 s</td>
+<td>813 kbps</td>
+<td>2.95</td>
+<td>舒服</td>
+</tr>
+<tr>
+<td>浙江國際 360p</td>
+<td>520 kB</td>
+<td>8.0 s</td>
+<td>520 kbps</td>
+<td>4.62</td>
+<td>最穩</td>
+</tr>
+</tbody></table>
+<p>兩個源徹底連不上（同一台伺服器上的兩個頻道，一起掛），佔 12 個裡的 2 個。</p>
+<h2 id="3-這張表推翻了三件事"><a href="#3-這張表推翻了三件事" class="headerlink" title="3. 這張表推翻了三件事"></a>3. 這張表推翻了三件事</h2><p><strong>第一，現網那個源是超頻寬的。</strong> 餘量 0.72，意味著平均每 10 秒的流需要 13.9 秒才能下完。能播出畫面，純粹是因為播放器會丟段。所以過去所有「幀率 13~20 fps」的記錄，混著頻寬不足的成分，不全是渲染的鍋。</p>
+<p><strong>第二，但崩潰實驗不能因此換源。</strong> 這輪最該克制的衝動就是：既然有個位元率低 4 倍的源，趕緊換過去。不行。我們要復現的是「餵第二個 IDR 必崩」和「約 150 秒週期崩」，換源會同時改掉 NAL 數量、TS 大小、分片節奏——很可能把要復現的現象一起換沒了。<strong>測崩潰用「能復現」的源，測流暢度用「能跟上」的源，這是兩套源、兩個目的。</strong></p>
+<p><strong>第三，流暢度這類結論現在全部作廢重來。</strong> 只要還在用 3333 kbps 的源，「提幀到 25 fps」這種目標就是偽命題——瓶頸在下載，不在解碼。</p>
+<h2 id="4-順手踩到一個很典型的坑"><a href="#4-順手踩到一個很典型的坑" class="headerlink" title="4. 順手踩到一個很典型的坑"></a>4. 順手踩到一個很典型的坑</h2><p>開跑前的探針為了省流量，用 <code>curl -r 0-2047</code> 只取播放清單開頭 2 KB。跑出來 4 個源裡 3 個「死」。</p>
+<p>實際是：帶 Range 的請求，伺服器回的是 <strong>206 Partial Content</strong>，不是 200。判據裡只寫了 <code>= 200</code>，於是三個活源被判死。改法一行（206 歸一成 200）。</p>
+<p>這件事比它看起來嚴重：<strong>探測工具自己會變成故障源，而且是「假陰性」那種</strong>——它不報錯，只是安靜地告訴你「源沒了」，然後你就會去換源、去懷疑 CDN、去懷疑播放器。凡是自己寫的健康檢查，第一件事應該是拿一個已知良好的物件去試它，而不是拿它去試世界。</p>
+<h2 id="5-於是把它做成一道閘門"><a href="#5-於是把它做成一道閘門" class="headerlink" title="5. 於是把它做成一道閘門"></a>5. 於是把它做成一道閘門</h2><p>裝置連續 10 輪離線，讓我重新算了一筆帳：線上窗口才是這個專案最貴的資源——一輪實驗 50 分鐘，SSH 工作階段洩漏還得斷電重啟。而「預設路由掉了」和「源已死」這兩個已知坑，都會讓四個實驗臂齊刷刷零幀，最後只換來一個 INVALID。</p>
+<p>所以把上面這些前置成開跑閘門，四步：</p>
+<ol>
+<li>預設路由自檢，缺了就自己 <code>route add default gw</code> 補回去；</li>
+<li>按帶位元率標註的源表逐源探針，<code>200 且含 #EXTM3U</code> 才算活；</li>
+<li>首選不可達就自動回退，並明確記一條「換了源」——換源事實必須進結論，否則前後兩輪沒法比較；</li>
+<li>全死或無路由，直接寫 INVALID 收工，<strong>四臂一個都不啟動</strong>。</li>
+</ol>
+<p>判決邏輯本身一個字沒改——上一輪那套「判決有效性門檻」是對的，這輪只是把它往前挪了一步：<strong>先證明實驗能跑，再證明實驗結果可信。</strong></p>
+<h2 id="6-一句可以帶走的話"><a href="#6-一句可以帶走的話" class="headerlink" title="6. 一句可以帶走的話"></a>6. 一句可以帶走的話</h2><p>自動化腳本的價值不在於它多聰明，而在於它肯在最開始就承認「今天這活幹不了」。省下的是 50 分鐘，換來的是一次真正的實驗機會。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%80%E5%80%8B%E5%BE%9E%E6%B2%92%E8%A2%AB%E9%87%8F%E9%81%8E%E7%9A%84%E5%89%8D%E6%8F%90"><span class="toc-number">1.</span> <span class="toc-text">1. 一個從沒被量過的前提</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%80%8E%E9%BA%BC%E9%87%8F%EF%BC%9A%E4%B8%89%E5%80%8B%E6%95%B8%E5%B0%B1%E8%83%BD%E5%AE%9A%E6%80%A7"><span class="toc-number">2.</span> <span class="toc-text">2. 怎麼量：三個數就能定性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%80%99%E5%BC%B5%E8%A1%A8%E6%8E%A8%E7%BF%BB%E4%BA%86%E4%B8%89%E4%BB%B6%E4%BA%8B"><span class="toc-number">3.</span> <span class="toc-text">3. 這張表推翻了三件事</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%A0%86%E6%89%8B%E8%B8%A9%E5%88%B0%E4%B8%80%E5%80%8B%E5%BE%88%E5%85%B8%E5%9E%8B%E7%9A%84%E5%9D%91"><span class="toc-number">4.</span> <span class="toc-text">4. 順手踩到一個很典型的坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%96%BC%E6%98%AF%E6%8A%8A%E5%AE%83%E5%81%9A%E6%88%90%E4%B8%80%E9%81%93%E9%96%98%E9%96%80"><span class="toc-number">5.</span> <span class="toc-text">5. 於是把它做成一道閘門</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E5%8F%AF%E4%BB%A5%E5%B8%B6%E8%B5%B0%E7%9A%84%E8%A9%B1"><span class="toc-number">6.</span> <span class="toc-text">6. 一句可以帶走的話</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&text=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&title=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&is_video=false&description=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據&body=Check out this article: https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&title=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&title=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&title=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&title=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/&name=netTV 硬解（38）：源取得到，不等於裝置播得動——替選源加一道「位元率餘量」判據&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

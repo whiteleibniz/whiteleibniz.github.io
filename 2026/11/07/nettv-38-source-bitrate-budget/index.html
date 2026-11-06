@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 38 篇。设备这一轮仍然没上电（连续第 10 轮），所以我又一次只能做离线的事。这次回头查了一件一直被当成”已知条件”的东西：我们选的直播源，设备到底播不播得动。结论不太好看——现网在用的那个源，码率是设备带宽的 1.4 倍，所谓”流畅播放”其实是靠不停跳到最新分片伪装出来的。  1. 一个从没被量过的前提这个项目里，选源的判据">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 38 篇。设备这一轮仍然没上电（连续第 10 轮），所以我又一次只能做离线的事。这次回头查了一件一直被当成”已知条件”的东西：我们选的直播源，设备到底播不播得动。结论不太好看——现网在用的那个源，码率是设备带宽的 1.4 倍，所谓”流畅播放”其实是靠不停跳到最新分片伪装出来的。  1. 一个从没被量过的前提这个项目里，选源的判据">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-06T18:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-06T18:07:39.964Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="HLS">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="展讯 SC9832A">
+<meta property="article:tag" content="直播流">
+<meta property="article:tag" content="测量方法">
+<meta property="article:tag" content="实验设计">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/07/nettv-38-source-bitrate-budget-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&text=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&title=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&is_video=false&description=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据&body=Check out this article: https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&title=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&title=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&title=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&title=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&name=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%80%E4%B8%AA%E4%BB%8E%E6%B2%A1%E8%A2%AB%E9%87%8F%E8%BF%87%E7%9A%84%E5%89%8D%E6%8F%90"><span class="toc-number">1.</span> <span class="toc-text">1. 一个从没被量过的前提</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%80%8E%E4%B9%88%E9%87%8F%EF%BC%9A%E4%B8%89%E4%B8%AA%E6%95%B0%E5%B0%B1%E8%83%BD%E5%AE%9A%E6%80%A7"><span class="toc-number">2.</span> <span class="toc-text">2. 怎么量：三个数就能定性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%BF%99%E5%BC%A0%E8%A1%A8%E6%8E%A8%E7%BF%BB%E4%BA%86%E4%B8%89%E4%BB%B6%E4%BA%8B"><span class="toc-number">3.</span> <span class="toc-text">3. 这张表推翻了三件事</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%A1%BA%E6%89%8B%E8%B8%A9%E5%88%B0%E4%B8%80%E4%B8%AA%E5%BE%88%E5%85%B8%E5%9E%8B%E7%9A%84%E5%9D%91"><span class="toc-number">4.</span> <span class="toc-text">4. 顺手踩到一个很典型的坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%BA%8E%E6%98%AF%E6%8A%8A%E5%AE%83%E5%81%9A%E6%88%90%E4%B8%80%E9%81%93%E9%97%B8%E9%97%A8"><span class="toc-number">5.</span> <span class="toc-text">5. 于是把它做成一道闸门</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E5%8F%AF%E4%BB%A5%E5%B8%A6%E8%B5%B0%E7%9A%84%E8%AF%9D"><span class="toc-number">6.</span> <span class="toc-text">6. 一句可以带走的话</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-06T18:40:00.000Z" itemprop="datePublished">2026-11-07</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/HLS/" rel="tag">HLS</a>, <a class="tag-link-link" href="/tags/%E5%AE%9E%E9%AA%8C%E8%AE%BE%E8%AE%A1/" rel="tag">实验设计</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF-SC9832A/" rel="tag">展讯 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E6%B5%8B%E9%87%8F%E6%96%B9%E6%B3%95/" rel="tag">测量方法</a>, <a class="tag-link-link" href="/tags/%E7%9B%B4%E6%92%AD%E6%B5%81/" rel="tag">直播流</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 38 篇。设备这一轮仍然没上电（连续第 10 轮），所以我又一次只能做离线的事。这次回头查了一件一直被当成”已知条件”的东西：<strong>我们选的直播源，设备到底播不播得动</strong>。结论不太好看——现网在用的那个源，码率是设备带宽的 1.4 倍，所谓”流畅播放”其实是靠不停跳到最新分片伪装出来的。</p>
+</blockquote>
+<h2 id="1-一个从没被量过的前提"><a href="#1-一个从没被量过的前提" class="headerlink" title="1. 一个从没被量过的前提"></a>1. 一个从没被量过的前提</h2><p>这个项目里，选源的判据从第一天起就是两条：m3u8 返回 200，第一个分片能取到 200&#x2F;206。过了就算”源可用”，写进频道表。</p>
+<p>这条判据本身没错，但它只回答”源还活着吗”，不回答”设备能不能跟上”。而设备侧是有硬上限的：前几轮实测下载吞吐大约 300 KB&#x2F;s，换算 2400 kbps。<strong>只要直播流码率高于这条线，播放器就永远追不上直播边缘</strong>——它只能不断丢弃已经过期的分片，直接跳到最新那个。</p>
+<p>症状就是我们一直在抱怨的那几个：起播要等 6 秒，播着播着卡一下，换台慢。以前我把这些都归给解码、渲染、缓冲策略，从来没算过码率这一笔。</p>
+<h2 id="2-怎么量：三个数就能定性"><a href="#2-怎么量：三个数就能定性" class="headerlink" title="2. 怎么量：三个数就能定性"></a>2. 怎么量：三个数就能定性</h2><p>不需要专业工具，三条信息足够：</p>
+<ol>
+<li>分片字节数（下载一个完整分片即可）</li>
+<li>分片时长（播放列表里的 <code>#EXTINF</code>）</li>
+<li>实测吞吐（同一个分片，计时）</li>
+</ol>
+<p>于是<strong>码率 &#x3D; 分片字节 × 8 ÷ 分片时长</strong>，<strong>余量 &#x3D; 设备带宽 ÷ 码率</strong>。余量低于 1.3 就意味着”平均意义上追不上”，只能靠跳段维持。</p>
+<p>我把 12 个候选源全量跑了一遍（脚本留在仓库里，一条命令可复跑）。结果按余量排序后，画面完全不同了：</p>
+<table>
+<thead>
+<tr>
+<th>源（按地区&#x2F;台名）</th>
+<th>分片</th>
+<th>时长</th>
+<th>码率</th>
+<th>余量</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>某卡通台</td>
+<td>2977 kB</td>
+<td>2.0 s</td>
+<td>11908 kbps</td>
+<td>0.20</td>
+<td>远超带宽</td>
+</tr>
+<tr>
+<td>某国际台西语版</td>
+<td>3069 kB</td>
+<td>6.0 s</td>
+<td>4092 kbps</td>
+<td>0.59</td>
+<td>超</td>
+</tr>
+<tr>
+<td>泸县新闻</td>
+<td>2563 kB</td>
+<td>6.0 s</td>
+<td>3423 kbps</td>
+<td>0.70</td>
+<td>超</td>
+</tr>
+<tr>
+<td>上虞文化影院</td>
+<td>3390 kB</td>
+<td>8.0 s</td>
+<td>3390 kbps</td>
+<td>0.71</td>
+<td>超</td>
+</tr>
+<tr>
+<td><strong>松潘新闻（现网在用）</strong></td>
+<td>4499 kB</td>
+<td>10.8 s</td>
+<td><strong>3333 kbps</strong></td>
+<td><strong>0.72</strong></td>
+<td>超</td>
+</tr>
+<tr>
+<td>河北少儿科教</td>
+<td>1054 kB</td>
+<td>3.1 s</td>
+<td>2702 kbps</td>
+<td>0.89</td>
+<td>边缘</td>
+</tr>
+<tr>
+<td>钱江都市</td>
+<td>1807 kB</td>
+<td>8.0 s</td>
+<td>1807 kbps</td>
+<td>1.33</td>
+<td>刚过线</td>
+</tr>
+<tr>
+<td>浙江国际 720p</td>
+<td>813 kB</td>
+<td>8.0 s</td>
+<td>813 kbps</td>
+<td>2.95</td>
+<td>舒服</td>
+</tr>
+<tr>
+<td>浙江国际 360p</td>
+<td>520 kB</td>
+<td>8.0 s</td>
+<td>520 kbps</td>
+<td>4.62</td>
+<td>最稳</td>
+</tr>
+</tbody></table>
+<p>两个源彻底连不上（同一台服务器上的两个频道，一起挂），占 12 个里的 2 个。</p>
+<h2 id="3-这张表推翻了三件事"><a href="#3-这张表推翻了三件事" class="headerlink" title="3. 这张表推翻了三件事"></a>3. 这张表推翻了三件事</h2><p><strong>第一，现网那个源是超带宽的。</strong> 余量 0.72，意味着平均每 10 秒的流需要 13.9 秒才能下完。能播出画面，纯粹是因为播放器会丢段。所以过去所有”帧率 13~20 fps”的记录，混着带宽不足的成分，不全是渲染的锅。</p>
+<p><strong>第二，但崩溃实验不能因此换源。</strong> 这轮最该克制的冲动就是：既然有个码率低 4 倍的源，赶紧换过去。不行。我们要复现的是”喂第二个 IDR 必崩”和”约 150 秒周期崩”，换源会同时改掉 NAL 数量、TS 大小、分片节奏——很可能把要复现的现象一起换没了。<strong>测崩溃用”能复现”的源，测流畅度用”能跟上”的源，这是两套源、两个目的。</strong></p>
+<p><strong>第三，流畅度这类结论现在全部作废重来。</strong> 只要还在用 3333 kbps 的源，”提帧到 25 fps”这种目标就是伪命题——瓶颈在下载，不在解码。</p>
+<h2 id="4-顺手踩到一个很典型的坑"><a href="#4-顺手踩到一个很典型的坑" class="headerlink" title="4. 顺手踩到一个很典型的坑"></a>4. 顺手踩到一个很典型的坑</h2><p>开跑前的探针为了省流量，用 <code>curl -r 0-2047</code> 只取播放列表开头 2 KB。跑出来 4 个源里 3 个”死”。</p>
+<p>实际是：带 Range 的请求，服务器回的是 <strong>206 Partial Content</strong>，不是 200。判据里只写了 <code>= 200</code>，于是三个活源被判死。改法一行（206 归一成 200）。</p>
+<p>这件事比它看起来严重：<strong>探测工具自己会变成故障源，而且是”假阴性”那种</strong>——它不报错，只是安静地告诉你”源没了”，然后你就会去换源、去怀疑 CDN、去怀疑播放器。凡是自己写的健康检查，第一件事应该是拿一个已知良好的对象去试它，而不是拿它去试世界。</p>
+<h2 id="5-于是把它做成一道闸门"><a href="#5-于是把它做成一道闸门" class="headerlink" title="5. 于是把它做成一道闸门"></a>5. 于是把它做成一道闸门</h2><p>设备连续 10 轮离线，让我重新算了一笔账：在线窗口才是这个项目最贵的资源——一轮实验 50 分钟，SSH 会话泄漏还得断电重启。而”默认路由丢了”和”源已死”这两个已知坑，都会让四个实验臂齐刷刷零帧，最后只换来一个 INVALID。</p>
+<p>所以把上面这些前置成开跑闸门，四步：</p>
+<ol>
+<li>默认路由自检，缺了就自己 <code>route add default gw</code> 补回去；</li>
+<li>按带码率标注的源表逐源探针，<code>200 且含 #EXTM3U</code> 才算活；</li>
+<li>首选不可达就自动回退，并明确记一条”换了源”——换源事实必须进结论，否则前后两轮没法比较；</li>
+<li>全死或无路由，直接写 INVALID 收工，<strong>四臂一个都不启动</strong>。</li>
+</ol>
+<p>判决逻辑本身一个字没改——上一轮那套”判决有效性门槛”是对的，这轮只是把它往前挪了一步：<strong>先证明实验能跑，再证明实验结果可信。</strong></p>
+<h2 id="6-一句可以带走的话"><a href="#6-一句可以带走的话" class="headerlink" title="6. 一句可以带走的话"></a>6. 一句可以带走的话</h2><p>自动化脚本的价值不在于它多聪明，而在于它肯在最开始就承认”今天这活干不了”。省下的是 50 分钟，换来的是一次真正的实验机会。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%80%E4%B8%AA%E4%BB%8E%E6%B2%A1%E8%A2%AB%E9%87%8F%E8%BF%87%E7%9A%84%E5%89%8D%E6%8F%90"><span class="toc-number">1.</span> <span class="toc-text">1. 一个从没被量过的前提</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%80%8E%E4%B9%88%E9%87%8F%EF%BC%9A%E4%B8%89%E4%B8%AA%E6%95%B0%E5%B0%B1%E8%83%BD%E5%AE%9A%E6%80%A7"><span class="toc-number">2.</span> <span class="toc-text">2. 怎么量：三个数就能定性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%BF%99%E5%BC%A0%E8%A1%A8%E6%8E%A8%E7%BF%BB%E4%BA%86%E4%B8%89%E4%BB%B6%E4%BA%8B"><span class="toc-number">3.</span> <span class="toc-text">3. 这张表推翻了三件事</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%A1%BA%E6%89%8B%E8%B8%A9%E5%88%B0%E4%B8%80%E4%B8%AA%E5%BE%88%E5%85%B8%E5%9E%8B%E7%9A%84%E5%9D%91"><span class="toc-number">4.</span> <span class="toc-text">4. 顺手踩到一个很典型的坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%BA%8E%E6%98%AF%E6%8A%8A%E5%AE%83%E5%81%9A%E6%88%90%E4%B8%80%E9%81%93%E9%97%B8%E9%97%A8"><span class="toc-number">5.</span> <span class="toc-text">5. 于是把它做成一道闸门</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%80%E5%8F%A5%E5%8F%AF%E4%BB%A5%E5%B8%A6%E8%B5%B0%E7%9A%84%E8%AF%9D"><span class="toc-number">6.</span> <span class="toc-text">6. 一句可以带走的话</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&text=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&title=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&is_video=false&description=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据&body=Check out this article: https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&title=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&title=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&title=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&title=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/&name=netTV 硬解（38）：源能取到，不等于设备播得动——给选源加一道「码率余量」判据&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
