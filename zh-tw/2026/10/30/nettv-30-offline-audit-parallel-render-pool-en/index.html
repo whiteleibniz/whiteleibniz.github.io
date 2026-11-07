@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Language: 簡體中文 · 繁體中文 · English   Post 30 in the series. The board has been offline for four consecutive rounds (10-27 through 10-30), which means the resident-fork parallel render pool from post">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Language: 簡體中文 · 繁體中文 · English   Post 30 in the series. The board has been offline for four consecutive rounds (10-27 through 10-30), which means the resident-fork parallel render pool from post">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-29T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-07T18:09:31.194Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="VSP decode">
+<meta property="article:tag" content="Multiprocess">
+<meta property="article:tag" content="Code audit">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&text=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&title=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&is_video=false&description=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&title=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&title=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&title=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&title=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&name=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Offline-is-not-a-dead-end-but-it-is-not-a-license-to-keep-writing-code"><span class="toc-number">1.</span> <span class="toc-text">1. Offline is not a dead end, but it is not a license to keep writing code</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Bug-1-split-points-not-aligned-to-the-band-height-tearing-plus-out-of-bounds-writes"><span class="toc-number">2.</span> <span class="toc-text">2. Bug 1: split points not aligned to the band height (tearing, plus out-of-bounds writes)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Bug-2-the-fallback-path-races-with-children-that-are-still-writing"><span class="toc-number">3.</span> <span class="toc-text">3. Bug 2: the fallback path races with children that are still writing</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Bug-3-resident-children-hold-on-to-ION-buffers-forever"><span class="toc-number">4.</span> <span class="toc-text">4. Bug 3: resident children hold on to ION buffers forever</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Bug-4-the-self-test-scratch-area-must-not-be-framebuffer-page-0"><span class="toc-number">5.</span> <span class="toc-text">5. Bug 4: the self-test scratch area must not be framebuffer page 0</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-What-made-the-audit-productive"><span class="toc-number">6.</span> <span class="toc-text">6. What made the audit productive</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Status-and-next-step"><span class="toc-number">7.</span> <span class="toc-text">7. Status and next step</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-29T18:30:00.000Z" itemprop="datePublished">2026-10-30</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Code-audit/" rel="tag">Code audit</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Multiprocess/" rel="tag">Multiprocess</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP-decode/" rel="tag">VSP decode</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool/">簡體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/30/zh-tw/nettv-30-offline-audit-parallel-render-pool-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Post 30 in the series. The board has been offline for four consecutive rounds (10-27 through 10-30), which means the resident-fork parallel render pool from post 29 has <strong>never once been compiled</strong>. This post is about a way to make real progress with the hardware out of reach: a static audit aimed specifically at defects that <em>do not crash, they quietly corrupt</em> — and the four real bugs it turned up.</p>
+</blockquote>
+<h2 id="1-Offline-is-not-a-dead-end-but-it-is-not-a-license-to-keep-writing-code"><a href="#1-Offline-is-not-a-dead-end-but-it-is-not-a-license-to-keep-writing-code" class="headerlink" title="1. Offline is not a dead end, but it is not a license to keep writing code"></a>1. Offline is not a dead end, but it is not a license to keep writing code</h2><p>This project has an awkward property: the only cross compiler lives on the target board. Source is written locally and compiled on the device. Pull the power and every new change becomes unvalidated debt; the more it piles up, the more likely the next online session is burned entirely on build errors.</p>
+<p>So the right move offline is not to keep adding features. It is to treat the written-but-unverified code as an audit target. The audit needs one specific aim, and mine is a single criterion:</p>
+<blockquote>
+<p>Hunt first for the bugs that <strong>do not crash, do not log an error, and quietly produce wrong results</strong>.</p>
+</blockquote>
+<p>The reasoning is pragmatic. Compile errors and segfaults announce themselves the moment you reconnect; they take five minutes to fix. The other class — frames that are subtly misplaced, performance counters that are fiction, resources that leak a little every frame — survives several experiment rounds and can push you to conclusions that are exactly backwards. The “private staging &#x3D; frozen copy” trap from post 29 is the archetype: it never crashes, the child just keeps rendering the previous frame.</p>
+<h2 id="2-Bug-1-split-points-not-aligned-to-the-band-height-tearing-plus-out-of-bounds-writes"><a href="#2-Bug-1-split-points-not-aligned-to-the-band-height-tearing-plus-out-of-bounds-writes" class="headerlink" title="2. Bug 1: split points not aligned to the band height (tearing, plus out-of-bounds writes)"></a>2. Bug 1: split points not aligned to the band height (tearing, plus out-of-bounds writes)</h2><p>The renderer is cut into bands; a band renders output rows <code>[oy0, oy0+bandh)</code>. The obvious way to dispatch those bands to N workers is also the wrong one:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> rows = <span class="number">1280</span> / n;                 <span class="comment">/* output rows per child */</span></span><br><span class="line">j.y0 = i * rows;</span><br><span class="line">j.y1 = (i == n - <span class="number">1</span>) ? <span class="number">1280</span> : (i + <span class="number">1</span>) * rows;</span><br></pre></td></tr></table></figure>
+
+<p>The problem is that the inner loop of <code>fb_render_range</code> <strong>always renders a whole band</strong> and has no idea that <code>y1</code> exists:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> oy0 = y0; oy0 &lt; y1; oy0 += g_bandh)</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; g_bandh; j++)</span><br><span class="line">        <span class="built_in">memcpy</span>(dst + (oy0 + j) * <span class="number">720</span>, band[j], <span class="number">720</span> * <span class="number">4</span>);   <span class="comment">/* writes bandh rows */</span></span><br></pre></td></tr></table></figure>
+
+<p>Whenever <code>(y1 - y0)</code> is not a multiple of <code>bandh</code>, the last child writes rows <code>[y1, oy0+bandh)</code>: it stomps on rows owned by the next child (tearing) and, at the end of the frame, runs past the tail of the framebuffer page (SIGSEGV). With the default band height of 64, the per-N arithmetic looks like this:</p>
+<table>
+<thead>
+<tr>
+<th>Workers n</th>
+<th>rows &#x3D; 1280&#x2F;n</th>
+<th>multiple of 64?</th>
+<th>outcome</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2</td>
+<td>640</td>
+<td>yes</td>
+<td>safe</td>
+</tr>
+<tr>
+<td>3</td>
+<td>426</td>
+<td><strong>no</strong></td>
+<td>tearing + OOB</td>
+</tr>
+<tr>
+<td>4</td>
+<td>320</td>
+<td>yes</td>
+<td>safe</td>
+</tr>
+<tr>
+<td>6</td>
+<td>213</td>
+<td><strong>no</strong></td>
+<td>tearing + OOB</td>
+</tr>
+<tr>
+<td>7</td>
+<td>182</td>
+<td><strong>no</strong></td>
+<td>tearing + OOB</td>
+</tr>
+<tr>
+<td>8</td>
+<td>160</td>
+<td><strong>no</strong></td>
+<td>tearing + OOB</td>
+</tr>
+</tbody></table>
+<p>So the three arms the A&#x2F;B script was going to run (2 and 4) <strong>happen to dodge the bug entirely</strong>, while the 8-worker arm — the one that actually shows off parallelism — was guaranteed to blow up. “The configurations you tested are precisely the ones that cannot fail” is the nastiest failure mode in parallel work.</p>
+<p>The fix is not to teach the inner loop about boundaries (that means threading a per-band <code>bh</code> through a dozen sites, easy to miss one). It is to make every split point a multiple of <code>bandh</code>. Since <code>1280 % bandh == 0</code> (bandh is restricted to 16&#x2F;32&#x2F;64&#x2F;128&#x2F;256), making <code>rows</code> a multiple as well guarantees every boundary is a multiple, so a partial band cannot exist:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> rows = ((<span class="number">1280</span> / n) + g_bandh - <span class="number">1</span>) / g_bandh * g_bandh;</span><br><span class="line"><span class="keyword">if</span> (rows &lt; g_bandh) rows = g_bandh;</span><br><span class="line">j.y0 = i * rows;  <span class="keyword">if</span> (j.y0 &gt; <span class="number">1280</span>) j.y0 = <span class="number">1280</span>;      <span class="comment">/* trailing workers may idle */</span></span><br><span class="line">j.y1 = j.y0 + rows; <span class="keyword">if</span> (j.y1 &gt; <span class="number">1280</span>) j.y1 = <span class="number">1280</span>;</span><br></pre></td></tr></table></figure>
+
+<p>The cost is slightly uneven load (at 8 workers: six get 192 rows, one gets 128, one idles). What you buy is a layout where overrunning is structurally impossible.</p>
+<h2 id="3-Bug-2-the-fallback-path-races-with-children-that-are-still-writing"><a href="#3-Bug-2-the-fallback-path-races-with-children-that-are-still-writing" class="headerlink" title="3. Bug 2: the fallback path races with children that are still writing"></a>3. Bug 2: the fallback path races with children that are still writing</h2><p>The original dispatcher bailed out on the first failed read or write and immediately re-rendered the whole frame serially:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (i...) <span class="keyword">if</span> (read(g_rp_c2p[i], &amp;ack, <span class="number">1</span>) != <span class="number">1</span>) &#123; bad = <span class="number">1</span>; <span class="keyword">break</span>; &#125;</span><br><span class="line"><span class="keyword">if</span> (bad) fb_render_range(nv, dst, <span class="number">0</span>, <span class="number">1280</span>);    <span class="comment">/* redo the entire frame */</span></span><br></pre></td></tr></table></figure>
+
+<p>But workers <code>i+1 … n-1</code> <strong>already hold jobs and are writing their own rows right now</strong>. The parent then overwrites all 1280 rows while they work — tearing that only appears when a child dies unexpectedly, which makes it nearly impossible to reproduce on purpose.</p>
+<p>The fix: <strong>drain every dispatched ack before declaring failure</strong>. Once all acks are in, each child has either finished writing or is confirmed dead, and only then is the serial redo exclusive:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; sent; i++)</span><br><span class="line">    <span class="keyword">if</span> (read(g_rp_c2p[i], &amp;ack, <span class="number">1</span>) != <span class="number">1</span>) bad = <span class="number">1</span>;   <span class="comment">/* no break */</span></span><br><span class="line"><span class="keyword">if</span> (bad) &#123; g_rp_dead = <span class="number">1</span>; g_rp_on = <span class="number">0</span>; fb_render_range(nv, dst, <span class="number">0</span>, <span class="number">1280</span>); &#125;</span><br></pre></td></tr></table></figure>
+
+<p>Reads here are blocking, so a live child always answers and nothing hangs; a dead child returns 0, which doubles as proof that it is gone.</p>
+<h2 id="4-Bug-3-resident-children-hold-on-to-ION-buffers-forever"><a href="#4-Bug-3-resident-children-hold-on-to-ION-buffers-forever" class="headerlink" title="4. Bug 3: resident children hold on to ION buffers forever"></a>4. Bug 3: resident children hold on to ION buffers forever</h2><p>The pool is forked on the <strong>first frame</strong> — by which point the parent has already opened a batch of ION &#x2F; dmabuf file descriptors. <code>fork()</code> copies the descriptor table, so every resident child ends up holding a reference. When the parent calls <code>close()</code>, nothing is released, because the children still count.</p>
+<p>On this platform the carveout pool is only 640 KB, and an ION leak ends in a black screen that can only be cleared by a reboot (see the “black screen SOP” in this series). The children touch no devices at all, so they can simply drop everything they inherited:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> fd = <span class="number">3</span>; fd &lt; <span class="number">64</span>; fd++)</span><br><span class="line">    <span class="keyword">if</span> (fd != rfd &amp;&amp; fd != wfd) close(fd);</span><br></pre></td></tr></table></figure>
+
+<p>The general lesson: <strong>any long-lived forked child should explicitly shrink its descriptor table</strong>. Short-lived per-frame forks do not care; a resident pool must.</p>
+<h2 id="5-Bug-4-the-self-test-scratch-area-must-not-be-framebuffer-page-0"><a href="#5-Bug-4-the-self-test-scratch-area-must-not-be-framebuffer-page-0" class="headerlink" title="5. Bug 4: the self-test scratch area must not be framebuffer page 0"></a>5. Bug 4: the self-test scratch area must not be framebuffer page 0</h2><p>The first-frame self-test renders once serially, once in parallel, and compares hashes. The lazy choice for the scratch target was framebuffer page 0, since playback only ever shows pages 1 and 2.</p>
+<p>But page 0 is the <strong>home page</strong>: <code>fb_home()</code> pans back to it when playback exits. Writing a full frame into it leaves the desktop parked on a ghost of the last frame. A one-shot <code>malloc</code>‘d private buffer is correct — the serial reference render does not need its destination to be video memory at all.</p>
+<p>The same pass also fixed a measurement-definition bug: in parallel mode the “convert” and “write fb” sub-timings are permanently zero, because children update their own private copies that the parent cannot see. Printing those zeros invites someone to cite them in the next A&#x2F;B. Now the line reports wall clock only and says so:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[perf] fb_render pool 4-way avg Xms (ceiling Y fps) [wall clock] (convert/write-fb are child-private, not counted here)</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-What-made-the-audit-productive"><a href="#6-What-made-the-audit-productive" class="headerlink" title="6. What made the audit productive"></a>6. What made the audit productive</h2><p>Not care. A different question. Swapping “is this code correct?” for these four questions raised the hit rate noticeably:</p>
+<ol>
+<li><strong>Boundaries and remainders</strong>: how is the remainder handled in every split, chunk, and modulo? Does the inner loop even know the boundary exists?</li>
+<li><strong>Concurrency on the failure path</strong>: when the failure fires, who else is still running? Is my fallback mutually exclusive with them?</li>
+<li><strong>Invisible holders of resources</strong>: what does a long-lived forked child still hold, and who is counting it?</li>
+<li><strong>Measurement definitions</strong>: who writes this number and who can read it? Could it be a constant zero?</li>
+</ol>
+<p>One more ordering rule that keeps paying off: <strong>for parallel changes, failure modes ranked by damage are “quietly wrong” &gt; “crashes” &gt; “slow”</strong>. That is why the first-frame hash self-test (serial vs parallel, FNV over the full page) matters more than the optimization itself — it is the only gate that catches the first category. And that is why the A&#x2F;B script gained an 8-worker arm: prove the fix at the configuration most likely to break, instead of only exercising the ones that were always fine.</p>
+<h2 id="7-Status-and-next-step"><a href="#7-Status-and-next-step" class="headerlink" title="7. Status and next step"></a>7. Status and next step</h2><ul>
+<li>Source v31 &#x3D; v30 plus the four fixes above. Default behavior is unchanged (<code>NETTV_RPOOL</code> defaults to 0, i.e. the original serial path).</li>
+<li>Still <strong>uncompiled</strong> (board offline, fourth round). Next power-on sequence: push the source, build, then run a back-to-back <code>RPOOL=0/2/4/8</code> A&#x2F;B.</li>
+<li>Pass criteria unchanged: <code>fps_x10</code> clearly above baseline, the self-test must print “serial&#x2F;parallel identical”, no <code>signal=11</code>, and ION clients must not grow.</li>
+</ul>
+<p>Once the board is up, the numbers here get replaced by measurements. Until then, these four fixes have removed “8-way is guaranteed to blow up” from the plan.</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Offline-is-not-a-dead-end-but-it-is-not-a-license-to-keep-writing-code"><span class="toc-number">1.</span> <span class="toc-text">1. Offline is not a dead end, but it is not a license to keep writing code</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Bug-1-split-points-not-aligned-to-the-band-height-tearing-plus-out-of-bounds-writes"><span class="toc-number">2.</span> <span class="toc-text">2. Bug 1: split points not aligned to the band height (tearing, plus out-of-bounds writes)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Bug-2-the-fallback-path-races-with-children-that-are-still-writing"><span class="toc-number">3.</span> <span class="toc-text">3. Bug 2: the fallback path races with children that are still writing</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Bug-3-resident-children-hold-on-to-ION-buffers-forever"><span class="toc-number">4.</span> <span class="toc-text">4. Bug 3: resident children hold on to ION buffers forever</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Bug-4-the-self-test-scratch-area-must-not-be-framebuffer-page-0"><span class="toc-number">5.</span> <span class="toc-text">5. Bug 4: the self-test scratch area must not be framebuffer page 0</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-What-made-the-audit-productive"><span class="toc-number">6.</span> <span class="toc-text">6. What made the audit productive</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Status-and-next-step"><span class="toc-number">7.</span> <span class="toc-text">7. Status and next step</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&text=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&title=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&is_video=false&description=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&title=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&title=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&title=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&title=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/10/30/nettv-30-offline-audit-parallel-render-pool-en/&name=netTV Hardware Decode (30): How to Make Progress While the Board Is Offline — A Static Audit of the Parallel Render Pool&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

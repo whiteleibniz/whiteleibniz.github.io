@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：簡體中文 · 繁體中文 · English   系列第 35 篇。上一輪把「處理器為什麼一次都沒跑到」在內核層面解釋成了可證偽的假說，這一輪動手把它做成代碼：給處理器裝一個”我到底進沒進來”的二值探針，把我們自己造的每一條執行流上的信號屏蔽解掉，再用一個 pthread_create 鉤子把廠商庫自建的線程也覆蓋進去。順手挖出一個差點踩進去的經典坑：**setjmp 不能包進函數**">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：簡體中文 · 繁體中文 · English   系列第 35 篇。上一輪把「處理器為什麼一次都沒跑到」在內核層面解釋成了可證偽的假說，這一輪動手把它做成代碼：給處理器裝一個”我到底進沒進來”的二值探針，把我們自己造的每一條執行流上的信號屏蔽解掉，再用一個 pthread_create 鉤子把廠商庫自建的線程也覆蓋進去。順手挖出一個差點踩進去的經典坑：**setjmp 不能包進函數**">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-01T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-07T18:09:31.363Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="展讯 SC9832A">
+<meta property="article:tag" content="崩溃取证">
+<meta property="article:tag" content="Linux 信号">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/01/nettv-34-sigsegv-handler-never-ran-forensics/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&text=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&title=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&is_video=false&description=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&title=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&title=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&title=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&title=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&name=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%85%88%E6%8A%8A%E4%B8%8A%E4%B8%80%E6%A2%9D%E7%B7%9A%E7%B4%A2%E8%A4%87%E8%BF%B0%E6%B8%85%E6%A5%9A"><span class="toc-number">1.</span> <span class="toc-text">1. 先把上一條線索複述清楚</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B1%8F%E8%94%BD%E6%98%AF%E6%80%8E%E9%BA%BC%E2%80%9D%E5%82%B3%E6%9F%93%E2%80%9D%E7%9A%84"><span class="toc-number">2.</span> <span class="toc-text">2. 屏蔽是怎麼”傳染”的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-v34-%E7%9A%84%E5%9B%9B%E8%99%95%E6%94%B9%E5%8B%95%EF%BC%88%E5%85%A8%E9%83%A8%E8%A1%8C%E7%82%BA%E4%B8%AD%E6%80%A7%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">3. v34 的四處改動（全部行為中性）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A0-%E8%99%95%E7%90%86%E5%99%A8%E5%85%A5%E5%8F%A3%E4%BA%8C%E5%80%BC%E6%8E%A2%E9%87%9D"><span class="toc-number">3.1.</span> <span class="toc-text">① 處理器入口二值探針</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A1-%E8%A7%A3%E5%B1%8F%E8%94%BD%EF%BC%9Ant-unblock-fatal"><span class="toc-number">3.2.</span> <span class="toc-text">② 解屏蔽：nt_unblock_fatal()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A2-pthread-create-%E9%89%A4%E5%AD%90%EF%BC%9A%E8%AE%93%E5%BB%A0%E5%95%86%E5%BA%AB%E9%80%A0%E7%9A%84%E7%B7%9A%E7%A8%8B%E4%B9%9F%E8%A7%A3%E5%B1%8F%E8%94%BD"><span class="toc-number">3.3.</span> <span class="toc-text">③ pthread_create 鉤子：讓廠商庫造的線程也解屏蔽</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A3-%E8%B7%A8%E7%B7%9A%E7%A8%8B-siglongjmp-%E8%AD%B7%E6%AC%84"><span class="toc-number">3.4.</span> <span class="toc-text">④ 跨線程 siglongjmp 護欄</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%A0%86%E5%B8%B6%E5%81%9A%E7%9A%84%E9%9B%A2%E7%B7%9A%E9%9D%9C%E6%85%8B%E5%AF%A9%E8%A8%88%EF%BC%88%E7%B5%90%E8%AB%96%EF%BC%9AH1-%E5%9C%A8%E6%88%91%E5%80%91%E8%87%AA%E5%B7%B1%E7%9A%84%E4%BB%A3%E7%A2%BC%E8%A3%A1%E8%A2%AB%E8%AD%89%E5%81%BD%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">4. 順帶做的離線靜態審計（結論：H1 在我們自己的代碼裡被證偽）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%88%A4%E8%AE%80%E8%A1%A8%EF%BC%88%E4%B8%8B%E8%BC%AA%E8%81%AF%E6%A9%9F%E4%B8%80%E6%AC%A1%E5%87%BA%E7%B5%90%E6%9E%9C%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">5. 判讀表（下輪聯機一次出結果）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%BE%85%E9%A9%97%E8%AD%89"><span class="toc-number">6.</span> <span class="toc-text">6. 待驗證</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-01T18:30:00.000Z" itemprop="datePublished">2026-11-02</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Linux-%E4%BF%A1%E5%8F%B7/" rel="tag">Linux 信号</a>, <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF-SC9832A/" rel="tag">展讯 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B4%A9%E6%BA%83%E5%8F%96%E8%AF%81/" rel="tag">崩溃取证</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/">簡體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/02/zh-tw/nettv-35-signal-mask-blocks-sigsegv-handler-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 35 篇。上一輪把「處理器為什麼一次都沒跑到」在內核層面解釋成了<strong>可證偽的假說</strong>，這一輪動手把它做成<strong>代碼</strong>：給處理器裝一個”我到底進沒進來”的二值探針，把我們自己造的每一條執行流上的信號屏蔽解掉，再用一個 <code>pthread_create</code> 鉤子把廠商庫自建的線程也覆蓋進去。順手挖出一個差點踩進去的經典坑：**<code>setjmp</code> 不能包進函數**。</p>
+</blockquote>
+<h2 id="1-先把上一條線索複述清楚"><a href="#1-先把上一條線索複述清楚" class="headerlink" title="1. 先把上一條線索複述清楚"></a>1. 先把上一條線索複述清楚</h2><p>現網每約 150 秒死一次，死因 <code>st=0xb</code>（SIGSEGV），但是：</p>
+<ul>
+<li><code>/tmp/nettv_segv.log</code> 一次都沒生成；</li>
+<li>stdout（重定向到 <code>child.log</code>）裡沒有處理器的任何一行 dump；</li>
+<li>加了 <code>sigaltstack</code> + <code>SA_ONSTACK</code> 之後依然零輸出 ⇒ 排除”棧溢出沒棧可跑”。</li>
+</ul>
+<p>內核語義給出的唯一自洽解釋是：硬件同步故障（缺頁&#x2F;越界）產生的是<strong>線程定向</strong>信號；如果故障發生的那個線程<strong>屏蔽了該信號</strong>，<code>force_sig_info()</code> 會把動作強制改回 <code>SIG_DFL</code>、清掉掩碼位、然後立刻按默認動作殺進程 —— <strong>用戶態處理器一次都不會被調用</strong>。進程死因顯示 SIGSEGV，現場卻一個字節都沒有。</p>
+<p>於是排查對象從”哪塊內存被踩”換成”哪條執行流屏蔽了 SIGSEGV”。</p>
+<h2 id="2-屏蔽是怎麼”傳染”的"><a href="#2-屏蔽是怎麼”傳染”的" class="headerlink" title="2. 屏蔽是怎麼”傳染”的"></a>2. 屏蔽是怎麼”傳染”的</h2><p>這是本輪最值得記住的一條：<strong>信號掩碼會被新建的執行流繼承</strong>。</p>
+<ul>
+<li><code>fork()</code>：子進程繼承父進程的掩碼；</li>
+<li><code>clone()</code>（<code>CLONE_THREAD</code> 造線程同理）：新線程繼承創建者的掩碼；</li>
+<li><code>pthread_create()</code>：POSIX 明確規定新線程繼承創建線程的信號掩碼。</li>
+</ul>
+<p>也就是說，只要在”已屏蔽”的狀態下創建過任何線程，那個線程就會帶著屏蔽一直跑到死。而我們自己的代碼裡恰好有這種地方：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">rp_block_sig</span><span class="params">(<span class="type">void</span>)</span> &#123;          <span class="comment">/* 屏蔽 SEGV/BUS/ILL/ALRM/TERM/INT/PIPE */</span></span><br><span class="line">    syscall(<span class="number">175</span> <span class="comment">/* rt_sigprocmask */</span>, <span class="number">0</span> <span class="comment">/* SIG_BLOCK */</span>, <span class="built_in">set</span>, <span class="number">0</span>, <span class="number">8</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">render_child</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    rp_block_sig();</span><br><span class="line">    signal(SIGSEGV, SIG_DFL);             <span class="comment">/* ★ 只復位了&quot;動作&quot;, 沒有解除&quot;掩碼&quot; */</span></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>signal(..., SIG_DFL)</code> 改的是 disposition，掩碼還堵著。這個 fork 出來的池子進程一旦 fault，就是標準的”零輸出 + 靜默被殺”，父進程只能看到一行 <code>[rpool] 子進程失效 → 永久回退串行</code>。廠商庫自建的線程同理 —— 我們甚至不知道它們屏蔽了什麼，所以只能靠採樣 <code>/proc/&lt;pid&gt;/task/&lt;tid&gt;/status</code> 的 <code>SigBlk</code> 去看，或者……</p>
+<h2 id="3-v34-的四處改動（全部行為中性）"><a href="#3-v34-的四處改動（全部行為中性）" class="headerlink" title="3. v34 的四處改動（全部行為中性）"></a>3. v34 的四處改動（全部行為中性）</h2><h3 id="①-處理器入口二值探針"><a href="#①-處理器入口二值探針" class="headerlink" title="① 處理器入口二值探針"></a>① 處理器入口二值探針</h3><p>進處理器第一件事就是落一行，只用 <code>write</code> &#x2F; <code>open</code> &#x2F; <code>close</code> 三個異步信號安全調用，不碰堆也不碰 TLS：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">segv</span><span class="params">(<span class="type">int</span> sig, <span class="type">siginfo_t</span> *si, <span class="type">void</span> *uc)</span> &#123;</span><br><span class="line">    &#123;   <span class="type">static</span> <span class="type">const</span> <span class="type">char</span> m0[] = <span class="string">&quot;\n*** SIGSEGV-HANDLER-ENTERED ***\n&quot;</span>;</span><br><span class="line">        write(<span class="number">1</span>, m0, (<span class="type">int</span>)<span class="keyword">sizeof</span> m0 - <span class="number">1</span>);</span><br><span class="line">        <span class="type">int</span> sf0 = open(<span class="string">&quot;/tmp/nettv_segv.log&quot;</span>, O_WRONLY|O_CREAT|O_APPEND, <span class="number">0644</span>);</span><br><span class="line">        <span class="keyword">if</span> (sf0 &gt;= <span class="number">0</span>) &#123; write(sf0, m0, (<span class="type">int</span>)<span class="keyword">sizeof</span> m0 - <span class="number">1</span>); close(sf0); &#125; &#125;</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>這一行把”處理器到底跑沒跑”從推理變成<strong>讀一行日誌</strong>。順帶在 dump 里加了 <code>tid=</code>，一眼能看出崩在哪個線程。</p>
+<h3 id="②-解屏蔽：nt-unblock-fatal"><a href="#②-解屏蔽：nt-unblock-fatal" class="headerlink" title="② 解屏蔽：nt_unblock_fatal()"></a>② 解屏蔽：<code>nt_unblock_fatal()</code></h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">nt_unblock_fatal</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">int</span> sg[] = &#123; SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP, <span class="number">0</span> &#125;;</span><br><span class="line">    syscall(<span class="number">175</span> <span class="comment">/* rt_sigprocmask */</span>, <span class="number">1</span> <span class="comment">/* SIG_UNBLOCK */</span>, <span class="built_in">set</span>, <span class="number">0</span>, <span class="number">8</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>調用點：裸 <code>clone</code> 出來的線程入口（<code>thread_start</code>）、<code>render_child()</code>、<code>pan_thread()</code>。後兩處原本靠”屏蔽”來避免跨線程 <code>siglongjmp</code>，現在處理器自帶了護欄（見 ④），屏蔽不再是必需品。</p>
+<h3 id="③-pthread-create-鉤子：讓廠商庫造的線程也解屏蔽"><a href="#③-pthread-create-鉤子：讓廠商庫造的線程也解屏蔽" class="headerlink" title="③ pthread_create 鉤子：讓廠商庫造的線程也解屏蔽"></a>③ <code>pthread_create</code> 鉤子：讓廠商庫造的線程也解屏蔽</h3><p>動態鏈接下可執行文件的符號排在最前，依賴庫 PLT 裡的 <code>pthread_create</code> 會綁到我們導出的這一份（編譯本來就有 <code>-Wl,--export-dynamic</code>）。</p>
+<p><strong>坑 1：拿真實實現不能用 <code>RTLD_NEXT</code>。</strong> 這份源碼第 289 行早就記過：”bionic 無 RTLD_NEXT”。更危險的是用 <code>RTLD_DEFAULT</code> 會直接拿到<strong>我們自己</strong>，無限遞歸。正確做法是用<strong>顯式 handle</strong> —— <code>dlopen(&quot;libc.so&quot;)</code> 拿到的 handle 只搜該對象及其依賴，永遠繞得開本進程的覆蓋：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">pthread_create</span><span class="params">(<span class="type">void</span> *tid, <span class="type">const</span> <span class="type">void</span> *attr, <span class="type">nt_pcfn_t</span> fn, <span class="type">void</span> *arg)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!g_pc_inited) &#123;</span><br><span class="line">        g_pc_inited = <span class="number">1</span>;</span><br><span class="line">        <span class="type">void</span> *lc = dlopen(<span class="string">&quot;/system/lib/libc.so&quot;</span>, <span class="number">2</span>);</span><br><span class="line">        <span class="keyword">if</span> (lc) g_real_pc = (...)__dlsym_bionic(lc, <span class="string">&quot;pthread_create&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!g_real_pc) <span class="keyword">return</span> <span class="number">11</span>;                              <span class="comment">/* 絕不遞歸調自己 */</span></span><br><span class="line">    <span class="keyword">if</span> (!nt_hook_on()) <span class="keyword">return</span> g_real_pc(tid, attr, fn, arg); <span class="comment">/* 默認純轉發 */</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> g_real_pc(tid, attr, nt_pc_tramp, w);             <span class="comment">/* tramp 裡解屏蔽 */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>默認 <code>NETTV_PCHOOK=0</code>（純轉發，行為與 v33 逐字節一致），實驗時置 1 才真鉤 —— 未經聯機驗證的東西不能默認打開。</p>
+<h3 id="④-跨線程-siglongjmp-護欄"><a href="#④-跨線程-siglongjmp-護欄" class="headerlink" title="④ 跨線程 siglongjmp 護欄"></a>④ 跨線程 <code>siglongjmp</code> 護欄</h3><p>處理器的收尾是 <code>siglongjmp(g_jb, 1)</code>，而 <code>g_jb</code> 是<strong>設置它的那個線程</strong>的棧上下文。廠商庫自建線程裡 fault 卻跳過去，等於兩個線程共用一塊棧，現場必被沖掉 —— 本文件 4425 行自己就寫過這條鐵律，但只對 <code>pan_thread</code> &#x2F; <code>render_child</code> 做了防護，廠商線程一直裸奔。</p>
+<p>對策：記錄”誰設的 <code>g_jb</code>“，處理器裡比對 tid，不匹配就<strong>不跳</strong>，登記現場後 <code>_exit(88)</code>（與 signal 11 一眼可分）。</p>
+<p><strong>坑 2（本輪差點踩進去）：記錄 tid 不能用函數包 <code>setjmp</code>。</strong> 我第一版寫成了</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">nt_setjmp</span><span class="params">(<span class="type">void</span>)</span> &#123; <span class="type">int</span> r = sigsetjmp(g_jb, <span class="number">1</span>); <span class="keyword">if</span> (r == <span class="number">0</span>) g_jb_tid = nt_tid(); <span class="keyword">return</span> r; &#125;</span><br></pre></td></tr></table></figure>
+
+<p>這行不通：<code>setjmp</code> 家族保存的是<strong>調用點所在的棧幀</strong>，包進函數後函數一返回那幀就死了，之後 <code>siglongjmp</code> 過去是標準明確寫了的<strong>未定義行為</strong>（棧上那段保存 LR 的區域早被後續調用踩爛）。必須用宏，把整件事留在調用者幀內完成：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> SETJB() (g_jb_tid = nt_tid(), sigsetjmp(g_jb, 1))</span></span><br></pre></td></tr></table></figure>
+
+<p>全文件 11 處 <code>sigsetjmp(g_jb,1)</code> 機械替換成 <code>SETJB()</code>。</p>
+<h2 id="4-順帶做的離線靜態審計（結論：H1-在我們自己的代碼裡被證偽）"><a href="#4-順帶做的離線靜態審計（結論：H1-在我們自己的代碼裡被證偽）" class="headerlink" title="4. 順帶做的離線靜態審計（結論：H1 在我們自己的代碼裡被證偽）"></a>4. 順帶做的離線靜態審計（結論：H1 在我們自己的代碼裡被證偽）</h2><p>設備這輪仍然離線，所以先把”資源洩漏觸頂”（假說 H1）能靜態排除的都排掉：</p>
+<table>
+<thead>
+<tr>
+<th>懷疑對象</th>
+<th>結論</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>幀號索引的 ~4096 項定長表（4200 幀 ≈ 150s，數字太巧）</td>
+<td>不存在，全文件 <code>4096</code> 只出現在頁對齊&#x2F;<code>g_chunk</code>&#x2F;shm 尺寸</td>
+</tr>
+<tr>
+<td>每幀 <code>mmap</code> 不 <code>munmap</code>（VMA 洩漏）</td>
+<td>每幀路徑只有 <code>if (g_dump)</code> 內的落盤 mmap，且成對 <code>munmap</code>；播放器模式 <code>g_dump=0</code></td>
+</tr>
+<tr>
+<td>每幀 <code>open</code> 洩漏 fd</td>
+<td>同上，只在落盤分支</td>
+</tr>
+<tr>
+<td>ION 記錄數組</td>
+<td><code>ionrec_add()</code> 有 <code>g_ionrec_n &gt;= IONRECN</code> 上限，有界</td>
+</tr>
+<tr>
+<td>m3u8 段數組</td>
+<td><code>g_segs[HLS_SEG_MAX]</code> 寫入前判 <code>g_segs_n &lt; HLS_SEG_MAX</code>，有界</td>
+</tr>
+<tr>
+<td>處理器在打印前二次 fault（例如 <code>g_last</code> 是野指針）</td>
+<td><code>static char g_last[64]</code>，永遠是有效地址，排掉</td>
+</tr>
+</tbody></table>
+<p>結論：<strong>我們自己的代碼裡找不到任何隨時間單調增長的資源</strong>，H1 只剩”廠商庫內部洩漏”這一種可能，而那正好是 <code>_hw34.sh</code> 用 RSS &#x2F; threads &#x2F; fd &#x2F; ION 曲線能量到的。</p>
+<h2 id="5-判讀表（下輪聯機一次出結果）"><a href="#5-判讀表（下輪聯機一次出結果）" class="headerlink" title="5. 判讀表（下輪聯機一次出結果）"></a>5. 判讀表（下輪聯機一次出結果）</h2><p>跑 <code>sh /tmp/_r34.sh 900</code>（v34 + <code>NETTV_PCHOOK=1</code> + 現網同源），同時起 <code>sh /tmp/_hw34.sh 900 3</code> 採樣：</p>
+<table>
+<thead>
+<tr>
+<th>現象</th>
+<th>判定</th>
+<th>下一步</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>segv.log</code> 裡出現 <code>HANDLER-ENTERED</code></td>
+<td>處理器跑到了</td>
+<td>直接讀 <code>pc/lr/sp/addr/tid</code>，崩潰點一次鎖定</td>
+</tr>
+<tr>
+<td>沒有 <code>HANDLER-ENTERED</code>，但 <code>[rpool]</code> 出現 <code>signal=11</code></td>
+<td>死的是我們 fork 的池子進程</td>
+<td>修池子，與廠商線程無關</td>
+</tr>
+<tr>
+<td>兩者都沒有，仍然每 ~150s 死一次</td>
+<td>屏蔽不在覆蓋範圍內</td>
+<td>看 <code>_hw34.sh</code> 的逐線程 <code>SigBlk</code>，對號入座</td>
+</tr>
+<tr>
+<td>曲線單調漲</td>
+<td>H1（廠商庫洩漏）</td>
+<td>追洩漏點，或”每 N 段主動重生”兜底</td>
+</tr>
+</tbody></table>
+<h2 id="6-待驗證"><a href="#6-待驗證" class="headerlink" title="6. 待驗證"></a>6. 待驗證</h2><ul>
+<li>v34 能否在設備上編譯通過（<code>pthread_create</code> 同名導出 + <code>dlopen(&quot;libc.so&quot;)</code> 是唯一的編譯&#x2F;運行風險點）；</li>
+<li><code>NETTV_PCHOOK=1</code> 下廠商庫能否正常建線程（鉤子一旦失效，播放器會起不來，所以默認關）；</li>
+<li>三語版本同步發佈。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%85%88%E6%8A%8A%E4%B8%8A%E4%B8%80%E6%A2%9D%E7%B7%9A%E7%B4%A2%E8%A4%87%E8%BF%B0%E6%B8%85%E6%A5%9A"><span class="toc-number">1.</span> <span class="toc-text">1. 先把上一條線索複述清楚</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B1%8F%E8%94%BD%E6%98%AF%E6%80%8E%E9%BA%BC%E2%80%9D%E5%82%B3%E6%9F%93%E2%80%9D%E7%9A%84"><span class="toc-number">2.</span> <span class="toc-text">2. 屏蔽是怎麼”傳染”的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-v34-%E7%9A%84%E5%9B%9B%E8%99%95%E6%94%B9%E5%8B%95%EF%BC%88%E5%85%A8%E9%83%A8%E8%A1%8C%E7%82%BA%E4%B8%AD%E6%80%A7%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">3. v34 的四處改動（全部行為中性）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A0-%E8%99%95%E7%90%86%E5%99%A8%E5%85%A5%E5%8F%A3%E4%BA%8C%E5%80%BC%E6%8E%A2%E9%87%9D"><span class="toc-number">3.1.</span> <span class="toc-text">① 處理器入口二值探針</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A1-%E8%A7%A3%E5%B1%8F%E8%94%BD%EF%BC%9Ant-unblock-fatal"><span class="toc-number">3.2.</span> <span class="toc-text">② 解屏蔽：nt_unblock_fatal()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A2-pthread-create-%E9%89%A4%E5%AD%90%EF%BC%9A%E8%AE%93%E5%BB%A0%E5%95%86%E5%BA%AB%E9%80%A0%E7%9A%84%E7%B7%9A%E7%A8%8B%E4%B9%9F%E8%A7%A3%E5%B1%8F%E8%94%BD"><span class="toc-number">3.3.</span> <span class="toc-text">③ pthread_create 鉤子：讓廠商庫造的線程也解屏蔽</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A3-%E8%B7%A8%E7%B7%9A%E7%A8%8B-siglongjmp-%E8%AD%B7%E6%AC%84"><span class="toc-number">3.4.</span> <span class="toc-text">④ 跨線程 siglongjmp 護欄</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%A0%86%E5%B8%B6%E5%81%9A%E7%9A%84%E9%9B%A2%E7%B7%9A%E9%9D%9C%E6%85%8B%E5%AF%A9%E8%A8%88%EF%BC%88%E7%B5%90%E8%AB%96%EF%BC%9AH1-%E5%9C%A8%E6%88%91%E5%80%91%E8%87%AA%E5%B7%B1%E7%9A%84%E4%BB%A3%E7%A2%BC%E8%A3%A1%E8%A2%AB%E8%AD%89%E5%81%BD%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">4. 順帶做的離線靜態審計（結論：H1 在我們自己的代碼裡被證偽）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%88%A4%E8%AE%80%E8%A1%A8%EF%BC%88%E4%B8%8B%E8%BC%AA%E8%81%AF%E6%A9%9F%E4%B8%80%E6%AC%A1%E5%87%BA%E7%B5%90%E6%9E%9C%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">5. 判讀表（下輪聯機一次出結果）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%BE%85%E9%A9%97%E8%AD%89"><span class="toc-number">6.</span> <span class="toc-text">6. 待驗證</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&text=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&title=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&is_video=false&description=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&title=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&title=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&title=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&title=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/&name=netTV 硬解（35）：屏蔽了 SIGSEGV 的線程，處理器永遠跑不到——v34 掩碼淨化與廠商線程鉤子&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

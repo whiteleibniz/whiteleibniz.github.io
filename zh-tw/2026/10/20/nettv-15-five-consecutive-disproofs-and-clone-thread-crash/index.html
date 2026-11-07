@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：簡體中文 · 繁體中文 · English   系列第 15 篇。上一篇（nettv-14）我們把“卡”定性成了 ptsync 正反饋和 O_SYNC 日誌，拿到 17fps 基線。這一篇是從 17fps 往 25fps 衝的過程——基本全是反面教材：五個看起來很合理的優化，四個被 A&#x2F;B 實驗直接證偽，一個把設備重啟了兩次。結論比過程重要，所以先把結論拍在前面。  一句話">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：簡體中文 · 繁體中文 · English   系列第 15 篇。上一篇（nettv-14）我們把“卡”定性成了 ptsync 正反饋和 O_SYNC 日誌，拿到 17fps 基線。這一篇是從 17fps 往 25fps 衝的過程——基本全是反面教材：五個看起來很合理的優化，四個被 A&#x2F;B 實驗直接證偽，一個把設備重啟了兩次。結論比過程重要，所以先把結論拍在前面。  一句話">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-20T03:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-07T18:09:30.538Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="SC9832A">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="性能分析">
+<meta property="article:tag" content="sprd">
+<meta property="article:tag" content="ION">
+<meta property="article:tag" content="ARM">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/10/20/nettv-12-ptsync-positive-feedback-stall-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&text=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&title=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&is_video=false&description=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&title=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&title=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&title=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&title=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&name=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B5%90%E8%AB%96"><span class="toc-number">1.</span> <span class="toc-text">一句話結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF%EF%BC%9A116ms-%E7%9A%84%E7%89%86"><span class="toc-number">2.</span> <span class="toc-text">背景：116ms 的牆</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AD%89%E5%81%BD%E4%B8%80%EF%BC%9A%E7%B0%BD%E5%90%8D%E6%8E%83%E6%8F%8F%E9%99%8D%E9%A0%BB%E2%80%94%E2%80%94%E2%80%9C%E8%AE%80%E5%B9%80-45ms-%E8%A3%A1%E6%9C%89-25ms-%E6%98%AF%E6%8E%83%E6%8F%8F%E2%80%9D"><span class="toc-number">3.</span> <span class="toc-text">證偽一：簽名掃描降頻——“讀幀 45ms 裡有 25ms 是掃描”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AD%89%E5%81%BD%E4%BA%8C%EF%BC%9Afb-render-%E6%9F%A5%E8%A1%A8%E5%8C%96%E2%80%94%E2%80%94%E2%80%9C%E6%B6%88%E9%99%A4%E6%AF%8F%E5%83%8F%E7%B4%A0-3-%E6%AC%A1%E4%B9%98%E6%B3%95%E2%80%9D"><span class="toc-number">4.</span> <span class="toc-text">證偽二：fb_render 查表化——“消除每像素 3 次乘法”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AD%89%E5%81%BD%E4%B8%89%EF%BC%9A%E7%9B%B4%E8%AE%80-ION-%E7%9C%81%E6%8E%89-memcpy%E2%80%94%E2%80%94%E2%80%9Ccopy-%E5%B0%B1%E6%98%AF%E6%B5%AA%E8%B2%BB%E2%80%9D"><span class="toc-number">5.</span> <span class="toc-text">證偽三：直讀 ION 省掉 memcpy——“copy 就是浪費”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BF%BB%E8%BB%8A%E5%9B%9B%EF%BC%9A%E8%A3%B8-clone-%E9%9B%99%E7%B7%9A%E7%A8%8B%E6%B5%81%E6%B0%B4%E7%B7%9A%E2%80%94%E2%80%94%E5%85%A9%E6%AC%A1%E9%87%8D%E5%95%9F"><span class="toc-number">6.</span> <span class="toc-text">翻車四：裸 clone 雙線程流水線——兩次重啟</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B2%A0%E5%84%AA%E5%8C%96%E4%BA%94%EF%BC%9A%E4%BF%AE%E5%A5%BD%E4%B9%8B%E5%BE%8C%EF%BC%8C%E6%B5%81%E6%B0%B4%E7%B7%9A%E5%8F%8D%E8%80%8C%E6%9B%B4%E6%85%A2"><span class="toc-number">7.</span> <span class="toc-text">負優化五：修好之後，流水線反而更慢</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%82%A3%E5%88%B0%E5%BA%95%E6%80%8E%E9%BA%BC%E6%89%8D%E8%83%BD%E5%BF%AB%EF%BC%9F"><span class="toc-number">8.</span> <span class="toc-text">那到底怎麼才能快？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E8%AB%96%E6%B2%89%E6%BE%B1"><span class="toc-number">9.</span> <span class="toc-text">方法論沉澱</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-20T03:30:00.000Z" itemprop="datePublished">2026-10-20</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/ARM/" rel="tag">ARM</a>, <a class="tag-link-link" href="/tags/ION/" rel="tag">ION</a>, <a class="tag-link-link" href="/tags/SC9832A/" rel="tag">SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/sprd/" rel="tag">sprd</a>, <a class="tag-link-link" href="/tags/%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90/" rel="tag">性能分析</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/">簡體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 15 篇。上一篇（nettv-14）我們把“卡”定性成了 ptsync 正反饋和 O_SYNC 日誌，<br>拿到 17fps 基線。這一篇是從 17fps 往 25fps 衝的過程——<strong>基本全是反面教材</strong>：<br>五個看起來很合理的優化，四個被 A&#x2F;B 實驗直接證偽，一個把設備重啟了兩次。<br>結論比過程重要，所以先把結論拍在前面。</p>
+</blockquote>
+<h2 id="一句話結論"><a href="#一句話結論" class="headerlink" title="一句話結論"></a>一句話結論</h2><p><strong>每幀 116ms 的賬：解碼 21ms + 拷貝 43ms + 渲染 32ms。真正的瓶頸是 3MB 的 memcpy，<br>而它慢，是因為 ION buffer 是非緩存映射。</strong> 所有對“解碼&#x2F;渲染&#x2F;流水線”的優化，<br>在 uncached 內存這堵牆面前都是隔靴搔癢。</p>
+<h2 id="背景：116ms-的牆"><a href="#背景：116ms-的牆" class="headerlink" title="背景：116ms 的牆"></a>背景：116ms 的牆</h2><p>瀘縣 1080p 直播源，每 AU（一個訪問單元 ≈ 一幀）實測：</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>耗時</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DRIVE</td>
+<td>21.1ms</td>
+<td>廠商庫同步解碼，其中硬件只算 14ms</td>
+</tr>
+<tr>
+<td>讀幀</td>
+<td>43.4ms</td>
+<td>3MB 的 <code>memcpy(uncached ION → 緩存暫存)</code></td>
+</tr>
+<tr>
+<td>渲染</td>
+<td>31.8ms</td>
+<td>NV12→ARGB + 旋轉合成 + 寫 fb</td>
+</tr>
+</tbody></table>
+<p>監控 <code>[STAT] fps_x10=157</code>，即 15.7fps。目標 25fps，意味著總賬必須從 116ms 壓到 40ms 以內。<br>下面是我們依次試過的五件事。</p>
+<h2 id="證偽一：簽名掃描降頻——“讀幀-45ms-裡有-25ms-是掃描”"><a href="#證偽一：簽名掃描降頻——“讀幀-45ms-裡有-25ms-是掃描”" class="headerlink" title="證偽一：簽名掃描降頻——“讀幀 45ms 裡有 25ms 是掃描”"></a>證偽一：簽名掃描降頻——“讀幀 45ms 裡有 25ms 是掃描”</h2><p>邏輯上無懈可擊：每幀對 Y&#x2F;UV 平面做內容簽名（判重複幀用），步長 256 抽樣也要<br>8K+4K 次訪問，看著就像大頭。</p>
+<p>改成“週期籤 + 回調計數判重”後 A&#x2F;B 實測：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">A 組(降頻後): 讀幀 44.6ms</span><br><span class="line">B 組(每幀全籤): 讀幀 44.8ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>差異是噪聲。</strong> 簽名掃描從來就不是瓶頸，全部耗時是 memcpy 的。<br>教訓：你以為的“大頭”和真正的大頭之間，只隔一次單變量 A&#x2F;B。</p>
+<h2 id="證偽二：fb-render-查表化——“消除每像素-3-次乘法”"><a href="#證偽二：fb-render-查表化——“消除每像素-3-次乘法”" class="headerlink" title="證偽二：fb_render 查表化——“消除每像素 3 次乘法”"></a>證偽二：fb_render 查表化——“消除每像素 3 次乘法”</h2><p>BT.601 轉換 <code>r=y+f(v)</code> 這類公式，教科書式優化是預計算係數表：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">short</span> sRV[<span class="number">256</span>], sGU[<span class="number">256</span>], sGV[<span class="number">256</span>], sBU[<span class="number">256</span>];</span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">unsigned</span> <span class="title function_">pxlut</span><span class="params">(<span class="type">int</span> yv, <span class="type">int</span> u, <span class="type">int</span> v)</span> &#123;</span><br><span class="line">    <span class="type">int</span> r = yv + sRV[v];</span><br><span class="line">    <span class="type">int</span> g = yv - sGU[u] - sGV[v];</span><br><span class="line">    <span class="type">int</span> b = yv + sBU[u];</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>三乘六 clamp 變成四查表三加法，理論上很美。實測：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">A 組(LUT):   渲染 39.3ms，fb_render 均值 39ms</span><br><span class="line">B 組(標量):  渲染 32.5ms，fb_render 均值 36ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>查錶慢了 20%。</strong> Cortex-A7 的硬件乘法器一個週期完事，4 張 256 項表的<br>隨機索引訪問（相鄰像素的 U&#x2F;V 跳躍）帶來的是 L1&#x2F;L2 miss。我們最後把默認值<br>翻了回來（<code>NETTV_LUT=1</code> 才啟用），只留代碼作 A&#x2F;B 教材。</p>
+<h2 id="證偽三：直讀-ION-省掉-memcpy——“copy-就是浪費”"><a href="#證偽三：直讀-ION-省掉-memcpy——“copy-就是浪費”" class="headerlink" title="證偽三：直讀 ION 省掉 memcpy——“copy 就是浪費”"></a>證偽三：直讀 ION 省掉 memcpy——“copy 就是浪費”</h2><p>既然 memcpy 佔 43ms，那讓渲染直接讀 ION buffer 不香嗎？<code>NETTV_STAGE=0</code> 就是<br>這個開關。實測：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">5.8fps，fb_render 均值 335ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>比拷貝版慢 10 倍。</strong> 原因是 ION 分配時 <code>flags=0</code>，映射出來的是<strong>非緩存<br>（uncached）內存</strong>：copy 版是一次順序大塊讀（DRAM  burst、硬件預取都舒服），<br>之後所有訪問都落在緩存；直讀版是每像素一次 uncached 事務，每筆都是完整總線<br>週期。排序掃描&#x2F;混合訪問在 uncached 內存上等於自殺。</p>
+<p><strong>3MB memcpy 不是浪費，是最優解。</strong> 但“43ms”這個數字本身成了新靶子。</p>
+<h2 id="翻車四：裸-clone-雙線程流水線——兩次重啟"><a href="#翻車四：裸-clone-雙線程流水線——兩次重啟" class="headerlink" title="翻車四：裸 clone 雙線程流水線——兩次重啟"></a>翻車四：裸 clone 雙線程流水線——兩次重啟</h2><p>到這一步單線程已經砍不動了，賬本上唯一的出路是流水線：<br>worker 解碼+拷貝，另起線程做渲染，兩者重疊。<br>裸 bionic（-nostdlib）沒有 pthread，我們直接用 <code>clone</code> syscall 拉了線程：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> CLONE_VM 0x00000100</span></span><br><span class="line"><span class="type">long</span> r = syscall(<span class="number">120</span> <span class="comment">/* clone ARM EABI */</span>,</span><br><span class="line">                 CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD,</span><br><span class="line">                 sp, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line"><span class="keyword">if</span> (r == <span class="number">0</span>) &#123; fn(); syscall(<span class="number">1</span>, <span class="number">0</span>); &#125;</span><br></pre></td></tr></table></figure>
+
+<p>20 秒試跑，功能全對：render 線程啟動、DRIVE 降到 18ms、牆鍾 80ms。<br>換成 60 秒長測——<strong>設備重啟了，而且是一天兩次</strong>（連 <code>/tmp</code> 裡的二進制都被<br>截成 0 字節，典型的掉電級文件系統損壞）。</p>
+<p>覆盤抓到的根因有兩條，都是“裸線程”特有的雷：</p>
+<ol>
+<li><strong>沒設 TLS</strong>。<code>clone</code> 時沒給 <code>CLONE_SETTLS</code>，新線程跑的是父線程的 TLS。<br>而 render 線程裡調了 bionic 的 <code>snprintf</code>（日誌打印）——bionic stdio 內部走<br><code>__nbuf</code> 線程局部緩衝池，也就是 <strong>TLS</strong>。子線程拿著別人的 TLS 寫，線程結構<br>被踩壞，什麼時候炸取決於時序（所以 20s 不炸、60s 炸）。</li>
+<li><strong>共享信號 handler</strong>。<code>CLONE_SIGHAND</code> 下 SIGSEGV&#x2F;SIGALRM 的 handler 可能被<br>任一線程執行，而 handler 裡有 <code>siglongjmp</code>——跨線程 longjmp 是未定義行為。</li>
+</ol>
+<p>修復（v16i）：render 線程入口先 <code>rt_sigprocmask</code> 屏蔽進程handler 的所有信號；<br>線程內禁用一切涉 TLS 的 libc 調用（<code>P</code>&#x2F;<code>snprintf</code> 改成手寫 <code>write</code> syscall，<br>memcpy 是純彙編、不用 TLS，保留）。修復後 60s 長測<strong>不再崩</strong>。</p>
+<blockquote>
+<p><strong>裸 clone 線程鐵律</strong>：子線程內只允許 raw syscall 和編譯器內建的 memcpy；<br>   進線程第一件事是屏蔽信號；snprintf&#x2F;P 宏一律算違禁品。</p>
+</blockquote>
+<h2 id="負優化五：修好之後，流水線反而更慢"><a href="#負優化五：修好之後，流水線反而更慢" class="headerlink" title="負優化五：修好之後，流水線反而更慢"></a>負優化五：修好之後，流水線反而更慢</h2><p>不崩只是拿到了實驗資格，單變量對照的結果是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">A 組(雙線程流水線): 12.3fps，牆鍾 80ms（口徑含重疊）</span><br><span class="line">B 組(單線程):       15.7fps，牆鍾 116ms</span><br></pre></td></tr></table></figure>
+
+<p><strong>慢 22%。</strong> 歸因：</p>
+<ul>
+<li>DRIVE 確實從 21ms 降到 18ms，但 <strong>memcpy 43ms 一動不動</strong>（這是鏈尾瓶頸）；</li>
+<li>兩個線程都在猛吃內存帶寬，L2 爭搶讓雙方的“讀”都變慢；</li>
+<li>握手的 <code>usleep(200µs)</code> 粒度把本來想做流水的並行又卡回半串行；</li>
+<li>render 的 32ms 被 worker 的 62ms 完全掩埋，等於白乾。</li>
+</ul>
+<p>安卓的 BufferQueue 能成立，前提是“輸出 buffer 多個輪轉 + 解碼器異步”；<br>我們 <code>g_nout=1</code>、單路輸出、解碼同步阻塞，把渲染線程掛上去也只是換了個<br>地方串行。<strong>架構不匹配時，抄形態沒用。</strong></p>
+<h2 id="那到底怎麼才能快？"><a href="#那到底怎麼才能快？" class="headerlink" title="那到底怎麼才能快？"></a>那到底怎麼才能快？</h2><p>三個數放在一起，路線圖自己就出來了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">DRIVE 21ms（其中硬件解碼 14ms，庫側文書 7ms —— 已接近極限）</span><br><span class="line">memcpy 43ms（3MB uncached —— 唯一的靶子）</span><br><span class="line">渲染 32ms（可被流水線掩埋，但掩埋它沒有淨收益）</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>第一刀：ION 改緩存映射。</strong> 分配時帶 <code>ION_FLAG_CACHED</code>，每幀 <code>ION_IOC_SYNC</code><br>做 invalidate。memcpy 從“uncached 順序大塊”變成“cached 大塊”，預期 43ms→10ms<br>量級，總牆鍾 116→約 75ms，**20fps+**。風險是 DMA 一致性（VSP 寫、CPU 讀 cache<br>stale → 花屏），必須灰度。</li>
+<li><strong>第二刀：DRIVE 庫側 7-18ms 的 phys ioctl 緩存化</strong>（fd→PA 建表，一次查長期用）。</li>
+<li><strong>第三刀：fb_render 的 32ms</strong>，在 ARMv7 編譯禁 NEON 的前提下做循環展開和<br>8 像素預取。</li>
+<li><strong>玄學刀：顯示驅動 overlay。</strong> 如果 sprd DPU 能直接吃 NV12+旋轉，CPU 合成整段<br>消失——這是追平安卓 50fps 的真正大殺器，但需要 recon 驅動能力。</li>
+</ul>
+<h2 id="方法論沉澱"><a href="#方法論沉澱" class="headerlink" title="方法論沉澱"></a>方法論沉澱</h2><ol>
+<li><strong>“一眼可見的大頭”必須 A&#x2F;B 驗證。</strong> 本輪五個裡有三個（簽名、LUT、直讀）<br>在實測面前翻了車，其中兩個翻得反直覺。</li>
+<li><strong>每加一個優化，同時 A&#x2F;B 一箇舊行為做反證。</strong> 沒有 B 組就沒有結論，<br>只有感覺。</li>
+<li><strong>性能歸因要到內存屬性這一層。</strong> uncached&#x2F;cached、順序&#x2F;隨機、命中&#x2F;miss，<br>比算法層面的優化更能解釋數量級差異。</li>
+<li>** risky 的運行時抽象（裸線程）上線前，先確認它能用滿 3 倍的時長。**<br>20 秒能跑不代表 60 秒能跑——時序性 bug 不挑時間，只挑概率。</li>
+<li>設備重啟 &#x3D; <code>/tmp</code> 文件被截斷的第一嫌疑對象。md5 對不上先懷疑掉電，再懷疑代碼。</li>
+</ol>
+<hr>
+<p><em>上一篇：nettv-14《從 6.3fps 到 17fps：O_SYNC 日誌與一次 dup2 誤判》</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E5%8F%A5%E8%A9%B1%E7%B5%90%E8%AB%96"><span class="toc-number">1.</span> <span class="toc-text">一句話結論</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF%EF%BC%9A116ms-%E7%9A%84%E7%89%86"><span class="toc-number">2.</span> <span class="toc-text">背景：116ms 的牆</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AD%89%E5%81%BD%E4%B8%80%EF%BC%9A%E7%B0%BD%E5%90%8D%E6%8E%83%E6%8F%8F%E9%99%8D%E9%A0%BB%E2%80%94%E2%80%94%E2%80%9C%E8%AE%80%E5%B9%80-45ms-%E8%A3%A1%E6%9C%89-25ms-%E6%98%AF%E6%8E%83%E6%8F%8F%E2%80%9D"><span class="toc-number">3.</span> <span class="toc-text">證偽一：簽名掃描降頻——“讀幀 45ms 裡有 25ms 是掃描”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AD%89%E5%81%BD%E4%BA%8C%EF%BC%9Afb-render-%E6%9F%A5%E8%A1%A8%E5%8C%96%E2%80%94%E2%80%94%E2%80%9C%E6%B6%88%E9%99%A4%E6%AF%8F%E5%83%8F%E7%B4%A0-3-%E6%AC%A1%E4%B9%98%E6%B3%95%E2%80%9D"><span class="toc-number">4.</span> <span class="toc-text">證偽二：fb_render 查表化——“消除每像素 3 次乘法”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AD%89%E5%81%BD%E4%B8%89%EF%BC%9A%E7%9B%B4%E8%AE%80-ION-%E7%9C%81%E6%8E%89-memcpy%E2%80%94%E2%80%94%E2%80%9Ccopy-%E5%B0%B1%E6%98%AF%E6%B5%AA%E8%B2%BB%E2%80%9D"><span class="toc-number">5.</span> <span class="toc-text">證偽三：直讀 ION 省掉 memcpy——“copy 就是浪費”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BF%BB%E8%BB%8A%E5%9B%9B%EF%BC%9A%E8%A3%B8-clone-%E9%9B%99%E7%B7%9A%E7%A8%8B%E6%B5%81%E6%B0%B4%E7%B7%9A%E2%80%94%E2%80%94%E5%85%A9%E6%AC%A1%E9%87%8D%E5%95%9F"><span class="toc-number">6.</span> <span class="toc-text">翻車四：裸 clone 雙線程流水線——兩次重啟</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B2%A0%E5%84%AA%E5%8C%96%E4%BA%94%EF%BC%9A%E4%BF%AE%E5%A5%BD%E4%B9%8B%E5%BE%8C%EF%BC%8C%E6%B5%81%E6%B0%B4%E7%B7%9A%E5%8F%8D%E8%80%8C%E6%9B%B4%E6%85%A2"><span class="toc-number">7.</span> <span class="toc-text">負優化五：修好之後，流水線反而更慢</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%82%A3%E5%88%B0%E5%BA%95%E6%80%8E%E9%BA%BC%E6%89%8D%E8%83%BD%E5%BF%AB%EF%BC%9F"><span class="toc-number">8.</span> <span class="toc-text">那到底怎麼才能快？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E8%AB%96%E6%B2%89%E6%BE%B1"><span class="toc-number">9.</span> <span class="toc-text">方法論沉澱</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&text=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&title=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&is_video=false&description=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&title=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&title=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&title=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&title=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/10/20/nettv-15-five-consecutive-disproofs-and-clone-thread-crash/&name=nettv-15：五連證偽——為什麼“想當然”的優化全部無效，以及裸 clone 線程是怎麼把設備搞重啟的&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Language: 簡體中文 · 繁體中文 · English   Post 33 in the series. The last post was the parallel render pool’s report card (20 fps → 28 fps), but that 10-minute regression hid one unresolved blemish: the w">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Language: 簡體中文 · 繁體中文 · English   Post 33 in the series. The last post was the parallel render pool’s report card (20 fps → 28 fps), but that 10-minute regression hid one unresolved blemish: the w">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-10-30T18:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-07T18:09:31.288Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="VSP decode">
+<meta property="article:tag" content="Multiprocess">
+<meta property="article:tag" content="Crash forensics">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&text=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&title=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&is_video=false&description=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&title=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&title=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&title=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&title=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&name=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-The-blemish-behind-the-report-card"><span class="toc-number">1.</span> <span class="toc-text">1. The blemish behind the report card</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Hypothesis-when-you-fork-matters-more-than-that-you-fork"><span class="toc-number">2.</span> <span class="toc-text">2. Hypothesis: when you fork matters more than that you fork</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Plan-A-move-the-pool-to-before-the-VSP"><span class="toc-number">3.</span> <span class="toc-text">3. Plan A: move the pool to before the VSP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-First-overturn-the-%E2%80%9Clast-words%E2%80%9D"><span class="toc-number">4.</span> <span class="toc-text">4. First, overturn the “last words”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Result-falsified"><span class="toc-number">5.</span> <span class="toc-text">5. Result: falsified</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-The-clue-that-paid-for-the-night-the-handler-never-ran"><span class="toc-number">6.</span> <span class="toc-text">6. The clue that paid for the night: the handler never ran</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Next-put-the-black-box-in-shared-memory"><span class="toc-number">7.</span> <span class="toc-text">7. Next: put the black box in shared memory</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Three-methods-from-this-night"><span class="toc-number">8.</span> <span class="toc-text">8. Three methods from this night</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-this-round%E2%80%99s-changes-v33-not-deployed"><span class="toc-number">9.</span> <span class="toc-text">Appendix: this round’s changes (v33, not deployed)</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-10-30T18:40:00.000Z" itemprop="datePublished">2026-10-31</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Crash-forensics/" rel="tag">Crash forensics</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Multiprocess/" rel="tag">Multiprocess</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP-decode/" rel="tag">VSP decode</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified/">簡體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/31/zh-tw/nettv-33-fork-earlier-hypothesis-falsified-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Post 33 in the series. The last post was the parallel render pool’s report card (20 fps → 28 fps), but that 10-minute regression hid one unresolved blemish: <strong>the worker was killed by SIGSEGV roughly every 150 seconds — three times in ten minutes</strong>. This post is the full record of “I thought I knew why, and I didn’t” — plus one clue that turned out to be worth more than the fix.</p>
+</blockquote>
+<h2 id="1-The-blemish-behind-the-report-card"><a href="#1-The-blemish-behind-the-report-card" class="headerlink" title="1. The blemish behind the report card"></a>1. The blemish behind the report card</h2><p>The regression numbers looked great: 28.2 fps, pool render 13–14 ms, zero ION leaks, zero leftover processes. But three lines were sitting in stdout:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">*** monitor: 子進程自退 st=0xb ***</span><br><span class="line">*** monitor: 重啟 (子進程 @4215 幀)</span><br></pre></td></tr></table></figure>
+
+<p>Every generation of the worker ran four to five thousand frames before dying, so this was not a startup problem. And the way it died was strange: <strong>SIGSEGV, with the handler leaving behind nothing at all</strong> — no <code>/tmp/nettv_segv.log</code>, no crash dump on stdout.</p>
+<h2 id="2-Hypothesis-when-you-fork-matters-more-than-that-you-fork"><a href="#2-Hypothesis-when-you-fork-matters-more-than-that-you-fork" class="headerlink" title="2. Hypothesis: when you fork matters more than that you fork"></a>2. Hypothesis: when you fork matters more than that you fork</h2><p>Our render pool is a set of <em>resident</em> child processes: fork N of them at startup, then send jobs over pipes. The original fork point was <strong>the first frame</strong> — by which time the OMX component is initialised and the VSP is open and actively decoding.</p>
+<p>So the natural hypothesis: <strong>forking while the VSP is working makes the child inherit a copy of the VSP’s user-space state</strong> (buffer queues, register shadows, vendor-heap context). Both processes then believe they own the hardware, the states drift apart, and eventually the parent walks off a stale pointer.</p>
+<p>There was supporting evidence too. This project already has a hard rule: any child born from <code>fork</code> must reset SEGV&#x2F;BUS&#x2F;ILL to <code>SIG_DFL</code>, because the parent’s handler ends in <code>siglongjmp(g_jb)</code> — and <code>g_jb</code> lives on the <strong>parent’s stack</strong>. If the child ever faults, it long-jumps into the parent’s stack and effectively becomes a “second decoder” fighting for the same VSP. We had already been burned once by “the child inherits the parent’s execution context”; “the child inherits VSP state” looked like round two.</p>
+<h2 id="3-Plan-A-move-the-pool-to-before-the-VSP"><a href="#3-Plan-A-move-the-pool-to-before-the-VSP" class="headerlink" title="3. Plan A: move the pool to before the VSP"></a>3. Plan A: move the pool to before the VSP</h2><p>The change itself is small. The hard part is <strong>three prerequisites</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Prerequisite</th>
+<th>Why it must come first</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>render_cfg_init()</code></td>
+<td>Render config (band height &#x2F; NEON &#x2F; LUT) is handed to children by fork inheritance; children never call <code>getenv</code></td>
+</tr>
+<tr>
+<td><code>stage_ensure()</code></td>
+<td>The staging buffer must be <code>mmap MAP_SHARED</code> and must exist <strong>before</strong> the fork, or children render a frozen copy (wrong picture, no error)</td>
+</tr>
+<tr>
+<td><code>fb_init()</code></td>
+<td>Children write to the address produced by the fb mapping; the mapping must already exist</td>
+</tr>
+</tbody></table>
+<p>The first one is easy — an existing function, just called explicitly early instead of lazily at the first frame. The second needs restructuring: staging used to be a <code>static</code> local inside the decode loop, created on the first frame. As long as it lived there, the pool <em>had</em> to fork late. So it became a file-scope <code>g_stage</code> plus <code>stage_ensure()</code> — same behaviour (still created exactly once), just earlier.</p>
+<p>The third is an old trap on this board. Fork the pool early and everything <code>exec</code>‘d afterwards — mplayer, the async audio pump — inherits the pipe write ends. If a pool child then dies, the parent’s <code>read()</code> never sees EOF because somebody else still holds the write end: the frame hangs forever instead of falling back to serial rendering. So all four pipes get <code>FD_CLOEXEC</code> (which only takes effect across <code>exec</code>, leaving the forked pool children unaffected).</p>
+<h2 id="4-First-overturn-the-“last-words”"><a href="#4-First-overturn-the-“last-words”" class="headerlink" title="4. First, overturn the “last words”"></a>4. First, overturn the “last words”</h2><p>Digging through child.log, the final line before every crash was the same:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Parent process disappeared, exiting cache process.</span><br></pre></td></tr></table></figure>
+
+<p>The reflex read is “mplayer crashed and took us with it.” Walk the process tree and the causality is backwards:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">worker dies (SIGSEGV)</span><br><span class="line">  -&gt; dl killed by PDEATHSIG</span><br><span class="line">    -&gt; mplayer killed (its PDEATHSIG is set the same way)</span><br><span class="line">      -&gt; mplayer&#x27;s cache child notices its parent is gone, prints that line, exits</span><br></pre></td></tr></table></figure>
+
+<p>That line is a <strong>consequence, not a cause</strong>, and it only appears in our log because stdout is inherited. Had we chased mplayer, the whole night would have been wasted.</p>
+<p>General lesson: <strong>when debugging a crash, first ask “is this log line the cause of death or a post-mortem artefact?”</strong> The tell for an artefact: it is printed by <em>someone else’s child process</em>, downstream of you on the same death chain.</p>
+<h2 id="5-Result-falsified"><a href="#5-Result-falsified" class="headerlink" title="5. Result: falsified"></a>5. Result: falsified</h2><p>Same board, same source, same three env vars (<code>NETTV_RPOOL=2</code> + <code>NETTV_AUDIO_ASYNC=1</code> + <code>NETTV_HLSBUF=1</code>), five minutes:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>v32 (baseline, 10 min)</th>
+<th>v33 (Plan A, 5 min)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>monitor restarts</td>
+<td>3</td>
+<td><strong>1</strong></td>
+</tr>
+<tr>
+<td>fps_x10</td>
+<td>265–282</td>
+<td>282</td>
+</tr>
+<tr>
+<td>pool render wall clock</td>
+<td>14 ms</td>
+<td>13–14 ms</td>
+</tr>
+<tr>
+<td>first-frame self-check</td>
+<td>pass</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>ION clients &#x2F; leftovers</td>
+<td>0 &#x2F; 0</td>
+<td>0 &#x2F; 0</td>
+</tr>
+<tr>
+<td>audio skip ratio</td>
+<td>0.29</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>Normalised: <strong>the baseline is 1.5 restarts per 5 minutes, v33 is 1</strong>. On a crash statistic with single-digit samples, that is “no change.” Plan A is falsified — fork timing is not the cause.</p>
+<p>(One more thing: the board also reset once during this session, at the two-minute mark of the earlier v33 run; the later five-minute run did not reproduce it. Too few samples to attribute it to v33, so it is recorded as a suspicion, not a conclusion.)</p>
+<p><strong>v33 is not deployed.</strong> If it does not fix the problem, it has no business touching production — that principle outranks “newer is better.”</p>
+<h2 id="6-The-clue-that-paid-for-the-night-the-handler-never-ran"><a href="#6-The-clue-that-paid-for-the-night-the-handler-never-ran" class="headerlink" title="6. The clue that paid for the night: the handler never ran"></a>6. The clue that paid for the night: the handler never ran</h2><p>Plan A also carried a pure-forensics change: reserve a 64 KB alternate stack with <code>sigaltstack</code> and register the handler with <code>SA_ONSTACK</code>. The reasoning: three SIGSEGVs with zero handler output most likely mean <strong>stack overflow</strong> — the handler has no stack to run on, so the kernel applies the default action and the scene is lost.</p>
+<p>That path is now closed too: <strong>with altstack in place, still zero output</strong>, and the string <code>SIGSEGV</code> appears <strong>zero times</strong> in child.log.</p>
+<p>If the handler never ran, only a few possibilities remain:</p>
+<ol>
+<li>Stack overflow (largely excluded by altstack);</li>
+<li>The handler itself crashed (but its first statements are pure computation followed by a <code>write</code> — no opportunity);</li>
+<li><strong>The signal is blocked</strong> — the faulting thread had SIGSEGV blocked, the kernel found no thread able to take it, and applied the default action to the whole process.</li>
+</ol>
+<p>Option 3 is not speculation; this project has precedent. The old hand-rolled <code>clone</code> render thread called <code>rp_block_sig()</code> to block SIGSEGV, and when it crashed the signature was exactly this: zero handler output, no <code>/tmp/nettv_segv.log</code>. That episode produced the rule “render work is <code>fork</code>, never bare <code>clone</code>.”</p>
+<p>The difference now: both of <em>our</em> signal-blocking threads (the vsync page-flip thread and the stage-2 render child) are off by default. So suspicion falls on <strong>threads the vendor library creates itself</strong> — <code>libstagefright</code>‘s ALooper and decoder threads — which we can neither inspect nor protect.</p>
+<h2 id="7-Next-put-the-black-box-in-shared-memory"><a href="#7-Next-put-the-black-box-in-shared-memory" class="headerlink" title="7. Next: put the black box in shared memory"></a>7. Next: put the black box in shared memory</h2><p>If the handler cannot help, stop expecting anything at the moment of death and start recording continuously:</p>
+<ul>
+<li>Every frame, the worker writes “current step id &#x2F; frame number &#x2F; segment number” into the existing <code>g_cnt_shm</code> page (<code>mmap MAP_SHARED</code>; the monitor holds a mapping too);</li>
+<li>When the child dies, the monitor simply prints the last set of values.</li>
+</ul>
+<p>The key property is <strong>zero I&#x2F;O cost</strong> — writing shared memory is a few instructions, unlike <code>ph()</code>, which does an O_SYNC write of ~15 ms each time. The trade-off is coarse granularity (step level), but that is enough to tell “died inside the vendor DRIVE” from “died in frame read or render.”</p>
+<p>In parallel, a two-arm bisect: <code>NETTV_RPOOL=0 + AF=1</code> and <code>RPOOL=2 + AF=0</code>, five minutes each, to rule out the two components added most recently — the render pool and the async audio pump.</p>
+<h2 id="8-Three-methods-from-this-night"><a href="#8-Three-methods-from-this-night" class="headerlink" title="8. Three methods from this night"></a>8. Three methods from this night</h2><ol>
+<li><strong>Record falsification too.</strong> A hypothesis that was disproved but not written down gets re-derived from scratch next session. The “fork timing” hypothesis had a complete reasoning chain and a supporting precedent, and it was still wrong. Write it down so the next run can skip it.</li>
+<li><strong>Separate cause of death from post-mortem artefacts.</strong> <code>Parent process disappeared</code> looked like mplayer’s fault; it was the far downstream end of the death chain.</li>
+<li><strong>Do the cheap forensics upgrade first.</strong> <code>sigaltstack</code> is ten lines and killed the stack-overflow hypothesis outright — cheaper than any amount of reasoning.</li>
+</ol>
+<h2 id="Appendix-this-round’s-changes-v33-not-deployed"><a href="#Appendix-this-round’s-changes-v33-not-deployed" class="headerlink" title="Appendix: this round’s changes (v33, not deployed)"></a>Appendix: this round’s changes (v33, not deployed)</h2><ul>
+<li><code>outputs/sprd_msg_np_v33.c</code> (450172 B, md5 <code>93fc5967</code>; binary 156576 B, md5 <code>18ed767b</code>)</li>
+<li>Pool fork moved to right after <code>fb_init()</code>, before the OMX component init</li>
+<li><code>g_stage</code> promoted to file scope, with <code>stage_ensure()</code> creating staging early</li>
+<li><code>FD_CLOEXEC</code> on all four pool pipes</li>
+<li><code>sigaltstack(64 KB)</code> + <code>SA_ONSTACK</code> (forensics only)</li>
+<li>Scripts: <code>outputs/_b33.sh</code> (build), <code>outputs/_r33.sh</code> (regression, criteria in the header)</li>
+</ul>
+<p>Production stays on v32 (md5 <code>0b6a4840</code>).</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-The-blemish-behind-the-report-card"><span class="toc-number">1.</span> <span class="toc-text">1. The blemish behind the report card</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Hypothesis-when-you-fork-matters-more-than-that-you-fork"><span class="toc-number">2.</span> <span class="toc-text">2. Hypothesis: when you fork matters more than that you fork</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Plan-A-move-the-pool-to-before-the-VSP"><span class="toc-number">3.</span> <span class="toc-text">3. Plan A: move the pool to before the VSP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-First-overturn-the-%E2%80%9Clast-words%E2%80%9D"><span class="toc-number">4.</span> <span class="toc-text">4. First, overturn the “last words”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Result-falsified"><span class="toc-number">5.</span> <span class="toc-text">5. Result: falsified</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-The-clue-that-paid-for-the-night-the-handler-never-ran"><span class="toc-number">6.</span> <span class="toc-text">6. The clue that paid for the night: the handler never ran</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Next-put-the-black-box-in-shared-memory"><span class="toc-number">7.</span> <span class="toc-text">7. Next: put the black box in shared memory</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Three-methods-from-this-night"><span class="toc-number">8.</span> <span class="toc-text">8. Three methods from this night</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Appendix-this-round%E2%80%99s-changes-v33-not-deployed"><span class="toc-number">9.</span> <span class="toc-text">Appendix: this round’s changes (v33, not deployed)</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&text=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&title=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&is_video=false&description=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&title=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&title=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&title=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&title=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/10/31/nettv-33-fork-earlier-hypothesis-falsified-en/&name=netTV Hardware Decode (33): Forking Before the VSP — A Falsified Hypothesis, and the One Clue That Paid for the Night&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

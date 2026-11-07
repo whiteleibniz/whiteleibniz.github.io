@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 簡體中文 · 繁體中文 · English   Post 35 in the series. Last round I turned “why did our SIGSEGV handler never run” into a falsifiable hypothesis at kernel level. This round I turn it into code:">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 簡體中文 · 繁體中文 · English   Post 35 in the series. Last round I turned “why did our SIGSEGV handler never run” into a falsifiable hypothesis at kernel level. This round I turn it into code:">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-01T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-07T18:09:31.352Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Crash Forensics">
+<meta property="article:tag" content="Linux Signals">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&text=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&title=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&is_video=false&description=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&title=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&title=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&title=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&title=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&name=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-The-symptom-restated"><span class="toc-number">1.</span> <span class="toc-text">1. The symptom, restated</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-How-blocking-spreads"><span class="toc-number">2.</span> <span class="toc-text">2. How blocking spreads</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Four-changes-in-v34-all-behaviour-neutral"><span class="toc-number">3.</span> <span class="toc-text">3. Four changes in v34 (all behaviour-neutral)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A0-A-binary-probe-at-handler-entry"><span class="toc-number">3.1.</span> <span class="toc-text">① A binary probe at handler entry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A1-Unblocking-nt-unblock-fatal"><span class="toc-number">3.2.</span> <span class="toc-text">② Unblocking: nt_unblock_fatal()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A2-A-pthread-create-hook-for-vendor-threads"><span class="toc-number">3.3.</span> <span class="toc-text">③ A pthread_create hook for vendor threads</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A3-A-cross-thread-siglongjmp-guard"><span class="toc-number">3.4.</span> <span class="toc-text">④ A cross-thread siglongjmp guard</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Offline-static-audit-H1-falsified-inside-our-own-code"><span class="toc-number">4.</span> <span class="toc-text">4. Offline static audit (H1 falsified inside our own code)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Decision-table-one-online-round-should-settle-it"><span class="toc-number">5.</span> <span class="toc-text">5. Decision table (one online round should settle it)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Still-to-verify"><span class="toc-number">6.</span> <span class="toc-text">6. Still to verify</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-01T18:30:00.000Z" itemprop="datePublished">2026-11-02</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Crash-Forensics/" rel="tag">Crash Forensics</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Linux-Signals/" rel="tag">Linux Signals</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/">簡體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/02/zh-tw/nettv-35-signal-mask-blocks-sigsegv-handler-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Post 35 in the series. Last round I turned “why did our SIGSEGV handler never run” into a <em>falsifiable hypothesis</em> at kernel level. This round I turn it into <em>code</em>: a binary probe that tells us whether the handler was entered at all, a mask cleanup for every execution flow we create ourselves, and a <code>pthread_create</code> hook so threads created by the vendor library get cleaned up too. Along the way I nearly walked into a classic trap: <strong><code>setjmp</code> must not be wrapped in a function</strong>.</p>
+</blockquote>
+<h2 id="1-The-symptom-restated"><a href="#1-The-symptom-restated" class="headerlink" title="1. The symptom, restated"></a>1. The symptom, restated</h2><p>The player dies roughly every 150 seconds with <code>st=0xb</code> (SIGSEGV), and:</p>
+<ul>
+<li><code>/tmp/nettv_segv.log</code> is never created;</li>
+<li>stdout (redirected into <code>child.log</code>) contains no dump line from the handler;</li>
+<li>adding <code>sigaltstack</code> + <code>SA_ONSTACK</code> changed nothing, which rules out “stack overflow, no stack to run on”.</li>
+</ul>
+<p>The only self-consistent kernel-level explanation: a hardware synchronous fault is delivered as a <strong>thread-directed</strong> signal. If the faulting thread has that signal <strong>blocked</strong>, <code>force_sig_info()</code> forcibly resets the action to <code>SIG_DFL</code>, clears the mask bit, and kills the process immediately — <strong>the user-space handler is never invoked</strong>. The process dies of SIGSEGV and leaves zero bytes behind.</p>
+<p>So the question changes from “which memory got stomped” to “which execution flow blocks SIGSEGV”.</p>
+<h2 id="2-How-blocking-spreads"><a href="#2-How-blocking-spreads" class="headerlink" title="2. How blocking spreads"></a>2. How blocking spreads</h2><p>The one thing worth remembering from this round: <strong>a signal mask is inherited by every execution flow you create</strong>.</p>
+<ul>
+<li><code>fork()</code> — the child inherits the parent’s mask;</li>
+<li><code>clone()</code> (and <code>CLONE_THREAD</code> threads) — the new thread inherits the creator’s mask;</li>
+<li><code>pthread_create()</code> — POSIX states the new thread inherits the creating thread’s signal mask.</li>
+</ul>
+<p>Anything created while SEGV is blocked carries that block until it dies. And we do have such code:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">rp_block_sig</span><span class="params">(<span class="type">void</span>)</span> &#123;          <span class="comment">/* blocks SEGV/BUS/ILL/ALRM/TERM/INT/PIPE */</span></span><br><span class="line">    syscall(<span class="number">175</span> <span class="comment">/* rt_sigprocmask */</span>, <span class="number">0</span> <span class="comment">/* SIG_BLOCK */</span>, <span class="built_in">set</span>, <span class="number">0</span>, <span class="number">8</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">render_child</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    rp_block_sig();</span><br><span class="line">    signal(SIGSEGV, SIG_DFL);             <span class="comment">/* resets the ACTION, never the MASK */</span></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>signal(..., SIG_DFL)</code> changes the disposition; the mask stays blocked. Any fault inside that forked pool child is textbook silent death, and the parent only sees <code>[rpool] child lost -&gt; fall back to serial forever</code>. Threads created by the vendor library behave the same way, except we don’t even know what they block — hence either sampling <code>SigBlk</code> from <code>/proc/&lt;pid&gt;/task/&lt;tid&gt;/status</code>, or…</p>
+<h2 id="3-Four-changes-in-v34-all-behaviour-neutral"><a href="#3-Four-changes-in-v34-all-behaviour-neutral" class="headerlink" title="3. Four changes in v34 (all behaviour-neutral)"></a>3. Four changes in v34 (all behaviour-neutral)</h2><h3 id="①-A-binary-probe-at-handler-entry"><a href="#①-A-binary-probe-at-handler-entry" class="headerlink" title="① A binary probe at handler entry"></a>① A binary probe at handler entry</h3><p>The first thing the handler does is emit one line, using only <code>write</code> &#x2F; <code>open</code> &#x2F; <code>close</code> — no heap, no TLS:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">segv</span><span class="params">(<span class="type">int</span> sig, <span class="type">siginfo_t</span> *si, <span class="type">void</span> *uc)</span> &#123;</span><br><span class="line">    &#123;   <span class="type">static</span> <span class="type">const</span> <span class="type">char</span> m0[] = <span class="string">&quot;\n*** SIGSEGV-HANDLER-ENTERED ***\n&quot;</span>;</span><br><span class="line">        write(<span class="number">1</span>, m0, (<span class="type">int</span>)<span class="keyword">sizeof</span> m0 - <span class="number">1</span>);</span><br><span class="line">        <span class="type">int</span> sf0 = open(<span class="string">&quot;/tmp/nettv_segv.log&quot;</span>, O_WRONLY|O_CREAT|O_APPEND, <span class="number">0644</span>);</span><br><span class="line">        <span class="keyword">if</span> (sf0 &gt;= <span class="number">0</span>) &#123; write(sf0, m0, (<span class="type">int</span>)<span class="keyword">sizeof</span> m0 - <span class="number">1</span>); close(sf0); &#125; &#125;</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>That single line turns “did the handler run?” from reasoning into <strong>reading one log line</strong>. I also added <code>tid=</code> to the dump so the faulting thread is obvious.</p>
+<h3 id="②-Unblocking-nt-unblock-fatal"><a href="#②-Unblocking-nt-unblock-fatal" class="headerlink" title="② Unblocking: nt_unblock_fatal()"></a>② Unblocking: <code>nt_unblock_fatal()</code></h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">nt_unblock_fatal</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">int</span> sg[] = &#123; SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP, <span class="number">0</span> &#125;;</span><br><span class="line">    syscall(<span class="number">175</span> <span class="comment">/* rt_sigprocmask */</span>, <span class="number">1</span> <span class="comment">/* SIG_UNBLOCK */</span>, <span class="built_in">set</span>, <span class="number">0</span>, <span class="number">8</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Called at the entry of every raw-<code>clone</code> thread (<code>thread_start</code>), in <code>render_child()</code>, and in <code>pan_thread()</code>. The latter two used blocking as a way to avoid cross-thread <code>siglongjmp</code>; with the guard in ④ that is no longer necessary.</p>
+<h3 id="③-A-pthread-create-hook-for-vendor-threads"><a href="#③-A-pthread-create-hook-for-vendor-threads" class="headerlink" title="③ A pthread_create hook for vendor threads"></a>③ A <code>pthread_create</code> hook for vendor threads</h3><p>Under dynamic linking the executable’s symbols come first, so a dependent library’s PLT entry for <code>pthread_create</code> binds to our exported copy (the build already passes <code>-Wl,--export-dynamic</code>).</p>
+<p><strong>Trap 1: don’t use <code>RTLD_NEXT</code> to fetch the real implementation.</strong> Line 289 of this very source already records “bionic has no RTLD_NEXT”, and <code>RTLD_DEFAULT</code> would hand us <em>our own</em> symbol — infinite recursion. Use an <strong>explicit handle</strong> instead: <code>dlopen(&quot;libc.so&quot;)</code> searches only that object and its dependencies, so it can never see our override:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">pthread_create</span><span class="params">(<span class="type">void</span> *tid, <span class="type">const</span> <span class="type">void</span> *attr, <span class="type">nt_pcfn_t</span> fn, <span class="type">void</span> *arg)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!g_pc_inited) &#123;</span><br><span class="line">        g_pc_inited = <span class="number">1</span>;</span><br><span class="line">        <span class="type">void</span> *lc = dlopen(<span class="string">&quot;/system/lib/libc.so&quot;</span>, <span class="number">2</span>);</span><br><span class="line">        <span class="keyword">if</span> (lc) g_real_pc = (...)__dlsym_bionic(lc, <span class="string">&quot;pthread_create&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!g_real_pc) <span class="keyword">return</span> <span class="number">11</span>;                               <span class="comment">/* never recurse */</span></span><br><span class="line">    <span class="keyword">if</span> (!nt_hook_on()) <span class="keyword">return</span> g_real_pc(tid, attr, fn, arg);  <span class="comment">/* default: passthrough */</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> g_real_pc(tid, attr, nt_pc_tramp, w);              <span class="comment">/* trampoline unblocks */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Default is <code>NETTV_PCHOOK=0</code> (pure passthrough, byte-identical behaviour to v33); set it to 1 for the experiment. Anything unverified on-device must not be on by default.</p>
+<h3 id="④-A-cross-thread-siglongjmp-guard"><a href="#④-A-cross-thread-siglongjmp-guard" class="headerlink" title="④ A cross-thread siglongjmp guard"></a>④ A cross-thread <code>siglongjmp</code> guard</h3><p>The handler ends with <code>siglongjmp(g_jb, 1)</code>, and <code>g_jb</code> holds the stack context of <strong>the thread that set it</strong>. A fault on a vendor thread that longjmps into the worker’s context means two threads sharing one stack — guaranteed corruption. Line 4425 of this file already states that rule, but only <code>pan_thread</code> and <code>render_child</code> were protected; vendor threads ran naked.</p>
+<p>Fix: record which thread set <code>g_jb</code>, compare tids in the handler, and if they differ <strong>do not jump</strong> — log the scene and <code>_exit(88)</code> (trivially distinguishable from signal 11).</p>
+<p><strong>Trap 2 (I almost shipped this): do not wrap <code>setjmp</code> in a function.</strong> My first version was</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">nt_setjmp</span><span class="params">(<span class="type">void</span>)</span> &#123; <span class="type">int</span> r = sigsetjmp(g_jb, <span class="number">1</span>); <span class="keyword">if</span> (r == <span class="number">0</span>) g_jb_tid = nt_tid(); <span class="keyword">return</span> r; &#125;</span><br></pre></td></tr></table></figure>
+
+<p>That cannot work: the <code>setjmp</code> family saves the <strong>frame of the call site</strong>. Wrapped in a function, that frame is dead the moment the function returns, and a later <code>siglongjmp</code> into it is explicitly undefined behaviour (the slot holding the saved LR has long been reused). It has to be a macro, so everything stays inside the caller’s frame:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> SETJB() (g_jb_tid = nt_tid(), sigsetjmp(g_jb, 1))</span></span><br></pre></td></tr></table></figure>
+
+<p>All 11 occurrences of <code>sigsetjmp(g_jb,1)</code> were mechanically replaced with <code>SETJB()</code>.</p>
+<h2 id="4-Offline-static-audit-H1-falsified-inside-our-own-code"><a href="#4-Offline-static-audit-H1-falsified-inside-our-own-code" class="headerlink" title="4. Offline static audit (H1 falsified inside our own code)"></a>4. Offline static audit (H1 falsified inside our own code)</h2><p>The device was offline again this round, so I killed off everything that can be ruled out statically for the “resource leak hits a limit” hypothesis:</p>
+<table>
+<thead>
+<tr>
+<th>Suspect</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A ~4096-entry table indexed by frame number (4200 frames ≈ 150 s — suspiciously neat)</td>
+<td>Does not exist; every <code>4096</code> in the file is page alignment, <code>g_chunk</code>, or an shm size</td>
+</tr>
+<tr>
+<td>Per-frame <code>mmap</code> without <code>munmap</code> (VMA leak)</td>
+<td>The only per-frame mmap sits inside <code>if (g_dump)</code> and is paired with <code>munmap</code>; player mode runs with <code>g_dump=0</code></td>
+</tr>
+<tr>
+<td>Per-frame <code>open</code> leaking fds</td>
+<td>Same, dump branch only</td>
+</tr>
+<tr>
+<td>ION record array</td>
+<td><code>ionrec_add()</code> checks <code>g_ionrec_n &gt;= IONRECN</code>, bounded</td>
+</tr>
+<tr>
+<td>m3u8 segment array</td>
+<td><code>g_segs[HLS_SEG_MAX]</code> guarded by <code>g_segs_n &lt; HLS_SEG_MAX</code>, bounded</td>
+</tr>
+<tr>
+<td>Handler faulting a second time before printing (e.g. <code>g_last</code> dangling)</td>
+<td><code>static char g_last[64]</code> — always a valid address, ruled out</td>
+</tr>
+</tbody></table>
+<p>Conclusion: <strong>nothing in our own code grows monotonically with time</strong>, so H1 is reduced to “the vendor library leaks”, which is exactly what <code>_hw34.sh</code> measures with RSS &#x2F; threads &#x2F; fd &#x2F; ION curves.</p>
+<h2 id="5-Decision-table-one-online-round-should-settle-it"><a href="#5-Decision-table-one-online-round-should-settle-it" class="headerlink" title="5. Decision table (one online round should settle it)"></a>5. Decision table (one online round should settle it)</h2><p>Run <code>sh /tmp/_r34.sh 900</code> (v34 + <code>NETTV_PCHOOK=1</code>, same source as production) together with <code>sh /tmp/_hw34.sh 900 3</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Observation</th>
+<th>Verdict</th>
+<th>Next step</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>HANDLER-ENTERED</code> appears in <code>segv.log</code></td>
+<td>The handler ran</td>
+<td>Read <code>pc/lr/sp/addr/tid</code>; the crash point is pinned in one shot</td>
+</tr>
+<tr>
+<td>No <code>HANDLER-ENTERED</code>, but <code>[rpool]</code> shows <code>signal=11</code></td>
+<td>Our forked pool child is dying</td>
+<td>Fix the pool; vendor threads are innocent</td>
+</tr>
+<tr>
+<td>Neither, still dying every ~150 s</td>
+<td>The block is outside our coverage</td>
+<td>Check per-thread <code>SigBlk</code> from <code>_hw34.sh</code></td>
+</tr>
+<tr>
+<td>Curves climb monotonically</td>
+<td>H1 (vendor library leak)</td>
+<td>Chase the leak, or respawn every N segments as a stopgap</td>
+</tr>
+</tbody></table>
+<h2 id="6-Still-to-verify"><a href="#6-Still-to-verify" class="headerlink" title="6. Still to verify"></a>6. Still to verify</h2><ul>
+<li>Whether v34 even compiles on the device (exporting our own <code>pthread_create</code> plus <code>dlopen(&quot;libc.so&quot;)</code> is the single build&#x2F;runtime risk);</li>
+<li>Whether the vendor library still creates threads correctly with <code>NETTV_PCHOOK=1</code> (if the hook fails the player won’t start, which is why it defaults to off);</li>
+<li>All three language versions published together.</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>Copyright</strong>: Original article by whiteleibniz (written with AI assistance). All rights reserved. Reuse requires attribution and a link to <a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-The-symptom-restated"><span class="toc-number">1.</span> <span class="toc-text">1. The symptom, restated</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-How-blocking-spreads"><span class="toc-number">2.</span> <span class="toc-text">2. How blocking spreads</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Four-changes-in-v34-all-behaviour-neutral"><span class="toc-number">3.</span> <span class="toc-text">3. Four changes in v34 (all behaviour-neutral)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A0-A-binary-probe-at-handler-entry"><span class="toc-number">3.1.</span> <span class="toc-text">① A binary probe at handler entry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A1-Unblocking-nt-unblock-fatal"><span class="toc-number">3.2.</span> <span class="toc-text">② Unblocking: nt_unblock_fatal()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A2-A-pthread-create-hook-for-vendor-threads"><span class="toc-number">3.3.</span> <span class="toc-text">③ A pthread_create hook for vendor threads</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%91%A3-A-cross-thread-siglongjmp-guard"><span class="toc-number">3.4.</span> <span class="toc-text">④ A cross-thread siglongjmp guard</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Offline-static-audit-H1-falsified-inside-our-own-code"><span class="toc-number">4.</span> <span class="toc-text">4. Offline static audit (H1 falsified inside our own code)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Decision-table-one-online-round-should-settle-it"><span class="toc-number">5.</span> <span class="toc-text">5. Decision table (one online round should settle it)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Still-to-verify"><span class="toc-number">6.</span> <span class="toc-text">6. Still to verify</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&text=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&title=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&is_video=false&description=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&title=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&title=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&title=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&title=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler-en/&name=netTV Hardware Decoding (35): A Thread That Blocks SIGSEGV Never Reaches Your Handler — v34 Mask Hygiene and a Vendor-Thread Hook&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

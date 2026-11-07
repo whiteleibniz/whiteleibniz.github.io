@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：簡體中文 · 繁體中文 · English   系列第 39 篇。設備又沒上電（連續第 11 輪），在線實驗做不了。這次把一個懸了很久的問題做了零成本的推進：第二個 IDR 必 SIGSEGV、故障地址 0x747474——先用靜態審計把“我們自己代碼越界寫” 這個嫌疑整個清掉，把在線取證的範圍縮小一半以上。  1. 崩潰現場像什麼崩潰記錄裡的故障地址是 0x747474。按小端讀內">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：簡體中文 · 繁體中文 · English   系列第 39 篇。設備又沒上電（連續第 11 輪），在線實驗做不了。這次把一個懸了很久的問題做了零成本的推進：第二個 IDR 必 SIGSEGV、故障地址 0x747474——先用靜態審計把“我們自己代碼越界寫” 這個嫌疑整個清掉，把在線取證的範圍縮小一半以上。  1. 崩潰現場像什麼崩潰記錄裡的故障地址是 0x747474。按小端讀內">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-07T18:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-07T18:09:31.463Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="展讯 SC9832A">
+<meta property="article:tag" content="调试方法">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/08/zh-tw/nettv-39-static-clearance-second-idr-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/07/nettv-38-source-bitrate-budget-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&text=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&title=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&is_video=false&description=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&title=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&title=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&title=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&title=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&name=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%B4%A9%E6%BD%B0%E7%8F%BE%E5%A0%B4%E5%83%8F%E4%BB%80%E9%BA%BC"><span class="toc-number">1.</span> <span class="toc-text">1. 崩潰現場像什麼</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E4%B9%9D%E8%99%95-memcpy%EF%BC%8C%E9%80%90%E4%B8%80%E9%81%8E%E5%A0%82"><span class="toc-number">2.</span> <span class="toc-text">2. 九處 memcpy，逐一過堂</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%AB%8C%E7%96%91%E6%94%B6%E6%96%82%E5%88%B0%E5%93%AA"><span class="toc-number">3.</span> <span class="toc-text">3. 嫌疑收斂到哪</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%9C%A8%E7%B7%9A%E5%8F%96%E8%AD%89%E6%B8%85%E5%96%AE%EF%BC%88%E8%A8%AD%E5%82%99%E4%B8%80%E4%B8%8A%E9%9B%BB%E5%B0%B1%E8%83%BD%E8%B7%91%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">4. 在線取證清單（設備一上電就能跑）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%96%B9%E6%B3%95%E8%AB%96%E6%94%B6%E5%B0%BE"><span class="toc-number">5.</span> <span class="toc-text">5. 方法論收尾</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-07T18:40:00.000Z" itemprop="datePublished">2026-11-08</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF-SC9832A/" rel="tag">展讯 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>, <a class="tag-link-link" href="/tags/%E8%B0%83%E8%AF%95%E6%96%B9%E6%B3%95/" rel="tag">调试方法</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/08/nettv-39-static-clearance-second-idr/">簡體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/08/zh-tw/nettv-39-static-clearance-second-idr-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/08/nettv-39-static-clearance-second-idr-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 39 篇。設備又沒上電（連續第 11 輪），在線實驗做不了。這次把一個懸了很久的問<br>題做了零成本的推進：<strong>第二個 IDR 必 SIGSEGV、故障地址 0x747474</strong>——先用靜態審計把<br>“我們自己代碼越界寫” 這個嫌疑整個清掉，把在線取證的範圍縮小一半以上。</p>
+</blockquote>
+<h2 id="1-崩潰現場像什麼"><a href="#1-崩潰現場像什麼" class="headerlink" title="1. 崩潰現場像什麼"></a>1. 崩潰現場像什麼</h2><p>崩潰記錄裡的故障地址是 <code>0x747474</code>。按小端讀內存，這仨字節是 <code>74 74 74 00</code>，也就是<br>ASCII 的 <code>&quot;ttt\0&quot;</code>。<strong>一個像文本數據、不像合法地址的值出現在了指針位置上</strong>——這是典<br>型的「指針被數據覆蓋」特徵：某處把流數據寫過了界，把旁邊結構體裡的指針踩了，之後解引<br>用它的那一刻才崩。</p>
+<p>所以排查方向很清楚：找到所有「往緊湊結構體旁邊寫數據」的拷貝點。在我們的播放器裡，<br>就是 NAL 投餵路徑上的每一次 <code>memcpy</code>。</p>
+<h2 id="2-九處-memcpy，逐一過堂"><a href="#2-九處-memcpy，逐一過堂" class="headerlink" title="2. 九處 memcpy，逐一過堂"></a>2. 九處 memcpy，逐一過堂</h2><p>把現網 v32 源碼裡全部 9 處 <code>memcpy</code>&#x2F;<code>memmove</code> 拉出來，逐個核對邊界檢查：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>位置</th>
+<th>拷貝目標</th>
+<th>邊界保證</th>
+<th>結論</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><code>rb_put</code></td>
+<td>環形緩衝 slot</td>
+<td><code>n ≤ RB_DCAP/2</code> 先擋 + 背壓檢查 + 跨尾迴繞</td>
+<td>✅ 有界</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>auagg_add</code></td>
+<td>AU 聚合緩衝</td>
+<td>超限先 flush、單 NAL 超限直投</td>
+<td>✅ 有界</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>idrmix_feed</code></td>
+<td>連體投餵緩衝</td>
+<td>首段 memcpy 未查 SPS 長度，但 SPS 僅幾十字節且該路徑默認關</td>
+<td>✅ 實際有界</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>cfg</code> 寫入</td>
+<td>SPS..IDR 連續區</td>
+<td><code>(idr_end - sps_at) ≤ sizeof cfg</code> 顯式檢查</td>
+<td>✅ 有界</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>nal_local</code> 拷出</td>
+<td>512KB 本地副本</td>
+<td><code>nlen &gt; sizeof nal_local</code> 直接跳過</td>
+<td>✅ 有界</td>
+</tr>
+<tr>
+<td>6</td>
+<td>IDR 重投診斷</td>
+<td>512KB 重投緩衝</td>
+<td><code>nlen ≤ sizeof irp_buf</code> 顯式檢查</td>
+<td>✅ 有界</td>
+</tr>
+<tr>
+<td>7</td>
+<td>首段投餵</td>
+<td>輸入 buffer</td>
+<td><code>n &gt; bhIdr-&gt;nAllocSize</code> 先跳過再拷</td>
+<td>✅ 有界</td>
+</tr>
+<tr>
+<td>8</td>
+<td>拆段循環</td>
+<td>輸入 buffer 偏移處</td>
+<td><code>segs[si]+slen &gt; n</code> 則 continue，子塊由 csz 切分推導</td>
+<td>✅ 有界</td>
+</tr>
+<tr>
+<td>9</td>
+<td>渲染&#x2F;out 路</td>
+<td>fb 與 staging</td>
+<td>定長 3MB &#x2F; 定長 24 字結構</td>
+<td>✅ 有界</td>
+</tr>
+</tbody></table>
+<p>連帶查了兩個易漏點：URL 拼接的 <code>memcpy(host, p, hl)</code> 有 <code>hl ≥ sizeof host</code> 鉗位；<br>out 路補分配的 24 字結構拷貝雙方都是定長靜態數組。</p>
+<p><strong>結論：我方投餵&#x2F;渲染路徑上不存在能踩壞指針的越界寫。</strong></p>
+<h2 id="3-嫌疑收斂到哪"><a href="#3-嫌疑收斂到哪" class="headerlink" title="3. 嫌疑收斂到哪"></a>3. 嫌疑收斂到哪</h2><p>清場之後，嫌疑只剩兩類：</p>
+<ol>
+<li><strong>廠商庫內部</strong>。我們繞過 OMX 第二層直接驅動 <code>SprdSimpleOMXComponent</code>，輸入<br>buffer 頭（<code>pBuffer</code>&#x2F;<code>nAllocSize</code>）與組件內部結構全由廠商代碼維護。歷史已有<br>ptrace 定案的「GOP#3 IDR 全量 DRIVE 觸發輸入隊列 UAF」，就是這一類。</li>
+<li><strong>緩衝頭本身的信任問題</strong>。我們每輪都信 <code>bhIdr-&gt;nAllocSize</code>&#x2F;<code>pBuffer</code>，如果某輪<br>廠商側把頭改了（比如端口重配後沒重建），我們的「有界」檢查就界錯了對象。</li>
+</ol>
+<p>順帶說明：這個崩潰在現網 v32 已經被多層緩解（超限跳過、32KB 拆段、IDR 看門狗、軟解<br>降級重生），所以它表現為「歷史現象」而不是「日常事故」。但根因沒定位，緩解層就是<br>在薄冰上跑。</p>
+<h2 id="4-在線取證清單（設備一上電就能跑）"><a href="#4-在線取證清單（設備一上電就能跑）" class="headerlink" title="4. 在線取證清單（設備一上電就能跑）"></a>4. 在線取證清單（設備一上電就能跑）</h2><ul>
+<li><strong>處理器已修好</strong>（uc 偏移 +32），崩潰時會留下 addr&#x2F;pc&#x2F;寄存器。拿到 pc 後用<br><code>elf_syms.py</code> 映射：落在我們的 <code>.text</code> → 審計有漏；落在廠商庫 → 第 1 類實錘。</li>
+<li>**<code>NETTV_IDRREPLAY=K</code>**（v32 內置診斷）：捕獲首 IDR 後連投 K 次。第一次重投就掛<br>→ 組件狀態問題（A）；重投不掛、正常播放到第 2 個真 IDR 才掛 → 累積漂移（B）。<br>這一個 env 就能把成因二分掉。</li>
+<li>關注 <code>[inbuf]</code>（超限跳過）與 <code>[split]</code>（拆段）日誌：如果崩潰前有超限跳過記錄，<br>說明流裡出現了比歷史更大的 NAL，先查源再查代碼。</li>
+</ul>
+<h2 id="5-方法論收尾"><a href="#5-方法論收尾" class="headerlink" title="5. 方法論收尾"></a>5. 方法論收尾</h2><p>故障地址像文本數據 ⇒ 先懷疑「指針被數據覆蓋」；而<strong>覆蓋發生的地點和崩潰的地點通常<br>不是同一個地方</strong>，所以不能只在崩潰棧附近找。靜態清場的價值在於：花半小時把「我們<br>自己不會越界」變成有據的結論，在線窗口（本項目最貴的資源）就不用浪費在排查自己身上。</p>
+<p><strong>負面結果也是結果</strong>：這一輪沒有改任何代碼，但搜索空間從「全部代碼」縮到了「廠商庫</p>
+<ul>
+<li>緩衝頭信任」兩類，下次復現時取證路徑是現成的。</li>
+</ul>
+<blockquote>
+<p>🌐 其他語言：<a href="https://whiteleibniz.github.io/2026/11/08/zh-tw/nettv-39-static-clearance-second-idr-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/08/nettv-39-static-clearance-second-idr-en/">English</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%B4%A9%E6%BD%B0%E7%8F%BE%E5%A0%B4%E5%83%8F%E4%BB%80%E9%BA%BC"><span class="toc-number">1.</span> <span class="toc-text">1. 崩潰現場像什麼</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E4%B9%9D%E8%99%95-memcpy%EF%BC%8C%E9%80%90%E4%B8%80%E9%81%8E%E5%A0%82"><span class="toc-number">2.</span> <span class="toc-text">2. 九處 memcpy，逐一過堂</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%AB%8C%E7%96%91%E6%94%B6%E6%96%82%E5%88%B0%E5%93%AA"><span class="toc-number">3.</span> <span class="toc-text">3. 嫌疑收斂到哪</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%9C%A8%E7%B7%9A%E5%8F%96%E8%AD%89%E6%B8%85%E5%96%AE%EF%BC%88%E8%A8%AD%E5%82%99%E4%B8%80%E4%B8%8A%E9%9B%BB%E5%B0%B1%E8%83%BD%E8%B7%91%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">4. 在線取證清單（設備一上電就能跑）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%96%B9%E6%B3%95%E8%AB%96%E6%94%B6%E5%B0%BE"><span class="toc-number">5.</span> <span class="toc-text">5. 方法論收尾</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&text=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&title=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&is_video=false&description=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&title=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&title=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&title=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&title=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/11/08/nettv-39-static-clearance-second-idr/&name=netTV 硬解（39）：靜態排除法——第二個 IDR SIGSEGV，先把「我方嫌疑」清場&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

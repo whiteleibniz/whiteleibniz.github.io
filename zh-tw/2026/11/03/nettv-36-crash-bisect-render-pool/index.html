@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：簡體中文 · 繁體中文 · English   系列第 36 篇。前兩輪我們把「為什麼處理器一次都沒跑到」一路追到內核的 force_sig_info，甚至把解掩碼的代碼（v34）都寫完了。這一輪我停下手，回頭查一件更基礎的事——我們手上每一次夠長的實測，都開著渲染池。換句話說，「崩潰是不是池帶來的」這個問題，至今沒有被有效測量過。  1. 一個被忽略的測量漏洞現網的崩潰長這樣：wo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：簡體中文 · 繁體中文 · English   系列第 36 篇。前兩輪我們把「為什麼處理器一次都沒跑到」一路追到內核的 force_sig_info，甚至把解掩碼的代碼（v34）都寫完了。這一輪我停下手，回頭查一件更基礎的事——我們手上每一次夠長的實測，都開著渲染池。換句話說，「崩潰是不是池帶來的」這個問題，至今沒有被有效測量過。  1. 一個被忽略的測量漏洞現網的崩潰長這樣：wo">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-02T18:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-07T18:09:31.384Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="VSP 硬解">
+<meta property="article:tag" content="展讯 SC9832A">
+<meta property="article:tag" content="崩溃取证">
+<meta property="article:tag" content="A&#x2F;B 实验设计">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/02/nettv-35-signal-mask-blocks-sigsegv-handler/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&text=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&title=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&is_video=false&description=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&title=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&title=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&title=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&title=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&name=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%80%E5%80%8B%E8%A2%AB%E5%BF%BD%E7%95%A5%E7%9A%84%E6%B8%AC%E9%87%8F%E6%BC%8F%E6%B4%9E"><span class="toc-number">1.</span> <span class="toc-text">1. 一個被忽略的測量漏洞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%96%B9%E6%B3%95%E8%AB%96%EF%BC%9A%E5%AF%A6%E9%A9%97%E8%87%82%E9%95%B7%E5%BF%85%E9%A0%88%E9%A1%AF%E8%91%97%E5%A4%A7%E6%96%BC%E6%95%85%E9%9A%9C%E9%80%B1%E6%9C%9F"><span class="toc-number">2.</span> <span class="toc-text">2. 方法論：實驗臂長必須顯著大於故障週期</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%B8%89%E8%87%82%E8%A8%AD%E8%A8%88%EF%BC%9A%E5%94%AF%E4%B8%80%E8%AE%8A%E9%87%8F%E6%98%AF%E3%80%8C%E5%AD%90%E9%80%B2%E7%A8%8B%E5%88%B0%E5%BA%95%E5%81%9A%E4%B8%8D%E5%81%9A%E6%B8%B2%E6%9F%93%E3%80%8D"><span class="toc-number">3.</span> <span class="toc-text">3. 三臂設計：唯一變量是「子進程到底做不做渲染」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%B7%A5%E7%A8%8B%E7%B4%B0%E7%AF%80%EF%BC%9A%E4%B8%89%E5%80%8B%E4%B8%8D%E5%81%9A%E5%B0%B1%E6%9C%83%E9%9D%9C%E9%BB%98%E4%BD%9C%E5%BB%A2%E7%9A%84%E5%9D%91"><span class="toc-number">4.</span> <span class="toc-text">4. 工程細節：三個不做就會靜默作廢的坑</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-wrapper-%E6%9C%83%E8%A6%86%E8%93%8B%E4%BD%A0%E7%9A%84-env"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 wrapper 會覆蓋你的 env</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E7%94%9F%E6%95%88-env-%E5%BF%85%E9%A0%88%E8%87%AA%E6%AA%A2"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 生效 env 必須自檢</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E6%89%BE%E9%80%B2%E7%A8%8B%E5%8F%AA%E8%83%BD%E5%8C%B9%E9%85%8D-proc-exe"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 找進程只能匹配 &#x2F;proc&#x2F;&lt;pid&gt;&#x2F;exe</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%88%A4%E8%AE%80%E8%A1%A8%EF%BC%88%E8%85%B3%E6%9C%AC%E6%9C%AB%E5%B0%BE%E8%87%AA%E5%8B%95%E5%87%BA%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">5. 判讀表（腳本末尾自動出）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%A0%86%E5%B8%B6%E8%A8%98%E4%B8%80%E7%AD%86%EF%BC%9A%E9%80%99%E5%80%8B%E9%A0%85%E7%9B%AE%E7%9A%84%E9%9B%A2%E7%B7%9A-%E5%9C%A8%E7%B7%9A%E7%AF%80%E5%A5%8F"><span class="toc-number">6.</span> <span class="toc-text">6. 順帶記一筆：這個項目的離線&#x2F;在線節奏</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-02T18:30:00.000Z" itemprop="datePublished">2026-11-03</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/A-B-%E5%AE%9E%E9%AA%8C%E8%AE%BE%E8%AE%A1/" rel="tag">A/B 实验设计</a>, <a class="tag-link-link" href="/tags/VSP-%E7%A1%AC%E8%A7%A3/" rel="tag">VSP 硬解</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%AE%AF-SC9832A/" rel="tag">展讯 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B4%A9%E6%BA%83%E5%8F%96%E8%AF%81/" rel="tag">崩溃取证</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool/">簡體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/03/zh-tw/nettv-36-crash-bisect-render-pool-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/03/nettv-36-crash-bisect-render-pool-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 36 篇。前兩輪我們把「為什麼處理器一次都沒跑到」一路追到內核的 <code>force_sig_info</code>，甚至把解掩碼的代碼（v34）都寫完了。這一輪我停下手，回頭查一件更基礎的事——<strong>我們手上每一次夠長的實測，都開著渲染池</strong>。換句話說，「崩潰是不是池帶來的」這個問題，至今沒有被有效測量過。</p>
+</blockquote>
+<h2 id="1-一個被忽略的測量漏洞"><a href="#1-一個被忽略的測量漏洞" class="headerlink" title="1. 一個被忽略的測量漏洞"></a>1. 一個被忽略的測量漏洞</h2><p>現網的崩潰長這樣：worker 每跑約 4000~5000 幀（≈150 秒）就被 SIGSEGV 殺掉一次，monitor 重啟，週而復始。</p>
+<p>我整理了歷史上每一次「連續播放」的實測：</p>
+<table>
+<thead>
+<tr>
+<th>時間</th>
+<th>版本 &#x2F; 配置</th>
+<th>時長</th>
+<th>有沒有崩</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>10-26</td>
+<td>v28（那時<strong>還沒有</strong>渲染池）</td>
+<td>120s</td>
+<td>signal&#x3D;11 &#x3D; 0</td>
+</tr>
+<tr>
+<td>10-30</td>
+<td>v31，<code>NETTV_RPOOL=0</code></td>
+<td>45s</td>
+<td>0</td>
+</tr>
+<tr>
+<td>10-30</td>
+<td>v31，<code>RPOOL=2/4/8</code></td>
+<td>45s</td>
+<td>2 路出過一次無限崩潰（v32 已修）</td>
+</tr>
+<tr>
+<td>10-31</td>
+<td>v33，<code>RPOOL=2 + AF=1 + HLSBUF=1</code></td>
+<td>300s</td>
+<td>1 次</td>
+</tr>
+<tr>
+<td>現網</td>
+<td>v32，<code>RPOOL=2 + AF=1 + HLSBUF=1</code></td>
+<td>600s</td>
+<td>3 次</td>
+</tr>
+</tbody></table>
+<p>看出問題了嗎：<strong>所有 ≥150 秒的實測，<code>NETTV_RPOOL</code> 都等於 2</strong>。而唯一跑過 <code>RPOOL=0</code> 的兩次，臂長分別是 45 秒和 120 秒——<strong>都沒活到第一個崩潰週期</strong>。</p>
+<p>這在實驗設計上是個硬傷：如果崩潰週期是 150 秒，那麼一個 120 秒的「乾淨」結果什麼都不能證明，它只是還沒來得及崩。我們卻一直把它當成「串行路徑是安全的」這條結論在用。</p>
+<h2 id="2-方法論：實驗臂長必須顯著大於故障週期"><a href="#2-方法論：實驗臂長必須顯著大於故障週期" class="headerlink" title="2. 方法論：實驗臂長必須顯著大於故障週期"></a>2. 方法論：實驗臂長必須顯著大於故障週期</h2><p>這條是我這輪最想留下的東西，比代碼值錢：</p>
+<blockquote>
+<p>要斷言「配置 X 不會崩」，觀測時長至少要是已知故障週期的 <strong>4~5 倍</strong>。週期 150s ⇒ 單臂 ≥600s。</p>
+</blockquote>
+<p>理由很樸素：故障近似泊松過程，週期 <code>T</code> 下觀測 <code>t</code> 秒一次都沒崩的概率是 <code>e^(-t/T)</code>。<code>t = T</code> 時這個概率是 37%——<strong>三分之一的概率你會把一個會崩的配置判成乾淨</strong>。<code>t = 4T</code> 時降到 1.8%，<code>t = 5T</code> 時 0.7%，才夠下結論。</p>
+<p>反過來，這條也解釋了為什麼前面幾輪 A&#x2F;B 總「看起來通過」：它們本來就不是為抓崩潰設計的，是為比幀率設計的，45 秒足夠看 fps，但根本不夠看 MTTF。</p>
+<h2 id="3-三臂設計：唯一變量是「子進程到底做不做渲染」"><a href="#3-三臂設計：唯一變量是「子進程到底做不做渲染」" class="headerlink" title="3. 三臂設計：唯一變量是「子進程到底做不做渲染」"></a>3. 三臂設計：唯一變量是「子進程到底做不做渲染」</h2><p>好在驗證成本極低——崩潰二分的開關現網二進制裡已經有了，不需要改一行代碼：</p>
+<table>
+<thead>
+<tr>
+<th>臂</th>
+<th>配置</th>
+<th>含義</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>C（對照）</td>
+<td><code>RPOOL=2 AF=1 HLSBUF=1</code></td>
+<td>現網原樣，預期復現崩潰</td>
+</tr>
+<tr>
+<td>A</td>
+<td><code>RPOOL=0 AF=1 HLSBUF=1</code></td>
+<td>完全不起池，串行渲染</td>
+</tr>
+<tr>
+<td>B</td>
+<td><code>RPOOL=2 IDLE=1 AF=1</code></td>
+<td>池子進程照常 fork，但<strong>只回 ack 不渲染</strong>（v32 已內置該開關）</td>
+</tr>
+</tbody></table>
+<p>B 臂是關鍵。它把「fork 這個動作」和「子進程裡跑渲染代碼」這兩件事拆開了：</p>
+<ul>
+<li>A 潔、B 潔、C 崩 ⇒ 崩在<strong>子進程渲染代碼</strong>裡，fork 只是載體；</li>
+<li>A 潔、B 崩 ⇒ <strong>fork 本身有毒</strong>（在持有 VSP 的進程裡 fork）；</li>
+<li>A 也崩 ⇒ 跟池完全無關，問題在解碼 &#x2F; 供數 &#x2F; 音頻側。</li>
+</ul>
+<p>三條互斥，跑完即可對號入座，不需要再猜。</p>
+<p><strong>控制臂先跑</strong>。如果 C 這一輪壓根不崩，說明源或環境變了，前提不成立，後面兩臂縮短到 300 秒只作確認——不然要白燒 40 分鐘。</p>
+<h2 id="4-工程細節：三個不做就會靜默作廢的坑"><a href="#4-工程細節：三個不做就會靜默作廢的坑" class="headerlink" title="4. 工程細節：三個不做就會靜默作廢的坑"></a>4. 工程細節：三個不做就會靜默作廢的坑</h2><h3 id="4-1-wrapper-會覆蓋你的-env"><a href="#4-1-wrapper-會覆蓋你的-env" class="headerlink" title="4.1 wrapper 會覆蓋你的 env"></a>4.1 wrapper 會覆蓋你的 env</h3><p>現網入口 <code>/usr/local/bin/nettv_player</code> 是個 shell wrapper，<code>RPOOL/AF/HLSBUF</code> 三個值都寫在裡面。如果你在它外面 <code>export NETTV_RPOOL=0</code> 再調它，<strong>wrapper 自己的 <code>export</code> 會把你的值蓋掉</strong>——三臂跑成同一個配置，實驗靜默作廢，而且日誌上完全看不出來。</p>
+<p>造臂的辦法是：複製 wrapper，刪掉末行（<code>exec</code> 那行），把本臂的 env 追加進去，再把末行接回去：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  sed -e <span class="string">&quot;s/NETTV_RPOOL=[0-9]*/NETTV_RPOOL=<span class="variable">$rp</span>/&quot;</span> ... <span class="variable">$WRAP</span> | sed <span class="string">&#x27;$d&#x27;</span></span><br><span class="line">  <span class="built_in">echo</span> <span class="string">&quot;export NETTV_RPOOL=<span class="variable">$rp</span>&quot;</span></span><br><span class="line">  <span class="built_in">echo</span> <span class="string">&quot;export NETTV_RPOOL_IDLE=<span class="variable">$idle</span>&quot;</span></span><br><span class="line">  <span class="built_in">tail</span> -1 <span class="variable">$WRAP</span>          <span class="comment"># 把 exec 那行接回去</span></span><br><span class="line">&#125; &gt; /tmp/w_<span class="variable">$tag</span>.sh</span><br></pre></td></tr></table></figure>
+
+<p>這樣既保留了 wrapper 自帶的全部環境（<code>LD_LIBRARY_PATH</code> 之類一個不少），又保證我們的值在 <code>exec</code> 之前最後生效。</p>
+<h3 id="4-2-生效-env-必須自檢"><a href="#4-2-生效-env-必須自檢" class="headerlink" title="4.2 生效 env 必須自檢"></a>4.2 生效 env 必須自檢</h3><p>光造對了還不夠，得<strong>驗證</strong>。起臂 25 秒後掃一遍真進程的環境塊：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> d <span class="keyword">in</span> /proc/[0-9]*; <span class="keyword">do</span></span><br><span class="line">  e=$(<span class="built_in">readlink</span> <span class="string">&quot;<span class="variable">$d</span>/exe&quot;</span> 2&gt;/dev/null)</span><br><span class="line">  <span class="keyword">case</span> <span class="string">&quot;<span class="variable">$e</span>&quot;</span> <span class="keyword">in</span> *nettv_player*) <span class="built_in">tr</span> <span class="string">&#x27;\0&#x27;</span> <span class="string">&#x27;\n&#x27;</span> &lt; <span class="string">&quot;<span class="variable">$d</span>/environ&quot;</span> | grep -a NETTV_ ;; <span class="keyword">esac</span></span><br><span class="line"><span class="keyword">done</span> | <span class="built_in">sort</span> -u</span><br></pre></td></tr></table></figure>
+
+<p>日誌裡直接打出「生效 env 自檢」，<code>IDLE</code> 的值對不上，這一臂當場判廢。這比事後對著結果懷疑人生便宜太多。</p>
+<h3 id="4-3-找進程只能匹配-proc-exe"><a href="#4-3-找進程只能匹配-proc-exe" class="headerlink" title="4.3 找進程只能匹配 /proc/&lt;pid&gt;/exe"></a>4.3 找進程只能匹配 <code>/proc/&lt;pid&gt;/exe</code></h3><p>這個坑在這個項目裡已經是第 5 次出現了：用 <code>ps -ef | grep nettv_player</code> 找進程要殺，而腳本自己的命令行裡就含 <code>nettv_player</code> 這個字串 ⇒ <strong>把自己也匹配進去</strong>。10-30 那次 A&#x2F;B 腳本就是這麼「自殺」的，基線臂一跑完就把自己 TERM 掉，後面三個臂一個沒跑。</p>
+<p>一律改成讀 <code>/proc/&lt;pid&gt;/exe</code> 的符號鏈接目標來匹配，命令行裡出現什麼都無所謂。</p>
+<h2 id="5-判讀表（腳本末尾自動出）"><a href="#5-判讀表（腳本末尾自動出）" class="headerlink" title="5. 判讀表（腳本末尾自動出）"></a>5. 判讀表（腳本末尾自動出）</h2><table>
+<thead>
+<tr>
+<th>A（RPOOL&#x3D;0）</th>
+<th>B（+IDLE）</th>
+<th>C（對照）</th>
+<th>結論</th>
+<th>下一步</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>潔</td>
+<td>潔</td>
+<td>崩</td>
+<td>崩在子進程渲染代碼</td>
+<td>編譯 v34（解掩碼 + 處理器探針），確認 RPOOL&#x3D;2 零崩潰後申請部署</td>
+</tr>
+<tr>
+<td>潔</td>
+<td>崩</td>
+<td>崩</td>
+<td>fork 本身有毒</td>
+<td>池挪到獨立進程，或 <code>RPOOL</code> 永久設 0，優化重心放回單核 <code>fb_render</code></td>
+</tr>
+<tr>
+<td>崩</td>
+<td>崩</td>
+<td>崩</td>
+<td>與池無關</td>
+<td>繼續二分 <code>AF</code> &#x2F; <code>HLSBUF</code>，同時跑資源趨勢採樣</td>
+</tr>
+<tr>
+<td>潔</td>
+<td>潔</td>
+<td>潔</td>
+<td>本輪未復現</td>
+<td>延長臂長到 1200s，或改用 UI 入口觸發</td>
+</tr>
+</tbody></table>
+<h2 id="6-順帶記一筆：這個項目的離線-在線節奏"><a href="#6-順帶記一筆：這個項目的離線-在線節奏" class="headerlink" title="6. 順帶記一筆：這個項目的離線&#x2F;在線節奏"></a>6. 順帶記一筆：這個項目的離線&#x2F;在線節奏</h2><p>設備已經連續 6 輪離線（未上電）。前幾輪的應對是「離線繼續寫新版本代碼」，結果堆了 v29&#x2F;v30&#x2F;v31&#x2F;v34 四個<strong>從未編譯過</strong>的版本——每上一輪新代碼，就多一份「上電後要先驗證它能不能編譯」的債。</p>
+<p>這輪換了個思路：<strong>離線只產出「零改碼」的測量工具</strong>。不改播放器，只用現網二進制 + env 組合，把不確定性壓到一個 40 分鐘的自動腳本里。等設備一上電，一條命令就能拿到判決，而不是再添一筆編譯債。</p>
+<hr>
+<blockquote>
+<p><strong>版權聲明</strong>：本文為 whiteleibniz 原創文章（AI 協作整理），版權歸 whiteleibniz 所有，轉載請註明出處與原文鏈接：<a href="https://whiteleibniz.github.io/">https://whiteleibniz.github.io</a></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%80%E5%80%8B%E8%A2%AB%E5%BF%BD%E7%95%A5%E7%9A%84%E6%B8%AC%E9%87%8F%E6%BC%8F%E6%B4%9E"><span class="toc-number">1.</span> <span class="toc-text">1. 一個被忽略的測量漏洞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%96%B9%E6%B3%95%E8%AB%96%EF%BC%9A%E5%AF%A6%E9%A9%97%E8%87%82%E9%95%B7%E5%BF%85%E9%A0%88%E9%A1%AF%E8%91%97%E5%A4%A7%E6%96%BC%E6%95%85%E9%9A%9C%E9%80%B1%E6%9C%9F"><span class="toc-number">2.</span> <span class="toc-text">2. 方法論：實驗臂長必須顯著大於故障週期</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%B8%89%E8%87%82%E8%A8%AD%E8%A8%88%EF%BC%9A%E5%94%AF%E4%B8%80%E8%AE%8A%E9%87%8F%E6%98%AF%E3%80%8C%E5%AD%90%E9%80%B2%E7%A8%8B%E5%88%B0%E5%BA%95%E5%81%9A%E4%B8%8D%E5%81%9A%E6%B8%B2%E6%9F%93%E3%80%8D"><span class="toc-number">3.</span> <span class="toc-text">3. 三臂設計：唯一變量是「子進程到底做不做渲染」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%B7%A5%E7%A8%8B%E7%B4%B0%E7%AF%80%EF%BC%9A%E4%B8%89%E5%80%8B%E4%B8%8D%E5%81%9A%E5%B0%B1%E6%9C%83%E9%9D%9C%E9%BB%98%E4%BD%9C%E5%BB%A2%E7%9A%84%E5%9D%91"><span class="toc-number">4.</span> <span class="toc-text">4. 工程細節：三個不做就會靜默作廢的坑</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-wrapper-%E6%9C%83%E8%A6%86%E8%93%8B%E4%BD%A0%E7%9A%84-env"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 wrapper 會覆蓋你的 env</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E7%94%9F%E6%95%88-env-%E5%BF%85%E9%A0%88%E8%87%AA%E6%AA%A2"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 生效 env 必須自檢</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E6%89%BE%E9%80%B2%E7%A8%8B%E5%8F%AA%E8%83%BD%E5%8C%B9%E9%85%8D-proc-exe"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 找進程只能匹配 &#x2F;proc&#x2F;&lt;pid&gt;&#x2F;exe</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%88%A4%E8%AE%80%E8%A1%A8%EF%BC%88%E8%85%B3%E6%9C%AC%E6%9C%AB%E5%B0%BE%E8%87%AA%E5%8B%95%E5%87%BA%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">5. 判讀表（腳本末尾自動出）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%A0%86%E5%B8%B6%E8%A8%98%E4%B8%80%E7%AD%86%EF%BC%9A%E9%80%99%E5%80%8B%E9%A0%85%E7%9B%AE%E7%9A%84%E9%9B%A2%E7%B7%9A-%E5%9C%A8%E7%B7%9A%E7%AF%80%E5%A5%8F"><span class="toc-number">6.</span> <span class="toc-text">6. 順帶記一筆：這個項目的離線&#x2F;在線節奏</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&text=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&title=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&is_video=false&description=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&title=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&title=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&title=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&title=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/11/03/nettv-36-crash-bisect-render-pool/&name=netTV 硬解（36）：崩潰週期 150 秒，可我們所有長跑都開著渲染池——用三臂 env 二分把「猜」變成「判」&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

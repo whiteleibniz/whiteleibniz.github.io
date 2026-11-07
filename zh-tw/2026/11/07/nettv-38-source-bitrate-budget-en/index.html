@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Languages: 簡體中文 · 繁體中文 · English   Part 38 of the series. The device was still unpowered this round (the tenth in a row), so once again only offline work was possible. This time I went back and qu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection">
+<meta property="og:url" content="https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Languages: 簡體中文 · 繁體中文 · English   Part 38 of the series. The device was still unpowered this round (the tenth in a row), so once again only offline work was possible. This time I went back and qu">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-06T18:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-07T18:09:31.432Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="HLS">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Live Streaming">
+<meta property="article:tag" content="Experiment Design">
+<meta property="article:tag" content="Measurement">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/zh-tw/2026/11/07/nettv-38-source-bitrate-budget/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&text=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&title=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&is_video=false&description=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&title=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&title=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&title=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&title=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&name=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-A-premise-that-was-never-measured"><span class="toc-number">1.</span> <span class="toc-text">1. A premise that was never measured</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-How-to-measure-three-numbers-are-enough"><span class="toc-number">2.</span> <span class="toc-text">2. How to measure: three numbers are enough</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-table-overturns-three-things"><span class="toc-number">3.</span> <span class="toc-text">3. The table overturns three things</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-A-textbook-trap-caught-along-the-way"><span class="toc-number">4.</span> <span class="toc-text">4. A textbook trap caught along the way</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-So-it-became-a-gate"><span class="toc-number">5.</span> <span class="toc-text">5. So it became a gate</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-One-sentence-worth-taking-away"><span class="toc-number">6.</span> <span class="toc-text">6. One sentence worth taking away</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-06T18:40:00.000Z" itemprop="datePublished">2026-11-07</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Experiment-Design/" rel="tag">Experiment Design</a>, <a class="tag-link-link" href="/tags/HLS/" rel="tag">HLS</a>, <a class="tag-link-link" href="/tags/Live-Streaming/" rel="tag">Live Streaming</a>, <a class="tag-link-link" href="/tags/Measurement/" rel="tag">Measurement</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Languages: <a href="https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget/">簡體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/07/zh-tw/nettv-38-source-bitrate-budget-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/07/nettv-38-source-bitrate-budget-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Part 38 of the series. The device was still unpowered this round (the tenth in a row), so once again only offline work was possible. This time I went back and questioned something that had been treated as a given from day one: <strong>can the device actually keep up with the stream we selected?</strong> The answer is uncomfortable — the source currently in production runs at 1.4× the device’s bandwidth, and the “smooth playback” we thought we had is really just the player skipping ahead to the newest segment.</p>
+</blockquote>
+<h2 id="1-A-premise-that-was-never-measured"><a href="#1-A-premise-that-was-never-measured" class="headerlink" title="1. A premise that was never measured"></a>1. A premise that was never measured</h2><p>From day one, source selection used two criteria: the m3u8 returns 200, and the first segment returns 200&#x2F;206. Pass both, call the source “usable”, write it into the channel list.</p>
+<p>The criteria are not wrong, but they only answer “is this source alive”, never “can the device keep up”. The device has a hard ceiling: earlier rounds measured roughly 300 KB&#x2F;s of download throughput, about 2400 kbps. <strong>Any live stream above that line can never reach the live edge</strong> — the player can only discard expired segments and jump to the newest one.</p>
+<p>The symptoms are exactly the ones we kept complaining about: about six seconds to first frame, random stalls, slow channel switching. I had been attributing all of that to decoding, rendering and buffering policy, and had never accounted for bitrate.</p>
+<h2 id="2-How-to-measure-three-numbers-are-enough"><a href="#2-How-to-measure-three-numbers-are-enough" class="headerlink" title="2. How to measure: three numbers are enough"></a>2. How to measure: three numbers are enough</h2><p>No special tooling needed:</p>
+<ol>
+<li>Segment size in bytes (download one full segment)</li>
+<li>Segment duration (the <code>#EXTINF</code> in the playlist)</li>
+<li>Measured throughput (time the same download)</li>
+</ol>
+<p>So <strong>bitrate &#x3D; segment bytes × 8 ÷ segment duration</strong>, and <strong>headroom &#x3D; device bandwidth ÷ bitrate</strong>. Below 1.3 headroom, the stream cannot be sustained on average and the player survives only by skipping.</p>
+<p>I ran all twelve candidate sources through this (the script is in the repo, one command to re-run). Sorted by headroom, the picture changes completely:</p>
+<table>
+<thead>
+<tr>
+<th>Source (by region &#x2F; channel)</th>
+<th>Segment</th>
+<th>Duration</th>
+<th>Bitrate</th>
+<th>Headroom</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A cartoon channel</td>
+<td>2977 kB</td>
+<td>2.0 s</td>
+<td>11908 kbps</td>
+<td>0.20</td>
+<td>Far over</td>
+</tr>
+<tr>
+<td>An international channel (Spanish)</td>
+<td>3069 kB</td>
+<td>6.0 s</td>
+<td>4092 kbps</td>
+<td>0.59</td>
+<td>Over</td>
+</tr>
+<tr>
+<td>Luxian news</td>
+<td>2563 kB</td>
+<td>6.0 s</td>
+<td>3423 kbps</td>
+<td>0.70</td>
+<td>Over</td>
+</tr>
+<tr>
+<td>Shangyu culture&#x2F;cinema</td>
+<td>3390 kB</td>
+<td>8.0 s</td>
+<td>3390 kbps</td>
+<td>0.71</td>
+<td>Over</td>
+</tr>
+<tr>
+<td><strong>Songpan news (in production)</strong></td>
+<td>4499 kB</td>
+<td>10.8 s</td>
+<td><strong>3333 kbps</strong></td>
+<td><strong>0.72</strong></td>
+<td>Over</td>
+</tr>
+<tr>
+<td>Hebei kids&#x2F;science</td>
+<td>1054 kB</td>
+<td>3.1 s</td>
+<td>2702 kbps</td>
+<td>0.89</td>
+<td>Marginal</td>
+</tr>
+<tr>
+<td>Qianjiang city</td>
+<td>1807 kB</td>
+<td>8.0 s</td>
+<td>1807 kbps</td>
+<td>1.33</td>
+<td>Just above</td>
+</tr>
+<tr>
+<td>Zhejiang Intl 720p</td>
+<td>813 kB</td>
+<td>8.0 s</td>
+<td>813 kbps</td>
+<td>2.95</td>
+<td>Comfortable</td>
+</tr>
+<tr>
+<td>Zhejiang Intl 360p</td>
+<td>520 kB</td>
+<td>8.0 s</td>
+<td>520 kbps</td>
+<td>4.62</td>
+<td>Safest</td>
+</tr>
+</tbody></table>
+<p>Two sources were completely unreachable (two channels on the same server, both down) — 2 out of 12.</p>
+<h2 id="3-The-table-overturns-three-things"><a href="#3-The-table-overturns-three-things" class="headerlink" title="3. The table overturns three things"></a>3. The table overturns three things</h2><p><strong>First, the production source is over budget.</strong> Headroom 0.72 means ten seconds of stream needs 13.9 seconds to download. There is a picture at all only because the player drops segments. So every earlier “13–20 fps” number is contaminated with bandwidth starvation — it was never purely a rendering problem.</p>
+<p><strong>Second, the crash experiment must not switch sources.</strong> The tempting move this round was: we have a source at one quarter the bitrate, switch immediately. No. What we need to reproduce is “the second IDR crashes deterministically” and “a crash roughly every 150 seconds”. Switching sources also changes NAL counts, TS sizes and segment cadence — it may well switch away the very phenomenon we are chasing. <strong>Use the reproducible source to study crashes, and a sustainable source to study smoothness. Two sources, two purposes.</strong></p>
+<p><strong>Third, every smoothness conclusion is now void.</strong> As long as we run a 3333 kbps source, “raise the frame rate to 25 fps” is a false goal — the bottleneck is the download, not the decoder.</p>
+<h2 id="4-A-textbook-trap-caught-along-the-way"><a href="#4-A-textbook-trap-caught-along-the-way" class="headerlink" title="4. A textbook trap caught along the way"></a>4. A textbook trap caught along the way</h2><p>To save bandwidth, the pre-flight probe fetched only the first 2 KB of the playlist with <code>curl -r 0-2047</code>. It reported three of four sources dead.</p>
+<p>The reality: with a Range request the server replies <strong>206 Partial Content</strong>, not 200. The check only accepted 200, so three live sources were declared dead. One-line fix (normalize 206 to 200).</p>
+<p>This matters more than it looks: <strong>a probe can itself become the fault, and specifically a false negative</strong> — it does not raise an error, it quietly tells you “the source is gone”, and off you go replacing sources, blaming the CDN, blaming the player. The first thing to do with any health check you write is to run it against something you know is good — not against the world.</p>
+<h2 id="5-So-it-became-a-gate"><a href="#5-So-it-became-a-gate" class="headerlink" title="5. So it became a gate"></a>5. So it became a gate</h2><p>Ten consecutive offline rounds forced a re-evaluation: the online window is the most expensive resource in this project — a 50-minute experiment per round, and a leaked SSH session means physically power-cycling the device. Meanwhile the two known landmines — a lost default route and a dead source — both produce four arms of zero frames, ending in a single INVALID.</p>
+<p>So all of the above became a pre-flight gate, in four steps:</p>
+<ol>
+<li>Check the default route; if missing, restore it with <code>route add default gw</code>.</li>
+<li>Probe each source in a bitrate-annotated table; only <code>200 with #EXTM3U</code> counts as alive.</li>
+<li>On failure of the primary, fall back automatically and record “source switched” explicitly — the switch must reach the conclusion, otherwise two rounds cannot be compared.</li>
+<li>All dead or no route: write INVALID and stop. <strong>Not a single arm starts.</strong></li>
+</ol>
+<p>The verdict logic itself was not touched. Last round’s “verdict validity gate” was right; this round merely moved the gate earlier: <strong>first prove the experiment can run, then prove its result is believable.</strong></p>
+<h2 id="6-One-sentence-worth-taking-away"><a href="#6-One-sentence-worth-taking-away" class="headerlink" title="6. One sentence worth taking away"></a>6. One sentence worth taking away</h2><p>The value of an automation script is not how clever it is, but its willingness to admit, at the very start, that today’s job cannot be done. What it saves is fifty minutes; what it buys is one real experiment.</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-A-premise-that-was-never-measured"><span class="toc-number">1.</span> <span class="toc-text">1. A premise that was never measured</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-How-to-measure-three-numbers-are-enough"><span class="toc-number">2.</span> <span class="toc-text">2. How to measure: three numbers are enough</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-The-table-overturns-three-things"><span class="toc-number">3.</span> <span class="toc-text">3. The table overturns three things</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-A-textbook-trap-caught-along-the-way"><span class="toc-number">4.</span> <span class="toc-text">4. A textbook trap caught along the way</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-So-it-became-a-gate"><span class="toc-number">5.</span> <span class="toc-text">5. So it became a gate</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-One-sentence-worth-taking-away"><span class="toc-number">6.</span> <span class="toc-text">6. One sentence worth taking away</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&text=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&title=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&is_video=false&description=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection&body=Check out this article: https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&title=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&title=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&title=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&title=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/zh-tw/2026/11/07/nettv-38-source-bitrate-budget-en/&name=netTV Hardware Decoding (38): A Reachable Stream Is Not a Playable One — Adding a Bitrate Headroom Criterion to Source Selection&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
