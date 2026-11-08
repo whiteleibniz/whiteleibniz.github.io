@@ -14,7 +14,7 @@ permalink: zh-tw/2026/09/24/device-report/
 # SC9832A 智能終端 · 設備軟硬件信息報告
 
 > 採集時間：2026-09-24 21:31 · 採集方式：SSH 只讀探測（/proc、/sys、dmesg、命令行工具）
-> 主機名 `spd-box` · IP `192.168.137.100`（rndis0）
+> 主機名 `spd-box` · IP `<設備IP>`（rndis0）
 
 ---
 
@@ -90,8 +90,8 @@ permalink: zh-tw/2026/09/24/device-report/
 | 接口 | IP | 說明 |
 |---|---|---|
 | lo | 127.0.0.1 | 迴環 |
-| **rndis0** | 192.168.137.100/24 | USB 虛擬網卡（連接 PC） |
-| **wlan0** | 192.168.1.52/24 + 全局 IPv6 | WiFi（MAC `8a:b3:92:1f:09:94`，驅動模塊 `sprdwl` 84.5KB） |
+| **rndis0** | <設備IP>/24 | USB 虛擬網卡（連接 PC） |
+| **wlan0** | <WiFi-IP>/24 + 全局 IPv6 | WiFi（MAC `8a:b3:92:1f:09:94`，驅動模塊 `sprdwl` 84.5KB） |
 
 - 內核模塊僅 2 個：`sprdwl`（WiFi）、`marlin_fm`（FM 收音機，17554 字節）
 - FM 現狀：AP 音頻子系統不工作（sipc 僅暴露 LTE 通道，無音頻 DSP 通道），場強/搜臺不可做

@@ -19,8 +19,8 @@ permalink: zh-tw/2026/10/10/aiwf-handoff/
 
 ## 1. 連接與工具（必讀）
 
-- 設備經 PC ICS NAT 上網：USB RNDIS(192.168.137.x) → PC → WiFi。環境變量 `DEV_IP`（當前 192.168.137.100）。
-- **SSH 一律走工程裡的 `ssh_tools/dev.py`**（paramiko）：`DEV_IP=192.168.137.100 python dev.py "<cmd>"`；跑本地腳本 `python dev.py --run <script> [timeout]`；傳文件 `MSYS_NO_PATHCONV=1 python devput.py <local> <remote>`（**必須帶 MSYS_NO_PATHCONV=1**，否則 Git Bash 吃掉遠端路徑）。裸 `ssh` 會被拒（非密鑰登錄）。
+- 設備經 PC ICS NAT 上網：USB RNDIS(RNDIS 網段) → PC → WiFi。環境變量 `DEV_IP`（當前 <設備IP>）。
+- **SSH 一律走工程裡的 `ssh_tools/dev.py`**（paramiko）：`DEV_IP=<設備IP> python dev.py "<cmd>"`；跑本地腳本 `python dev.py --run <script> [timeout]`；傳文件 `MSYS_NO_PATHCONV=1 python devput.py <local> <remote>`（**必須帶 MSYS_NO_PATHCONV=1**，否則 Git Bash 吃掉遠端路徑）。裸 `ssh` 會被拒（非密鑰登錄）。
 - ★ 本機 sandbox 會 SIGTERM 跑久的命令 → **SSH 命令一律 <20s 完成**；長任務用 `--run` 後臺跑。被殺的 SSH 會話洩漏會耗盡 dropbear（症狀：TCP22 通但 banner 立即斷，只能設備斷電重啟）。
 - ★ 設備 SFTP 損壞 → 不要用 dev.py --get 拉大文件；文本/小文件用 devput（inline base64）。
 - 設備有 python3.12、GNU ld 2.43.1（無 gold/lld）、gcc14（apk 升級過，新工具鏈產物老 bionic linker 不認，見 §3）。
@@ -54,7 +54,7 @@ MINIRETRO_SHOW_FPS=1 timeout -k 3 30 ./miniretro_psp_hw ./ppsspp_libretro_hw.so 
 
 ## 3. ★★ 重啟後必做清單（不做全是坑）
 
-1. **默認路由**：設備跑 `route add default gw 192.168.137.1`（否則上不了外網）。
+1. **默認路由**：設備跑 `route add default gw <RNDIS-GW>`（否則上不了外網）。
 2. **PC 側 ICS 重綁**：RNDIS 重新枚舉後 PC 跑 `outputs/_ics_rebind.ps1`。判據：GW_OK+EXT_FAIL=ICS 掉了。
 3. **mount p17**：`mount -r /dev/mmcblk0p17 /mnt/android_sys`（重啟後 gpu_env_ensure 的 stamp 兜底**不生效**；不掛 → /system/lib/libEGL.so 斷鏈 → EGL 失敗靜默退軟渲 20fps）。
 4. **insmod mali**：`insmod /lib/modules/mali.ko`（硬件加速默認關、app 不拉驅動；不加載同樣靜默退軟渲）。

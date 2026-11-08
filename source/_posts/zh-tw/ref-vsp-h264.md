@@ -247,7 +247,7 @@ VSP 用它訪問內存必然失敗 → 不出幀、`SPS:0/PPS:0`。
 ## 六、構建/運行
 
 ```bash
-export DEV_IP=192.168.137.100 MSYS_NO_PATHCONV=1   # ★ 不加會 SFTP 報不存在
+export DEV_IP=<設備IP> MSYS_NO_PATHCONV=1   # ★ 不加會 SFTP 報不存在
 python ssh_tools/dev.py --push outputs/sprd_msg.c /tmp/sprd_msg.c
 python ssh_tools/dev.py "sh /tmp/smb.sh 2>&1 | grep -E 'BUILD|error:'"
 python ssh_tools/dev.py "rm -f /tmp/run.log; timeout 150 /tmp/sprd_msg > /tmp/run.log 2>&1"
