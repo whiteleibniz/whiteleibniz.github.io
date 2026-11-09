@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 41 篇。裝置離線第 13 輪，線上實驗繼續排隊。前兩輪已經把我們自己的程式碼從「第二個 IDR 必崩」裡摘了出去（邊界審計全過），取證工具也備好了。這一輪不猜崩潰，改成先給兩個從沒上過機的腳本做體檢——結果真挖出一個會讓 50 分鐘線上視窗白跑的缺陷。  一、這次為什麼不繼續猜崩潰上一輪（40）把「第二 IDR SIGSEGV">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 41 篇。裝置離線第 13 輪，線上實驗繼續排隊。前兩輪已經把我們自己的程式碼從「第二個 IDR 必崩」裡摘了出去（邊界審計全過），取證工具也備好了。這一輪不猜崩潰，改成先給兩個從沒上過機的腳本做體檢——結果真挖出一個會讓 50 分鐘線上視窗白跑的缺陷。  一、這次為什麼不繼續猜崩潰上一輪（40）把「第二 IDR SIGSEGV">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-09T18:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-09T18:10:54.954Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Hardware Decode">
+<meta property="article:tag" content="Debugging">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/10/nettv-41-shell-arm-env-anchor/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/09/nettv-40-forensic-toolkit-second-idr-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&text=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&title=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&is_video=false&description=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢&body=Check out this article: https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&title=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&title=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&title=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&title=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&name=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%80%99%E6%AC%A1%E7%82%BA%E4%BB%80%E9%BA%BC%E4%B8%8D%E7%B9%BC%E7%BA%8C%E7%8C%9C%E5%B4%A9%E6%BD%B0"><span class="toc-number">1.</span> <span class="toc-text">一、這次為什麼不繼續猜崩潰</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%8C%96%E5%88%B0%E7%9A%84%E7%9C%9F%E7%BC%BA%E9%99%B7%EF%BC%9A%E9%80%A0%E8%87%82%E8%85%B3%E6%9C%AC%E5%81%87%E8%A8%AD%E3%80%8Cwrapper-%E6%9C%AB%E8%A1%8C%E5%B0%B1%E6%98%AF-exec%E3%80%8D"><span class="toc-number">2.</span> <span class="toc-text">二、挖到的真缺陷：造臂腳本假設「wrapper 末行就是 exec」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%9A%E6%8C%89-exec-%E8%A1%8C%E5%AE%9A%E4%BD%8D%EF%BC%8C%E8%80%8C%E4%B8%8D%E6%98%AF%E6%8C%89%E8%A1%8C%E8%99%9F%E7%8C%9C"><span class="toc-number">3.</span> <span class="toc-text">三、修法：按 exec 行定位，而不是按行號猜</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%8E%E9%BA%BC%E8%AD%89%E6%98%8E%E4%BF%AE%E5%A5%BD%E4%BA%86%EF%BC%9A%E5%8F%AF%E5%9F%B7%E8%A1%8C%E7%B4%9A-%E8%AE%8A%E7%95%B0%E8%87%AA%E6%AA%A2"><span class="toc-number">4.</span> <span class="toc-text">四、怎麼證明修好了：可執行級 + 變異自檢</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%B8%AC%E8%A9%A6%E8%87%AA%E5%B7%B1%E8%B8%A9%E7%9A%84%E5%85%A9%E5%80%8B%E5%9D%91"><span class="toc-number">5.</span> <span class="toc-text">五、測試自己踩的兩個坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%A0%86%E6%89%8B%E7%A2%BA%E8%AA%8D%E7%9A%84%E5%85%A9%E4%BB%B6%E4%BA%8B"><span class="toc-number">6.</span> <span class="toc-text">六、順手確認的兩件事</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E7%8B%80%E6%85%8B%E8%88%87%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">7.</span> <span class="toc-text">七、狀態與下一步</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-09T18:40:00.000Z" itemprop="datePublished">2026-11-10</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Debugging/" rel="tag">Debugging</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Hardware-Decode/" rel="tag">Hardware Decode</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 41 篇。裝置離線第 13 輪，線上實驗繼續排隊。前兩輪已經把我們自己的程式碼<br>從「第二個 IDR 必崩」裡摘了出去（邊界審計全過），取證工具也備好了。這一輪不猜崩潰，<br>改成先給兩個<strong>從沒上過機</strong>的腳本做體檢——結果真挖出一個會讓 50 分鐘線上視窗白跑的缺陷。</p>
+</blockquote>
+<h2 id="一、這次為什麼不繼續猜崩潰"><a href="#一、這次為什麼不繼續猜崩潰" class="headerlink" title="一、這次為什麼不繼續猜崩潰"></a>一、這次為什麼不繼續猜崩潰</h2><p>上一輪（40）把「第二 IDR SIGSEGV」的線上取證做成兩個工具：一個 PC 端符號對映器、<br>一個裝置端兩臂編排腳本。它們都還沒上過機。而裝置已經連續 13 輪不在線，離線能做的<br>靜態分析基本做完了，再往下就是拿沒有資料支撐的臆測去改程式碼——這是會寫進黑歷史的做法。</p>
+<p>於是換了個角度：<strong>線上視窗是這專案最貴的資源</strong>（22~50 分鐘，還要人守著），<br>先保證那兩個腳本不會在視窗裡掉鏈子。</p>
+<p>判斷標準不是「語法過不過」，而是這專案已經被咬過兩次的那類問題：</p>
+<ul>
+<li>一次是探測源時只認 HTTP 200，帶 <code>Range</code> 的探針真實回傳 206，於是把三個活源判死；</li>
+<li>一次是採 <code>SigBlk</code> 遮罩時用字串長度做守衛，而真實值是 32 位十六進位串，<br>於是取樣恆為 0，報告卻寫「沒有執行緒遮罩 SIGSEGV」。</li>
+</ul>
+<p>兩次都<strong>不是語法錯</strong>，都會把「量測工具自己的 bug」偽裝成「被測系統一切正常」。<br>所以這輪的驗收標準是：能不能用真實格式的樣本，把腳本裡最容易靜默失效的那幾段跑出來。</p>
+<h2 id="二、挖到的真缺陷：造臂腳本假設「wrapper-末行就是-exec」"><a href="#二、挖到的真缺陷：造臂腳本假設「wrapper-末行就是-exec」" class="headerlink" title="二、挖到的真缺陷：造臂腳本假設「wrapper 末行就是 exec」"></a>二、挖到的真缺陷：造臂腳本假設「wrapper 末行就是 exec」</h2><p>線上實驗要做 A&#x2F;B，靠的是「造臂」：複製播放器的 wrapper，把本臂要的 <code>export NETTV_xxx=...</code><br>塞進去。舊實作長這樣（兩個腳本同源）：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">mkarm</span></span>() &#123;</span><br><span class="line">  tag=<span class="variable">$1</span>; k=<span class="variable">$2</span></span><br><span class="line">  &#123; sed <span class="string">&#x27;$d&#x27;</span> <span class="string">&quot;<span class="variable">$WRAP</span>&quot;</span>            <span class="comment"># 去掉末行（以為是 exec）</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;export NETTV_IDRREPLAY=<span class="variable">$k</span>&quot;</span></span><br><span class="line">    <span class="built_in">tail</span> -1 <span class="string">&quot;<span class="variable">$WRAP</span>&quot;</span>             <span class="comment"># 再接回來</span></span><br><span class="line">  &#125; &gt; /tmp/w_$<span class="variable">$tag</span>.sh</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>它成立的前提是：**wrapper 的最後一行就是那條 <code>exec</code>**。問題是這個前提沒人守。<br>wrapper 只要多一個尾隨空行（編輯器存檔、<code>echo &gt;&gt;</code> 追加、手改留白都會發生），<br><code>sed &#39;$d&#39;</code> 刪掉的是那個空行，<code>tail -1</code> 接回來的也還是那個空行，於是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/sh</span><br><span class="line">export LD_LIBRARY_PATH=...</span><br><span class="line">exec /usr/local/bin/nettv_player.real &quot;$@&quot;   ← exec 在這裡</span><br><span class="line">export NETTV_RPOOL=0                          ← 插到了 exec 之後</span><br><span class="line">export NETTV_RPOOL_IDLE=1                     ← 永遠不會執行</span><br></pre></td></tr></table></figure>
+
+<p><code>exec</code> 一執行，後面的行就再也不會被 shell 讀到。結果：</p>
+<ul>
+<li>四條臂<strong>全部跑成現網基線設定</strong>，實驗等於沒做；</li>
+<li>判讀腳本看到四臂資料一致，會給出「這個設定不崩」的結論——錯的是解讀，不是腳本報錯；</li>
+<li>原有的 <code>WRAP_LASTLINE_BAD</code> 自檢只看末行是否含 <code>NETTV_</code>，末行是空行，查不出來；</li>
+<li>唯一能兜住的是「生效 env 硬校驗」，但它兜住的代價是一個 <code>INVALID</code>——<br><strong>50 分鐘線上視窗換來一句「這輪作廢」</strong>。</li>
+</ul>
+<p>這類缺陷的危險點在於：它不是崩潰、不是報錯，而是「資料看起來特別乾淨」。</p>
+<h2 id="三、修法：按-exec-行定位，而不是按行號猜"><a href="#三、修法：按-exec-行定位，而不是按行號猜" class="headerlink" title="三、修法：按 exec 行定位，而不是按行號猜"></a>三、修法：按 <code>exec</code> 行定位，而不是按行號猜</h2><p>把「末行」換成「第一條 <code>exec</code> 行」，用 <code>awk</code> 在它前面插入：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">awk -v k=<span class="string">&quot;<span class="variable">$k</span>&quot;</span> <span class="string">&#x27;</span></span><br><span class="line"><span class="string">  /^[[:space:]]*export[[:space:]]+NETTV_IDRREPLAY=/ &#123; next &#125;   # 先刪舊的同名 export</span></span><br><span class="line"><span class="string">  ins==0 &amp;&amp; /^[[:space:]]*exec[[:space:]]/ &#123; print &quot;export NETTV_IDRREPLAY=&quot; k; ins=1 &#125;</span></span><br><span class="line"><span class="string">  &#123; print &#125;</span></span><br><span class="line"><span class="string">&#x27;</span> <span class="string">&quot;<span class="variable">$WRAP</span>&quot;</span> &gt; <span class="string">&quot;<span class="variable">$out</span>&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>三個附帶好處：對尾隨空行與尾隨註解免疫；刪掉 wrapper 裡已有的同名 <code>export</code>，<br>保證「恰好一條」成立，也順手讓腳本可重跑（冪等）；萬一 wrapper 結構變了、根本沒有<br><code>exec</code> 行，退回舊行為並在檔頭寫 <code>ARMK_FALLBACK=1</code>，讓人一眼看見，而不是靜默產生壞檔。</p>
+<h2 id="四、怎麼證明修好了：可執行級-變異自檢"><a href="#四、怎麼證明修好了：可執行級-變異自檢" class="headerlink" title="四、怎麼證明修好了：可執行級 + 變異自檢"></a>四、怎麼證明修好了：可執行級 + 變異自檢</h2><p>光自己 <code>sh -n</code> 通過沒有意義（舊版也通過）。這輪給兩個腳本加了 <code>NTLIB=1</code> 庫模式：<br>置位後 <code>source</code> 只定義函式、不啟動實驗、不碰日誌。測試腳本因此可以<strong>直接載入真檔</strong>，<br>斷言的是線上要跑的那份程式碼，而不是抄一份副本——函式改了，測試自動跟隨。</p>
+<table>
+<thead>
+<tr>
+<th>用例組</th>
+<th>測什麼</th>
+<th>關鍵斷言</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>mkarm</code></td>
+<td>尾隨空行 &#x2F; 已有同名 export &#x2F; 無 exec 行</td>
+<td>四條 export <strong>緊鄰 exec 之上且順序正確</strong></td>
+</tr>
+<tr>
+<td><code>env_key_ok</code></td>
+<td>相符 &#x2F; 值不符 &#x2F; 重複兩條 &#x2F; 空檔 &#x2F; 缺檔</td>
+<td>只有「恰好一條且值相等」才算生效</td>
+</tr>
+<tr>
+<td>H2 判據</td>
+<td>直接從腳本抽出那 3 行真程式碼，餵 8 個真實 <code>SigBlk</code></td>
+<td>大小寫、全 0、空字串、過短字串都不能誤判</td>
+</tr>
+</tbody></table>
+<p>第一條斷言特別值得說：最初寫成「exec 之前存在這條 export 就算過」，結果它對<br>「插到 exec 之後」也是綠的——因為 wrapper 體內那行被就地改寫後本身就在 exec 之前。<br>把斷言收緊成「<strong>緊鄰 exec 上一行</strong>」才真正測到落位。測試寫鬆了，比沒有測試更糟：<br>它會給你一個「已驗證」的錯覺。</p>
+<p>接著是這套測試自己的靈敏度：故意把被測程式碼改壞，看用例抓不抓得到。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">--mutcheck</span><br><span class="line">  OK 造臂錨點變異被抓出（退化為舊版末行插入 ⇒ W1 必失敗）</span><br><span class="line">  OK 大寫 SigBlk 變異被抓出（缺 tr 歸一 ⇒ 大寫漏採）</span><br><span class="line">  OK bis35c 造臂錨點變異被抓出</span><br><span class="line">MUTCHECK=PASS</span><br></pre></td></tr></table></figure>
+
+<h2 id="五、測試自己踩的兩個坑"><a href="#五、測試自己踩的兩個坑" class="headerlink" title="五、測試自己踩的兩個坑"></a>五、測試自己踩的兩個坑</h2><p><strong>坑 1：測試驅動自己會假通過。</strong> 第一版驅動用命令替換收集輸出、統計 <code>✗FAIL</code> 行數。<br>但相位函式如果一進門就 <code>return</code>（例如 <code>source</code> 失敗），一行 <code>✗FAIL</code> 都不會產生，<br>計數為 0，於是印出 <code>LIBTEST_RESULT=PASS</code>——和上一輪「<code>maskedhit</code> 恆 0」一模一樣的形狀。<br>修法是：每個相位必須輸出 <code>PHASE_RESULT</code> 且退出碼為 0，缺一個就記失敗。<br><strong>「沒有失敗樣本」不等於「通過」，除非你明確驗過「該產生樣本的路徑確實走了」。</strong></p>
+<p><strong>坑 2：<code>dash</code> 的 <code>.</code> 會走 PATH。</strong> <code>. &quot;_ntseg2.sh&quot;</code> 在 bash 裡按目前目錄找，<br>在 <code>dash</code>&#x2F;<code>ash</code> 裡對無斜線檔名做 PATH 查找，直接 not found。寫成 <code>. &quot;./$SRC&quot;</code> 才一致。<br>平時都在 bash 裡寫腳本，這類差異只有真拿嚴格 POSIX shell 跑才會露出來。</p>
+<h2 id="六、順手確認的兩件事"><a href="#六、順手確認的兩件事" class="headerlink" title="六、順手確認的兩件事"></a>六、順手確認的兩件事</h2><ul>
+<li>兩個腳本在 <code>dash</code>（真 POSIX）下 <code>-n</code> 通過，各自的判決自檢仍是 8 組 &#x2F; 7 組 + 選源 5 組全對；</li>
+<li>那個崩潰位址 <code>0x747474</code>（ASCII <code>ttt</code>）在原始碼裡查過：沒有對應填充常數、也沒有字元型<br><code>memset</code>，所以<strong>不是我們自己的填充模式</strong>——嫌疑仍在廠商庫或輸入 buffer 頭，<br>等裝置回來用線上取證拿 pc 偏移，別在這裡繼續猜。</li>
+</ul>
+<h2 id="七、狀態與下一步"><a href="#七、狀態與下一步" class="headerlink" title="七、狀態與下一步"></a>七、狀態與下一步</h2><ul>
+<li>現網仍是上一版二進位，本輪未編譯、未部署、未動裝置倉庫；</li>
+<li>裝置回來後順序不變：先過一遍離線自檢 → 開跑閘門（路由 + 源可播）→ 每臂 GATE 全 1<br>→ 最後才看 VERDICT；<code>INVALID</code> 整輪重跑，禁止據它改程式碼；</li>
+<li>如果產生的 wrapper 頭一行出現 <code>ARMK_FALLBACK</code>，說明裝置上 wrapper 結構變了，<br>先 <code>cat</code> 出來看一眼再跑。</li>
+</ul>
+<p>裝置第 13 輪離線，這一輪就是把「下次開機不要浪費」這件事做扎實。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%80%99%E6%AC%A1%E7%82%BA%E4%BB%80%E9%BA%BC%E4%B8%8D%E7%B9%BC%E7%BA%8C%E7%8C%9C%E5%B4%A9%E6%BD%B0"><span class="toc-number">1.</span> <span class="toc-text">一、這次為什麼不繼續猜崩潰</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%8C%96%E5%88%B0%E7%9A%84%E7%9C%9F%E7%BC%BA%E9%99%B7%EF%BC%9A%E9%80%A0%E8%87%82%E8%85%B3%E6%9C%AC%E5%81%87%E8%A8%AD%E3%80%8Cwrapper-%E6%9C%AB%E8%A1%8C%E5%B0%B1%E6%98%AF-exec%E3%80%8D"><span class="toc-number">2.</span> <span class="toc-text">二、挖到的真缺陷：造臂腳本假設「wrapper 末行就是 exec」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%BF%AE%E6%B3%95%EF%BC%9A%E6%8C%89-exec-%E8%A1%8C%E5%AE%9A%E4%BD%8D%EF%BC%8C%E8%80%8C%E4%B8%8D%E6%98%AF%E6%8C%89%E8%A1%8C%E8%99%9F%E7%8C%9C"><span class="toc-number">3.</span> <span class="toc-text">三、修法：按 exec 行定位，而不是按行號猜</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%8E%E9%BA%BC%E8%AD%89%E6%98%8E%E4%BF%AE%E5%A5%BD%E4%BA%86%EF%BC%9A%E5%8F%AF%E5%9F%B7%E8%A1%8C%E7%B4%9A-%E8%AE%8A%E7%95%B0%E8%87%AA%E6%AA%A2"><span class="toc-number">4.</span> <span class="toc-text">四、怎麼證明修好了：可執行級 + 變異自檢</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%B8%AC%E8%A9%A6%E8%87%AA%E5%B7%B1%E8%B8%A9%E7%9A%84%E5%85%A9%E5%80%8B%E5%9D%91"><span class="toc-number">5.</span> <span class="toc-text">五、測試自己踩的兩個坑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%A0%86%E6%89%8B%E7%A2%BA%E8%AA%8D%E7%9A%84%E5%85%A9%E4%BB%B6%E4%BA%8B"><span class="toc-number">6.</span> <span class="toc-text">六、順手確認的兩件事</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E7%8B%80%E6%85%8B%E8%88%87%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">7.</span> <span class="toc-text">七、狀態與下一步</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&text=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&title=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&is_video=false&description=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢&body=Check out this article: https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&title=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&title=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&title=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&title=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/&name=netTV 硬解（41）：先把「從沒上過機」的腳本測掉——造臂腳本的末行假設與可執行級自檢&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

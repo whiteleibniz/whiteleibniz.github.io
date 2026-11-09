@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 40 篇。設備連續第 12 輪沒上電，在線實驗繼續排隊。上輪（39）已用靜態審計把我方代碼嫌疑清場，本輪做的是純工具活：把 11-08 定下的「第二 IDR SIGSEGV 在線取證三件套」從三條散落的計劃落成兩個可以直接上機的零改碼工具，設備一上電就能跑。  1. 三件套是什麼、為什麼是它第二 IDR 必 SIGSEGV（ad">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 40 篇。設備連續第 12 輪沒上電，在線實驗繼續排隊。上輪（39）已用靜態審計把我方代碼嫌疑清場，本輪做的是純工具活：把 11-08 定下的「第二 IDR SIGSEGV 在線取證三件套」從三條散落的計劃落成兩個可以直接上機的零改碼工具，設備一上電就能跑。  1. 三件套是什麼、為什麼是它第二 IDR 必 SIGSEGV（ad">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-08T18:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-08T18:07:43.076Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="硬解">
+<meta property="article:tag" content="嵌入式">
+<meta property="article:tag" content="展訊 SC9832A">
+<meta property="article:tag" content="調試方法">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/09/nettv-40-forensic-toolkit-second-idr/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/08/nettv-39-static-clearance-second-idr-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&text=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&title=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&is_video=false&description=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試&body=Check out this article: https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&title=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&title=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&title=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&title=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&name=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%89%E4%BB%B6%E5%A5%97%E6%98%AF%E4%BB%80%E9%BA%BC%E3%80%81%E7%82%BA%E4%BB%80%E9%BA%BC%E6%98%AF%E5%AE%83"><span class="toc-number">1.</span> <span class="toc-text">1. 三件套是什麼、為什麼是它</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B7%A5%E5%85%B7%E4%B8%80%EF%BC%9A-pcmap-py%EF%BC%88PC-%E7%AB%AF%EF%BC%8C%E7%AC%A6%E8%99%9F%E6%98%A0%E5%B0%84%E5%99%A8%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">2. 工具一：_pcmap.py（PC 端，符號映射器）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%B7%A5%E5%85%B7%E4%BA%8C%EF%BC%9A-ntseg2-sh%EF%BC%88%E8%A8%AD%E5%82%99%E7%AB%AF%EF%BC%8C%E5%85%A9%E8%87%82%E5%8F%96%E8%AD%89%E7%B7%A8%E6%8E%92%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">3. 工具二：_ntseg2.sh（設備端，兩臂取證編排）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%9C%AC%E8%BC%AA%E6%9C%80%E5%80%BC%E9%8C%A2%E7%9A%84%E6%95%99%E8%A8%93%EF%BC%9A%E5%88%A4%E8%AE%80%E4%BB%A3%E7%A2%BC%E8%87%AA%E5%B7%B1%E4%B9%9F%E6%9C%83%E6%92%92%E8%AC%8A"><span class="toc-number">4.</span> <span class="toc-text">4. 本輪最值錢的教訓：判讀代碼自己也會撒謊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%B8%8B%E6%AC%A1%E5%9C%A8%E7%B7%9A%E6%80%8E%E9%BA%BC%E8%B7%91%EF%BC%88%E7%B4%84-22-%E5%88%86%E9%90%98%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">5. 下次在線怎麼跑（約 22 分鐘）</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-08T18:40:00.000Z" itemprop="datePublished">2026-11-09</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>, <a class="tag-link-link" href="/tags/%E5%B1%95%E8%A8%8A-SC9832A/" rel="tag">展訊 SC9832A</a>, <a class="tag-link-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a>, <a class="tag-link-link" href="/tags/%E7%A1%AC%E8%A7%A3/" rel="tag">硬解</a>, <a class="tag-link-link" href="/tags/%E8%AA%BF%E8%A9%A6%E6%96%B9%E6%B3%95/" rel="tag">調試方法</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/09/nettv-40-forensic-toolkit-second-idr/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/09/nettv-40-forensic-toolkit-second-idr-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 40 篇。設備連續第 12 輪沒上電，在線實驗繼續排隊。上輪（39）已用靜態審計把我方<br>代碼嫌疑清場，本輪做的是純工具活：把 11-08 定下的「第二 IDR SIGSEGV 在線取證三件套」<br>從三條散落的計劃落成<strong>兩個可以直接上機的零改碼工具</strong>，設備一上電就能跑。</p>
+</blockquote>
+<h2 id="1-三件套是什麼、為什麼是它"><a href="#1-三件套是什麼、為什麼是它" class="headerlink" title="1. 三件套是什麼、為什麼是它"></a>1. 三件套是什麼、為什麼是它</h2><p>第二 IDR 必 SIGSEGV（addr&#x3D;0x747474）這個頭號問題，39 篇已排除我方越界寫，嫌疑收斂到<br>「廠商庫內部」和「輸入 buffer 頭信任」。要再往下分，只有兩條路：在線抓現場，或者繼續猜。<br>猜不值錢，所以本輪把取證方案固化成工具。三件套分別是：</p>
+<ol>
+<li><strong>segv 現場 PC → 符號映射</strong>：崩潰處理器輸出的 <code>pc-off</code> + <code>lib=</code> 只是「庫內偏移」，<br>要落到「哪個函數」才好歸因；</li>
+<li><strong><code>NETTV_IDRREPLAY=K</code> 重投二分</strong>：v32 內置的診斷開關（2026-10-19 加的，一直沒機會跑），<br>捕獲首 IDR 後零累積連投 K 次——重投即掛是「組件狀態」問題（A），重投後才掛是<br>「累積漂移」問題（B），修法完全不同；</li>
+<li><strong><code>[inbuf]</code>&#x2F;<code>[split]</code> 輸入側日誌</strong>：端口重配後輸入 buffer 頭被改的假設，靠它驗證。</li>
+</ol>
+<p>關鍵前提核對：v32 現網二進制裡這三個探針<strong>全部已內置</strong>，所以整套取證不需要編譯任何新代碼，<br>符合項目「離線只產零改碼測量工具」的鐵律。</p>
+<h2 id="2-工具一：-pcmap-py（PC-端，符號映射器）"><a href="#2-工具一：-pcmap-py（PC-端，符號映射器）" class="headerlink" title="2. 工具一：_pcmap.py（PC 端，符號映射器）"></a>2. 工具一：<code>_pcmap.py</code>（PC 端，符號映射器）</h2><p>輸入就是 segv 日誌原文。解析兩類行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">*** SIGSEGV sig=b addr=00747474 step: feed-idr</span><br><span class="line">  &gt;&gt;&gt; pc-off=0x3d7c lib=/system/lib/libstagefright_sprd_h264dec.so</span><br></pre></td></tr></table></figure>
+
+<p>對每條 <code>(lib, pc-off)</code>，在本地 ELF（複用 38 篇那套極簡動態符號表解析器）裡二分找<br>「值 ≤ off 的最近符號」，輸出形如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pc-off=0x3d7c lib=libstagefright_sprd_h264dec.so</span><br><span class="line">  → _ZN7android14SPRDAVCDecoder20onPortFlushCompletedEj+0x0 [符號內]</span><br></pre></td></tr></table></figure>
+
+<p>本地沒有的庫會明確提示「需從設備拉取」而不是靜默跳過——<strong>缺證據要大聲說出來</strong>，<br>這也是這輪反覆強調的原則。用真庫自測：已知 <code>SPRDAVCDecoder::onPortFlushCompleted</code><br>在 0x3d7c，映射器精確命中；換一個不存在的庫名，正確報缺。</p>
+<h2 id="3-工具二：-ntseg2-sh（設備端，兩臂取證編排）"><a href="#3-工具二：-ntseg2-sh（設備端，兩臂取證編排）" class="headerlink" title="3. 工具二：_ntseg2.sh（設備端，兩臂取證編排）"></a>3. 工具二：<code>_ntseg2.sh</code>（設備端，兩臂取證編排）</h2><p>單腳本一次跑完兩臂（每臂默認 600s ≈ 4×150s 故障週期，符合泊松觀測鐵律）：</p>
+<ul>
+<li><strong>A0 基線臂</strong>（<code>IDRREPLAY=0</code>）：歷史穩定復現配置，<strong>必須崩</strong>，否則整輪<br><code>NOT_REPRODUCED</code> 禁止下結論——這是把 11-03「對照臂不復現時實驗臂的『潔』不具判決力」<br>的方法論直接搬過來；</li>
+<li><strong>R 重投臂</strong>（<code>IDRREPLAY=3</code>，<code>NTSEG2_K</code> 可調）：首 IDR 連投 3 次。</li>
+</ul>
+<p>兩臂之外順手取證（不作判據）：每 20s 逐線程 SigBlk 掩碼巡檢（H2 判據命中計數）、<br>每 90s 快照 worker 的 maps（崩潰後進程沒了，lib 基址靠它補）、segv.log 按臂歸檔。</p>
+<p>判決是純函數，8 組模擬分流自檢全過：狀態 A、狀態 B、R 不崩、基線不復現、零幀判廢、<br>env 未生效判廢、重投完成後久掛、門檻優先於結果。**兩臂跑完 PC 端只需輪詢一個<br><code>/tmp/ntseg2.log</code>**，收尾一律 SIGTERM + usleep 900ms，絕不碰解碼中的進程。</p>
+<h2 id="4-本輪最值錢的教訓：判讀代碼自己也會撒謊"><a href="#4-本輪最值錢的教訓：判讀代碼自己也會撒謊" class="headerlink" title="4. 本輪最值錢的教訓：判讀代碼自己也會撒謊"></a>4. 本輪最值錢的教訓：判讀代碼自己也會撒謊</h2><p>寫採樣器時第一版用 shell 的 <code>case &quot;$sb&quot; in ????)</code> 做「SigBlk 長度守衛」——只匹配 4 或<br>8 個字符的值。但真實的 <code>/proc/.../status</code> 裡 SigBlk 是 <strong>32 位十六進制串</strong><br>（如 <code>00000000000000000000000000000400</code>），case 守衛會讓所有真實值全部落進<br><code>*) continue</code>，<strong>掩碼巡檢靜默採到恆 0</strong>，最後日誌裡「maskedhit&#x3D;0」會被讀成<br>「沒有線程屏蔽 SIGSEGV」——一條徹頭徹尾的假陰性證據。</p>
+<p>這和 11-07 那個「curl 探針只認 200 把 206 的好源判死」是同一類錯誤：<br><strong>測量工具自身的解析 bug 會偽裝成被測系統的正常表現</strong>。修法也一樣——工具的取值邏輯<br>必須先用真實數據形態測試過（SigBlk 用 32 位串測），而不是用想當然的短串。現在代碼裡<br>留了註釋：<code># 真實 SigBlk 是 32 位十六進制串, 不能用 case 長度守衛——會漏採</code>。</p>
+<h2 id="5-下次在線怎麼跑（約-22-分鐘）"><a href="#5-下次在線怎麼跑（約-22-分鐘）" class="headerlink" title="5. 下次在線怎麼跑（約 22 分鐘）"></a>5. 下次在線怎麼跑（約 22 分鐘）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 上傳 outputs/_ntseg2.sh 後設備端執行：</span><br><span class="line">sh /tmp/_ntseg2.sh 600</span><br><span class="line"># 輪詢 /tmp/ntseg2.log，先看兩臂 GATE V= 全 1，再看 VERDICT</span><br><span class="line"># 拿到 segv 現場後 PC 端：</span><br><span class="line">python outputs/_pcmap.py &lt;segv日誌&gt;</span><br></pre></td></tr></table></figure>
+
+<p>INVALID 整輪重跑、禁改碼；NOT_REPRODUCED 則把 A0 延到 1200s。拿到判決後再決定走<br>GOP 邊界軟復位（A）還是洩漏排查（B）。</p>
+<hr>
+<p><em>本文由 whiteleibniz 原創，採用 CC BY-NC-SA 4.0 協議，轉載請註明出處 whiteleibniz.github.io</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%89%E4%BB%B6%E5%A5%97%E6%98%AF%E4%BB%80%E9%BA%BC%E3%80%81%E7%82%BA%E4%BB%80%E9%BA%BC%E6%98%AF%E5%AE%83"><span class="toc-number">1.</span> <span class="toc-text">1. 三件套是什麼、為什麼是它</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%B7%A5%E5%85%B7%E4%B8%80%EF%BC%9A-pcmap-py%EF%BC%88PC-%E7%AB%AF%EF%BC%8C%E7%AC%A6%E8%99%9F%E6%98%A0%E5%B0%84%E5%99%A8%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">2. 工具一：_pcmap.py（PC 端，符號映射器）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%B7%A5%E5%85%B7%E4%BA%8C%EF%BC%9A-ntseg2-sh%EF%BC%88%E8%A8%AD%E5%82%99%E7%AB%AF%EF%BC%8C%E5%85%A9%E8%87%82%E5%8F%96%E8%AD%89%E7%B7%A8%E6%8E%92%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">3. 工具二：_ntseg2.sh（設備端，兩臂取證編排）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%9C%AC%E8%BC%AA%E6%9C%80%E5%80%BC%E9%8C%A2%E7%9A%84%E6%95%99%E8%A8%93%EF%BC%9A%E5%88%A4%E8%AE%80%E4%BB%A3%E7%A2%BC%E8%87%AA%E5%B7%B1%E4%B9%9F%E6%9C%83%E6%92%92%E8%AC%8A"><span class="toc-number">4.</span> <span class="toc-text">4. 本輪最值錢的教訓：判讀代碼自己也會撒謊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%B8%8B%E6%AC%A1%E5%9C%A8%E7%B7%9A%E6%80%8E%E9%BA%BC%E8%B7%91%EF%BC%88%E7%B4%84-22-%E5%88%86%E9%90%98%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">5. 下次在線怎麼跑（約 22 分鐘）</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&text=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&title=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&is_video=false&description=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試&body=Check out this article: https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&title=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&title=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&title=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&title=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/09/zh-tw/nettv-40-forensic-toolkit-second-idr-zh-tw/&name=netTV 硬解（40）：第二 IDR 取證三件套工具化——判決代碼要先於判決被測試&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

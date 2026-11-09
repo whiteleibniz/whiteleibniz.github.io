@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Language: 简体中文 · 繁體中文 · English   Part 41. The device has been offline for the 13th round in a row, so online experimentsstay queued. The previous two rounds cleared our own code of the “second ID">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A&#x2F;B Arm Builders">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Language: 简体中文 · 繁體中文 · English   Part 41. The device has been offline for the 13th round in a row, so online experimentsstay queued. The previous two rounds cleared our own code of the “second ID">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-09T18:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-09T18:10:40.913Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Hardware Decode">
+<meta property="article:tag" content="Debugging">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2026/11/10/nettv-41-shell-arm-env-anchor/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&text=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&title=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&is_video=false&description=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders&body=Check out this article: https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&title=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&title=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&title=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&title=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&name=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Why-not-keep-guessing-at-the-crash"><span class="toc-number">1.</span> <span class="toc-text">1. Why not keep guessing at the crash</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-real-defect-the-arm-builder-assumes-%E2%80%9Cthe-last-line-is-exec%E2%80%9D"><span class="toc-number">2.</span> <span class="toc-text">2. The real defect: the arm builder assumes “the last line is exec”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Fix-anchor-on-the-exec-line-not-on-a-line-number"><span class="toc-number">3.</span> <span class="toc-text">3. Fix: anchor on the exec line, not on a line number</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Proving-the-fix-executable-level-tests-plus-mutation-checks"><span class="toc-number">4.</span> <span class="toc-text">4. Proving the fix: executable-level tests plus mutation checks</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Two-traps-the-test-harness-itself-fell-into"><span class="toc-number">5.</span> <span class="toc-text">5. Two traps the test harness itself fell into</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Two-things-confirmed-along-the-way"><span class="toc-number">6.</span> <span class="toc-text">6. Two things confirmed along the way</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Status-and-next-steps"><span class="toc-number">7.</span> <span class="toc-text">7. Status and next steps</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-09T18:40:00.000Z" itemprop="datePublished">2026-11-10</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Debugging/" rel="tag">Debugging</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Hardware-Decode/" rel="tag">Hardware Decode</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-41-shell-arm-env-anchor-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Part 41. The device has been offline for the 13th round in a row, so online experiments<br>stay queued. The previous two rounds cleared our own code of the “second IDR always<br>crashes” symptom via static audit. Instead of guessing further, this round did a physical<br>on the two scripts that have <strong>never run on the device</strong> — and found a defect that would<br>have burned an entire 50-minute online window.</p>
+</blockquote>
+<h2 id="1-Why-not-keep-guessing-at-the-crash"><a href="#1-Why-not-keep-guessing-at-the-crash" class="headerlink" title="1. Why not keep guessing at the crash"></a>1. Why not keep guessing at the crash</h2><p>Round 40 turned the second-IDR forensics into two tools: a PC-side symbol mapper and a<br>device-side two-arm orchestrator. Neither has ever touched the device. With 13 consecutive<br>offline rounds, every static avenue is basically exhausted; pushing further would mean<br>changing code based on speculation with no supporting data — the kind of thing that ends up<br>in the post-mortem.</p>
+<p>So the angle changed: <strong>the online window is the most expensive resource in this project</strong><br>(22–50 minutes, plus a human watching). Make sure those two scripts cannot embarrass<br>themselves inside it.</p>
+<p>The acceptance bar is not “does it parse”. It is the failure class that already bit this<br>project twice:</p>
+<ul>
+<li>a source probe that only accepted HTTP 200, while a ranged probe really returns 206 —<br>three live sources were declared dead;</li>
+<li>a <code>SigBlk</code> sampler guarded by string length, while the real value is a 32-digit hex<br>string — sampling stayed at zero and the report said “no thread masks SIGSEGV”.</li>
+</ul>
+<p>Neither was a syntax error. Both disguised a <strong>measurement-tool bug as a healthy system</strong>.<br>So the criterion here: can real-shaped samples actually exercise the parts that fail<br>silently?</p>
+<h2 id="2-The-real-defect-the-arm-builder-assumes-“the-last-line-is-exec”"><a href="#2-The-real-defect-the-arm-builder-assumes-“the-last-line-is-exec”" class="headerlink" title="2. The real defect: the arm builder assumes “the last line is exec”"></a>2. The real defect: the arm builder assumes “the last line is exec”</h2><p>A&#x2F;B experiments rely on an “arm builder”: copy the player wrapper, inject this arm’s<br><code>export NETTV_xxx=...</code>. The old implementation (shared by both scripts):</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">mkarm</span></span>() &#123;</span><br><span class="line">  tag=<span class="variable">$1</span>; k=<span class="variable">$2</span></span><br><span class="line">  &#123; sed <span class="string">&#x27;$d&#x27;</span> <span class="string">&quot;<span class="variable">$WRAP</span>&quot;</span>            <span class="comment"># drop the last line (assumed to be exec)</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;export NETTV_IDRREPLAY=<span class="variable">$k</span>&quot;</span></span><br><span class="line">    <span class="built_in">tail</span> -1 <span class="string">&quot;<span class="variable">$WRAP</span>&quot;</span>             <span class="comment"># put it back</span></span><br><span class="line">  &#125; &gt; /tmp/w_$<span class="variable">$tag</span>.sh</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>It only holds if <strong>the wrapper’s last line is that <code>exec</code></strong>. Nothing enforces that. Add one<br>trailing blank line — editor save, <code>echo &gt;&gt;</code> append, manual whitespace — and <code>sed &#39;$d&#39;</code><br>deletes the blank line while <code>tail -1</code> pastes the blank line back:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/sh</span><br><span class="line">export LD_LIBRARY_PATH=...</span><br><span class="line">exec /usr/local/bin/nettv_player.real &quot;$@&quot;   ← exec is here</span><br><span class="line">export NETTV_RPOOL=0                          ← injected after exec</span><br><span class="line">export NETTV_RPOOL_IDLE=1                     ← never executed</span><br></pre></td></tr></table></figure>
+
+<p>Once <code>exec</code> runs, the shell never reads the following lines. Consequences:</p>
+<ul>
+<li>all four arms silently run the production baseline configuration;</li>
+<li>the verdict script sees four identical arms and concludes “this config does not crash” —<br>the data is clean, the interpretation is wrong;</li>
+<li>the existing <code>WRAP_LASTLINE_BAD</code> check only looks for <code>NETTV_</code> on the last line; a blank<br>line passes;</li>
+<li>the only thing that catches it is the “effective env” hard gate, and catching it means an<br><code>INVALID</code> — a 50-minute window spent on “this round is void”.</li>
+</ul>
+<p>The dangerous part is that this is neither a crash nor an error message. It is data that<br>looks unusually clean.</p>
+<h2 id="3-Fix-anchor-on-the-exec-line-not-on-a-line-number"><a href="#3-Fix-anchor-on-the-exec-line-not-on-a-line-number" class="headerlink" title="3. Fix: anchor on the exec line, not on a line number"></a>3. Fix: anchor on the <code>exec</code> line, not on a line number</h2><p>Replace “last line” with “first <code>exec</code> line” and insert before it:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">awk -v k=<span class="string">&quot;<span class="variable">$k</span>&quot;</span> <span class="string">&#x27;</span></span><br><span class="line"><span class="string">  /^[[:space:]]*export[[:space:]]+NETTV_IDRREPLAY=/ &#123; next &#125;   # drop stale same-name export</span></span><br><span class="line"><span class="string">  ins==0 &amp;&amp; /^[[:space:]]*exec[[:space:]]/ &#123; print &quot;export NETTV_IDRREPLAY=&quot; k; ins=1 &#125;</span></span><br><span class="line"><span class="string">  &#123; print &#125;</span></span><br><span class="line"><span class="string">&#x27;</span> <span class="string">&quot;<span class="variable">$WRAP</span>&quot;</span> &gt; <span class="string">&quot;<span class="variable">$out</span>&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>Three side benefits: immune to trailing blank lines and comments; removes any pre-existing<br>same-name export so the “exactly one” gate holds (also makes reruns idempotent); and if the<br>wrapper has no <code>exec</code> line at all, it falls back to the old behaviour but leaves an explicit<br><code>ARMK_FALLBACK=1</code> marker in the file instead of silently generating a broken one.</p>
+<h2 id="4-Proving-the-fix-executable-level-tests-plus-mutation-checks"><a href="#4-Proving-the-fix-executable-level-tests-plus-mutation-checks" class="headerlink" title="4. Proving the fix: executable-level tests plus mutation checks"></a>4. Proving the fix: executable-level tests plus mutation checks</h2><p>Passing <code>sh -n</code> proves nothing — the broken version passed it too. Both scripts now support<br>an <code>NTLIB=1</code> library mode: when set, sourcing them only defines functions, starts no<br>experiment, touches no logs. The test suite therefore loads <strong>the real file</strong> and asserts on<br>the exact code that ships, not on a copy.</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Covers</th>
+<th>Key assertion</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>mkarm</code></td>
+<td>trailing blank line &#x2F; pre-existing export &#x2F; no exec line</td>
+<td>the exports sit <strong>immediately above exec, in order</strong></td>
+</tr>
+<tr>
+<td><code>env_key_ok</code></td>
+<td>match &#x2F; wrong value &#x2F; duplicates &#x2F; empty &#x2F; missing</td>
+<td>effective only if exactly one entry with the expected value</td>
+</tr>
+<tr>
+<td>H2 mask criterion</td>
+<td>extract the real 3 lines from the script, feed 8 real <code>SigBlk</code> shapes</td>
+<td>case, all-zero, empty, too-short must not misjudge</td>
+</tr>
+</tbody></table>
+<p>That first assertion deserves a note. It was initially written as “an export exists before<br>exec”, which stayed green even when the export landed <strong>after</strong> exec — because the wrapper<br>body line, rewritten in place, already sat before exec. Only tightening it to “immediately<br>above exec” actually tested placement. A loose test is worse than none: it hands you a false<br>sense of having verified something.</p>
+<p>Then the suite’s own sensitivity — deliberately break the code under test and check that<br>cases notice:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">--mutcheck</span><br><span class="line">  OK arm-anchor mutation caught (degrades to last-line insert =&gt; W1 must fail)</span><br><span class="line">  OK uppercase SigBlk mutation caught (missing tr normalisation)</span><br><span class="line">  OK bis35c arm-anchor mutation caught</span><br><span class="line">MUTCHECK=PASS</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-Two-traps-the-test-harness-itself-fell-into"><a href="#5-Two-traps-the-test-harness-itself-fell-into" class="headerlink" title="5. Two traps the test harness itself fell into"></a>5. Two traps the test harness itself fell into</h2><p><strong>Trap 1: the driver could pass falsely.</strong> The first version collected output via command<br>substitution and counted <code>✗FAIL</code> lines. But if a phase function returns early (e.g. the<br>source failed), zero failure lines are produced, the count is zero, and it prints<br><code>LIBTEST_RESULT=PASS</code> — exactly the “<code>maskedhit</code> stuck at 0” shape from the previous round.<br>Fix: every phase must emit <code>PHASE_RESULT</code> and exit 0; missing either counts as a failure.<br><strong>“No failures observed” is not “pass” unless you have verified the path that should have<br>produced them actually ran.</strong></p>
+<p><strong>Trap 2: <code>dash</code>‘s <code>.</code> searches PATH.</strong> <code>. &quot;_ntseg2.sh&quot;</code> resolves relative to the current<br>directory in bash, but <code>dash</code>&#x2F;<code>ash</code> perform a PATH lookup for names without a slash and<br>report “not found”. <code>. &quot;./$SRC&quot;</code> behaves identically everywhere. This class of difference<br>only shows up when you actually run a strict POSIX shell.</p>
+<h2 id="6-Two-things-confirmed-along-the-way"><a href="#6-Two-things-confirmed-along-the-way" class="headerlink" title="6. Two things confirmed along the way"></a>6. Two things confirmed along the way</h2><ul>
+<li>Both scripts pass <code>dash -n</code> (real POSIX), and their own verdict self-tests still pass<br>(8 cases &#x2F; 7 + 5 source-selection cases).</li>
+<li>The crash address <code>0x747474</code> (ASCII <code>ttt</code>) was re-checked against the source: no matching<br>fill constant, no character <code>memset</code>. So it is <strong>not our own fill pattern</strong>; suspicion<br>remains on the vendor library or the input buffer header. Wait for the device and get a pc<br>offset instead of guessing further.</li>
+</ul>
+<h2 id="7-Status-and-next-steps"><a href="#7-Status-and-next-steps" class="headerlink" title="7. Status and next steps"></a>7. Status and next steps</h2><ul>
+<li>Production still runs the previous binary; nothing was compiled, deployed, or committed<br>this round.</li>
+<li>When the device is back: run the offline suite first → open-run gate (route + playable<br>source) → every arm <code>GATE V=</code> all 1 → only then read VERDICT. <code>INVALID</code> means rerun the<br>whole round, never edit code based on it.</li>
+<li>If a generated wrapper starts with <code>ARMK_FALLBACK</code>, the wrapper structure on the device<br>changed — <code>cat</code> it before running.</li>
+</ul>
+<p>Round 13 offline. This round was about making sure the next power-on is not wasted.</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Why-not-keep-guessing-at-the-crash"><span class="toc-number">1.</span> <span class="toc-text">1. Why not keep guessing at the crash</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-The-real-defect-the-arm-builder-assumes-%E2%80%9Cthe-last-line-is-exec%E2%80%9D"><span class="toc-number">2.</span> <span class="toc-text">2. The real defect: the arm builder assumes “the last line is exec”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Fix-anchor-on-the-exec-line-not-on-a-line-number"><span class="toc-number">3.</span> <span class="toc-text">3. Fix: anchor on the exec line, not on a line number</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Proving-the-fix-executable-level-tests-plus-mutation-checks"><span class="toc-number">4.</span> <span class="toc-text">4. Proving the fix: executable-level tests plus mutation checks</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Two-traps-the-test-harness-itself-fell-into"><span class="toc-number">5.</span> <span class="toc-text">5. Two traps the test harness itself fell into</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Two-things-confirmed-along-the-way"><span class="toc-number">6.</span> <span class="toc-text">6. Two things confirmed along the way</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Status-and-next-steps"><span class="toc-number">7.</span> <span class="toc-text">7. Status and next steps</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&text=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&title=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&is_video=false&description=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders&body=Check out this article: https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&title=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&title=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&title=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&title=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/10/nettv-41-shell-arm-env-anchor-en/&name=netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
