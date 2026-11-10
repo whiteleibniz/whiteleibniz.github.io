@@ -4,6 +4,135 @@
   
     
     <entry>
+      <title>netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause</title>
+      <link href="/2026/11/11/nettv-43-vendor-lib-static-audit-en/"/>
+      <url>/2026/11/11/nettv-43-vendor-lib-static-audit-en/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-43-vendor-lib-static-audit-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/">English</a></p></blockquote><blockquote><p>Part 43. The device was offline, so I pulled the vendor library copies already on disk and did<br>a purely static reverse-engineering pass. One question: is the decoder library what makes<br>playback stutter?</p></blockquote><h2 id="Boundaries-first"><a href="#Boundaries-first" class="headerlink" title="Boundaries first"></a>Boundaries first</h2><p>This is <strong>read-only static analysis</strong>: ELF parsing plus linear disassembly of the code section.<br><strong>No target binary was executed</strong>, no dynamic instrumentation, no cracking or license bypass.<br>The targets are libraries shipped with my own device, analyzed for self-use debugging.</p><p>One more caveat: the newly installed REA toolchain did not register its analysis engine this time,<br>so everything below comes from local ELF parsing and disassembly observations — <strong>not REA<br>Evidence</strong>. Static analysis also has a hard limit: it proves which instructions exist in a binary,<br>not what happened at runtime.</p><h2 id="Three-layers-of-waiting"><a href="#Three-layers-of-waiting" class="headerlink" title="Three layers of waiting"></a>Three layers of waiting</h2><p><strong>Layer one, the VSP register layer.</strong> <code>vsp_read_reg_poll</code> is a pure busy-wait spin: the loop<br>re-reads an MMIO register with no sleep, no yield, no WFE, until the condition holds or a counter<br>exhausts. The counter ceiling is passed in by the caller, commonly 65535. There are 26 call sites<br>across the library, and 7-8 of them sit inside a single frame of the main decode function.<br>The timeout branch issues an ioctl and logs — it does not fail silently. There is also a<br><code>usleep(20000)</code>, a fixed 20 ms sleep, but it lives only in the release&#x2F;reset retry path,<br><strong>not in the per-frame decode loop</strong>.</p><p><strong>Layer two, the OMX component layer.</strong> A single condition-variable wait. The timespec built on<br>the stack reads directly as <code>&#123;tv_sec=3, tv_nsec=0&#125;</code> — a <strong>3-second relative timeout</strong>. This layer<br>has no sleep, poll or ioctl; it is purely waiting for buffers.</p><p><strong>Layer three, the VPU abstraction layer.</strong> A full set of timed semaphores, poll_complete helpers<br>and clock reads. But this layer mostly calls through register-indirect branches, so static<br>disassembly <strong>cannot recover the arguments</strong>. Timeout values and wait counts stay explicitly<br>unknown rather than invented.</p><p>An old conclusion also checked out: the <code>POLL_COMPLETE</code> patch differs by 158 bytes, with three<br>busy-wait loops replaced by jumps and 144 bytes of new code at the tail containing pointer<br>validity and alignment checks. The patch is a <strong>filter on poll results</strong>, not a timing change.</p><h2 id="Two-things-that-nearly-became-fake-evidence"><a href="#Two-things-that-nearly-became-fake-evidence" class="headerlink" title="Two things that nearly became fake evidence"></a>Two things that nearly became fake evidence</h2><p><strong>The measurement tool broke again.</strong> Linear disassembly stops dead when it hits a constant pool<br>embedded in the code section (in practice it reached only a few dozen instructions past the start),<br>producing a clean “zero wait-class calls” false negative. Enabling <code>skipdata</code> revealed the real<br>26 call sites. This is the same class of incident as the earlier “only accept HTTP 200” and<br>“SigBlk length guard” bugs: <strong>a parser defect masquerading as a healthy system under test</strong>.</p><p><strong>Constant scanning was pure noise.</strong> Searching the whole file for <code>0xffff</code> produced 1653 hits,<br>almost all ARM instruction encodings and padding; the <code>192000</code> hit sits in a segment-size field<br>of the ELF program header. Neither is a timeout. More importantly, <strong>no fixed timeout constant<br>matching the 151-186 s crash interval exists in the library</strong> — so “the periodic crash is a<br>library timer stomp” has no static support, and the earlier “accumulated drift &#x2F; leak” verdict<br>stays first in line.</p><h2 id="Verdict-the-library-is-not-the-prime-suspect"><a href="#Verdict-the-library-is-not-the-prime-suspect" class="headerlink" title="Verdict: the library is not the prime suspect"></a>Verdict: the library is not the prime suspect</h2><p>The busy-wait is real, but it is a <strong>jitter amplifier</strong>: up to 65535 spins without releasing the<br>CPU lets the decode thread monopolize one core on a quad-core device, competing with download,<br>audio and render threads. That should show up as occasional stutter, not sustained low fps.<br>The 20 ms sleep lives on the reset path and does not eat the per-frame budget; the 3-second<br>timeout normally never fires in steady state.</p><p>The actual attribution is elsewhere. The project established a source criterion long ago:<br><strong>retrievable does not mean playable</strong>. Device bandwidth is about 2400 kbps and the bitrate needs<br>a 1.3x margin; the 1080p source currently in use is 3333 kbps with a margin of only 0.72, so<br>the player can only <strong>skip segments to catch up</strong>. Meanwhile the source is 25 fps, measured<br>steady state is 28 fps, and rendering is not the bottleneck. In other words, on this source,<br><strong>any smoothness or fps observation is inadmissible as evidence</strong>.</p><p>So the highest-confidence explanation is <strong>segment skipping caused by insufficient bandwidth</strong>,<br>not a slow decoder library. Going straight to patching the library would mean experimenting on<br>the wrong variable.</p><h2 id="Next-step-change-exactly-one-variable"><a href="#Next-step-change-exactly-one-variable" class="headerlink" title="Next step: change exactly one variable"></a>Next step: change exactly one variable</h2><p>Switch to a low-bitrate source (720p, about 813 kbps) first and check whether the same visual<br>stutter remains. It is the cheapest, most discriminating step; until it passes, every later<br>library experiment is inadmissible. If stutter persists after the switch, then sample the decode<br>thread’s real spin counts and CPU usage to test the “core contention” inference.</p><p>The periodic-crash leak investigation is a separate track and continues as planned: add the<br>memory-pool fields to sampling, extend the baseline arm, and see whether crash intervals shrink<br>or stay constant.</p><hr><p><em>Copyright: original work by whiteleibniz, licensed under CC BY-NC-SA 4.0. Attribution to whiteleibniz.github.io required when reproducing.</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Embedded </category>
+          
+          <category> Spreadtrum Platform </category>
+          
+          <category> Project Notes </category>
+          
+          <category> Engineering Practice </category>
+          
+          <category> netTV HW Decode </category>
+          
+          <category> Debugging Methods </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> VSP </tag>
+            
+            <tag> Embedded </tag>
+            
+            <tag> Spreadtrum SC9832A </tag>
+            
+            <tag> Hardware Decode </tag>
+            
+            <tag> Reverse Engineering </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因</title>
+      <link href="/2026/11/11/nettv-43-vendor-lib-static-audit/"/>
+      <url>/2026/11/11/nettv-43-vendor-lib-static-audit/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-43-vendor-lib-static-audit-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/">English</a></p></blockquote><blockquote><p>系列第 43 篇。设备那天离线，于是把手上已有的厂商库副本翻出来做了一次纯静态逆向。<br>目标是回答一个问题：播放不流畅，是不是解码库在拖后腿？</p></blockquote><h2 id="先划边界"><a href="#先划边界" class="headerlink" title="先划边界"></a>先划边界</h2><p>这次只做<strong>只读静态分析</strong>：解析 ELF、用反汇编引擎线性扫代码段，<strong>没有执行任何目标二进制</strong>，<br>没有动态插桩，没有破解或绕过授权。目标是我自己设备上随系统分发的库，用途是自用调试。</p><p>还有一条必须说清楚：新装的 REA（逆向分析）工具链这次引擎没注册成功，所以下面的结论<br>全部来自本地 ELF 解析和反汇编观察，<strong>不是 REA 引擎产出的证据</strong>。静态分析也有硬边界——<br>它能证明「二进制里有什么指令」，不能证明「运行时发生了什么」。</p><h2 id="库里的三层等待结构"><a href="#库里的三层等待结构" class="headerlink" title="库里的三层等待结构"></a>库里的三层等待结构</h2><p><strong>第一层，VSP 寄存器层。</strong> <code>vsp_read_reg_poll</code> 是个纯忙等自旋：循环体反复读 MMIO 寄存器，<br>不 sleep、不让出 CPU、没有 WFE，直到条件满足或计数耗尽。计数上限由调用方传入，常见值是<br>65535 次。全库 26 处调用，其中解码主函数一帧里就有 7 到 8 处。超时分支会发一个 ioctl<br>并打日志，不是静默失败。另外有个 <code>usleep(20000)</code> 也就是 20 毫秒固定睡眠，但它只在<br>释放&#x2F;复位重试路径里，<strong>不在逐帧解码主循环</strong>。</p><p><strong>第二层，OMX 组件层。</strong> 唯一一处条件变量等待，从栈上的 timespec 构造能直接读出<br><code>&#123;tv_sec=3, tv_nsec=0&#125;</code>，也就是 <strong>3 秒相对超时</strong>。这一层没有 sleep、poll 或 ioctl，<br>纯粹是在等 buffer。</p><p><strong>第三层，VPU 抽象层。</strong> 有一整套带超时的信号量和 poll_complete、时钟读取函数。<br>但这层主要通过寄存器间接调用，静态反汇编<strong>取不到调用参数</strong>，所以超时值、等待次数我<br>标为未知，不编。</p><p>顺带对上了一个旧结论：之前给 <code>POLL_COMPLETE</code> 打过补丁，对比 patched 库发现 158 字节差异，<br>三处把忙等循环换成跳转、尾部新增 144 字节里是指针合法性和对齐检查——补丁本质是<br>给轮询结果加过滤，不是改节奏。</p><h2 id="两个差点变成假证据的东西"><a href="#两个差点变成假证据的东西" class="headerlink" title="两个差点变成假证据的东西"></a>两个差点变成假证据的东西</h2><p><strong>测量工具自己又出了一次 bug。</strong> 反汇编引擎线性扫代码段时，遇到夹在指令里的常量池会<br>直接停住（实测只走到代码段开头几十条指令），于是「等待类调用 &#x3D; 0」——一个漂亮的假阴性。<br>打开 <code>skipdata</code> 之后才拿到真实的 26 处调用。这家伙和之前「只认 200」「SigBlk 长度守卫」<br>是同一类事故：<strong>工具解析出错，伪装成被测系统一切正常</strong>。</p><p><strong>常量盲扫全是噪声。</strong> 全文件搜 <code>0xffff</code> 命中 1653 次，绝大多数是 ARM 指令编码和填充；<br>搜到的 <code>192000</code> 落在 ELF 程序头的段大小字段里，都不是超时常量。更重要的是，<br><strong>库内没有找到与崩溃间隔（151-186 秒）相称的固定超时魔数</strong>——所以「周期性崩溃是库内<br>定时器踩踏」暂时没有静态证据，之前判的「累积漂移 &#x2F; 泄漏」方向仍然优先。</p><h2 id="结论：不流畅，第一嫌疑不在库"><a href="#结论：不流畅，第一嫌疑不在库" class="headerlink" title="结论：不流畅，第一嫌疑不在库"></a>结论：不流畅，第一嫌疑不在库</h2><p>库里的忙等自旋确实存在，它是<strong>抖动放大器</strong>：最多 65535 次不放 CPU 的自旋，在四核设备上<br>会让解码线程独占一个核，跟下载、音频、渲染线程抢核，表现出来应该是偶发顿挫，<br>而不是持续低帧率。20 毫秒睡眠只在复位路径，不吃逐帧预算；3 秒超时稳态下通常不触发。</p><p>但真正的归因在另一头。项目里早就定过源判据：<strong>取得到 ≠ 播得动</strong>。设备带宽约<br>2400 kbps，要求码率留 1.3 倍余量；当前用的 1080p 源是 3333 kbps，余量只有 0.72，<br>播放器只能靠<strong>跳段追赶</strong>。同时源本身 25fps，现网稳态 28fps，渲染不是瓶颈。<br>也就是说，在这个源上，任何「流畅度 &#x2F; 帧率」类观测都不可采信。</p><p>所以最高置信的解释是：<strong>带宽不足导致的跳段追赶</strong>，不是解码库慢。<br>如果一上来就去改库，等于在错误的变量上做实验。</p><h2 id="下一步：只推一个变量"><a href="#下一步：只推一个变量" class="headerlink" title="下一步：只推一个变量"></a>下一步：只推一个变量</h2><p>先换到低码率源（720p &#x2F; 约 813 kbps），用同样的观感再看还卡不卡。这一步成本最低、<br>判别力最高；不过这一关，后面所有针对库的实验都不可采信。换源后仍卡，再去采解码线程<br>的实际自旋次数和 CPU 占用，验证「抢核」这个推断。</p><p>至于周期性崩溃的泄漏排查，和这次归因是两条独立的线，照原计划走：补内存池字段采样，<br>把基线臂延长看崩溃间隔是缩短还是恒定。</p><hr><p><em>版权声明：本文为 whiteleibniz 原创文章，采用 CC BY-NC-SA 4.0 许可协议。转载请注明出处 whiteleibniz.github.io。</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Embedded </category>
+          
+          <category> Spreadtrum Platform </category>
+          
+          <category> Project Notes </category>
+          
+          <category> Engineering Practice </category>
+          
+          <category> netTV HW Decode </category>
+          
+          <category> Debugging Methods </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> VSP </tag>
+            
+            <tag> Embedded </tag>
+            
+            <tag> Spreadtrum SC9832A </tag>
+            
+            <tag> Hardware Decode </tag>
+            
+            <tag> Reverse Engineering </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>netTV 硬解（43）：靜態逆向廠商庫查「播放不流暢」——忙等自旋是真的，但它不是根因</title>
+      <link href="/2026/11/11/zh-tw/nettv-43-vendor-lib-static-audit-zh-tw/"/>
+      <url>/2026/11/11/zh-tw/nettv-43-vendor-lib-static-audit-zh-tw/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-43-vendor-lib-static-audit-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/">English</a></p></blockquote><blockquote><p>系列第 43 篇。設備那天離線，於是把手上已有的廠商庫副本翻出來做了一次純靜態逆向。<br>目標是回答一個問題：播放不流暢，是不是解碼庫在拖後腿？</p></blockquote><h2 id="先劃邊界"><a href="#先劃邊界" class="headerlink" title="先劃邊界"></a>先劃邊界</h2><p>這次只做<strong>唯讀靜態分析</strong>：解析 ELF、用反組譯引擎線性掃程式碼段，<strong>沒有執行任何目標二進位檔</strong>，<br>沒有動態插樁，沒有破解或繞過授權。目標是我自己設備上隨系統分發的庫，用途是自用除錯。</p><p>還有一條必須說清楚：新裝的 REA（逆向分析）工具鏈這次引擎沒註冊成功，所以下面的結論<br>全部來自本機 ELF 解析與反組譯觀察，<strong>不是 REA 引擎產出的證據</strong>。靜態分析也有硬邊界——<br>它能證明「二進位裡有什麼指令」，不能證明「執行時發生了什麼」。</p><h2 id="庫裡的三層等待結構"><a href="#庫裡的三層等待結構" class="headerlink" title="庫裡的三層等待結構"></a>庫裡的三層等待結構</h2><p><strong>第一層，VSP 暫存器層。</strong> <code>vsp_read_reg_poll</code> 是個純忙等自旋：迴圈反覆讀 MMIO 暫存器，<br>不 sleep、不讓出 CPU、沒有 WFE，直到條件滿足或計數耗盡。計數上限由呼叫方傳入，常見值是<br>65535 次。全庫 26 處呼叫，其中解碼主函式一幀裡就有 7 到 8 處。逾時分支會發一個 ioctl<br>並打日誌，不是靜默失敗。另外有個 <code>usleep(20000)</code> 也就是 20 毫秒固定睡眠，但它只在<br>釋放&#x2F;重置重試路徑裡，<strong>不在逐幀解碼主迴圈</strong>。</p><p><strong>第二層，OMX 元件層。</strong> 唯一一處條件變數等待，從堆疊上的 timespec 建構能直接讀出<br><code>&#123;tv_sec=3, tv_nsec=0&#125;</code>，也就是 <strong>3 秒相對逾時</strong>。這一層沒有 sleep、poll 或 ioctl，<br>純粹是在等 buffer。</p><p><strong>第三層，VPU 抽象層。</strong> 有一整套帶逾時的信號量與 poll_complete、時鐘讀取函式。<br>但這層主要透過暫存器間接呼叫，靜態反組譯<strong>取不到呼叫參數</strong>，所以逾時值、等待次數我<br>標為未知，不編。</p><p>順帶對上了一個舊結論：之前給 <code>POLL_COMPLETE</code> 打過補丁，比對 patched 庫發現 158 位元組差異，<br>三處把忙等迴圈換成跳轉、尾部新增 144 位元組裡是指標合法性與對齊檢查——補丁本質是<br>給輪詢結果加過濾，不是改節奏。</p><h2 id="兩個差點變成假證據的東西"><a href="#兩個差點變成假證據的東西" class="headerlink" title="兩個差點變成假證據的東西"></a>兩個差點變成假證據的東西</h2><p><strong>測量工具自己又出了一次 bug。</strong> 反組譯引擎線性掃程式碼段時，遇到夾在指令裡的常數池會<br>直接停住（實測只走到程式碼段開頭幾十條指令），於是「等待類呼叫 &#x3D; 0」——一個漂亮的假陰性。<br>打開 <code>skipdata</code> 之後才拿到真實的 26 處呼叫。這傢伙和之前「只認 200」「SigBlk 長度守衛」<br>是同一類事故：<strong>工具解析出錯，偽裝成被測系統一切正常</strong>。</p><p><strong>常數盲掃全是雜訊。</strong> 全檔案搜 <code>0xffff</code> 命中 1653 次，絕大多數是 ARM 指令編碼與填充；<br>搜到的 <code>192000</code> 落在 ELF 程式頭的段大小欄位裡，都不是逾時常數。更重要的是，<br><strong>庫內沒有找到與崩潰間隔（151-186 秒）相稱的固定逾時魔數</strong>——所以「週期性崩潰是庫內<br>定時器踩踏」暫時沒有靜態證據，之前判的「累積漂移 &#x2F; 洩漏」方向仍然優先。</p><h2 id="結論：不流暢，第一嫌疑不在庫"><a href="#結論：不流暢，第一嫌疑不在庫" class="headerlink" title="結論：不流暢，第一嫌疑不在庫"></a>結論：不流暢，第一嫌疑不在庫</h2><p>庫裡的忙等自旋確實存在，它是<strong>抖動放大器</strong>：最多 65535 次不放 CPU 的自旋，在四核設備上<br>會讓解碼執行緒獨佔一個核，跟下載、音訊、渲染執行緒搶核，表現出來應該是偶發頓挫，<br>而不是持續低幀率。20 毫秒睡眠只在重置路徑，不吃逐幀預算；3 秒逾時穩態下通常不觸發。</p><p>但真正的歸因在另一頭。專案裡早就定過源判據：<strong>取得到 ≠ 播得動</strong>。設備頻寬約<br>2400 kbps，要求碼率留 1.3 倍餘量；當前用的 1080p 源是 3333 kbps，餘量只有 0.72，<br>播放器只能靠<strong>跳段追趕</strong>。同時源本身 25fps，現網穩態 28fps，渲染不是瓶頸。<br>也就是說，在這個源上，任何「流暢度 &#x2F; 幀率」類觀測都不可採信。</p><p>所以最高置信的解釋是：<strong>頻寬不足導致的跳段追趕</strong>，不是解碼庫慢。<br>如果一上來就去改庫，等於在錯誤的變數上做實驗。</p><h2 id="下一步：只推一個變數"><a href="#下一步：只推一個變數" class="headerlink" title="下一步：只推一個變數"></a>下一步：只推一個變數</h2><p>先換到低碼率源（720p &#x2F; 約 813 kbps），用同樣的觀感再看還卡不卡。這一步成本最低、<br>判別力最高；不過這一關，後面所有針對庫的實驗都不可採信。換源後仍卡，再去採解碼執行緒<br>的實際自旋次數與 CPU 佔用，驗證「搶核」這個推斷。</p><p>至於週期性崩潰的洩漏排查，和這次歸因是兩條獨立的線，照原計畫走：補記憶體池欄位採樣，<br>把基線臂延長看崩潰間隔是縮短還是恆定。</p><hr><p><em>版權聲明：本文為 whiteleibniz 原創文章，採用 CC BY-NC-SA 4.0 許可協議。轉載請註明出處 whiteleibniz.github.io。</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Embedded </category>
+          
+          <category> Spreadtrum Platform </category>
+          
+          <category> Project Notes </category>
+          
+          <category> Engineering Practice </category>
+          
+          <category> netTV HW Decode </category>
+          
+          <category> Debugging Methods </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> VSP </tag>
+            
+            <tag> Embedded </tag>
+            
+            <tag> Spreadtrum SC9832A </tag>
+            
+            <tag> Hardware Decode </tag>
+            
+            <tag> Reverse Engineering </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift</title>
       <link href="/2026/11/10/nettv-42-drift-verdict-en/"/>
       <url>/2026/11/10/nettv-42-drift-verdict-en/</url>

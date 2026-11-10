@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Language: 简体中文 · 繁體中文 · English   Part 43. The device was offline, so I pulled the vendor library copies already on disk and dida purely static reverse-engineering pass. One question: is the decod">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Language: 简体中文 · 繁體中文 · English   Part 43. The device was offline, so I pulled the vendor library copies already on disk and dida purely static reverse-engineering pass. One question: is the decod">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-10T16:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-10T16:40:33.185Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Hardware Decode">
+<meta property="article:tag" content="Reverse Engineering">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2026/11/11/nettv-43-vendor-lib-static-audit/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&text=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&title=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&is_video=false&description=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause&body=Check out this article: https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&title=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&title=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&title=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&title=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&name=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Boundaries-first"><span class="toc-number">1.</span> <span class="toc-text">Boundaries first</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Three-layers-of-waiting"><span class="toc-number">2.</span> <span class="toc-text">Three layers of waiting</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Two-things-that-nearly-became-fake-evidence"><span class="toc-number">3.</span> <span class="toc-text">Two things that nearly became fake evidence</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Verdict-the-library-is-not-the-prime-suspect"><span class="toc-number">4.</span> <span class="toc-text">Verdict: the library is not the prime suspect</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Next-step-change-exactly-one-variable"><span class="toc-number">5.</span> <span class="toc-text">Next step: change exactly one variable</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-10T16:40:00.000Z" itemprop="datePublished">2026-11-11</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Hardware-Decode/" rel="tag">Hardware Decode</a>, <a class="tag-link-link" href="/tags/Reverse-Engineering/" rel="tag">Reverse Engineering</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-43-vendor-lib-static-audit-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Part 43. The device was offline, so I pulled the vendor library copies already on disk and did<br>a purely static reverse-engineering pass. One question: is the decoder library what makes<br>playback stutter?</p>
+</blockquote>
+<h2 id="Boundaries-first"><a href="#Boundaries-first" class="headerlink" title="Boundaries first"></a>Boundaries first</h2><p>This is <strong>read-only static analysis</strong>: ELF parsing plus linear disassembly of the code section.<br><strong>No target binary was executed</strong>, no dynamic instrumentation, no cracking or license bypass.<br>The targets are libraries shipped with my own device, analyzed for self-use debugging.</p>
+<p>One more caveat: the newly installed REA toolchain did not register its analysis engine this time,<br>so everything below comes from local ELF parsing and disassembly observations — <strong>not REA<br>Evidence</strong>. Static analysis also has a hard limit: it proves which instructions exist in a binary,<br>not what happened at runtime.</p>
+<h2 id="Three-layers-of-waiting"><a href="#Three-layers-of-waiting" class="headerlink" title="Three layers of waiting"></a>Three layers of waiting</h2><p><strong>Layer one, the VSP register layer.</strong> <code>vsp_read_reg_poll</code> is a pure busy-wait spin: the loop<br>re-reads an MMIO register with no sleep, no yield, no WFE, until the condition holds or a counter<br>exhausts. The counter ceiling is passed in by the caller, commonly 65535. There are 26 call sites<br>across the library, and 7-8 of them sit inside a single frame of the main decode function.<br>The timeout branch issues an ioctl and logs — it does not fail silently. There is also a<br><code>usleep(20000)</code>, a fixed 20 ms sleep, but it lives only in the release&#x2F;reset retry path,<br><strong>not in the per-frame decode loop</strong>.</p>
+<p><strong>Layer two, the OMX component layer.</strong> A single condition-variable wait. The timespec built on<br>the stack reads directly as <code>&#123;tv_sec=3, tv_nsec=0&#125;</code> — a <strong>3-second relative timeout</strong>. This layer<br>has no sleep, poll or ioctl; it is purely waiting for buffers.</p>
+<p><strong>Layer three, the VPU abstraction layer.</strong> A full set of timed semaphores, poll_complete helpers<br>and clock reads. But this layer mostly calls through register-indirect branches, so static<br>disassembly <strong>cannot recover the arguments</strong>. Timeout values and wait counts stay explicitly<br>unknown rather than invented.</p>
+<p>An old conclusion also checked out: the <code>POLL_COMPLETE</code> patch differs by 158 bytes, with three<br>busy-wait loops replaced by jumps and 144 bytes of new code at the tail containing pointer<br>validity and alignment checks. The patch is a <strong>filter on poll results</strong>, not a timing change.</p>
+<h2 id="Two-things-that-nearly-became-fake-evidence"><a href="#Two-things-that-nearly-became-fake-evidence" class="headerlink" title="Two things that nearly became fake evidence"></a>Two things that nearly became fake evidence</h2><p><strong>The measurement tool broke again.</strong> Linear disassembly stops dead when it hits a constant pool<br>embedded in the code section (in practice it reached only a few dozen instructions past the start),<br>producing a clean “zero wait-class calls” false negative. Enabling <code>skipdata</code> revealed the real<br>26 call sites. This is the same class of incident as the earlier “only accept HTTP 200” and<br>“SigBlk length guard” bugs: <strong>a parser defect masquerading as a healthy system under test</strong>.</p>
+<p><strong>Constant scanning was pure noise.</strong> Searching the whole file for <code>0xffff</code> produced 1653 hits,<br>almost all ARM instruction encodings and padding; the <code>192000</code> hit sits in a segment-size field<br>of the ELF program header. Neither is a timeout. More importantly, <strong>no fixed timeout constant<br>matching the 151-186 s crash interval exists in the library</strong> — so “the periodic crash is a<br>library timer stomp” has no static support, and the earlier “accumulated drift &#x2F; leak” verdict<br>stays first in line.</p>
+<h2 id="Verdict-the-library-is-not-the-prime-suspect"><a href="#Verdict-the-library-is-not-the-prime-suspect" class="headerlink" title="Verdict: the library is not the prime suspect"></a>Verdict: the library is not the prime suspect</h2><p>The busy-wait is real, but it is a <strong>jitter amplifier</strong>: up to 65535 spins without releasing the<br>CPU lets the decode thread monopolize one core on a quad-core device, competing with download,<br>audio and render threads. That should show up as occasional stutter, not sustained low fps.<br>The 20 ms sleep lives on the reset path and does not eat the per-frame budget; the 3-second<br>timeout normally never fires in steady state.</p>
+<p>The actual attribution is elsewhere. The project established a source criterion long ago:<br><strong>retrievable does not mean playable</strong>. Device bandwidth is about 2400 kbps and the bitrate needs<br>a 1.3x margin; the 1080p source currently in use is 3333 kbps with a margin of only 0.72, so<br>the player can only <strong>skip segments to catch up</strong>. Meanwhile the source is 25 fps, measured<br>steady state is 28 fps, and rendering is not the bottleneck. In other words, on this source,<br><strong>any smoothness or fps observation is inadmissible as evidence</strong>.</p>
+<p>So the highest-confidence explanation is <strong>segment skipping caused by insufficient bandwidth</strong>,<br>not a slow decoder library. Going straight to patching the library would mean experimenting on<br>the wrong variable.</p>
+<h2 id="Next-step-change-exactly-one-variable"><a href="#Next-step-change-exactly-one-variable" class="headerlink" title="Next step: change exactly one variable"></a>Next step: change exactly one variable</h2><p>Switch to a low-bitrate source (720p, about 813 kbps) first and check whether the same visual<br>stutter remains. It is the cheapest, most discriminating step; until it passes, every later<br>library experiment is inadmissible. If stutter persists after the switch, then sample the decode<br>thread’s real spin counts and CPU usage to test the “core contention” inference.</p>
+<p>The periodic-crash leak investigation is a separate track and continues as planned: add the<br>memory-pool fields to sampling, extend the baseline arm, and see whether crash intervals shrink<br>or stay constant.</p>
+<hr>
+<p><em>Copyright: original work by whiteleibniz, licensed under CC BY-NC-SA 4.0. Attribution to whiteleibniz.github.io required when reproducing.</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Boundaries-first"><span class="toc-number">1.</span> <span class="toc-text">Boundaries first</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Three-layers-of-waiting"><span class="toc-number">2.</span> <span class="toc-text">Three layers of waiting</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Two-things-that-nearly-became-fake-evidence"><span class="toc-number">3.</span> <span class="toc-text">Two things that nearly became fake evidence</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Verdict-the-library-is-not-the-prime-suspect"><span class="toc-number">4.</span> <span class="toc-text">Verdict: the library is not the prime suspect</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Next-step-change-exactly-one-variable"><span class="toc-number">5.</span> <span class="toc-text">Next step: change exactly one variable</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&text=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&title=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&is_video=false&description=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause&body=Check out this article: https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&title=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&title=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&title=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&title=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/&name=netTV HW Decode (43): Statically Reversing a Vendor Library for Stutter — the Busy-Wait Is Real, but It Is Not the Root Cause&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

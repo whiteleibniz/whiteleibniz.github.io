@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 43 篇。设备那天离线，于是把手上已有的厂商库副本翻出来做了一次纯静态逆向。目标是回答一个问题：播放不流畅，是不是解码库在拖后腿？  先划边界这次只做只读静态分析：解析 ELF、用反汇编引擎线性扫代码段，没有执行任何目标二进制，没有动态插桩，没有破解或绕过授权。目标是我自己设备上随系统分发的库，用途是自用调试。 还有一条必须说清">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 43 篇。设备那天离线，于是把手上已有的厂商库副本翻出来做了一次纯静态逆向。目标是回答一个问题：播放不流畅，是不是解码库在拖后腿？  先划边界这次只做只读静态分析：解析 ELF、用反汇编引擎线性扫代码段，没有执行任何目标二进制，没有动态插桩，没有破解或绕过授权。目标是我自己设备上随系统分发的库，用途是自用调试。 还有一条必须说清">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-10T16:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-10T16:40:13.851Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Hardware Decode">
+<meta property="article:tag" content="Reverse Engineering">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/11/nettv-43-vendor-lib-static-audit-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/11/zh-tw/nettv-43-vendor-lib-static-audit-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&text=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&title=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&is_video=false&description=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因&body=Check out this article: https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&title=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&title=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&title=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&title=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&name=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%88%E5%88%92%E8%BE%B9%E7%95%8C"><span class="toc-number">1.</span> <span class="toc-text">先划边界</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BA%93%E9%87%8C%E7%9A%84%E4%B8%89%E5%B1%82%E7%AD%89%E5%BE%85%E7%BB%93%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">库里的三层等待结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%A4%E4%B8%AA%E5%B7%AE%E7%82%B9%E5%8F%98%E6%88%90%E5%81%87%E8%AF%81%E6%8D%AE%E7%9A%84%E4%B8%9C%E8%A5%BF"><span class="toc-number">3.</span> <span class="toc-text">两个差点变成假证据的东西</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA%EF%BC%9A%E4%B8%8D%E6%B5%81%E7%95%85%EF%BC%8C%E7%AC%AC%E4%B8%80%E5%AB%8C%E7%96%91%E4%B8%8D%E5%9C%A8%E5%BA%93"><span class="toc-number">4.</span> <span class="toc-text">结论：不流畅，第一嫌疑不在库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8B%E4%B8%80%E6%AD%A5%EF%BC%9A%E5%8F%AA%E6%8E%A8%E4%B8%80%E4%B8%AA%E5%8F%98%E9%87%8F"><span class="toc-number">5.</span> <span class="toc-text">下一步：只推一个变量</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-10T16:40:00.000Z" itemprop="datePublished">2026-11-11</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Hardware-Decode/" rel="tag">Hardware Decode</a>, <a class="tag-link-link" href="/tags/Reverse-Engineering/" rel="tag">Reverse Engineering</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-43-vendor-lib-static-audit-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 43 篇。设备那天离线，于是把手上已有的厂商库副本翻出来做了一次纯静态逆向。<br>目标是回答一个问题：播放不流畅，是不是解码库在拖后腿？</p>
+</blockquote>
+<h2 id="先划边界"><a href="#先划边界" class="headerlink" title="先划边界"></a>先划边界</h2><p>这次只做<strong>只读静态分析</strong>：解析 ELF、用反汇编引擎线性扫代码段，<strong>没有执行任何目标二进制</strong>，<br>没有动态插桩，没有破解或绕过授权。目标是我自己设备上随系统分发的库，用途是自用调试。</p>
+<p>还有一条必须说清楚：新装的 REA（逆向分析）工具链这次引擎没注册成功，所以下面的结论<br>全部来自本地 ELF 解析和反汇编观察，<strong>不是 REA 引擎产出的证据</strong>。静态分析也有硬边界——<br>它能证明「二进制里有什么指令」，不能证明「运行时发生了什么」。</p>
+<h2 id="库里的三层等待结构"><a href="#库里的三层等待结构" class="headerlink" title="库里的三层等待结构"></a>库里的三层等待结构</h2><p><strong>第一层，VSP 寄存器层。</strong> <code>vsp_read_reg_poll</code> 是个纯忙等自旋：循环体反复读 MMIO 寄存器，<br>不 sleep、不让出 CPU、没有 WFE，直到条件满足或计数耗尽。计数上限由调用方传入，常见值是<br>65535 次。全库 26 处调用，其中解码主函数一帧里就有 7 到 8 处。超时分支会发一个 ioctl<br>并打日志，不是静默失败。另外有个 <code>usleep(20000)</code> 也就是 20 毫秒固定睡眠，但它只在<br>释放&#x2F;复位重试路径里，<strong>不在逐帧解码主循环</strong>。</p>
+<p><strong>第二层，OMX 组件层。</strong> 唯一一处条件变量等待，从栈上的 timespec 构造能直接读出<br><code>&#123;tv_sec=3, tv_nsec=0&#125;</code>，也就是 <strong>3 秒相对超时</strong>。这一层没有 sleep、poll 或 ioctl，<br>纯粹是在等 buffer。</p>
+<p><strong>第三层，VPU 抽象层。</strong> 有一整套带超时的信号量和 poll_complete、时钟读取函数。<br>但这层主要通过寄存器间接调用，静态反汇编<strong>取不到调用参数</strong>，所以超时值、等待次数我<br>标为未知，不编。</p>
+<p>顺带对上了一个旧结论：之前给 <code>POLL_COMPLETE</code> 打过补丁，对比 patched 库发现 158 字节差异，<br>三处把忙等循环换成跳转、尾部新增 144 字节里是指针合法性和对齐检查——补丁本质是<br>给轮询结果加过滤，不是改节奏。</p>
+<h2 id="两个差点变成假证据的东西"><a href="#两个差点变成假证据的东西" class="headerlink" title="两个差点变成假证据的东西"></a>两个差点变成假证据的东西</h2><p><strong>测量工具自己又出了一次 bug。</strong> 反汇编引擎线性扫代码段时，遇到夹在指令里的常量池会<br>直接停住（实测只走到代码段开头几十条指令），于是「等待类调用 &#x3D; 0」——一个漂亮的假阴性。<br>打开 <code>skipdata</code> 之后才拿到真实的 26 处调用。这家伙和之前「只认 200」「SigBlk 长度守卫」<br>是同一类事故：<strong>工具解析出错，伪装成被测系统一切正常</strong>。</p>
+<p><strong>常量盲扫全是噪声。</strong> 全文件搜 <code>0xffff</code> 命中 1653 次，绝大多数是 ARM 指令编码和填充；<br>搜到的 <code>192000</code> 落在 ELF 程序头的段大小字段里，都不是超时常量。更重要的是，<br><strong>库内没有找到与崩溃间隔（151-186 秒）相称的固定超时魔数</strong>——所以「周期性崩溃是库内<br>定时器踩踏」暂时没有静态证据，之前判的「累积漂移 &#x2F; 泄漏」方向仍然优先。</p>
+<h2 id="结论：不流畅，第一嫌疑不在库"><a href="#结论：不流畅，第一嫌疑不在库" class="headerlink" title="结论：不流畅，第一嫌疑不在库"></a>结论：不流畅，第一嫌疑不在库</h2><p>库里的忙等自旋确实存在，它是<strong>抖动放大器</strong>：最多 65535 次不放 CPU 的自旋，在四核设备上<br>会让解码线程独占一个核，跟下载、音频、渲染线程抢核，表现出来应该是偶发顿挫，<br>而不是持续低帧率。20 毫秒睡眠只在复位路径，不吃逐帧预算；3 秒超时稳态下通常不触发。</p>
+<p>但真正的归因在另一头。项目里早就定过源判据：<strong>取得到 ≠ 播得动</strong>。设备带宽约<br>2400 kbps，要求码率留 1.3 倍余量；当前用的 1080p 源是 3333 kbps，余量只有 0.72，<br>播放器只能靠<strong>跳段追赶</strong>。同时源本身 25fps，现网稳态 28fps，渲染不是瓶颈。<br>也就是说，在这个源上，任何「流畅度 &#x2F; 帧率」类观测都不可采信。</p>
+<p>所以最高置信的解释是：<strong>带宽不足导致的跳段追赶</strong>，不是解码库慢。<br>如果一上来就去改库，等于在错误的变量上做实验。</p>
+<h2 id="下一步：只推一个变量"><a href="#下一步：只推一个变量" class="headerlink" title="下一步：只推一个变量"></a>下一步：只推一个变量</h2><p>先换到低码率源（720p &#x2F; 约 813 kbps），用同样的观感再看还卡不卡。这一步成本最低、<br>判别力最高；不过这一关，后面所有针对库的实验都不可采信。换源后仍卡，再去采解码线程<br>的实际自旋次数和 CPU 占用，验证「抢核」这个推断。</p>
+<p>至于周期性崩溃的泄漏排查，和这次归因是两条独立的线，照原计划走：补内存池字段采样，<br>把基线臂延长看崩溃间隔是缩短还是恒定。</p>
+<hr>
+<p><em>版权声明：本文为 whiteleibniz 原创文章，采用 CC BY-NC-SA 4.0 许可协议。转载请注明出处 whiteleibniz.github.io。</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%88%E5%88%92%E8%BE%B9%E7%95%8C"><span class="toc-number">1.</span> <span class="toc-text">先划边界</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BA%93%E9%87%8C%E7%9A%84%E4%B8%89%E5%B1%82%E7%AD%89%E5%BE%85%E7%BB%93%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">库里的三层等待结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%A4%E4%B8%AA%E5%B7%AE%E7%82%B9%E5%8F%98%E6%88%90%E5%81%87%E8%AF%81%E6%8D%AE%E7%9A%84%E4%B8%9C%E8%A5%BF"><span class="toc-number">3.</span> <span class="toc-text">两个差点变成假证据的东西</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA%EF%BC%9A%E4%B8%8D%E6%B5%81%E7%95%85%EF%BC%8C%E7%AC%AC%E4%B8%80%E5%AB%8C%E7%96%91%E4%B8%8D%E5%9C%A8%E5%BA%93"><span class="toc-number">4.</span> <span class="toc-text">结论：不流畅，第一嫌疑不在库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8B%E4%B8%80%E6%AD%A5%EF%BC%9A%E5%8F%AA%E6%8E%A8%E4%B8%80%E4%B8%AA%E5%8F%98%E9%87%8F"><span class="toc-number">5.</span> <span class="toc-text">下一步：只推一个变量</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&text=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&title=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&is_video=false&description=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因&body=Check out this article: https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&title=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&title=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&title=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&title=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/11/nettv-43-vendor-lib-static-audit/&name=netTV 硬解（43）：静态逆向厂商库查「播放不流畅」——忙等自旋是真的，但它不是根因&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
