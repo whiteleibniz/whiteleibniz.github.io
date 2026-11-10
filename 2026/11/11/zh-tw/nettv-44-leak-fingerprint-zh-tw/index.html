@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 44 篇。上一輪把崩潰定性成「累積漂移」，也就是要按洩漏查。但「洩漏」是個太便宜的詞——它可以是記憶體池耗散、可以是句柄、也可以是每 N 段的固定動作。這一輪不碰播放器一行程式碼，只做一件事：造一台能稱出「是哪一種」的秤。  定性之後，問題變成了「哪一種」裝置那天依舊沒上電，只能離線推進。翻回上一輪的結論：兩個 1200 秒的臂">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 語言：简体中文 · 繁體中文 · English   系列第 44 篇。上一輪把崩潰定性成「累積漂移」，也就是要按洩漏查。但「洩漏」是個太便宜的詞——它可以是記憶體池耗散、可以是句柄、也可以是每 N 段的固定動作。這一輪不碰播放器一行程式碼，只做一件事：造一台能稱出「是哪一種」的秤。  定性之後，問題變成了「哪一種」裝置那天依舊沒上電，只能離線推進。翻回上一輪的結論：兩個 1200 秒的臂">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-10T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-11-10T18:08:25.182Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Hardware Decode">
+<meta property="article:tag" content="Debugging Methods">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/11/nettv-44-leak-fingerprint-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/11/nettv-43-vendor-lib-static-audit-en/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&text=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&title=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&is_video=false&description=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門&body=Check out this article: https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&title=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&title=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&title=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&title=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&name=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E6%80%A7%E4%B9%8B%E5%BE%8C%EF%BC%8C%E5%95%8F%E9%A1%8C%E8%AE%8A%E6%88%90%E4%BA%86%E3%80%8C%E5%93%AA%E4%B8%80%E7%A8%AE%E3%80%8D"><span class="toc-number">1.</span> <span class="toc-text">定性之後，問題變成了「哪一種」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E5%B7%A5%EF%BC%9A%E8%A3%9D%E7%BD%AE%E5%8F%AA%E5%81%9A%E5%95%9E%E6%8E%A1%E9%9B%86%EF%BC%8C%E5%88%A4%E6%B1%BA%E5%85%A8%E5%9C%A8-PC"><span class="toc-number">2.</span> <span class="toc-text">分工：裝置只做啞採集，判決全在 PC</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%88%E8%AD%89%E6%98%8E%E3%80%8C%E9%80%99%E8%BC%AA%E8%A7%80%E6%B8%AC%E6%9C%89%E6%95%88%E3%80%8D%EF%BC%8C%E5%86%8D%E8%AB%87%E8%B6%A8%E5%8B%A2"><span class="toc-number">3.</span> <span class="toc-text">先證明「這輪觀測有效」，再談趨勢</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%A4%E6%B1%BA%E6%AA%94%E4%BD%8D%EF%BC%9A%E6%8A%8A%E3%80%8C%E6%B4%A9%E6%BC%8F%E3%80%8D%E6%8B%86%E6%88%90%E8%83%BD%E5%8B%95%E6%89%8B%E7%9A%84%E5%B9%BE%E7%A8%AE"><span class="toc-number">4.</span> <span class="toc-text">判決檔位：把「洩漏」拆成能動手的幾種</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E5%80%8B-bug%EF%BC%9A%E5%85%A8%E9%83%BD%E6%98%AF%E3%80%8C%E5%B7%A5%E5%85%B7%E6%8A%8A%E8%87%AA%E5%B7%B1%E5%81%BD%E8%A3%9D%E6%88%90%E7%B5%90%E8%AB%96%E3%80%8D"><span class="toc-number">5.</span> <span class="toc-text">四個 bug：全都是「工具把自己偽裝成結論」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E7%8B%80%E8%88%87%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">6.</span> <span class="toc-text">現狀與下一步</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-10T18:00:00.000Z" itemprop="datePublished">2026-11-11</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Debugging-Methods/" rel="tag">Debugging Methods</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Hardware-Decode/" rel="tag">Hardware Decode</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 44 篇。上一輪把崩潰定性成「累積漂移」，也就是要按洩漏查。<br>但「洩漏」是個太便宜的詞——它可以是記憶體池耗散、可以是句柄、也可以是每 N 段的固定動作。<br>這一輪不碰播放器一行程式碼，只做一件事：<strong>造一台能稱出「是哪一種」的秤</strong>。</p>
+</blockquote>
+<h2 id="定性之後，問題變成了「哪一種」"><a href="#定性之後，問題變成了「哪一種」" class="headerlink" title="定性之後，問題變成了「哪一種」"></a>定性之後，問題變成了「哪一種」</h2><p>裝置那天依舊沒上電，只能離線推進。翻回上一輪的結論：兩個 1200 秒的臂各崩 6 次和 7 次，<br>間隔 151～186 秒，影格率正常，崩潰點隨真實流推進。結論是「累積漂移」——但這句話能推出的<br>下一步動作有好幾個，方向完全不同：</p>
+<ul>
+<li>如果間隔在<strong>縮短</strong>，那是典型的洩漏曲線（每輪少一點餘量，越到後面越快撞牆）；</li>
+<li>如果間隔<strong>恆定</strong>，那更像固定槽位／定時器——每 N 格、每 N 段、每 N 秒必然越過某條邊界；</li>
+<li>如果記憶體曲線在掉但間隔不變，那是耗散與崩潰<strong>兩個獨立現象</strong>，別硬捆在一起歸因。</li>
+</ul>
+<p>這三種情況的修法完全不重疊。所以真正缺的不是取樣器（早就有了逐執行緒 SigBlk、RSS、ION 的<br>輪詢腳本），而是一台<strong>判決器</strong>：把「間隔序列」和「記憶體序列」變成一個有名字、帶前提條件的結論。</p>
+<h2 id="分工：裝置只做啞採集，判決全在-PC"><a href="#分工：裝置只做啞採集，判決全在-PC" class="headerlink" title="分工：裝置只做啞採集，判決全在 PC"></a>分工：裝置只做啞採集，判決全在 PC</h2><p>這條鏈的設計原則是能不說話的一律不說話：</p>
+<ul>
+<li>裝置端只有一個採集器：跑一次單臂 2400 秒（約 40 分鐘），每 10 秒記一行<br><code>MemFree / CmaFree / ION / 各行程執行緒數、RSS、fd</code>，同時把 <code>phase.log</code> 裡新出現的<br><code>mon-child-signal=11</code> 連同牆鐘時間抄進崩潰台帳；</li>
+<li>判決全部放在 PC 端的腳本裡，因為裝置上沒有 Python，而且 SSH 連線絕不能掛 40 分鐘——<br>長任務必須拆成「裝置背景腳本 + 短輪詢」。</li>
+</ul>
+<p>採集器還做一件容易被忽略的事：<strong>它自己也出一份完整性閘門</strong>。跑完寫 <code>GATE=OK</code> 或<br><code>GATE=FAIL 原因=...</code>，條件包括開跑殘留為零、結束時殘留為零、有影格率統計、取樣條數夠、<br>跨度夠。這份 GATE 會被 PC 端<strong>再算一遍</strong>。</p>
+<h2 id="先證明「這輪觀測有效」，再談趨勢"><a href="#先證明「這輪觀測有效」，再談趨勢" class="headerlink" title="先證明「這輪觀測有效」，再談趨勢"></a>先證明「這輪觀測有效」，再談趨勢</h2><p>這是整個方法論裡最貴的一條經驗，也是我反覆踩的坑：<strong>最省事的執行永遠看起來最乾淨</strong>。<br>解碼器沒起來、來源掛了、行程被殘留擋住——這些情況下崩潰數當然是 0，而 0 會被順理成章<br>讀成「這個配置不崩」。</p>
+<p>所以判決器的第一段程式碼不是統計，是閘門：</p>
+<table>
+<thead>
+<tr>
+<th>閘門</th>
+<th>判據</th>
+<th>不滿足說明什麼</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>開跑殘留</td>
+<td>0</td>
+<td>上一輪沒清乾淨，配置可能沒生效</td>
+</tr>
+<tr>
+<td>影格率</td>
+<td><code>fps_x10 ≥ 50</code> 且統計行 ≥3</td>
+<td>根本沒解碼，崩潰數為 0 無意義</td>
+</tr>
+<tr>
+<td>收尾殘留</td>
+<td>0</td>
+<td>收尾沒收乾淨，下一輪污染</td>
+</tr>
+<tr>
+<td>取樣條數／跨度</td>
+<td>≥ 期望的 80%</td>
+<td>採集被截斷，趨勢是半截資料</td>
+</tr>
+<tr>
+<td>取樣斷檔</td>
+<td>相鄰樣本 ≤ max(60s, 5×間隔)</td>
+<td>中間缺了一大段，不能當連續趨勢</td>
+</tr>
+</tbody></table>
+<p>任何一條不過，判決直接是 <code>INVALID</code>，並且明確寫「禁止據此改任何程式碼」。</p>
+<p>更進一步：閘門和判決<strong>各寫兩遍</strong>。裝置端是 shell 的 <code>gate_eval</code>，PC 端是 Python 的<br><code>_gates()</code>，兩套獨立實作，結論不一致就判 <code>INVALID（交叉不一致）</code>。這一條不是潔癖——<br>本輪正是靠它抓到了自己的一個 bug（見下）。</p>
+<h2 id="判決檔位：把「洩漏」拆成能動手的幾種"><a href="#判決檔位：把「洩漏」拆成能動手的幾種" class="headerlink" title="判決檔位：把「洩漏」拆成能動手的幾種"></a>判決檔位：把「洩漏」拆成能動手的幾種</h2><p>間隔趨勢不看變異數，只看「首末相對變化 + 線性擬合的 r²」；記憶體趨勢看 <code>CmaFree</code> 的斜率、<br><code>r²</code> 和總跌幅，按量級分「洩漏量級」與「漂移量級」兩檔。</p>
+<table>
+<thead>
+<tr>
+<th>VERDICT</th>
+<th>觸發條件</th>
+<th>下一步該查什麼</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>LEAK_CONFIRMED</code></td>
+<td>間隔遞減且記憶體耗散達洩漏量級</td>
+<td>每輪崩潰週期內新配置未釋放的物件</td>
+</tr>
+<tr>
+<td><code>LEAK_LIKELY</code></td>
+<td>間隔遞減，記憶體只有漂移量級</td>
+<td>先按洩漏查，核對 fd／執行緒數與崩潰速率是否同比</td>
+</tr>
+<tr>
+<td><code>LEAK_SUSPECTED</code></td>
+<td>間隔遞減但記憶體平穩</td>
+<td>非記憶體類累積：fd、執行緒、池槽位、廠商內部句柄</td>
+</tr>
+<tr>
+<td><code>PERIODIC_WITH_DRIFT</code></td>
+<td>間隔恆定但記憶體在掉</td>
+<td>固定槽位／定時器，耗散是伴生現象</td>
+</tr>
+<tr>
+<td><code>PERIODIC_TIMER</code></td>
+<td>間隔恆定且記憶體平穩</td>
+<td>每 N 格／N 段／N 秒的固定動作（重連、重新 init、指標回繞）</td>
+</tr>
+<tr>
+<td><code>SLOWING</code></td>
+<td>間隔變長</td>
+<td>可能與來源切換、GOP 長度變化相關</td>
+</tr>
+<tr>
+<td><code>RANDOM</code></td>
+<td>無規律</td>
+<td>偏向隨機踩記憶體，回去做 pc 映射與緩衝區邊界</td>
+</tr>
+<tr>
+<td><code>STABLE</code></td>
+<td>零崩潰且觀測夠長</td>
+<td><strong>不能據此說修好了</strong>，要 ≥4～5 個故障週期</td>
+</tr>
+</tbody></table>
+<p>最後一行值得單獨說：斷言「配置 X 不崩」，觀測時長必須是故障週期的 4～5 倍。這是泊松分布<br>給的數——跑 1 個週期就「沒復現」的機率還有 37%，5 個週期才降到 0.7%。</p>
+<h2 id="四個-bug：全都是「工具把自己偽裝成結論」"><a href="#四個-bug：全都是「工具把自己偽裝成結論」" class="headerlink" title="四個 bug：全都是「工具把自己偽裝成結論」"></a>四個 bug：全都是「工具把自己偽裝成結論」</h2><p>這一輪最有價值的部分不是那兩個腳本，而是自檢抓出來的四個自傷：</p>
+<p><strong>① 貪婪正則把間隔全算成 0。</strong><br>崩潰行的格式是 <code>t=1117000 mon-child-signal=11 st=0x8b</code>。想取毫秒時間戳，於是寫了<br><code>sub(/^.*t=/,&quot;&quot;)</code>——行尾的 <code>st=</code> 裡也含 <code>t=</code>，貪婪匹配一路吞到那裡，剩下的 <code>0x8b</code><br>再被剝成 <code>0</code>。四個崩潰算出來三個間隔，全是 0，看起來像「節拍極其穩定」。改成按首欄位<br><code>split</code> 取值，自檢當場由 FAIL 轉 PASS。</p>
+<p><strong>② Windows 文字模式寫 shell 腳本，變成 CRLF。</strong><br>用 Python 打個補丁改了腳本裡的幾行，<code>open(p,&quot;w&quot;)</code> 在 Windows 上會把 <code>\n</code> 翻成 <code>\r\n</code>。<br>dash 解析到第 46 行報 <code>&quot;|&quot; unexpected</code>——因為上一行結尾是反斜線續行，<code>\</code> 後面跟的<br>是 <code>\r</code> 而不是換行，續行失效。這個錯誤離真正的問題（檔案編碼）隔了 250 行，純屬<br>「報錯位置騙人」。裝置上沒有 CRLF 轉換工具，這種腳本傳上去只會全盤失敗。</p>
+<p><strong>③ 交叉校驗恆報不一致，而且不一致沒有降級。</strong><br>meta 裡一行 <code>GATE=OK</code> 被按首個 <code>=</code> 切成 <code>key=GATE, value=OK</code>，而校驗程式碼寫的是<br><code>value.startswith(&quot;GATE=OK&quot;)</code>——永遠 False，於是<strong>每一輪</strong>都報「交叉不一致」。<br>更糟的是不一致只往原因清單裡塞了一條，沒有把 <code>ok</code> 置假：結果是判決照樣給出<br><code>PERIODIC_WITH_DRIFT</code>，而理由裡寫著「交叉不一致」。<strong>結論和前提自相矛盾</strong>，這比不校驗更危險。<br>修法是先歸一化，再讓不一致必須降級。</p>
+<p><strong>④ 用變異數判「在加速」，把 186→128 判成了恆定節拍。</strong><br><code>cv</code>（標準差／均值）小既可能是恆定節拍，也可能是<strong>均勻地越崩越快</strong>——本輪 demo 資料<br>186、179、168、155、141、128 秒，<code>cv=0.13</code> 很「穩」，<code>r²=0.99</code> 是漂亮的直線下降，<br>卻因為 <code>cv≤0.20</code> 先命中了 <code>PERIODIC</code>。判據改成「首末相對變化 ≤15% 且 cv 小」才算恆定，<br>方向性交給 <code>r²</code> 和相對斜率。</p>
+<p>四個 bug 的共性很清楚：<strong>它們都不是讓程式崩，而是讓程式給出一個「看起來很合理」的錯誤結論。</strong><br>對策也就三條，都不新鮮但必須落地：</p>
+<ol>
+<li>自檢要斷言<strong>期望的判決名</strong>，而不只是「沒有 FAIL 行」——上次的教訓是相位函式沒載入時<br>計數器為 0，測試工具直接變成「永遠通過」；</li>
+<li>關鍵判據寫兩遍，用兩份獨立實作互相對帳；</li>
+<li>加<strong>變異用例</strong>：把同一個資料集裡的影格率改成 0、殘留改成 2，判決必須掉進 <code>INVALID</code>。<br>如果變異後結論不變，說明閘門根本沒在起作用。</li>
+</ol>
+<h2 id="現狀與下一步"><a href="#現狀與下一步" class="headerlink" title="現狀與下一步"></a>現狀與下一步</h2><p>這一輪沒有編譯、沒有部署、沒有改現網二進位檔的任何一個位元組——採集器跑的是現網包裝腳本的<br>原樣配置。離線驗證做到兩件事：shell 自檢 13 項（間隔解析、碼率餘量、閘門六態、全零假通過）、<br>Python 端 17 項（含 4 組變異與 2 條解析／交叉回歸），以及閘門失敗分支在本機的實跑<br>（不會啟動播放器，只驗證參數流、閘門與 meta 生成）。</p>
+<p>裝置上電後的順序是固定的：先跑 2400 秒單臂，把 meta 和崩潰台帳取回，再讓判決器說話。<br>如果它說 <code>PERIODIC_TIMER</code>，洩漏這條線就得讓位給「固定動作」假設；如果說 <code>LEAK_*</code>，<br>那就順著 fd／執行緒數曲線去定位每輪的淨增量。<strong>在拿到 4～5 個崩潰間隔之前，任何改動都是猜。</strong></p>
+<hr>
+<p><em>版權聲明：本文為 whiteleibniz 原創文章，採用 CC BY-NC-SA 4.0 許可協議。轉載請註明出處 whiteleibniz.github.io。</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E6%80%A7%E4%B9%8B%E5%BE%8C%EF%BC%8C%E5%95%8F%E9%A1%8C%E8%AE%8A%E6%88%90%E4%BA%86%E3%80%8C%E5%93%AA%E4%B8%80%E7%A8%AE%E3%80%8D"><span class="toc-number">1.</span> <span class="toc-text">定性之後，問題變成了「哪一種」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E5%B7%A5%EF%BC%9A%E8%A3%9D%E7%BD%AE%E5%8F%AA%E5%81%9A%E5%95%9E%E6%8E%A1%E9%9B%86%EF%BC%8C%E5%88%A4%E6%B1%BA%E5%85%A8%E5%9C%A8-PC"><span class="toc-number">2.</span> <span class="toc-text">分工：裝置只做啞採集，判決全在 PC</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%88%E8%AD%89%E6%98%8E%E3%80%8C%E9%80%99%E8%BC%AA%E8%A7%80%E6%B8%AC%E6%9C%89%E6%95%88%E3%80%8D%EF%BC%8C%E5%86%8D%E8%AB%87%E8%B6%A8%E5%8B%A2"><span class="toc-number">3.</span> <span class="toc-text">先證明「這輪觀測有效」，再談趨勢</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%A4%E6%B1%BA%E6%AA%94%E4%BD%8D%EF%BC%9A%E6%8A%8A%E3%80%8C%E6%B4%A9%E6%BC%8F%E3%80%8D%E6%8B%86%E6%88%90%E8%83%BD%E5%8B%95%E6%89%8B%E7%9A%84%E5%B9%BE%E7%A8%AE"><span class="toc-number">4.</span> <span class="toc-text">判決檔位：把「洩漏」拆成能動手的幾種</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E5%80%8B-bug%EF%BC%9A%E5%85%A8%E9%83%BD%E6%98%AF%E3%80%8C%E5%B7%A5%E5%85%B7%E6%8A%8A%E8%87%AA%E5%B7%B1%E5%81%BD%E8%A3%9D%E6%88%90%E7%B5%90%E8%AB%96%E3%80%8D"><span class="toc-number">5.</span> <span class="toc-text">四個 bug：全都是「工具把自己偽裝成結論」</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8F%BE%E7%8B%80%E8%88%87%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">6.</span> <span class="toc-text">現狀與下一步</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&text=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&title=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&is_video=false&description=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門&body=Check out this article: https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&title=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&title=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&title=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&title=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/&name=netTV 硬解（44）：給「洩漏」造一台秤——崩潰間隔指紋與觀測有效性閘門&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

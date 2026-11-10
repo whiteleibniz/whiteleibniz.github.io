@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Language: 简体中文 · 繁體中文 · English   Part 44. The previous round labelled the recurring crash “cumulative drift”, i.e. look for a leak.But “leak” is a word far too cheap to act on. This round touches">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV HW Decode (44): Building a Scale for &quot;Leaks&quot; — Crash-Interval Fingerprints and Validity Gates">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Language: 简体中文 · 繁體中文 · English   Part 44. The previous round labelled the recurring crash “cumulative drift”, i.e. look for a leak.But “leak” is a word far too cheap to act on. This round touches">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-10T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-11-10T18:08:11.251Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Hardware Decode">
+<meta property="article:tag" content="Debugging Methods">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/11/nettv-44-leak-fingerprint/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&text=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&title=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&is_video=false&description=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates&body=Check out this article: https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&title=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&title=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&title=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&title=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&name=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#After-the-label-the-question-becomes-%E2%80%9Cwhich-kind%E2%80%9D"><span class="toc-number">1.</span> <span class="toc-text">After the label, the question becomes “which kind”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Division-of-labour-the-device-only-collects-the-PC-decides"><span class="toc-number">2.</span> <span class="toc-text">Division of labour: the device only collects, the PC decides</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prove-the-observation-is-valid-before-discussing-trends"><span class="toc-number">3.</span> <span class="toc-text">Prove the observation is valid before discussing trends</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Verdict-levels-split-%E2%80%9Cleak%E2%80%9D-into-things-you-can-act-on"><span class="toc-number">4.</span> <span class="toc-text">Verdict levels: split “leak” into things you can act on</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Four-bugs-all-of-the-%E2%80%9Ctool-disguises-itself-as-a-conclusion%E2%80%9D-kind"><span class="toc-number">5.</span> <span class="toc-text">Four bugs, all of the “tool disguises itself as a conclusion” kind</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Status-and-next-step"><span class="toc-number">6.</span> <span class="toc-text">Status and next step</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-10T18:00:00.000Z" itemprop="datePublished">2026-11-11</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Debugging-Methods/" rel="tag">Debugging Methods</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Hardware-Decode/" rel="tag">Hardware Decode</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/zh-tw/nettv-44-leak-fingerprint-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Part 44. The previous round labelled the recurring crash “cumulative drift”, i.e. look for a leak.<br>But “leak” is a word far too cheap to act on. This round touches zero lines of the player and<br>does one thing only: <strong>build a scale that can tell which kind of leak it is.</strong></p>
+</blockquote>
+<h2 id="After-the-label-the-question-becomes-“which-kind”"><a href="#After-the-label-the-question-becomes-“which-kind”" class="headerlink" title="After the label, the question becomes “which kind”"></a>After the label, the question becomes “which kind”</h2><p>The device was offline again, so this had to be done offline. Bringing back the last result: two<br>1200-second arms crashed 6 and 7 times, intervals 151–186 s, frame rate normal, crash point moving<br>forward with the real stream. The verdict was “cumulative drift” — but that verdict supports at<br>least three mutually exclusive next steps:</p>
+<ul>
+<li>If the interval <strong>shrinks</strong>, that is the classic leak curve: less headroom each cycle, hitting<br>the wall sooner and sooner.</li>
+<li>If the interval is <strong>constant</strong>, it looks more like a fixed slot or timer — every N frames, every<br>N segments, every N seconds something crosses a boundary.</li>
+<li>If memory drains while the interval stays flat, those are <strong>two independent phenomena</strong> and should<br>not be bundled into one explanation.</li>
+</ul>
+<p>The fixes do not overlap at all. So what was missing was never a sampler (per-thread signal masks,<br>RSS and ION polling already existed) — it was a <strong>decision tool</strong> that turns an interval series plus<br>a memory series into a named conclusion with explicit preconditions.</p>
+<h2 id="Division-of-labour-the-device-only-collects-the-PC-decides"><a href="#Division-of-labour-the-device-only-collects-the-PC-decides" class="headerlink" title="Division of labour: the device only collects, the PC decides"></a>Division of labour: the device only collects, the PC decides</h2><p>The design rule is: anything that can stay silent, stays silent.</p>
+<ul>
+<li>The device runs a single 2400-second arm (about 40 minutes) and every 10 seconds writes one line<br>of <code>MemFree / CmaFree / ION / per-process threads, RSS, fd</code>, while copying newly appeared<br><code>mon-child-signal=11</code> lines from <code>phase.log</code> into a crash ledger together with wall-clock time.</li>
+<li>All decisions happen on the PC: there is no Python on the device, and an SSH session must never<br>sit idle for 40 minutes — long work has to be split into a device-side background script plus<br>short polling.</li>
+</ul>
+<p>The collector also does something easy to forget: it emits <strong>its own integrity gate</strong>. At the end it<br>writes <code>GATE=OK</code> or <code>GATE=FAIL reason=...</code>, covering start residue, end residue, frame statistics,<br>sample count and time span. The PC then <strong>recomputes that gate independently</strong>.</p>
+<h2 id="Prove-the-observation-is-valid-before-discussing-trends"><a href="#Prove-the-observation-is-valid-before-discussing-trends" class="headerlink" title="Prove the observation is valid before discussing trends"></a>Prove the observation is valid before discussing trends</h2><p>This is the most expensive lesson in the whole methodology, and one I keep re-learning: <strong>the laziest<br>run always looks the cleanest</strong>. Decoder never starts, source is dead, a leftover process blocks the<br>arm — crash count is of course zero, and zero gets read as “this configuration is stable”.</p>
+<p>So the first stage of the decision tool is not statistics, it is a gate:</p>
+<table>
+<thead>
+<tr>
+<th>Gate</th>
+<th>Criterion</th>
+<th>What failure means</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Start residue</td>
+<td>0</td>
+<td>Previous round not cleaned, config may not be in effect</td>
+</tr>
+<tr>
+<td>Frame rate</td>
+<td><code>fps_x10 ≥ 50</code>, ≥3 stat lines</td>
+<td>No decoding at all; zero crashes means nothing</td>
+</tr>
+<tr>
+<td>End residue</td>
+<td>0</td>
+<td>Shutdown unclean, next round polluted</td>
+</tr>
+<tr>
+<td>Sample count &#x2F; span</td>
+<td>≥80% of expected</td>
+<td>Sampling truncated; trend is half a dataset</td>
+</tr>
+<tr>
+<td>Sampling gap</td>
+<td>consecutive samples ≤ max(60 s, 5×interval)</td>
+<td>A whole chunk missing; not a continuous trend</td>
+</tr>
+</tbody></table>
+<p>If any gate fails, the verdict is <code>INVALID</code> with an explicit “do not change any code based on this”.</p>
+<p>Better still: the gate and the verdict are <strong>each written twice</strong>. The device side has a shell<br><code>gate_eval</code>; the PC side has a Python <code>_gates()</code>. Two independent implementations, and if they<br>disagree the verdict is <code>INVALID (cross-check mismatch)</code>. That is not pedantry — this round it caught<br>one of my own bugs (below).</p>
+<h2 id="Verdict-levels-split-“leak”-into-things-you-can-act-on"><a href="#Verdict-levels-split-“leak”-into-things-you-can-act-on" class="headerlink" title="Verdict levels: split “leak” into things you can act on"></a>Verdict levels: split “leak” into things you can act on</h2><p>The interval trend ignores variance and looks at “relative first-to-last change plus linear-fit r²”.<br>The memory trend looks at the <code>CmaFree</code> slope, its r², and total drop, split into “leak magnitude”<br>and “drift magnitude”.</p>
+<table>
+<thead>
+<tr>
+<th>VERDICT</th>
+<th>Trigger</th>
+<th>What to inspect next</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>LEAK_CONFIRMED</code></td>
+<td>shrinking intervals + leak-magnitude memory drain</td>
+<td>objects allocated per crash cycle and never freed</td>
+</tr>
+<tr>
+<td><code>LEAK_LIKELY</code></td>
+<td>shrinking intervals + drift-magnitude drain</td>
+<td>treat as leak, check whether fd&#x2F;thread growth scales with crash rate</td>
+</tr>
+<tr>
+<td><code>LEAK_SUSPECTED</code></td>
+<td>shrinking intervals, flat memory</td>
+<td>non-memory accumulation: fd, threads, pool slots, vendor handles</td>
+</tr>
+<tr>
+<td><code>PERIODIC_WITH_DRIFT</code></td>
+<td>constant interval but memory draining</td>
+<td>fixed slot&#x2F;timer, drain is a side effect</td>
+</tr>
+<tr>
+<td><code>PERIODIC_TIMER</code></td>
+<td>constant interval, flat memory</td>
+<td>every N frames&#x2F;segments&#x2F;seconds action (reconnect, re-init, pointer wrap)</td>
+</tr>
+<tr>
+<td><code>SLOWING</code></td>
+<td>intervals growing</td>
+<td>may correlate with source switching or GOP length changes</td>
+</tr>
+<tr>
+<td><code>RANDOM</code></td>
+<td>no pattern</td>
+<td>random memory corruption; go back to pc mapping and buffer bounds</td>
+</tr>
+<tr>
+<td><code>STABLE</code></td>
+<td>zero crashes over a long window</td>
+<td><strong>does not mean fixed</strong>; needs ≥4–5 failure periods</td>
+</tr>
+</tbody></table>
+<p>That last row deserves its own paragraph: claiming “configuration X does not crash” requires<br>observing 4–5 failure periods. Poisson gives the numbers — one period still leaves a 37% chance of<br>“not reproduced”, five periods brings it to 0.7%.</p>
+<h2 id="Four-bugs-all-of-the-“tool-disguises-itself-as-a-conclusion”-kind"><a href="#Four-bugs-all-of-the-“tool-disguises-itself-as-a-conclusion”-kind" class="headerlink" title="Four bugs, all of the “tool disguises itself as a conclusion” kind"></a>Four bugs, all of the “tool disguises itself as a conclusion” kind</h2><p>The valuable part of this round is not the two scripts, it is what the self-tests caught:</p>
+<p><strong>① A greedy regex turned every interval into zero.</strong><br>Crash lines look like <code>t=1117000 mon-child-signal=11 st=0x8b</code>. To extract the millisecond stamp I<br>wrote <code>sub(/^.*t=/,&quot;&quot;)</code> — but <code>st=</code> at the end of the line also contains <code>t=</code>, greedy matching ate<br>all the way there, and the remaining <code>0x8b</code> was stripped to <code>0</code>. Four crashes produced three<br>intervals, all zero, which reads as “extremely stable cadence”. Fixed by splitting the first field.</p>
+<p><strong>② Windows text mode wrote CRLF into a shell script.</strong><br>A Python patch script used <code>open(p,&quot;w&quot;)</code>, which on Windows translates <code>\n</code> to <code>\r\n</code>. dash then<br>reported <code>&quot;|&quot; unexpected</code> at line 46 — the preceding line ended in a backslash continuation, and the<br>backslash was followed by <code>\r</code> instead of a newline, so the continuation broke. The reported line was<br>250 lines away from the actual problem. The device has no CRLF converter; such a script simply fails<br>everywhere.</p>
+<p><strong>③ The cross-check always reported a mismatch, and the mismatch never demoted the verdict.</strong><br>A meta line <code>GATE=OK</code> is split at the first <code>=</code> into <code>key=GATE, value=OK</code>, while the check used<br><code>value.startswith(&quot;GATE=OK&quot;)</code> — always false. So <strong>every</strong> run reported “cross-check mismatch”.<br>Worse, the mismatch only appended a reason and never set <code>ok = False</code>: the verdict came out as<br><code>PERIODIC_WITH_DRIFT</code> while its own explanation said the cross-check disagreed. A conclusion<br>contradicting its precondition is more dangerous than having no check at all.</p>
+<p><strong>④ Using variance to detect acceleration mislabelled 186→128 as constant.</strong><br>A small <code>cv</code> can mean a constant cadence, or it can mean <strong>uniformly accelerating</strong> crashes. The demo<br>data 186, 179, 168, 155, 141, 128 s has <code>cv=0.13</code> (very “stable”) and <code>r²=0.99</code> (a beautiful straight<br>decline), yet matched <code>PERIODIC</code> first because <code>cv ≤ 0.20</code>. The rule now requires both a small<br>first-to-last change and small cv for “constant”, leaving direction to r² and relative slope.</p>
+<p>The common thread: <strong>none of these crash the program; they make it produce a plausible wrong answer.</strong><br>Three countermeasures, none novel but all mandatory:</p>
+<ol>
+<li>Self-tests must assert the <strong>expected verdict name</strong>, not merely “no FAIL lines” — the earlier<br>lesson was a phase function that failed to load, leaving its counter at zero so the test harness<br>became “always passing”.</li>
+<li>Write critical criteria twice and reconcile two independent implementations.</li>
+<li>Add <strong>mutation cases</strong>: set the frame rate to 0, set end residue to 2 in the same dataset; the<br>verdict must fall into <code>INVALID</code>. If the verdict survives the mutation, the gate is not wired in.</li>
+</ol>
+<h2 id="Status-and-next-step"><a href="#Status-and-next-step" class="headerlink" title="Status and next step"></a>Status and next step</h2><p>Nothing was compiled, deployed, or changed in the production binary this round — the collector runs<br>the shipping wrapper exactly as configured. Offline verification covered: 13 shell self-test items<br>(interval parsing, bitrate headroom, six gate states, the all-zero false-pass), 17 Python items<br>(including 4 mutations and 2 parser&#x2F;cross-check regressions), plus a real local run of the<br>gate-failure branch (no player launched; validates argument flow, gate and meta generation).</p>
+<p>Once the device is powered, the order is fixed: run the 2400-second arm, pull meta and the crash<br>ledger, then let the decision tool speak. If it says <code>PERIODIC_TIMER</code>, the leak line yields to a<br>“fixed action” hypothesis; if it says <code>LEAK_*</code>, follow the fd&#x2F;thread curves to the per-cycle net<br>increment. <strong>Before 4–5 crash intervals exist, any change is a guess.</strong></p>
+<hr>
+<p><em>Copyright notice: this is an original article by whiteleibniz, licensed under CC BY-NC-SA 4.0. Please credit whiteleibniz.github.io when republishing.</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#After-the-label-the-question-becomes-%E2%80%9Cwhich-kind%E2%80%9D"><span class="toc-number">1.</span> <span class="toc-text">After the label, the question becomes “which kind”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Division-of-labour-the-device-only-collects-the-PC-decides"><span class="toc-number">2.</span> <span class="toc-text">Division of labour: the device only collects, the PC decides</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prove-the-observation-is-valid-before-discussing-trends"><span class="toc-number">3.</span> <span class="toc-text">Prove the observation is valid before discussing trends</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Verdict-levels-split-%E2%80%9Cleak%E2%80%9D-into-things-you-can-act-on"><span class="toc-number">4.</span> <span class="toc-text">Verdict levels: split “leak” into things you can act on</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Four-bugs-all-of-the-%E2%80%9Ctool-disguises-itself-as-a-conclusion%E2%80%9D-kind"><span class="toc-number">5.</span> <span class="toc-text">Four bugs, all of the “tool disguises itself as a conclusion” kind</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Status-and-next-step"><span class="toc-number">6.</span> <span class="toc-text">Status and next step</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&text=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&title=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&is_video=false&description=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates&body=Check out this article: https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&title=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&title=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&title=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&title=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/11/nettv-44-leak-fingerprint-en/&name=netTV HW Decode (44): Building a Scale for &#34;Leaks&#34; — Crash-Interval Fingerprints and Validity Gates&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
