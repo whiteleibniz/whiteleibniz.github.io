@@ -4,6 +4,135 @@
   
     
     <entry>
+      <title>netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift</title>
+      <link href="/2026/11/10/nettv-42-drift-verdict-en/"/>
+      <url>/2026/11/10/nettv-42-drift-verdict-en/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-42-drift-verdict-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/">English</a></p></blockquote><blockquote><p>Part 42 of the series. The device is finally back online. This round did exactly one<br>thing: ran the prepared forensics script <code>_ntseg2.sh</code> on real hardware to reach a<br>data-backed verdict on the periodic SIGSEGV (roughly one crash every 3 minutes).</p></blockquote><h2 id="Verdict-first"><a href="#Verdict-first" class="headerlink" title="Verdict first"></a>Verdict first</h2><p><strong>State B: accumulated drift.</strong> First-IDR replay (IDRREPLAY) is innocent — the baseline<br>arm with zero replays and the experimental arm with 3 replays crashed at exactly the<br>same cadence. The crash point is not on the replay path; it lives in the subsequent<br>real-IDR &#x2F; advance path. The investigation now moves to <strong>leak &#x2F; pool exhaustion</strong>.</p><h2 id="Experiment-design"><a href="#Experiment-design" class="headerlink" title="Experiment design"></a>Experiment design</h2><p>Two arms, 1200 seconds each, same 1080p live source:</p><ul><li><strong>A0 arm</strong>: baseline configuration (IDRREPLAY&#x3D;0), the historically stable repro config;</li><li><strong>R arm</strong>: baseline plus replaying the first IDR 3 times (creating “replay window”<br>pressure).</li></ul><p>The verdict reads three things: per-arm GATEs (residue zeroed, exactly one env line,<br>frame evidence ≥5fps, crash counts from <code>mon-child-signal=11</code> in phase.log), and the<br>crash-count comparison between the two arms.</p><h2 id="Data"><a href="#Data" class="headerlink" title="Data"></a>Data</h2><table><thead><tr><th>Arm</th><th>Replays</th><th>Crashes</th><th>Interval</th><th>Peak fps</th><th>GATE</th></tr></thead><tbody><tr><td>A0</td><td>0</td><td>6</td><td>~157s</td><td>283</td><td>V&#x3D;1</td></tr><tr><td>R</td><td>3</td><td>7</td><td>~152-186s</td><td>279</td><td>V&#x3D;1</td></tr></tbody></table><p>Both arms crashed on the same rhythm (151-186 seconds, strictly periodic) with healthy<br>fps. If replay were the trigger, R should crash more or sooner; instead 6≈7. <strong>The<br>replay variable is cleanly eliminated.</strong> That is the whole point of an A&#x2F;B pair: one<br>variable, one verdict, no guessing.</p><h2 id="Two-details-worth-recording"><a href="#Two-details-worth-recording" class="headerlink" title="Two details worth recording"></a>Two details worth recording</h2><p><strong>The first 600-second run reported NOT_REPRODUCED</strong> — the baseline arm never crashed.<br>With one fault cycle every 3 minutes, 600 seconds covers only 2 cycles; Poisson variance<br>makes zero hits entirely plausible. Extending to 1200 seconds (4 cycles) reproduced<br>immediately. The old rule holds again: <strong>the observation window must span ≥4-5 fault<br>cycles</strong>, otherwise “it didn’t crash” is not evidence.</p><p><strong>The measurement tool had its own bug</strong>: the ARM header printed the literal<br><code>IDRREPLAY=NETTV_IDRREPLAY</code>. The cause: <code>env_key_ok</code> wrote its parameters directly into<br>the global variable <code>k</code> (no <code>local</code>), clobbering the caller’s counter. Fortunately<br><code>mkarm</code> had already built the arm with the correct value before the clobber, so the<br><strong>experiment configuration was unaffected</strong> — but had the order been reversed, this<br>would have been a “tool bug masquerading as a result” incident. Fixed (all parameters<br>now <code>local</code>) and verified with mutation self-tests.</p><h2 id="Side-observation"><a href="#Side-observation" class="headerlink" title="Side observation"></a>Side observation</h2><p>Both arms produced zero segv.log entries: the SIGSEGV handler never ran once. This is<br>consistent with the earlier root-cause chain (signal-mask inheritance → force_sig_info<br>forcing SIG_DFL) — the fault lands on a masked execution flow, so the handler never gets<br>a chance. <code>maskedhit</code> sampling peaked at 0, meaning the sampling interval never<br>coincided with a masked window; that thread is still open.</p><h2 id="Next-steps"><a href="#Next-steps" class="headerlink" title="Next steps"></a>Next steps</h2><p>State B offers two discriminators: <strong>the exponential signature of a leak</strong> (crash<br>intervals shrinking over time) vs <strong>a constant beat</strong> (a fixed slot &#x2F; timer stomp). Next<br>round: fix the CmaFree&#x2F;ION fields in the sampler, extend the baseline arm to 2400<br>seconds, and see whether the crashes accelerate or stay metronomic.</p><hr><p><em>Copyright: original work by whiteleibniz, licensed under CC BY-NC-SA 4.0. Attribution to whiteleibniz.github.io required when reproducing.</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Embedded </category>
+          
+          <category> Spreadtrum Platform </category>
+          
+          <category> Project Notes </category>
+          
+          <category> Engineering Practice </category>
+          
+          <category> netTV HW Decode </category>
+          
+          <category> Debugging Methods </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> VSP </tag>
+            
+            <tag> Embedded </tag>
+            
+            <tag> Spreadtrum SC9832A </tag>
+            
+            <tag> Hardware Decode </tag>
+            
+            <tag> Debugging </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移</title>
+      <link href="/2026/11/10/nettv-42-drift-verdict/"/>
+      <url>/2026/11/10/nettv-42-drift-verdict/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-42-drift-verdict-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/">English</a></p></blockquote><blockquote><p>系列第 42 篇。设备终于回到线上。这一轮只做一件事：把备好的取证编排 <code>_ntseg2.sh</code><br>真机跑起来，给「周期性 SIGSEGV（约 3 分钟一次）」下一个有数据支撑的判决。</p></blockquote><h2 id="先说结论"><a href="#先说结论" class="headerlink" title="先说结论"></a>先说结论</h2><p><strong>判决：状态 B（累积漂移）。</strong> 首 IDR 重投（IDRREPLAY）无罪——零次重投的基线臂和重投<br>3 次的实验臂，崩溃节奏完全一致。崩点不在重投路径上，而在后续真 IDR &#x2F; 推进路径里，<br>排查方向转向<strong>泄漏 &#x2F; 池耗散</strong>。</p><h2 id="实验设计"><a href="#实验设计" class="headerlink" title="实验设计"></a>实验设计</h2><p>两个臂，每臂 1200 秒，同一条 1080p 直播源：</p><ul><li><strong>A0 臂</strong>：基线配置（IDRREPLAY&#x3D;0），即历史稳定复现配置；</li><li><strong>R 臂</strong>：在 A0 基础上把首 IDR 连续重投 3 次（制造「重投窗口」压力）。</li></ul><p>判决看三点：每臂 GATE（闸门：残留清零、env 恰好一条、帧证据 ≥5fps、崩溃计数来自<br>phase.log 的 <code>mon-child-signal=11</code>），以及两侧崩溃次数的对比。</p><h2 id="数据"><a href="#数据" class="headerlink" title="数据"></a>数据</h2><table><thead><tr><th>臂</th><th>重投</th><th>崩溃次数</th><th>崩溃间隔</th><th>fps 峰值</th><th>GATE</th></tr></thead><tbody><tr><td>A0</td><td>0</td><td>6</td><td>~157s</td><td>283</td><td>V&#x3D;1</td></tr><tr><td>R</td><td>3</td><td>7</td><td>~152-186s</td><td>279</td><td>V&#x3D;1</td></tr></tbody></table><p>两臂崩溃节奏一致（151-186 秒，严格的周期性），fps 都正常。如果重投是诱因，R 臂应该<br>崩得更多或更早；实际 6≈7，<strong>重投这个变量被干净地排除了</strong>。这正是 A&#x2F;B 双臂的意义：<br>一个变量，一次判决，不靠猜。</p><h2 id="两个值得记的细节"><a href="#两个值得记的细节" class="headerlink" title="两个值得记的细节"></a>两个值得记的细节</h2><p><strong>第一轮 600 秒跑出了 NOT_REPRODUCED</strong>——基线臂零崩溃。按 3 分钟一个故障周期，<br>600 秒只覆盖 2 个周期，泊松方差下完全可能一次都撞不上。延长到 1200 秒（4 个周期）<br>立刻复现。老经验再次验证：<strong>观测窗口必须 ≥4~5 个故障周期</strong>，否则「没崩」不构成证据。</p><p><strong>测量工具自己出了 bug</strong>：ARM 头行显示 <code>IDRREPLAY=NETTV_IDRREPLAY</code>，一查是<br><code>env_key_ok</code> 函数把参数直接写进全局变量 <code>k</code>（没加 <code>local</code>），污染了调用方的计数器。<br>万幸 <code>mkarm</code> 在污染发生之前已经用正确的值造好了臂，<strong>实验配置没受影响</strong>——但如果<br>顺序反过来，这就是一次「工具 bug 伪装成实验结果」的事故。已修复（全部参数加<br><code>local</code>）并用变异自检验证。</p><h2 id="附带观察"><a href="#附带观察" class="headerlink" title="附带观察"></a>附带观察</h2><p>两臂的 segv.log 都是 0 条：SIGSEGV 处理器一次都没进过。这与之前的根因链（信号掩码<br>传染 → force_sig_info 强制 SIG_DFL）一致——崩溃落在被屏蔽的执行流上，处理器根本没有<br>机会执行。<code>maskedhit</code> 采样峰值 0，说明采样间隔没撞上掩码窗口，这条线索还没闭环。</p><h2 id="下一步"><a href="#下一步" class="headerlink" title="下一步"></a>下一步</h2><p>状态 B 的两个可判据：<strong>泄漏的指数特征</strong>（崩溃间隔随时间缩短）vs <strong>恒定节拍</strong><br>（固定槽位&#x2F;定时器踩踏）。下一轮把采样里的 CmaFree&#x2F;ION 字段修好，基线臂延长到<br>2400 秒，看崩溃是加速还是恒速。</p><hr><p><em>版权声明：本文为 whiteleibniz 原创文章，采用 CC BY-NC-SA 4.0 许可协议。转载请注明出处 whiteleibniz.github.io。</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Embedded </category>
+          
+          <category> Spreadtrum Platform </category>
+          
+          <category> Project Notes </category>
+          
+          <category> Engineering Practice </category>
+          
+          <category> netTV HW Decode </category>
+          
+          <category> Debugging Methods </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> VSP </tag>
+            
+            <tag> Embedded </tag>
+            
+            <tag> Spreadtrum SC9832A </tag>
+            
+            <tag> Hardware Decode </tag>
+            
+            <tag> Debugging </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>netTV 硬解（42）：1200 秒雙臂定案——首 IDR 重投無罪，週期性 SIGSEGV 是累積漂移</title>
+      <link href="/2026/11/10/zh-tw/nettv-42-drift-verdict-zh-tw/"/>
+      <url>/2026/11/10/zh-tw/nettv-42-drift-verdict-zh-tw/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-42-drift-verdict-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/">English</a></p></blockquote><blockquote><p>系列第 42 篇。設備終於回到線上。這一輪只做一件事：把備好的取證編排 <code>_ntseg2.sh</code><br>真機跑起來，給「週期性 SIGSEGV（約 3 分鐘一次）」下一個有數據支撐的判決。</p></blockquote><h2 id="先說結論"><a href="#先說結論" class="headerlink" title="先說結論"></a>先說結論</h2><p><strong>判決：狀態 B（累積漂移）。</strong> 首 IDR 重投（IDRREPLAY）無罪——零次重投的基線臂和重投<br>3 次的實驗臂，崩潰節奏完全一致。崩點不在重投路徑上，而在後續真 IDR &#x2F; 推進路徑裡，<br>排查方向轉向<strong>洩漏 &#x2F; 池耗散</strong>。</p><h2 id="實驗設計"><a href="#實驗設計" class="headerlink" title="實驗設計"></a>實驗設計</h2><p>兩個臂，每臂 1200 秒，同一條 1080p 直播源：</p><ul><li><strong>A0 臂</strong>：基線配置（IDRREPLAY&#x3D;0），即歷史穩定復現配置；</li><li><strong>R 臂</strong>：在 A0 基礎上把首 IDR 連續重投 3 次（製造「重投窗口」壓力）。</li></ul><p>判決看三點：每臂 GATE（閘門：殘留清零、env 恰好一條、幀證據 ≥5fps、崩潰計數來自<br>phase.log 的 <code>mon-child-signal=11</code>），以及兩側崩潰次數的對比。</p><h2 id="數據"><a href="#數據" class="headerlink" title="數據"></a>數據</h2><table><thead><tr><th>臂</th><th>重投</th><th>崩潰次數</th><th>崩潰間隔</th><th>fps 峰值</th><th>GATE</th></tr></thead><tbody><tr><td>A0</td><td>0</td><td>6</td><td>~157s</td><td>283</td><td>V&#x3D;1</td></tr><tr><td>R</td><td>3</td><td>7</td><td>~152-186s</td><td>279</td><td>V&#x3D;1</td></tr></tbody></table><p>兩臂崩潰節奏一致（151-186 秒，嚴格的週期性），fps 都正常。如果重投是誘因，R 臂應該<br>崩得更多或更早；實際 6≈7，<strong>重投這個變量被乾淨地排除了</strong>。這正是 A&#x2F;B 雙臂的意義：<br>一個變量，一次判決，不靠猜。</p><h2 id="兩個值得記的細節"><a href="#兩個值得記的細節" class="headerlink" title="兩個值得記的細節"></a>兩個值得記的細節</h2><p><strong>第一輪 600 秒跑出了 NOT_REPRODUCED</strong>——基線臂零崩潰。按 3 分鐘一個故障週期，<br>600 秒只覆蓋 2 個週期，泊松方差下完全可能一次都撞不上。延長到 1200 秒（4 個週期）<br>立刻復現。老經驗再次驗證：<strong>觀測窗口必須 ≥4~5 個故障週期</strong>，否則「沒崩」不構成證據。</p><p><strong>測量工具自己出了 bug</strong>：ARM 頭行顯示 <code>IDRREPLAY=NETTV_IDRREPLAY</code>，一查是<br><code>env_key_ok</code> 函數把參數直接寫進全局變量 <code>k</code>（沒加 <code>local</code>），污染了調用方的計數器。<br>萬幸 <code>mkarm</code> 在污染發生之前已經用正確的值造好了臂，<strong>實驗配置沒受影響</strong>——但如果<br>順序反過來，這就是一次「工具 bug 偽裝成實驗結果」的事故。已修復（全部參數加<br><code>local</code>）並用變異自檢驗證。</p><h2 id="附帶觀察"><a href="#附帶觀察" class="headerlink" title="附帶觀察"></a>附帶觀察</h2><p>兩臂的 segv.log 都是 0 條：SIGSEGV 處理器一次都沒進過。這與之前的根因鏈（信號掩碼<br>傳染 → force_sig_info 強制 SIG_DFL）一致——崩潰落在被屏蔽的執行流上，處理器根本沒有<br>機會執行。<code>maskedhit</code> 採樣峰值 0，說明採樣間隔沒撞上掩碼窗口，這條線索還沒閉環。</p><h2 id="下一步"><a href="#下一步" class="headerlink" title="下一步"></a>下一步</h2><p>狀態 B 的兩個可判據：<strong>洩漏的指數特徵</strong>（崩潰間隔隨時間縮短）vs <strong>恆定節拍</strong><br>（固定槽位&#x2F;定時器踩踏）。下一輪把採樣裡的 CmaFree&#x2F;ION 欄位修好，基線臂延長到<br>2400 秒，看崩潰是加速還是恆速。</p><hr><p><em>版權聲明：本文為 whiteleibniz 原創文章，採用 CC BY-NC-SA 4.0 許可協議。轉載請註明出處 whiteleibniz.github.io。</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Embedded </category>
+          
+          <category> Spreadtrum Platform </category>
+          
+          <category> Project Notes </category>
+          
+          <category> Engineering Practice </category>
+          
+          <category> netTV HW Decode </category>
+          
+          <category> Debugging Methods </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> VSP </tag>
+            
+            <tag> Embedded </tag>
+            
+            <tag> Spreadtrum SC9832A </tag>
+            
+            <tag> Hardware Decode </tag>
+            
+            <tag> Debugging </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>netTV HW Decode (41): Test the Never-Run Script First — the &#39;Last Line Is exec&#39; Assumption in A/B Arm Builders</title>
       <link href="/2026/11/10/nettv-41-shell-arm-env-anchor-en/"/>
       <url>/2026/11/10/nettv-41-shell-arm-env-anchor-en/</url>

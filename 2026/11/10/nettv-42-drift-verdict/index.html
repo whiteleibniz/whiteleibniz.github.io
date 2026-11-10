@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 42 篇。设备终于回到线上。这一轮只做一件事：把备好的取证编排 _ntseg2.sh真机跑起来，给「周期性 SIGSEGV（约 3 分钟一次）」下一个有数据支撑的判决。  先说结论判决：状态 B（累积漂移）。 首 IDR 重投（IDRREPLAY）无罪——零次重投的基线臂和重投3 次的实验臂，崩溃节奏完全一致。崩点不在重投路径上">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 42 篇。设备终于回到线上。这一轮只做一件事：把备好的取证编排 _ntseg2.sh真机跑起来，给「周期性 SIGSEGV（约 3 分钟一次）」下一个有数据支撑的判决。  先说结论判决：状态 B（累积漂移）。 首 IDR 重投（IDRREPLAY）无罪——零次重投的基线臂和重投3 次的实验臂，崩溃节奏完全一致。崩点不在重投路径上">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-10T08:00:00.000Z">
+<meta property="article:modified_time" content="2026-11-10T07:56:38.693Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Hardware Decode">
+<meta property="article:tag" content="Debugging">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/10/nettv-42-drift-verdict-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/10/zh-tw/nettv-42-drift-verdict-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&text=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&title=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&is_video=false&description=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移&body=Check out this article: https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&title=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&title=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&title=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&title=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&name=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%88%E8%AF%B4%E7%BB%93%E8%AE%BA"><span class="toc-number">1.</span> <span class="toc-text">先说结论</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">实验设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE"><span class="toc-number">3.</span> <span class="toc-text">数据</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%A4%E4%B8%AA%E5%80%BC%E5%BE%97%E8%AE%B0%E7%9A%84%E7%BB%86%E8%8A%82"><span class="toc-number">4.</span> <span class="toc-text">两个值得记的细节</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%B8%A6%E8%A7%82%E5%AF%9F"><span class="toc-number">5.</span> <span class="toc-text">附带观察</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">6.</span> <span class="toc-text">下一步</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-10T08:00:00.000Z" itemprop="datePublished">2026-11-10</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Debugging/" rel="tag">Debugging</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Hardware-Decode/" rel="tag">Hardware Decode</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-42-drift-verdict-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 42 篇。设备终于回到线上。这一轮只做一件事：把备好的取证编排 <code>_ntseg2.sh</code><br>真机跑起来，给「周期性 SIGSEGV（约 3 分钟一次）」下一个有数据支撑的判决。</p>
+</blockquote>
+<h2 id="先说结论"><a href="#先说结论" class="headerlink" title="先说结论"></a>先说结论</h2><p><strong>判决：状态 B（累积漂移）。</strong> 首 IDR 重投（IDRREPLAY）无罪——零次重投的基线臂和重投<br>3 次的实验臂，崩溃节奏完全一致。崩点不在重投路径上，而在后续真 IDR &#x2F; 推进路径里，<br>排查方向转向<strong>泄漏 &#x2F; 池耗散</strong>。</p>
+<h2 id="实验设计"><a href="#实验设计" class="headerlink" title="实验设计"></a>实验设计</h2><p>两个臂，每臂 1200 秒，同一条 1080p 直播源：</p>
+<ul>
+<li><strong>A0 臂</strong>：基线配置（IDRREPLAY&#x3D;0），即历史稳定复现配置；</li>
+<li><strong>R 臂</strong>：在 A0 基础上把首 IDR 连续重投 3 次（制造「重投窗口」压力）。</li>
+</ul>
+<p>判决看三点：每臂 GATE（闸门：残留清零、env 恰好一条、帧证据 ≥5fps、崩溃计数来自<br>phase.log 的 <code>mon-child-signal=11</code>），以及两侧崩溃次数的对比。</p>
+<h2 id="数据"><a href="#数据" class="headerlink" title="数据"></a>数据</h2><table>
+<thead>
+<tr>
+<th>臂</th>
+<th>重投</th>
+<th>崩溃次数</th>
+<th>崩溃间隔</th>
+<th>fps 峰值</th>
+<th>GATE</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A0</td>
+<td>0</td>
+<td>6</td>
+<td>~157s</td>
+<td>283</td>
+<td>V&#x3D;1</td>
+</tr>
+<tr>
+<td>R</td>
+<td>3</td>
+<td>7</td>
+<td>~152-186s</td>
+<td>279</td>
+<td>V&#x3D;1</td>
+</tr>
+</tbody></table>
+<p>两臂崩溃节奏一致（151-186 秒，严格的周期性），fps 都正常。如果重投是诱因，R 臂应该<br>崩得更多或更早；实际 6≈7，<strong>重投这个变量被干净地排除了</strong>。这正是 A&#x2F;B 双臂的意义：<br>一个变量，一次判决，不靠猜。</p>
+<h2 id="两个值得记的细节"><a href="#两个值得记的细节" class="headerlink" title="两个值得记的细节"></a>两个值得记的细节</h2><p><strong>第一轮 600 秒跑出了 NOT_REPRODUCED</strong>——基线臂零崩溃。按 3 分钟一个故障周期，<br>600 秒只覆盖 2 个周期，泊松方差下完全可能一次都撞不上。延长到 1200 秒（4 个周期）<br>立刻复现。老经验再次验证：<strong>观测窗口必须 ≥4~5 个故障周期</strong>，否则「没崩」不构成证据。</p>
+<p><strong>测量工具自己出了 bug</strong>：ARM 头行显示 <code>IDRREPLAY=NETTV_IDRREPLAY</code>，一查是<br><code>env_key_ok</code> 函数把参数直接写进全局变量 <code>k</code>（没加 <code>local</code>），污染了调用方的计数器。<br>万幸 <code>mkarm</code> 在污染发生之前已经用正确的值造好了臂，<strong>实验配置没受影响</strong>——但如果<br>顺序反过来，这就是一次「工具 bug 伪装成实验结果」的事故。已修复（全部参数加<br><code>local</code>）并用变异自检验证。</p>
+<h2 id="附带观察"><a href="#附带观察" class="headerlink" title="附带观察"></a>附带观察</h2><p>两臂的 segv.log 都是 0 条：SIGSEGV 处理器一次都没进过。这与之前的根因链（信号掩码<br>传染 → force_sig_info 强制 SIG_DFL）一致——崩溃落在被屏蔽的执行流上，处理器根本没有<br>机会执行。<code>maskedhit</code> 采样峰值 0，说明采样间隔没撞上掩码窗口，这条线索还没闭环。</p>
+<h2 id="下一步"><a href="#下一步" class="headerlink" title="下一步"></a>下一步</h2><p>状态 B 的两个可判据：<strong>泄漏的指数特征</strong>（崩溃间隔随时间缩短）vs <strong>恒定节拍</strong><br>（固定槽位&#x2F;定时器踩踏）。下一轮把采样里的 CmaFree&#x2F;ION 字段修好，基线臂延长到<br>2400 秒，看崩溃是加速还是恒速。</p>
+<hr>
+<p><em>版权声明：本文为 whiteleibniz 原创文章，采用 CC BY-NC-SA 4.0 许可协议。转载请注明出处 whiteleibniz.github.io。</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%88%E8%AF%B4%E7%BB%93%E8%AE%BA"><span class="toc-number">1.</span> <span class="toc-text">先说结论</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">实验设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE"><span class="toc-number">3.</span> <span class="toc-text">数据</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%A4%E4%B8%AA%E5%80%BC%E5%BE%97%E8%AE%B0%E7%9A%84%E7%BB%86%E8%8A%82"><span class="toc-number">4.</span> <span class="toc-text">两个值得记的细节</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%B8%A6%E8%A7%82%E5%AF%9F"><span class="toc-number">5.</span> <span class="toc-text">附带观察</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">6.</span> <span class="toc-text">下一步</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&text=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&title=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&is_video=false&description=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移&body=Check out this article: https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&title=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&title=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&title=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&title=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/&name=netTV 硬解（42）：1200 秒双臂定案——首 IDR 重投无罪，周期性 SIGSEGV 是累积漂移&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+

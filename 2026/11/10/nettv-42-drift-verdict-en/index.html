@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 Language: 简体中文 · 繁體中文 · English   Part 42 of the series. The device is finally back online. This round did exactly onething: ran the prepared forensics script _ntseg2.sh on real hardware to reach">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 Language: 简体中文 · 繁體中文 · English   Part 42 of the series. The device is finally back online. This round did exactly onething: ran the prepared forensics script _ntseg2.sh on real hardware to reach">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-10T08:00:00.000Z">
+<meta property="article:modified_time" content="2026-11-10T07:57:03.440Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Hardware Decode">
+<meta property="article:tag" content="Debugging">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2026/11/10/nettv-42-drift-verdict/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&text=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&title=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&is_video=false&description=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift&body=Check out this article: https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&title=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&title=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&title=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&title=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&name=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Verdict-first"><span class="toc-number">1.</span> <span class="toc-text">Verdict first</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Experiment-design"><span class="toc-number">2.</span> <span class="toc-text">Experiment design</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Data"><span class="toc-number">3.</span> <span class="toc-text">Data</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Two-details-worth-recording"><span class="toc-number">4.</span> <span class="toc-text">Two details worth recording</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Side-observation"><span class="toc-number">5.</span> <span class="toc-text">Side observation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Next-steps"><span class="toc-number">6.</span> <span class="toc-text">Next steps</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-10T08:00:00.000Z" itemprop="datePublished">2026-11-10</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Debugging/" rel="tag">Debugging</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Hardware-Decode/" rel="tag">Hardware Decode</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/zh-tw/nettv-42-drift-verdict-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>Part 42 of the series. The device is finally back online. This round did exactly one<br>thing: ran the prepared forensics script <code>_ntseg2.sh</code> on real hardware to reach a<br>data-backed verdict on the periodic SIGSEGV (roughly one crash every 3 minutes).</p>
+</blockquote>
+<h2 id="Verdict-first"><a href="#Verdict-first" class="headerlink" title="Verdict first"></a>Verdict first</h2><p><strong>State B: accumulated drift.</strong> First-IDR replay (IDRREPLAY) is innocent — the baseline<br>arm with zero replays and the experimental arm with 3 replays crashed at exactly the<br>same cadence. The crash point is not on the replay path; it lives in the subsequent<br>real-IDR &#x2F; advance path. The investigation now moves to <strong>leak &#x2F; pool exhaustion</strong>.</p>
+<h2 id="Experiment-design"><a href="#Experiment-design" class="headerlink" title="Experiment design"></a>Experiment design</h2><p>Two arms, 1200 seconds each, same 1080p live source:</p>
+<ul>
+<li><strong>A0 arm</strong>: baseline configuration (IDRREPLAY&#x3D;0), the historically stable repro config;</li>
+<li><strong>R arm</strong>: baseline plus replaying the first IDR 3 times (creating “replay window”<br>pressure).</li>
+</ul>
+<p>The verdict reads three things: per-arm GATEs (residue zeroed, exactly one env line,<br>frame evidence ≥5fps, crash counts from <code>mon-child-signal=11</code> in phase.log), and the<br>crash-count comparison between the two arms.</p>
+<h2 id="Data"><a href="#Data" class="headerlink" title="Data"></a>Data</h2><table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>Replays</th>
+<th>Crashes</th>
+<th>Interval</th>
+<th>Peak fps</th>
+<th>GATE</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A0</td>
+<td>0</td>
+<td>6</td>
+<td>~157s</td>
+<td>283</td>
+<td>V&#x3D;1</td>
+</tr>
+<tr>
+<td>R</td>
+<td>3</td>
+<td>7</td>
+<td>~152-186s</td>
+<td>279</td>
+<td>V&#x3D;1</td>
+</tr>
+</tbody></table>
+<p>Both arms crashed on the same rhythm (151-186 seconds, strictly periodic) with healthy<br>fps. If replay were the trigger, R should crash more or sooner; instead 6≈7. <strong>The<br>replay variable is cleanly eliminated.</strong> That is the whole point of an A&#x2F;B pair: one<br>variable, one verdict, no guessing.</p>
+<h2 id="Two-details-worth-recording"><a href="#Two-details-worth-recording" class="headerlink" title="Two details worth recording"></a>Two details worth recording</h2><p><strong>The first 600-second run reported NOT_REPRODUCED</strong> — the baseline arm never crashed.<br>With one fault cycle every 3 minutes, 600 seconds covers only 2 cycles; Poisson variance<br>makes zero hits entirely plausible. Extending to 1200 seconds (4 cycles) reproduced<br>immediately. The old rule holds again: <strong>the observation window must span ≥4-5 fault<br>cycles</strong>, otherwise “it didn’t crash” is not evidence.</p>
+<p><strong>The measurement tool had its own bug</strong>: the ARM header printed the literal<br><code>IDRREPLAY=NETTV_IDRREPLAY</code>. The cause: <code>env_key_ok</code> wrote its parameters directly into<br>the global variable <code>k</code> (no <code>local</code>), clobbering the caller’s counter. Fortunately<br><code>mkarm</code> had already built the arm with the correct value before the clobber, so the<br><strong>experiment configuration was unaffected</strong> — but had the order been reversed, this<br>would have been a “tool bug masquerading as a result” incident. Fixed (all parameters<br>now <code>local</code>) and verified with mutation self-tests.</p>
+<h2 id="Side-observation"><a href="#Side-observation" class="headerlink" title="Side observation"></a>Side observation</h2><p>Both arms produced zero segv.log entries: the SIGSEGV handler never ran once. This is<br>consistent with the earlier root-cause chain (signal-mask inheritance → force_sig_info<br>forcing SIG_DFL) — the fault lands on a masked execution flow, so the handler never gets<br>a chance. <code>maskedhit</code> sampling peaked at 0, meaning the sampling interval never<br>coincided with a masked window; that thread is still open.</p>
+<h2 id="Next-steps"><a href="#Next-steps" class="headerlink" title="Next steps"></a>Next steps</h2><p>State B offers two discriminators: <strong>the exponential signature of a leak</strong> (crash<br>intervals shrinking over time) vs <strong>a constant beat</strong> (a fixed slot &#x2F; timer stomp). Next<br>round: fix the CmaFree&#x2F;ION fields in the sampler, extend the baseline arm to 2400<br>seconds, and see whether the crashes accelerate or stay metronomic.</p>
+<hr>
+<p><em>Copyright: original work by whiteleibniz, licensed under CC BY-NC-SA 4.0. Attribution to whiteleibniz.github.io required when reproducing.</em></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Verdict-first"><span class="toc-number">1.</span> <span class="toc-text">Verdict first</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Experiment-design"><span class="toc-number">2.</span> <span class="toc-text">Experiment design</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Data"><span class="toc-number">3.</span> <span class="toc-text">Data</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Two-details-worth-recording"><span class="toc-number">4.</span> <span class="toc-text">Two details worth recording</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Side-observation"><span class="toc-number">5.</span> <span class="toc-text">Side observation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Next-steps"><span class="toc-number">6.</span> <span class="toc-text">Next steps</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&text=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&title=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&is_video=false&description=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift&body=Check out this article: https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&title=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&title=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&title=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&title=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/10/nettv-42-drift-verdict-en/&name=netTV HW Decode (42): 2400-Second Verdict Pending — First-IDR Replay Is Innocent, the Periodic SIGSEGV Is Accumulated Drift&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
