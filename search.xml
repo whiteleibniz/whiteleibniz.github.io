@@ -4,6 +4,141 @@
   
     
     <entry>
+      <title>netTV HW Decode (45): A 12-Byte Heap Overflow — How a Static Audit Caught Our Own Dead Writes</title>
+      <link href="/2026/11/12/nettv-45-c1-heap-oob-en/"/>
+      <url>/2026/11/12/nettv-45-c1-heap-oob-en/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>🌐 Language: <a href="https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/12/zh-tw/nettv-45-c1-heap-oob-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob-en/">English</a></p></blockquote><blockquote><p>Post 45 in the series. Last round we concluded the crash was “accumulating drift” and built the measuring instrument — but the device stayed powered off.<br>This round we changed the audit dimension: not waits, but allocations. The culprit turned out to be six assignments<br>in our own shim layer that were never read by anyone.</p></blockquote><p>A periodic SIGSEGV we chased for half a month ended on six assignments in our own code. They are not <code>memcpy</code> calls, so two earlier rounds of “audit every memcpy boundary” never touched them. This post is about that blind spot, and about pinning down “how big is this object, really” with nothing but a disassembler.</p><span id="more"></span><h2 id="Background-symptom-and-prior-conclusions"><a href="#Background-symptom-and-prior-conclusions" class="headerlink" title="Background: symptom and prior conclusions"></a>Background: symptom and prior conclusions</h2><p>The network-TV player on a Spreadtrum SC9832A device (VSP hardware decoding) dies of SIGSEGV roughly every three minutes during steady playback. Frame rate stays normal, the crash does not scale with IDR size, and the faulting address sometimes looks like ASCII — <code>0x747474</code>.</p><p>Directions already ruled out:</p><ul><li>The signal handler was rewritten (<code>sigaltstack</code>, pure <code>write</code> to avoid dying on a held malloc lock) — but it is never entered;</li><li>All nine of our <code>memcpy</code> sites were checked individually; every one is bounded;</li><li>Render pool, thread signal masks, and fork timing were A&#x2F;B tested; none is the primary cause.</li></ul><p>What remained was the “accumulating drift” hypothesis: some path executed every frame slowly consumes a resource. The open question was <strong>which path</strong>.</p><h2 id="Method-turn-alloc-free-pairing-into-a-function-level-audit"><a href="#Method-turn-alloc-free-pairing-into-a-function-level-audit" class="headerlink" title="Method: turn alloc&#x2F;free pairing into a function-level audit"></a>Method: turn alloc&#x2F;free pairing into a function-level audit</h2><p>The previous round audited waits and timeouts. This round audited allocation behaviour. The idea is plain:</p><ol><li>Take exact function boundaries from <code>.dynsym</code> FUNC symbols (which carry a size); fill in non-exported static functions using <code>push &#123;…, lr&#125;</code> prologues — the only reliable boundary signal in a stripped library;</li><li>Build a PLT-address → symbol-name map from <code>.plt</code> + <code>.rel.plt</code>, then capture every <code>bl/blx</code> inside a function body that targets <code>malloc/calloc/new/mmap</code> or <code>free/delete/munmap</code>;</li><li>Decide whether the call site sits inside a loop formed by a backward branch in the same function (the smell of per-iteration allocation);</li><li>Walk back twelve instructions to recover <code>r0</code> (including <code>movw</code>&#x2F;<code>movt</code> pairs) — the requested size;</li><li>Build a call graph rooted at per-frame entry points (<code>onQueueFilled</code>, <code>H264DecDecode</code>, …) and BFS-annotate reachability depth.</li></ol><p>Two gates to keep the tool from fooling itself:</p><ul><li><strong>Coverage must be printed.</strong> Linear disassembly stops at constant pools; when coverage is low the tool prints <code>INCOMPLETE</code>. Otherwise “found zero allocation sites” gets read as “nothing allocates”.</li><li><strong>A negative control.</strong> The register-layer library does not import <code>malloc</code> at all, so the tool must report “zero heap allocation sites” rather than “no leak”. That is a deliberate reverse test.</li></ul><h2 id="The-decisive-step-how-big-is-the-object"><a href="#The-decisive-step-how-big-is-the-object" class="headerlink" title="The decisive step: how big is the object?"></a>The decisive step: how big is the object?</h2><p>One unremarkable line in the audit output: a callback contains <code>_Znwj</code> with a recovered <code>r0 = 0x1c</code>.</p><p><code>0x1c</code> is 28. Those 28 bytes are then handed to the <code>MemoryHeapIon</code> constructor. Following that thread through all four construction sites, three of them read <code>mov r0, #0x1c; bl _Znwj</code> — <strong>the object is 28 bytes</strong>.</p><p>Back to our own source. To work around ION allocation failures, the player replaces the entire <code>MemoryHeapIon</code> constructor with a shim that fills the object according to a field-offset table:</p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">*(<span class="type">void</span>    **)(o +  <span class="number">0</span>) = ...;</span><br><span class="line">*(<span class="type">int</span>      *)(o +  <span class="number">8</span>) = ...;</span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">12</span>) = ...;</span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">16</span>) = ...;</span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">20</span>) = ...;</span><br><span class="line">*(<span class="type">void</span>    **)(o + <span class="number">24</span>) = ...;   <span class="comment">/* 28 bytes end here */</span></span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">28</span>) = handle;   <span class="comment">/* overflow 1 */</span></span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">32</span>) = fd;       <span class="comment">/* overflow 2 */</span></span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">36</span>) = buf_fd;   <span class="comment">/* overflow 3 — actually reaches o+39 */</span></span><br></pre></td></tr></table></figure><p><strong>Every construction writes 12 bytes past the end.</strong> And none of those three fields is ever read: <code>getBase()</code> reads +24, <code>getHeapID()</code> reads +16, <code>get_phy_addr_from_ion()</code>&#x2F;<code>get_iova()</code> read +8&#x2F;+12&#x2F;+16&#x2F;+24. All three assignments are dead writes.</p><p>Frequency sets the scale: an mbinfo buffer is requested roughly every two frames — 12.5 times per second at 25 fps, about 2200 overflowing writes every three minutes, each smearing 12 bytes over the neighbouring malloc chunk (header or data).</p><h2 id="Why-two-memcpy-audits-missed-it"><a href="#Why-two-memcpy-audits-missed-it" class="headerlink" title="Why two memcpy audits missed it"></a>Why two memcpy audits missed it</h2><p>This is the part worth remembering.</p><p>Intuitively, “out-of-bounds write” means “a <code>memcpy</code> length computed wrong”. So the audit was shaped like that: check every length variable, every source buffer size, every <code>min()</code> clamp. That works for <strong>data movement</strong>. It fails completely for <strong>fixed-offset struct writes</strong>: <code>*(int*)(o + 36) = fd;</code> contains no length variable at all. It <em>looks</em> like setting a field. The correctness problem hides in an external fact — how large the object actually is.</p><p>So the audit rule needs an addition: <strong>audit by “write offset vs. true object size”, not only by “is there a length parameter”.</strong> The true size usually is not in your file; it comes from a <code>new(N)</code> inside the library, and you have to disassemble to get it.</p><p>A counter-intuitive corollary: these six lines existed from the second version of the code and survived all the way to the deployed build, through several rounds of “memory safety review”. They were not hidden — they were simply outside the checklist.</p><h2 id="Two-mutually-exclusive-hypotheses-one-experiment-to-separate-them"><a href="#Two-mutually-exclusive-hypotheses-one-experiment-to-separate-them" class="headerlink" title="Two mutually exclusive hypotheses, one experiment to separate them"></a>Two mutually exclusive hypotheses, one experiment to separate them</h2><p>At this point there are two candidates whose predictions contradict each other:</p><table><thead><tr><th>Hypothesis</th><th>Prediction</th></tr></thead><tbody><tr><td>A: per-frame byte leak</td><td>CMA free memory declines linearly; 151 s implies ~1.94 KB&#x2F;frame, 186 s ~1.58 KB&#x2F;frame (7 MB pool, 25 fps)</td></tr><tr><td>B: corrupted heap metadata (this post)</td><td><strong>It can crash with CMA flat</strong>; the timing depends on when the allocator touches the damaged chunk</td></tr></tbody></table><p>That distinction matters: every previous investigation watched free memory, and hypothesis B consumes none. If you only sample CmaFree, B stays invisible forever.</p><p>So the next step is one thing only: delete those 3 lines × 2 sites (six lines total), compile, and run four to five full failure periods. Crash gone means root cause; markedly longer interval means a contributing cause; no change kills the hypothesis and sends us back to the CMA slope branch.</p><p>Which is also why nothing else was changed at the same time. There is still a separate “signal-mask sanitisation” patch pending on this code, and mixing the two into one experiment would make the result unattributable. The value of “one variable at a time” is not caution — it is that conclusions stay reusable.</p><h2 id="Takeaways"><a href="#Takeaways" class="headerlink" title="Takeaways"></a>Takeaways</h2><ul><li>A static audit’s output is not necessarily “the vendor library is broken”. It can be “our own shim layer is broken” — and the shim is exactly the part everyone assumes has already been validated.</li><li>Function-level symbols, self-reported coverage, and a negative control are the minimum kit for a static report to count as evidence.</li><li>An ASCII-looking fault address (<code>0x747474</code>) does not make it a string. Don’t ride that intuition too far; this round did not prove where it comes from either.</li></ul>]]></content>
+      
+      
+      <categories>
+          
+          <category> Embedded </category>
+          
+          <category> Spreadtrum Platform </category>
+          
+          <category> Project Notes </category>
+          
+          <category> Engineering Practice </category>
+          
+          <category> netTV HW Decode </category>
+          
+          <category> Debugging Methods </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> VSP </tag>
+            
+            <tag> Embedded </tag>
+            
+            <tag> Spreadtrum SC9832A </tag>
+            
+            <tag> Hardware Decode </tag>
+            
+            <tag> Debugging Methods </tag>
+            
+            <tag> Memory Safety </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」</title>
+      <link href="/2026/11/12/nettv-45-c1-heap-oob/"/>
+      <url>/2026/11/12/nettv-45-c1-heap-oob/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/12/zh-tw/nettv-45-c1-heap-oob-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob-en/">English</a></p></blockquote><blockquote><p>系列第 45 篇。上一轮把崩溃定性成「累积漂移」，工具造好了，设备却一直没上电。<br>这一轮换了个审计维度——不看等待，看分配——结果抓到的不是厂商库，而是我们自己替身层里<br>6 行从来没被读过的赋值。</p></blockquote><p>一个查了半个月的「周期性 SIGSEGV」，最后落在自己代码的 6 行赋值上。这 6 行不是 <code>memcpy</code>，所以两轮「逐处审计 memcpy 边界」都没扫到它。这篇记录方法上的那个盲区，以及怎么用二进制反汇编把「对象到底多大」这件事钉死。</p><span id="more"></span><h2 id="背景：症状与既有结论"><a href="#背景：症状与既有结论" class="headerlink" title="背景：症状与既有结论"></a>背景：症状与既有结论</h2><p>设备上的网络电视播放器（展讯 SC9832A，VSP 硬件解码）稳定播放时，约每 3 分钟死一次 SIGSEGV，帧率正常、与 IDR 尺寸无关；崩溃地址出现 <code>0x747474</code> 这种「ASCII 感」的值。此前已经排查掉的方向：</p><ul><li>信号处理器本身写过（带 <code>sigaltstack</code>、纯 <code>write</code> 避免持锁死锁），但从没执行到；</li><li>我方的 9 处 <code>memcpy</code> 逐处判过边界，全部有界；</li><li>渲染池、线程信号掩码、fork 时机都做过 A&#x2F;B，均非主因。</li></ul><p>剩下的假说是「累积漂移」：某个每帧都会走到的路径在缓慢消耗资源。问题是——<strong>哪个路径</strong>。</p><h2 id="方法：把「分配-释放配对」做成函数级审计"><a href="#方法：把「分配-释放配对」做成函数级审计" class="headerlink" title="方法：把「分配&#x2F;释放配对」做成函数级审计"></a>方法：把「分配&#x2F;释放配对」做成函数级审计</h2><p>上一轮审的是「等待&#x2F;超时」，这轮换成分配行为。工具思路很朴素：</p><ol><li>用 <code>.dynsym</code> 里的 FUNC 符号（带 size）拿精确函数边界；未导出的静态函数用 <code>push &#123;…, lr&#125;</code> 序言补齐（stripped 库里这是唯一可靠的分界）；</li><li>用 <code>.plt</code> + <code>.rel.plt</code> 建 PLT 地址 → 符号名映射，抓函数体内 <code>bl/blx</code> 到 <code>malloc/calloc/new/mmap</code> 与 <code>free/delete/munmap</code> 的调用点；</li><li>判断该调用点是否落在函数内某个回跳分支构成的循环体里（per-iteration 分配的气味）；</li><li>回溯 12 条指令复原 <code>r0</code>（含 <code>movw/movt</code> 拼装）＝ 申请大小；</li><li>以逐帧入口（<code>onQueueFilled</code>、<code>H264DecDecode</code> 等）为根建调用图，BFS 标注「从逐帧路径是否可达」。</li></ol><p>两个防止自欺的门槛：</p><ul><li><strong>覆盖率必须打印</strong>。线性反汇编遇到常量池会中断，覆盖率不足时工具直接打 <code>INCOMPLETE</code>——否则「没找到分配点」会被读成「没有分配」。</li><li><strong>阴性对照</strong>。寄存器层那个库的导入表里根本没有 <code>malloc</code>，工具必须报「堆分配点 0 个」，而不是「无泄漏」。这是给自己设的反向测试。</li></ul><h2 id="关键一步：对象到底多大"><a href="#关键一步：对象到底多大" class="headerlink" title="关键一步：对象到底多大"></a>关键一步：对象到底多大</h2><p>审计报告里有一行不起眼的东西：某个回调里有 <code>_Znwj</code>，复原出来的 <code>r0 = 0x1c</code>。</p><p><code>0x1c</code> &#x3D; 28。这 28 字节随后被交给 <code>MemoryHeapIon</code> 的构造函数。于是顺着反汇编把 4 个构造点全看了一遍，3 个都是 <code>mov r0, #0x1c; bl _Znwj</code> ——<strong>这个对象就是 28 字节</strong>。</p><p>回到我们自己的源码：为了绕开 ION 分配失败，播放器里把 <code>MemoryHeapIon</code> 的构造函数整个替身掉了，替身里按「字段偏移表」往对象上填值：</p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">*(<span class="type">void</span>    **)(o +  <span class="number">0</span>) = ...;</span><br><span class="line">*(<span class="type">int</span>      *)(o +  <span class="number">8</span>) = ...;</span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">12</span>) = ...;</span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">16</span>) = ...;</span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">20</span>) = ...;</span><br><span class="line">*(<span class="type">void</span>    **)(o + <span class="number">24</span>) = ...;   <span class="comment">/* 28 字节到此为止 */</span></span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">28</span>) = handle;   <span class="comment">/* 越界 1 */</span></span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">32</span>) = fd;       <span class="comment">/* 越界 2 */</span></span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">36</span>) = buf_fd;   <span class="comment">/* 越界 3，实际写到 o+39 */</span></span><br></pre></td></tr></table></figure><p><strong>每次构造越界写 12 字节。</strong> 而这三个字段没有任何读取点——<code>getBase()</code> 读 +24，<code>getHeapID()</code> 读 +16，<code>get_phy_addr_from_ion()</code>&#x2F;<code>get_iova()</code> 读 +8&#x2F;+12&#x2F;+16&#x2F;+24。三条赋值是纯死写。</p><p>调用频度决定了量级：mbinfo 缓冲区大约每 2 帧申请一次，25fps 下 12.5 次&#x2F;秒，3 分钟约 2200 次越界写，每次都踩在紧邻 malloc 块的 12 字节上（块头或邻块数据）。</p><h2 id="为什么两轮-memcpy-审计都没抓到"><a href="#为什么两轮-memcpy-审计都没抓到" class="headerlink" title="为什么两轮 memcpy 审计都没抓到"></a>为什么两轮 memcpy 审计都没抓到</h2><p>这是这次最值得记的一点。</p><p>「越界写」在直觉里等于 <code>memcpy</code> 长度算错。于是审计就按 <code>memcpy</code> 去审：逐个看长度变量、看源缓冲大小、看有无 <code>min()</code> 截断。这个做法对<strong>数据搬运</strong>有效，对<strong>定偏移结构体写</strong>完全失效——<code>*(int*)(o + 36) = fd;</code> 里没有任何长度变量，它「看起来」只是给某个字段赋值，而正确性问题隐藏在「这个对象真实有多大」这个外部事实上。</p><p>所以审计法则要补一条：<strong>按「写入偏移 vs 对象真实大小」审，不能只按「有没有长度参数」审。</strong> 对象大小往往不在本文件里——它由库里的 <code>new(N)</code> 决定，必须反汇编去取。</p><p>顺带一个反直觉的结论：这 6 行从代码的第二个版本就存在，一路活到被部署的版本，中间经历了多次「内存安全专项检查」。它不是隐蔽，而是<strong>检查项不覆盖</strong>。</p><h2 id="两条互斥假说，一次实验分流"><a href="#两条互斥假说，一次实验分流" class="headerlink" title="两条互斥假说，一次实验分流"></a>两条互斥假说，一次实验分流</h2><p>至此有两条候选，它们的预测互相排斥：</p><table><thead><tr><th>假说</th><th>预测</th></tr></thead><tbody><tr><td>A：每帧字节泄漏</td><td>CMA 可用量线性下降，151s 对应约 1.94 KB&#x2F;帧，186s 约 1.58 KB&#x2F;帧（按 7 MB 池、25fps 反推）</td></tr><tr><td>B：堆元数据被踩坏（本文）</td><td><strong>CMA 可以不降也照样崩</strong>，崩溃时机取决于分配器何时用到被踩的块</td></tr></tbody></table><p>这很重要：此前的排查都在盯「内存余量」，而 B 假说根本不消耗余量。如果只采 CmaFree，B 假说永远不会被看见。</p><p>所以下一步只做一件事：删掉那 3 行 ×2 处（共 6 行），编译，跑满 4~5 个故障周期。崩溃消失即定因；间隔显著变长说明是真因之一；完全不变则本假说被否，回到 CMA 斜率分支。</p><p>顺便说明为什么没有顺手改别的东西：这段代码上还压着一个「信号掩码净化版」的改动，两者混在一次实验里，出结果也无法归因。<strong>一次只动一个变量</strong>这条纪律，价值不在谨慎，而在让结论可复用。</p><h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul><li>静态审计的产出不一定是「厂商库有问题」，也可能是「自己的替身层有问题」——而替身层恰恰是最容易被当成「已经验证过」的部分。</li><li>函数级符号 + 覆盖率自证 + 阴性对照，这三件是让静态报告能当证据用的最低配置。</li><li>崩溃地址长得像 ASCII（<code>0x747474</code>）不代表它就是字符串，别顺着这个直觉走太远；本轮也没能证明它的直接来源。</li></ul>]]></content>
+      
+      
+      <categories>
+          
+          <category> Embedded </category>
+          
+          <category> Spreadtrum Platform </category>
+          
+          <category> Project Notes </category>
+          
+          <category> Engineering Practice </category>
+          
+          <category> netTV HW Decode </category>
+          
+          <category> Debugging Methods </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> VSP </tag>
+            
+            <tag> Embedded </tag>
+            
+            <tag> Spreadtrum SC9832A </tag>
+            
+            <tag> Hardware Decode </tag>
+            
+            <tag> Debugging Methods </tag>
+            
+            <tag> Memory Safety </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>netTV 硬解（45）：一次 12 位元組的堆越界——靜態審計如何抓到我們自己寫的「死寫」</title>
+      <link href="/2026/11/12/zh-tw/nettv-45-c1-heap-oob-zh-tw/"/>
+      <url>/2026/11/12/zh-tw/nettv-45-c1-heap-oob-zh-tw/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>🌐 語言：<a href="https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/12/zh-tw/nettv-45-c1-heap-oob-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob-en/">English</a></p></blockquote><blockquote><p>系列第 45 篇。上一輪把崩潰定性成「累積漂移」，工具造好了，設備卻一直沒上電。<br>這一輪換了個審計維度——不看等待，看分配——結果抓到的不是廠商庫，而是我們自己替身層裡<br>6 行從來沒被讀過的賦值。</p></blockquote><p>一個查了半個月的「週期性 SIGSEGV」，最後落在自己程式的 6 行賦值上。這 6 行不是 <code>memcpy</code>，所以兩輪「逐處審計 memcpy 邊界」都沒掃到它。這篇記錄方法上的那個盲區，以及怎麼用二進位反組譯把「物件到底多大」這件事釘死。</p><span id="more"></span><h2 id="背景：症狀與既有結論"><a href="#背景：症狀與既有結論" class="headerlink" title="背景：症狀與既有結論"></a>背景：症狀與既有結論</h2><p>設備上的網路電視播放器（展訊 SC9832A，VSP 硬體解碼）穩定播放時，約每 3 分鐘死一次 SIGSEGV，影格率正常、與 IDR 大小無關；崩潰位址出現 <code>0x747474</code> 這種「像 ASCII」的值。先前已排查掉的方向：</p><ul><li>訊號處理程式本身寫過（帶 <code>sigaltstack</code>、純 <code>write</code> 避免持鎖死鎖），但從沒被執行到；</li><li>我們自己的 9 處 <code>memcpy</code> 逐處判過邊界，全部有界；</li><li>渲染池、執行緒訊號遮罩、fork 時機都做過 A&#x2F;B，均非主因。</li></ul><p>剩下的假說是「累積漂移」：某個每幀都會走到的路徑在緩慢消耗資源。問題是——<strong>哪個路徑</strong>。</p><h2 id="方法：把「配置／釋放配對」做成函式級審計"><a href="#方法：把「配置／釋放配對」做成函式級審計" class="headerlink" title="方法：把「配置／釋放配對」做成函式級審計"></a>方法：把「配置／釋放配對」做成函式級審計</h2><p>上一輪審的是「等待／逾時」，這輪換成配置行為。工具思路很樸素：</p><ol><li>用 <code>.dynsym</code> 裡的 FUNC 符號（帶 size）取得精確函式邊界；未匯出的靜態函式用 <code>push &#123;…, lr&#125;</code> 前言補齊（stripped 的庫裡這是唯一可靠的分界）；</li><li>用 <code>.plt</code> + <code>.rel.plt</code> 建 PLT 位址 → 符號名對映，抓函式體內 <code>bl/blx</code> 到 <code>malloc/calloc/new/mmap</code> 與 <code>free/delete/munmap</code> 的呼叫點；</li><li>判斷該呼叫點是否落在函式內某個往回跳的分支所構成的迴圈體內（per-iteration 配置的氣味）；</li><li>回溯 12 條指令還原 <code>r0</code>（含 <code>movw/movt</code> 拼裝）＝ 申請大小；</li><li>以逐幀入口（<code>onQueueFilled</code>、<code>H264DecDecode</code> 等）為根建呼叫圖，BFS 標注「從逐幀路徑是否可達」。</li></ol><p>兩道防止自我欺騙的門檻：</p><ul><li><strong>覆蓋率必須印出來</strong>。線性反組譯遇到常數池會中斷，覆蓋率不足時工具直接標 <code>INCOMPLETE</code>——否則「沒找到配置點」會被讀成「沒有配置」。</li><li><strong>陰性對照</strong>。暫存器層那個庫的匯入表裡根本沒有 <code>malloc</code>，工具必須回報「堆積配置點 0 個」，而不是「無洩漏」。這是給自己設的反向測試。</li></ul><h2 id="關鍵一步：物件到底多大"><a href="#關鍵一步：物件到底多大" class="headerlink" title="關鍵一步：物件到底多大"></a>關鍵一步：物件到底多大</h2><p>審計報告裡有一行不起眼的東西：某個回呼裡有 <code>_Znwj</code>，還原出來的 <code>r0 = 0x1c</code>。</p><p><code>0x1c</code> &#x3D; 28。這 28 位元組隨後被交給 <code>MemoryHeapIon</code> 的建構函式。於是順著反組譯把 4 個建構點全看了一遍，3 個都是 <code>mov r0, #0x1c; bl _Znwj</code>——<strong>這個物件就是 28 位元組</strong>。</p><p>回到我們自己的程式：為了繞開 ION 配置失敗，播放器裡把 <code>MemoryHeapIon</code> 的建構函式整個替身掉了，替身裡按「欄位偏移表」往物件上填值：</p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">*(<span class="type">void</span>    **)(o +  <span class="number">0</span>) = ...;</span><br><span class="line">*(<span class="type">int</span>      *)(o +  <span class="number">8</span>) = ...;</span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">12</span>) = ...;</span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">16</span>) = ...;</span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">20</span>) = ...;</span><br><span class="line">*(<span class="type">void</span>    **)(o + <span class="number">24</span>) = ...;   <span class="comment">/* 28 位元組到此為止 */</span></span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">28</span>) = handle;   <span class="comment">/* 越界 1 */</span></span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">32</span>) = fd;       <span class="comment">/* 越界 2 */</span></span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">36</span>) = buf_fd;   <span class="comment">/* 越界 3，實際寫到 o+39 */</span></span><br></pre></td></tr></table></figure><p><strong>每次建構就越界寫 12 位元組。</strong> 而這三個欄位沒有任何讀取點——<code>getBase()</code> 讀 +24，<code>getHeapID()</code> 讀 +16，<code>get_phy_addr_from_ion()</code>／<code>get_iova()</code> 讀 +8&#x2F;+12&#x2F;+16&#x2F;+24。三條賦值是純死寫。</p><p>呼叫頻率決定量級：mbinfo 緩衝區大約每 2 幀申請一次，25fps 下每秒 12.5 次，3 分鐘約 2200 次越界寫，每次都踩在緊鄰 malloc 區塊的 12 位元組上（區塊標頭或鄰塊資料）。</p><h2 id="為什麼兩輪-memcpy-審計都沒抓到"><a href="#為什麼兩輪-memcpy-審計都沒抓到" class="headerlink" title="為什麼兩輪 memcpy 審計都沒抓到"></a>為什麼兩輪 memcpy 審計都沒抓到</h2><p>這是這次最值得記的一點。</p><p>「越界寫」在直覺裡等於 <code>memcpy</code> 長度算錯。於是審計就按 <code>memcpy</code> 去審：逐個看長度變數、看來源緩衝大小、看有無 <code>min()</code> 截斷。這個做法對<strong>資料搬運</strong>有效，對<strong>固定偏移的結構體寫入</strong>完全失效——<code>*(int*)(o + 36) = fd;</code> 裡沒有任何長度變數，它「看起來」只是給某個欄位賦值，而正確性問題藏在「這個物件真實有多大」這個外部事實上。</p><p>所以審計法則要補一條：<strong>按「寫入偏移 vs 物件真實大小」審，不能只按「有沒有長度參數」審。</strong> 物件大小往往不在本檔案裡——它由庫裡的 <code>new(N)</code> 決定，必須反組譯去取。</p><p>順帶一個反直覺的結論：這 6 行從程式的第二個版本就存在，一路活到被部署的版本，中間經歷過多次「記憶體安全專項檢查」。它不是隱蔽，而是<strong>檢查項目不覆蓋</strong>。</p><h2 id="兩條互斥假說，一次實驗分流"><a href="#兩條互斥假說，一次實驗分流" class="headerlink" title="兩條互斥假說，一次實驗分流"></a>兩條互斥假說，一次實驗分流</h2><p>至此有兩條候選，它們的預測互相排斥：</p><table><thead><tr><th>假說</th><th>預測</th></tr></thead><tbody><tr><td>A：每幀位元組洩漏</td><td>CMA 可用量線性下降，151s 對應約 1.94 KB&#x2F;幀，186s 約 1.58 KB&#x2F;幀（按 7 MB 池、25fps 反推）</td></tr><tr><td>B：堆積中介資料被踩壞（本文）</td><td><strong>CMA 可以不降也照樣崩</strong>，崩潰時機取決於配置器何時用到被踩的區塊</td></tr></tbody></table><p>這很重要：先前的排查都在盯「記憶體餘量」，而 B 假說根本不消耗餘量。如果只採 CmaFree，B 假說永遠不會被看見。</p><p>所以下一步只做一件事：刪掉那 3 行 ×2 處（共 6 行），編譯，跑滿 4~5 個故障週期。崩潰消失即定因；間隔顯著變長說明是真因之一；完全不變則本假說被否，回到 CMA 斜率分支。</p><p>順便說明為什麼沒有順手改別的東西：這段程式上還壓著一個「訊號遮罩淨化版」的改動，兩者混在一次實驗裡，出結果也無法歸因。<strong>一次只動一個變數</strong>這條紀律，價值不在謹慎，而在讓結論可重複使用。</p><h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><ul><li>靜態審計的產出不一定是「廠商庫有問題」，也可能是「自己的替身層有問題」——而替身層恰恰是最容易被當成「已經驗證過」的部分。</li><li>函式級符號 + 覆蓋率自證 + 陰性對照，這三件是讓靜態報告能當證據用的最低配置。</li><li>崩潰位址長得像 ASCII（<code>0x747474</code>）不代表它就是字串，別順著這個直覺走太遠；本輪也沒能證明它的直接來源。</li></ul>]]></content>
+      
+      
+      <categories>
+          
+          <category> Embedded </category>
+          
+          <category> Spreadtrum Platform </category>
+          
+          <category> Project Notes </category>
+          
+          <category> Engineering Practice </category>
+          
+          <category> netTV HW Decode </category>
+          
+          <category> Debugging Methods </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> VSP </tag>
+            
+            <tag> Embedded </tag>
+            
+            <tag> Spreadtrum SC9832A </tag>
+            
+            <tag> Hardware Decode </tag>
+            
+            <tag> Debugging Methods </tag>
+            
+            <tag> Memory Safety </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>netTV 硬解（44）：给「泄漏」造一台秤——崩溃间隔指纹与观测有效性闸门</title>
       <link href="/2026/11/11/nettv-44-leak-fingerprint/"/>
       <url>/2026/11/11/nettv-44-leak-fingerprint/</url>

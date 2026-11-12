@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 45 篇。上一轮把崩溃定性成「累积漂移」，工具造好了，设备却一直没上电。这一轮换了个审计维度——不看等待，看分配——结果抓到的不是厂商库，而是我们自己替身层里6 行从来没被读过的赋值。  一个查了半个月的「周期性 SIGSEGV」，最后落在自己代码的 6 行赋值上。这 6 行不是 memcpy，所以两轮「逐处审计 memcpy">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」">
+<meta property="og:url" content="https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/index.html">
+<meta property="og:site_name" content="wlb">
+<meta property="og:description" content="🌐 语言：简体中文 · 繁體中文 · English   系列第 45 篇。上一轮把崩溃定性成「累积漂移」，工具造好了，设备却一直没上电。这一轮换了个审计维度——不看等待，看分配——结果抓到的不是厂商库，而是我们自己替身层里6 行从来没被读过的赋值。  一个查了半个月的「周期性 SIGSEGV」，最后落在自己代码的 6 行赋值上。这 6 行不是 memcpy，所以两轮「逐处审计 memcpy">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-11-11T18:00:00.000Z">
+<meta property="article:modified_time" content="2026-11-12T00:08:38.521Z">
+<meta property="article:author" content="white leibniz">
+<meta property="article:tag" content="VSP">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="Spreadtrum SC9832A">
+<meta property="article:tag" content="Hardware Decode">
+<meta property="article:tag" content="Debugging Methods">
+<meta property="article:tag" content="Memory Safety">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        
+          <li><a class="navlink" href="/"><span data-i18n="nav.home">home</span></a></li>
+        
+          <li><a class="navlink" href="/%E5%85%B3%E4%BA%8E/"><span data-i18n="nav.about">about</span></a></li>
+        
+          <li><a class="navlink" href="/archives/"><span data-i18n="nav.article">article</span></a></li>
+        
+          <li><a class="navlink" href="/Search/"><span data-i18n="nav.Search">Search</span></a></li>
+        
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </span>
+  <br/>
+  <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2026/11/12/nettv-45-c1-heap-oob-en/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2026/11/12/zh-tw/nettv-45-c1-heap-oob-zh-tw/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+  <span id="i-next" class="info" style="display:none;">Next post</span>
+  <span id="i-top" class="info" style="display:none;">Back to top</span>
+  <span id="i-share" class="info" style="display:none;">Share post</span>
+  </span>
+  <br/>
+  <div id="share" style="display: none">
+    <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&text=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&title=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&is_video=false&description=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」&body=Check out this article: https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&title=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&title=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&title=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&title=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&name=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」&description=&lt;blockquote&gt;
+&lt;p&gt;🌐 语言：&lt;a href=&#34;https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&#34;&gt;简体中文&lt;/a&gt; · &lt;a href=&#34;https://whiteleibniz.github.io/2026/11/12/zh-tw/nettv-45-c1-heap-oob-zh-tw/&#34;&gt;繁體中文&lt;/a&gt; · &lt;a href=&#34;https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob-en/&#34;&gt;English&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;系列第 45 篇。上一轮把崩溃定性成「累积漂移」，工具造好了，设备却一直没上电。&lt;br&gt;这一轮换了个审计维度——不看等待，看分配——结果抓到的不是厂商库，而是我们自己替身层里&lt;br&gt;6 行从来没被读过的赋值。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;一个查了半个月的「周期性 SIGSEGV」，最后落在自己代码的 6 行赋值上。这 6 行不是 &lt;code&gt;memcpy&lt;/code&gt;，所以两轮「逐处审计 memcpy 边界」都没扫到它。这篇记录方法上的那个盲区，以及怎么用二进制反汇编把「对象到底多大」这件事钉死。&lt;/p&gt;"><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+  </div>
+  <div id="toc">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF%EF%BC%9A%E7%97%87%E7%8A%B6%E4%B8%8E%E6%97%A2%E6%9C%89%E7%BB%93%E8%AE%BA"><span class="toc-number">1.</span> <span class="toc-text">背景：症状与既有结论</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%EF%BC%9A%E6%8A%8A%E3%80%8C%E5%88%86%E9%85%8D-%E9%87%8A%E6%94%BE%E9%85%8D%E5%AF%B9%E3%80%8D%E5%81%9A%E6%88%90%E5%87%BD%E6%95%B0%E7%BA%A7%E5%AE%A1%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">方法：把「分配&#x2F;释放配对」做成函数级审计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E4%B8%80%E6%AD%A5%EF%BC%9A%E5%AF%B9%E8%B1%A1%E5%88%B0%E5%BA%95%E5%A4%9A%E5%A4%A7"><span class="toc-number">3.</span> <span class="toc-text">关键一步：对象到底多大</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%A4%E8%BD%AE-memcpy-%E5%AE%A1%E8%AE%A1%E9%83%BD%E6%B2%A1%E6%8A%93%E5%88%B0"><span class="toc-number">4.</span> <span class="toc-text">为什么两轮 memcpy 审计都没抓到</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%A4%E6%9D%A1%E4%BA%92%E6%96%A5%E5%81%87%E8%AF%B4%EF%BC%8C%E4%B8%80%E6%AC%A1%E5%AE%9E%E9%AA%8C%E5%88%86%E6%B5%81"><span class="toc-number">5.</span> <span class="toc-text">两条互斥假说，一次实验分流</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">小结</span></a></li></ol>
+  </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">wlb</span>
+      </span>
+      
+  <div class="postdate">
+    <time datetime="2026-11-11T18:00:00.000Z" itemprop="datePublished">2026-11-12</time>
+  </div>
+  
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link-link" href="/tags/Debugging-Methods/" rel="tag">Debugging Methods</a>, <a class="tag-link-link" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="tag-link-link" href="/tags/Hardware-Decode/" rel="tag">Hardware Decode</a>, <a class="tag-link-link" href="/tags/Memory-Safety/" rel="tag">Memory Safety</a>, <a class="tag-link-link" href="/tags/Spreadtrum-SC9832A/" rel="tag">Spreadtrum SC9832A</a>, <a class="tag-link-link" href="/tags/VSP/" rel="tag">VSP</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <blockquote>
+<p>🌐 语言：<a href="https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/">简体中文</a> · <a href="https://whiteleibniz.github.io/2026/11/12/zh-tw/nettv-45-c1-heap-oob-zh-tw/">繁體中文</a> · <a href="https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob-en/">English</a></p>
+</blockquote>
+<blockquote>
+<p>系列第 45 篇。上一轮把崩溃定性成「累积漂移」，工具造好了，设备却一直没上电。<br>这一轮换了个审计维度——不看等待，看分配——结果抓到的不是厂商库，而是我们自己替身层里<br>6 行从来没被读过的赋值。</p>
+</blockquote>
+<p>一个查了半个月的「周期性 SIGSEGV」，最后落在自己代码的 6 行赋值上。这 6 行不是 <code>memcpy</code>，所以两轮「逐处审计 memcpy 边界」都没扫到它。这篇记录方法上的那个盲区，以及怎么用二进制反汇编把「对象到底多大」这件事钉死。</p>
+<span id="more"></span>
+
+<h2 id="背景：症状与既有结论"><a href="#背景：症状与既有结论" class="headerlink" title="背景：症状与既有结论"></a>背景：症状与既有结论</h2><p>设备上的网络电视播放器（展讯 SC9832A，VSP 硬件解码）稳定播放时，约每 3 分钟死一次 SIGSEGV，帧率正常、与 IDR 尺寸无关；崩溃地址出现 <code>0x747474</code> 这种「ASCII 感」的值。此前已经排查掉的方向：</p>
+<ul>
+<li>信号处理器本身写过（带 <code>sigaltstack</code>、纯 <code>write</code> 避免持锁死锁），但从没执行到；</li>
+<li>我方的 9 处 <code>memcpy</code> 逐处判过边界，全部有界；</li>
+<li>渲染池、线程信号掩码、fork 时机都做过 A&#x2F;B，均非主因。</li>
+</ul>
+<p>剩下的假说是「累积漂移」：某个每帧都会走到的路径在缓慢消耗资源。问题是——<strong>哪个路径</strong>。</p>
+<h2 id="方法：把「分配-释放配对」做成函数级审计"><a href="#方法：把「分配-释放配对」做成函数级审计" class="headerlink" title="方法：把「分配&#x2F;释放配对」做成函数级审计"></a>方法：把「分配&#x2F;释放配对」做成函数级审计</h2><p>上一轮审的是「等待&#x2F;超时」，这轮换成分配行为。工具思路很朴素：</p>
+<ol>
+<li>用 <code>.dynsym</code> 里的 FUNC 符号（带 size）拿精确函数边界；未导出的静态函数用 <code>push &#123;…, lr&#125;</code> 序言补齐（stripped 库里这是唯一可靠的分界）；</li>
+<li>用 <code>.plt</code> + <code>.rel.plt</code> 建 PLT 地址 → 符号名映射，抓函数体内 <code>bl/blx</code> 到 <code>malloc/calloc/new/mmap</code> 与 <code>free/delete/munmap</code> 的调用点；</li>
+<li>判断该调用点是否落在函数内某个回跳分支构成的循环体里（per-iteration 分配的气味）；</li>
+<li>回溯 12 条指令复原 <code>r0</code>（含 <code>movw/movt</code> 拼装）＝ 申请大小；</li>
+<li>以逐帧入口（<code>onQueueFilled</code>、<code>H264DecDecode</code> 等）为根建调用图，BFS 标注「从逐帧路径是否可达」。</li>
+</ol>
+<p>两个防止自欺的门槛：</p>
+<ul>
+<li><strong>覆盖率必须打印</strong>。线性反汇编遇到常量池会中断，覆盖率不足时工具直接打 <code>INCOMPLETE</code>——否则「没找到分配点」会被读成「没有分配」。</li>
+<li><strong>阴性对照</strong>。寄存器层那个库的导入表里根本没有 <code>malloc</code>，工具必须报「堆分配点 0 个」，而不是「无泄漏」。这是给自己设的反向测试。</li>
+</ul>
+<h2 id="关键一步：对象到底多大"><a href="#关键一步：对象到底多大" class="headerlink" title="关键一步：对象到底多大"></a>关键一步：对象到底多大</h2><p>审计报告里有一行不起眼的东西：某个回调里有 <code>_Znwj</code>，复原出来的 <code>r0 = 0x1c</code>。</p>
+<p><code>0x1c</code> &#x3D; 28。这 28 字节随后被交给 <code>MemoryHeapIon</code> 的构造函数。于是顺着反汇编把 4 个构造点全看了一遍，3 个都是 <code>mov r0, #0x1c; bl _Znwj</code> ——<strong>这个对象就是 28 字节</strong>。</p>
+<p>回到我们自己的源码：为了绕开 ION 分配失败，播放器里把 <code>MemoryHeapIon</code> 的构造函数整个替身掉了，替身里按「字段偏移表」往对象上填值：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">*(<span class="type">void</span>    **)(o +  <span class="number">0</span>) = ...;</span><br><span class="line">*(<span class="type">int</span>      *)(o +  <span class="number">8</span>) = ...;</span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">12</span>) = ...;</span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">16</span>) = ...;</span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">20</span>) = ...;</span><br><span class="line">*(<span class="type">void</span>    **)(o + <span class="number">24</span>) = ...;   <span class="comment">/* 28 字节到此为止 */</span></span><br><span class="line">*(<span class="type">unsigned</span> *)(o + <span class="number">28</span>) = handle;   <span class="comment">/* 越界 1 */</span></span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">32</span>) = fd;       <span class="comment">/* 越界 2 */</span></span><br><span class="line">*(<span class="type">int</span>      *)(o + <span class="number">36</span>) = buf_fd;   <span class="comment">/* 越界 3，实际写到 o+39 */</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>每次构造越界写 12 字节。</strong> 而这三个字段没有任何读取点——<code>getBase()</code> 读 +24，<code>getHeapID()</code> 读 +16，<code>get_phy_addr_from_ion()</code>&#x2F;<code>get_iova()</code> 读 +8&#x2F;+12&#x2F;+16&#x2F;+24。三条赋值是纯死写。</p>
+<p>调用频度决定了量级：mbinfo 缓冲区大约每 2 帧申请一次，25fps 下 12.5 次&#x2F;秒，3 分钟约 2200 次越界写，每次都踩在紧邻 malloc 块的 12 字节上（块头或邻块数据）。</p>
+<h2 id="为什么两轮-memcpy-审计都没抓到"><a href="#为什么两轮-memcpy-审计都没抓到" class="headerlink" title="为什么两轮 memcpy 审计都没抓到"></a>为什么两轮 memcpy 审计都没抓到</h2><p>这是这次最值得记的一点。</p>
+<p>「越界写」在直觉里等于 <code>memcpy</code> 长度算错。于是审计就按 <code>memcpy</code> 去审：逐个看长度变量、看源缓冲大小、看有无 <code>min()</code> 截断。这个做法对<strong>数据搬运</strong>有效，对<strong>定偏移结构体写</strong>完全失效——<code>*(int*)(o + 36) = fd;</code> 里没有任何长度变量，它「看起来」只是给某个字段赋值，而正确性问题隐藏在「这个对象真实有多大」这个外部事实上。</p>
+<p>所以审计法则要补一条：<strong>按「写入偏移 vs 对象真实大小」审，不能只按「有没有长度参数」审。</strong> 对象大小往往不在本文件里——它由库里的 <code>new(N)</code> 决定，必须反汇编去取。</p>
+<p>顺带一个反直觉的结论：这 6 行从代码的第二个版本就存在，一路活到被部署的版本，中间经历了多次「内存安全专项检查」。它不是隐蔽，而是<strong>检查项不覆盖</strong>。</p>
+<h2 id="两条互斥假说，一次实验分流"><a href="#两条互斥假说，一次实验分流" class="headerlink" title="两条互斥假说，一次实验分流"></a>两条互斥假说，一次实验分流</h2><p>至此有两条候选，它们的预测互相排斥：</p>
+<table>
+<thead>
+<tr>
+<th>假说</th>
+<th>预测</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A：每帧字节泄漏</td>
+<td>CMA 可用量线性下降，151s 对应约 1.94 KB&#x2F;帧，186s 约 1.58 KB&#x2F;帧（按 7 MB 池、25fps 反推）</td>
+</tr>
+<tr>
+<td>B：堆元数据被踩坏（本文）</td>
+<td><strong>CMA 可以不降也照样崩</strong>，崩溃时机取决于分配器何时用到被踩的块</td>
+</tr>
+</tbody></table>
+<p>这很重要：此前的排查都在盯「内存余量」，而 B 假说根本不消耗余量。如果只采 CmaFree，B 假说永远不会被看见。</p>
+<p>所以下一步只做一件事：删掉那 3 行 ×2 处（共 6 行），编译，跑满 4~5 个故障周期。崩溃消失即定因；间隔显著变长说明是真因之一；完全不变则本假说被否，回到 CMA 斜率分支。</p>
+<p>顺便说明为什么没有顺手改别的东西：这段代码上还压着一个「信号掩码净化版」的改动，两者混在一次实验里，出结果也无法归因。<strong>一次只动一个变量</strong>这条纪律，价值不在谨慎，而在让结论可复用。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li>静态审计的产出不一定是「厂商库有问题」，也可能是「自己的替身层有问题」——而替身层恰恰是最容易被当成「已经验证过」的部分。</li>
+<li>函数级符号 + 覆盖率自证 + 阴性对照，这三件是让静态报告能当证据用的最低配置。</li>
+<li>崩溃地址长得像 ASCII（<code>0x747474</code>）不代表它就是字符串，别顺着这个直觉走太远；本轮也没能证明它的直接来源。</li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li>
+            <a class="navlink" href="/">
+              <span data-i18n="nav.home">home</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/%E5%85%B3%E4%BA%8E/">
+              <span data-i18n="nav.about">about</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/archives/">
+              <span data-i18n="nav.article">article</span>
+            </a>
+          </li>
+          
+          <li>
+            <a class="navlink" href="/Search/">
+              <span data-i18n="nav.Search">Search</span>
+            </a>
+          </li>
+          
+        <li class="lang-switch">
+          <a href="javascript:void(0)" data-lang="zh-CN">简体</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="zh-TW">繁體</a><span class="lang-sep">/</span><a href="javascript:void(0)" data-lang="en">EN</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF%EF%BC%9A%E7%97%87%E7%8A%B6%E4%B8%8E%E6%97%A2%E6%9C%89%E7%BB%93%E8%AE%BA"><span class="toc-number">1.</span> <span class="toc-text">背景：症状与既有结论</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%EF%BC%9A%E6%8A%8A%E3%80%8C%E5%88%86%E9%85%8D-%E9%87%8A%E6%94%BE%E9%85%8D%E5%AF%B9%E3%80%8D%E5%81%9A%E6%88%90%E5%87%BD%E6%95%B0%E7%BA%A7%E5%AE%A1%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">方法：把「分配&#x2F;释放配对」做成函数级审计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E4%B8%80%E6%AD%A5%EF%BC%9A%E5%AF%B9%E8%B1%A1%E5%88%B0%E5%BA%95%E5%A4%9A%E5%A4%A7"><span class="toc-number">3.</span> <span class="toc-text">关键一步：对象到底多大</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%A4%E8%BD%AE-memcpy-%E5%AE%A1%E8%AE%A1%E9%83%BD%E6%B2%A1%E6%8A%93%E5%88%B0"><span class="toc-number">4.</span> <span class="toc-text">为什么两轮 memcpy 审计都没抓到</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%A4%E6%9D%A1%E4%BA%92%E6%96%A5%E5%81%87%E8%AF%B4%EF%BC%8C%E4%B8%80%E6%AC%A1%E5%AE%9E%E9%AA%8C%E5%88%86%E6%B5%81"><span class="toc-number">5.</span> <span class="toc-text">两条互斥假说，一次实验分流</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">小结</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&text=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&title=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&is_video=false&description=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」&body=Check out this article: https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&title=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&title=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&title=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&title=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&name=netTV 硬解(45)：一次 12 字节的堆越界——静态审计如何抓到自己写的「死写」&description=&lt;blockquote&gt;
+&lt;p&gt;🌐 语言：&lt;a href=&#34;https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob/&#34;&gt;简体中文&lt;/a&gt; · &lt;a href=&#34;https://whiteleibniz.github.io/2026/11/12/zh-tw/nettv-45-c1-heap-oob-zh-tw/&#34;&gt;繁體中文&lt;/a&gt; · &lt;a href=&#34;https://whiteleibniz.github.io/2026/11/12/nettv-45-c1-heap-oob-en/&#34;&gt;English&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;系列第 45 篇。上一轮把崩溃定性成「累积漂移」，工具造好了，设备却一直没上电。&lt;br&gt;这一轮换了个审计维度——不看等待，看分配——结果抓到的不是厂商库，而是我们自己替身层里&lt;br&gt;6 行从来没被读过的赋值。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;一个查了半个月的「周期性 SIGSEGV」，最后落在自己代码的 6 行赋值上。这 6 行不是 &lt;code&gt;memcpy&lt;/code&gt;，所以两轮「逐处审计 memcpy 边界」都没扫到它。这篇记录方法上的那个盲区，以及怎么用二进制反汇编把「对象到底多大」这件事钉死。&lt;/p&gt;"><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+
+  <!--<div class="footer-left">-->
+    <!--Copyright &copy; 2026 white leibniz-->
+  <!--</div>-->
+
+  <!--<div class="footer-right">-->
+    <!--<nav>-->
+      <!--<ul>-->
+        <!---->
+          <!--<li><a href="/">home</a></li>-->
+        <!---->
+          <!--<li><a href="/%E5%85%B3%E4%BA%8E/">about</a></li>-->
+        <!---->
+          <!--<li><a href="/archives/">article</a></li>-->
+        <!---->
+          <!--<li><a href="/Search/">Search</a></li>-->
+        <!---->
+      <!--</ul>-->
+    <!--</nav>-->
+  <!--</div>-->
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+<script src="/js/header.js"></script>
+
+
+<script src="/js/i18n.js"></script>
+
+<!-- 51La statistics -->
+<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3RUH1Y5pw497QWiW",ck:"3RUH1Y5pw497QWiW"})</script>
+
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-121919637-1', 'auto');
+    ga('send', 'pageview');
+</script>
+
+
